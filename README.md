@@ -1,6 +1,6 @@
 ## Source to Red Dog: Superior Firepower
 
-This is the last known source of the Sega Dreamcast game [Red Dog: Superior Firepower](https://en.wikipedia.org/wiki/Red_Dog:_Superior_Firepower).
+This is the last known source of the Sega Dreamcast game [Red Dog: Superior Firepower](https://en.wikipedia.org/wiki/Red_Dog:_Superior_Firepower). It includes the "strat" (enemy behaviour strategies), rendering engine and the 3DS Max plugin used to design the game, but no assets.
 
 It's not known to compile, or work, or indeed represent much other than a historical artifact of how games in the late 90s/early 2000s were created. There is any amount of unused code in this repository, and unfortunately there's no game assets here.
 
