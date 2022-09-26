@@ -1,0 +1,35 @@
+STATE Init
+
+	MakeMeTheLast()
+//	absspeedx = parentoldx - parentx
+//	absspeedy = parentoldy - parenty
+//	absspeedz = parentoldz - parentz
+
+	MyFlag = MyFlag | SPRITE | GRAVITYON | FLOORCOLL | STRATCOLL | LOWCOLL | ENEMY | BULLETTYPE
+	RegisterCollision()
+	SetFriction(0.0,0.0,0.0)
+	damage = 50.0
+	MyFlag2 = MyFlag2 | NOHDC
+   	OBJECT> BOSSES\SWAMPBOSSWEAPONS\BOSSFLAME
+   	ANIM> BOSSFLAME>Explosion
+
+	TRIGSET>KillOff	EVERY 150
+	MoveY(1.7)
+
+	STAT>SetPos
+ENDSTATE 
+
+STATE SetPos
+  IF (scalex < 7.0)
+	scaley = scalex = scalex + 1.0
+  ENDIF
+
+ENDSTATE
+
+
+//ON DYING TRIGGER CHANGE THE MAIN RUN ADDRESS TO DEATH
+STATE KillOff
+	
+	Delete()
+ //	TRIGSTOP
+ENDSTATE

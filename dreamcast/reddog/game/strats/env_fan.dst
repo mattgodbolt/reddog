@@ -1,0 +1,19 @@
+PARAMFLOAT speed
+
+STATE Init
+	MyFlag = MyFlag | ENEMY | STRATCOLL | LOWCOLL
+	RegisterCollision()
+   	TRIGSET>Explode WHENDEAD
+	health = 30
+	STAT> StartRotate
+ENDSTATE
+
+STATE StartRotate
+	RelRotateY(speed)
+ENDSTATE
+
+STATE Explode
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+ //	TRIGSTOP
+	DESTROYME SPAWN_EXPLODINGBITS
+ENDSTATE

@@ -1,0 +1,359 @@
+LOCALINT ID
+LOCALINT temp
+LOCALINT Crystal
+LOCALFLOAT size
+
+//DESTROY WHEN CHARGED UP, OR WHEN HIT BY PLAYER/ENEMY, OR WHEN BOSS GEN APPEARS AND
+//SETS GLOBALVAR2
+
+
+STATE Init
+	IF (GetGlobalParamInt(0))
+		STAT>RingExplode
+	ENDIF
+
+
+	MyFlag = MyFlag | ENEMY | STRATCOLL 
+	RegisterCollision()
+	InitHDC()
+	CalculateStratPolyData(0)
+
+	//AWAIT THE BOSS
+
+	WHILE (!BossStrat)
+		MyFlag = MyFlag
+	ENDWHILE
+
+
+	//ENSURE THERE IS AN ATTACHED PNODE AND GET ITS NUMBER OF IDS
+	IF (PNode)
+		ID = MyPNODEIDS + 1
+
+		temp = 0
+		IMMLOOP (ID)
+			IF (temp)
+				UpdateObjectCollFlag(temp, NOPLAYERCOLLIDE | NOCAMERACOLLIDE | CALCMATRIX)
+  			 	SetSpecularColour(temp,0,0,0)
+				//
+  							ObjectSpecularFlash(temp,0)
+				SetObjectAnimScale(temp,1.0,1.0,1.0)
+				SetObjectHealth(temp,5.0)
+
+			ENDIF
+			temp = temp + 1
+	  	IMMENDLOOP
+		TRIGSET>CrystalFlashCheck EVERY 1
+	
+		STAT>Idle
+	ELSE
+		STAT>Dummy
+	ENDIF
+ENDSTATE
+
+LOCALFLOAT COL
+LOCALFLOAT tCOL
+LOCALFLOAT TSx
+LOCALFLOAT TSy
+LOCALFLOAT TSz
+
+
+
+
+TRIGGER CrystalFlashCheck
+
+  
+	//HEALTH CHECKS
+  	Crystal = 0
+
+   	IMMLOOP (ID)
+   		IF (Crystal)
+			scalefac = GetObjectAnimScale(Crystal,MODEX)
+			IF (scalefac >= 10.0)
+				IF (scalefac <= 10.0)
+					//POLL HERE FOR NEARNESS TO BOSS
+					MyX = GetObjectCrntPos(Crystal,MODEX)
+					MyY = GetObjectCrntPos(Crystal,MODEY)
+					SetCheckPosRel(0,MyX,MyY,0)
+					MyX = CheckX
+					MyY = CheckY
+					distx = BossX - MyX
+					disty = BossY - MyY
+					dist = FSQRT((distx * distx) + (disty * disty))
+					IF ((dist > (BossRadius + 15.0)) AND (!GlobalVar2))
+				 		SetObjectScale(Crystal,0.01,0.01,0.01)
+						UnhideObject(Crystal)
+						scalefac = 0.01
+					ENDIF
+			   
+			  	ELSE
+					scalefac = scalefac - 1.0
+
+			   	ENDIF
+			  	SetObjectAnimScale(Crystal,scalefac,scalefac,scalefac)
+			ENDIF
+
+			IF (scalefac  < 1.0)
+
+				TSx = GetObjectCrntScale(Crystal,MODEX)
+				TSy = GetObjectCrntScale(Crystal,MODEY)
+				TSz = GetObjectCrntScale(Crystal,MODEZ)
+				TSx = TSy = TSz = 1.0
+			   	SetObjectScale(Crystal,TSx * scalefac,TSy * scalefac,TSz * scalefac)
+				scalefac = scalefac + 0.01
+				SetObjectAnimScale(Crystal,scalefac,scalefac,scalefac)
+
+				IF (scalefac >= 1.0)
+					ActivateObjectCollision(Crystal)
+					SetObjectScale(Crystal,TSx * scalefac,TSy * scalefac,TSz * scalefac)
+				ENDIF
+
+			ENDIF
+		ENDIF
+
+		Crystal = Crystal + 1
+
+   	IMMENDLOOP
+	
+
+
+
+	TRIGFIN
+ENDTRIGGER
+
+
+LOCALFLOAT MyX
+LOCALFLOAT MyY
+LOCALFLOAT testX
+LOCALFLOAT testY
+LOCALFLOAT distx
+LOCALFLOAT disty
+LOCALFLOAT dist
+LOCALINT testcryst
+
+LOCALFLOAT scalefac
+
+LOCALFLOAT Wait
+
+STATE Idle
+	temp = 0
+	size = 1.0
+
+	IMMLOOP (ID)
+	   	//IF (temp)
+			IF (temp  AND ObjectHitStrat(temp))
+			   COL = GetSpecularColour(temp,MODERED)
+			   COL = COL + (COL * 1.2) + ((1.0 /255.0) * 15.0)
+			   
+				IF ((COL) >= 1.0)
+					InActivateObjectCollision(temp)
+					HideObject(temp)
+					SetGlobalParamInt(0,1)
+					CheckX = RandRange(0.25,1.0)
+					CREATE ENV_BILLYS 0,0, CheckX, 0,0,0, temp
+
+					ClearGlobalParams()
+
+					Wait = RandRange(1.0,1.5) * 250.0
+				   	Wait = 300.0
+		  			SetObjectAnimScale(temp, Wait, Wait, Wait)
+
+				 	SetObjectScale(temp,0.01,0.01,0.01)
+
+					IF (RandRange(0,3.0) > 2.65)
+						MyVar = 1.0
+						SetGlobalParamFloat(0,size)
+
+//						adrelanin = adrelanin + 0.2
+						CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, temp
+						ClearGlobalParams()
+					//	size = size + 0.25
+						size = size + 0.15
+					ENDIF
+				 	COL = 1.0	
+
+//					MyX = GetObjectCrntPos(temp,MODEX)
+//					MyY = GetObjectCrntPos(temp,MODEY)
+//					SetCheckPosRel(0,MyX,MyY,0)
+//					MyX = CheckX
+//					MyY = CheckY
+//					distx = BossX - MyX
+//					disty = BossY - MyY
+//					dist = FSQRT((distx * distx) + (disty * disty))
+					
+					
+//					IF (dist < (BossRadius + 10.0))
+//						BossFrame = 100.0
+//					ENDIF
+
+					testcryst = 0
+					IMMLOOP (ID)
+						testX = GetObjectCrntPos(testcryst,MODEX)
+						testY = GetObjectCrntPos(testcryst,MODEY)
+						SetCheckPosRel(0,testX,testY,0)
+						testX = CheckX
+						testY = CheckY
+						distx = testX - MyX
+						disty = testY - MyY
+						dist = FSQRT((distx * distx) + (disty * disty))
+						scalefac = GetObjectAnimScale(testcryst,MODEX)
+						
+					  
+					  	IF ((scalefac < 10.0) AND (testcryst) AND (dist < (100.0)))
+							tCOL = GetSpecularColour(testcryst,MODERED)
+							tCOL = tCOL + (tCOL * 1.8) + ((1.0 /255.0) * 35.0)
+							SetSpecularColour(testcryst,tCOL, 0, tCOL)
+  							ObjectSpecularFlash(testcryst,1)
+						ENDIF
+						IF ((scalefac < 10.0) AND (testcryst) AND (dist < (100.0)) AND (tCOL > 1.0))
+							UpdateObjectCollFlag(testcryst, HITSTRAT)
+							SetSpecularColour(testcryst,1.0, 0, 1.0)
+  							//
+						 	ObjectSpecularFlash(testcryst,1)
+						ENDIF
+
+						testcryst = testcryst + 1
+					IMMENDLOOP
+
+
+
+			   	ENDIF
+
+
+				SetSpecularColour(temp,COL,0,COL)
+  			 	ObjectSpecularFlash(temp,1)
+				ClearObjCollFlag(temp,HITSTRAT)
+		 	ENDIF
+			IF (temp)
+				scalefac = GetObjectAnimScale(temp,MODEX)
+				IF (scalefac < 10.0)
+					MyX = GetObjectCrntPos(temp,MODEX)
+					MyY = GetObjectCrntPos(temp,MODEY)
+
+					SetCheckPosRel(0,MyX,MyY,0)
+					MyX = CheckX
+					MyY = CheckY
+				   
+				   	distx = BossX - MyX
+					disty = BossY - MyY
+					dist = FSQRT((distx * distx) + (disty * disty))
+					
+					//CHECK AGAINST BOSS COLLISION
+					IF ((dist < (BossRadius) ) OR GlobalVar2)
+						MyVar = 4.0
+						CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, temp
+						HideObject(temp)
+					 	InActivateObjectCollision(temp)
+						SetObjectAnimScale(temp, 300.0, 300.0, 300.0)
+						SetObjectScale(temp,0.01,0.01,0.01)
+					ENDIF
+					distx = DogX - MyX
+					disty = DogY - MyY
+					dist = FSQRT((distx * distx) + (disty * disty))
+					
+					//CHECK AGAINST BOSS COLLISION
+				  //	IF ((dist < (PlayerRadius)) OR GlobalVar2)
+				  //		adrelanin = adrelanin + 0.2
+				  //		MyVar = 4.0
+				  //		CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, temp
+				  //		HideObject(temp)
+				  //		InActivateObjectCollision(temp)
+				  //		SetObjectAnimScale(temp, 300.0, 300.0, 300.0)
+				  //	  	SetObjectScale(temp,0.01,0.01,0.01)
+				  //	ENDIF
+				ENDIF
+
+
+			ENDIF
+
+
+			IF (temp)
+
+		 	COL = GetSpecularColour(temp,MODERED)
+		 	COL = COL - (1.0 /255.0) * 0.15
+			SetSpecularColour(temp,COL,0,COL)
+  							ObjectSpecularFlash(temp,1)
+
+
+		 	IF (COL <=0 )
+  		 	   	SetSpecularColour(temp,0,0,0)
+		 	   	ObjectSpecularFlash(temp,0)
+		 	ENDIF
+	   
+	   		ENDIF
+
+	  
+	  	temp = temp + 1
+
+	IMMENDLOOP
+
+ENDSTATE
+
+STATE Dummy
+ENDSTATE
+
+DEFINE PARENT 1
+
+STATE RingExplode
+   	OBJECT> BOSSES\CAVEBOSS\CRYSTALEXPLODE
+	MyVar = 1.5
+	health = 0
+	ID = MyPNODEIDS + 1
+
+	temp = 0
+	IMMLOOP (ID)
+		IF (temp > 1)
+			HideObject(temp)
+		ENDIF
+		temp = temp + 1
+	IMMENDLOOP
+		
+
+	LOOP (15)
+	   
+		temp = 0
+		IMMLOOP (ID)
+			IF ((temp > 1) AND (RandRange(0,2.0) > 0.75))
+				Crystal = DrawLightning (temp, 0, 0, 0, Crystal,3)
+			ENDIF
+		  	temp = temp + 1
+		IMMENDLOOP
+
+	   	distx = BossX - x
+	   	disty = BossY - y
+	   	dist = FSQRT((distx * distx) + (disty * disty))
+		IF (dist < (health + (BossRadius) + 5.0))
+		  	BossFrame = 100.0
+	   		STAT>Die
+	   	ENDIF
+	   
+	   	health = health + MyVar
+		
+		IF (MyVar > 0.4)
+		   	MyVar = MyVar * 0.85
+		ENDIF
+
+		SetObjectScale(PARENT,health,health,health)
+
+	ENDLOOP
+
+	Delete()
+
+
+
+ENDSTATE
+
+
+STATE Die
+	LOOP (2)
+		temp = 0
+		IMMLOOP (ID)
+			IF (temp > 1)
+				Crystal = DrawLightning (temp, 0, 0, 0, Crystal,3)
+			ENDIF
+		  	temp = temp + 1
+		IMMENDLOOP
+
+
+	ENDLOOP
+	Delete()
+ENDSTATE

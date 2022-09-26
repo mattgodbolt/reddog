@@ -1,0 +1,61 @@
+STATE Init
+	MyFlag = MyFlag | ENEMY 
+
+	
+	collisionable = 0
+	hdc = 0
+	explodeWhenShot = 0
+	Health = 1
+	speed = 1.5
+	rotObjectOneZ = 0.0
+
+	MyFlag = STRATCOLL | ENEMY
+	RegisterCollision()
+	InitHDC()
+		
+
+	InheritMyParent()
+
+	health = 1
+
+	TRIGSET>HealthCheck EVERY 1	
+
+	InitPath()
+	InitSplineData()
+
+	STAT>Start
+ENDSTATE
+
+TRIGGER HealthCheck
+	IF (health <= 0.0)
+		ParentVar = ParentVar + 1.0
+		MyVar = 8.0
+		CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+		DESTROYME SPAWN_EXPLODINGBITS
+		TRIGSTOP
+	ELSE
+		TRIGFIN
+	ENDIF
+ENDTRIGGER
+
+STATE Start
+	IF (LastSplineSection())
+		IF (distToLastWay() < 5.0)
+			STAT>Die
+		ENDIF
+	ENDIF
+
+	
+	tempf = GetObjectCrntRot(1, MODEZ)
+	SetObjectCrntRot(1, tempf + 0.2, MODEZ)
+
+	MoveAlongPath(2.0)
+	FaceAlongPath(1)
+	TiltAlongPath(1.0)
+	SplineRelFlatten(1.0)
+ENDSTATE
+
+STATE Die
+	ParentVar = ParentVar + 1.0
+	Delete()
+ENDSTATE

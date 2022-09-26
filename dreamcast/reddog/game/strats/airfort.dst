@@ -1,0 +1,23 @@
+LOCALINT near
+LOCALFLOAT count
+
+STATE Init
+
+	MyFlag = MyFlag | (STRATCOLL) | FLOORCOLL | GRAVITYON | ENEMY
+
+	RegisterCollision()
+	SetFriction(0.2,0.2,0.2)
+	scalex = 0.2
+	scaley = 0.2
+	scalez = 0.2
+
+	STAT>Main
+	//Yaw(0.01)
+	//MoveY(1.0)
+ENDSTATE
+
+STATE Main
+//	MoveY(0.02)
+
+
+ENDSTATE

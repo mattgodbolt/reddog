@@ -1,0 +1,67 @@
+
+STATE Init
+	MakeMeTheLast()
+//	MyFlag = MyFlag | SPRITE 
+	trans =0.9
+
+	SetFriction(0.03,0.03,0.03)
+	scalex = scaley = scalez = 0.1
+	
+//	scalex = 3.0
+//	scaley = 3.0
+//	scalex = 2.0
+//	scaley = 2.0
+
+	OBJECT> BOSSES\SWAMPBOSSWEAPONS\WATERWAKE
+	MODELANIM>BOSSES\SWAMPBOSSWEAPONS\WATERWAKE.rdo>WakeMeUp>REPEAT
+
+
+
+//	OBJECT> SFX\DARKPUFF
+//	ANIM> DARKPUFF>Smoke
+	TRIGSET>Die PARENTDEAD
+ 	STAT>Link
+ENDSTATE
+
+
+STATE Link
+
+	IF (!MyVar)
+		IF (scalex < 1.0)
+			scalex = scalex + 0.05
+			scaley = scalez = scalex
+		ELSE
+			MyVar = 1.0
+		ENDIF
+	ENDIF
+
+	LinkToParentObject(0,0,0,0,0,0.0,0)
+   //	health = parentx - parentoldx
+   //	damage = parenty - parentoldy
+  //	MyVar = FSQRT((health * health) + (damage * damage))
+
+
+  //	scalez = 1.0 + MyVar
+ENDSTATE
+
+TRIGGER Die
+	Delete()
+
+ENDTRIGGER
+
+
+STATE KillOff
+   	WHILE (scalex > 0.11)
+	  	IF (trans > 0.0)
+	  		trans = trans - 0.5
+	  	ELSE
+			trans = 0.01
+		ENDIF
+	 	scalex = scalex - 0.06
+	 	scaley = scalex
+	ENDWHILE
+	
+	Delete()
+ENDSTATE
+
+

@@ -1,0 +1,42 @@
+LOCALINT	DelayTime
+
+STATE Init
+	MyFlag = ENEMY | STRATCOLL | GRAVITYON | FLOORCOLL | LOWCOLL
+	IF (!MyFlag2 & OWNIPARAMS)
+		DelayTime = 60
+	ENDIF
+	DelayTime = GetGlobalParamInt(0)
+	damage = 10.0
+	SetFriction(0.0, 0.0, 0.0)
+	MoveY(1.5)
+	OBJECT> WEAPON\BOMB
+	RegisterCollision()
+	TRIGSET>Explode WHENHIT 
+	TRIGSET>Explode	ONFLOOR
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	absspeedx = absspeedx * 0.99
+	absspeedy = absspeedy * 0.99
+	MyFlag = MyFlag
+	IF (z < DogZ)
+		STAT>Explode
+	ENDIF
+ENDSTATE
+
+STATE Explode
+	CREATE SPAWN_PolyWaterSplash 0, 0, 0, 0, 0, 0, 0
+	MyFlag = MyFlag | NODISP
+	MyFlag = MyFlag & LNOT(GRAVITYON | FLOORCOLL | STRATCOLL)
+	KillMyVelocity()
+	LOOP (DelayTime)
+		MyFlag = MyFlag
+	ENDLOOP
+	IF (NearPlayerXY(10.0))
+		PlayerHealth = PlayerHealth - 10.0
+	ENDIF
+	CREATE SPAWN_PolyExplosionWater 0, 0, 0, 0, 0, 0, 0
+	Delete()
+ //	TRIGSTOP
+ENDSTATE 

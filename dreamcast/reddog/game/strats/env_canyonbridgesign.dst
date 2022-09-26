@@ -1,0 +1,29 @@
+STATE Init
+	MyFlag = MyFlag | ENEMY | STRATCOLL
+	OBJECT>Scenery\Canyon\bridgeX
+	RegisterCollision()
+	InitHDC()
+	CalculateStratPolyData(1)
+	WHILE (!EscortTankerInActivationXY(0))
+		MyFlag = MyFlag
+	ENDWHILE
+	OBJECT>Scenery\Canyon\bridgeWaitX
+	InitHDC()
+	CalculateStratPolyData(1)
+	LOOP (90)
+		MyFlag = MyFlag
+	ENDLOOP
+	OBJECT>Scenery\Canyon\bridgeProceedX30
+	InitHDC()
+	CalculateStratPolyData(1)
+	LOOP (90)
+		MyFlag = MyFlag
+	ENDLOOP
+	OBJECT>Scenery\Canyon\bridgeProceed30
+	InitHDC()
+	CalculateStratPolyData(1)
+	STAT>Start
+ENDSTATE
+
+STATE Start
+ENDSTATE

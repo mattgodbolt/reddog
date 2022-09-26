@@ -1,0 +1,25 @@
+LOCALFLOAT	time
+
+STATE Init
+	MyFlag = MyFlag | ENEMY
+	time = 0.0
+	CREATE SPAWN_ExplosionShardGround 0, 0, 0, 0, 0, 0, 0
+	OBJECT>ENEMIES\DEATH\GunEmplacementLevel1Death
+	MODELANIM>ENEMIES\DEATH\GunEmplacementLevel1Death.RDO>Play>NOTWEEN
+	IMMLOOP (3) 
+		CREATE SPAWN_EnemyDebris 0, 0, 0, 0, 0, 0, 0
+	IMMENDLOOP
+	WHILE (MyAnimFlag & RUNNING)
+		time = time + 1.0
+		IF (time > 75.0)
+			MyFlag2 = MyFlag2 | TRANSLUCENT
+			trans = (85.0 - time) / 10.0
+		ENDIF
+		MyFlag = MyFlag
+	ENDWHILE
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	DESTROYME SPAWN_EXPLODINGBITS
+ENDSTATE

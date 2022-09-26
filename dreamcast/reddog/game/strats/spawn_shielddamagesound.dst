@@ -1,0 +1,9 @@
+
+STATE Init
+	AllocStratSoundBlock(1)
+	PLAYSOUND>DAMAGE3 0 1.0  0.0 0.0 0.0  RANDOM
+	WHILE (IsPlaying(0))
+		MyFlag = MyFlag
+	ENDWHILE
+	Delete()
+ENDSTATE

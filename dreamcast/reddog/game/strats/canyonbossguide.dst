@@ -1,0 +1,61 @@
+LOCALFLOAT	ox
+LOCALFLOAT	oz
+LOCALFLOAT	time
+LOCALFLOAT	tempf
+LOCALFLOAT	speed
+LOCALFLOAT	dist
+LOCALINT	ft 
+LOCALFLOAT	rx
+LOCALFLOAT	rz
+
+STATE Init
+	MyFlag = MyFlag | ENEMY | FLOORCOLL | RELVELCALC | NODISP
+	RegisterCollision()
+	OBJECT>BOSSES\CANYONBOSS\CANYONBOSS
+	oz = z
+	ox = x
+	ft = 0
+	IAmBossGuide
+	speed = 2
+	time = 0.0
+	SetFriction(0.1, 0.1, 0.1)
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	time = time + 0.1
+	tempf = Ssin(time * 0.7) * 5.0
+	z = oz + tempf
+	IF (GetParentSem(0) = 1)
+		dist = 500.0
+	ELSE
+		dist = 50.0
+	ENDIF
+	IF (NearPlayerXY(dist))
+		IF (speed > 1.0)
+			speed = speed - 0.1
+		ELSE
+			speed = 1.0
+		ENDIF
+		IF (dist = 500)
+			IF (ft > 10)
+				rx = RandRange(-10.0, 10.0)	
+				rz = RandRange(-10.0, 10.0)
+				CREATE SPAWN_BLASTEXP rx, 10, rz, 0, 0, 0, 0
+				ft = 0
+			ELSE
+				ft = ft + 1
+			ENDIF
+		ENDIF
+	ELSE
+		IF (NearPlayerXY(100))
+			speed = speed + (3.0 - speed) * 0.1
+		ELSE
+			speed = speed + (7.0 - speed) * 0.1
+			x = ox
+		ENDIF
+		
+	ENDIF
+	y = y + speed
+	FaceAlongDir()
+ENDSTATE

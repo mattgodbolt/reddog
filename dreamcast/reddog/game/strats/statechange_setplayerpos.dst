@@ -1,0 +1,41 @@
+PARAMINT	SetCameraNow 1
+PARAMINT	DelayFor	0
+
+
+STATE Init
+	IF (!(MyFlag2 & OWNIPARAMS))
+		SetCameraNow = 1
+		DelayFor = 0
+	ENDIF
+	IF (HasActivation(0))
+		WHILE (!PlayerNearActivationXY(0))
+			MyFlag = MyFlag
+		ENDWHILE
+	ENDIF
+			
+	IF (PAL)
+		DelayFor = DelayFor / 1.2
+	ENDIF
+	WHILE (DelayFor > 0)
+		DelayFor = DelayFor - 1
+	ENDWHILE
+	IF (PlayerOnBoat = 1)
+		PlayerOnBoat = 0
+	ENDIF
+	DogX = x
+	DogY = y
+	DogZ = z
+	PlayerVelX = 0
+	PlayerVelY = 0
+	PlayerVelZ = 0
+	SetPlayerMatrix()
+	SetPlayerOCP()
+	IF (SetCameraNow = 1)
+		SetPlayerCamera()
+	ENDIF
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	Delete()
+ENDSTATE

@@ -1,0 +1,314 @@
+LOCALINT	count
+LOCALFLOAT	i
+
+DEFINE FADESPEED 0.1
+DEFINE FADEFRAME 10
+
+STATE Init
+	MyFlag = MyFlag
+	InitCred()
+	TRIGSET>Always EVERY 1
+	LOOP (10)
+		MyFlag = MyFlag
+		SetScreenARGB(1.0, 0, 0, 0)
+	ENDLOOP
+	
+
+	count = 0
+	SetGlobalParamInt(0, 1)
+	CREATE camTrack 0, 0, 0, 0, 0, 0, 0
+	SetGlobalParamInt(0, 0)
+	ChangeCamStrat()
+	i = 0
+	WHILE (i < 10)
+		i = i + 1
+		SetScreenARGB(1.0 - (i * 0.1), 0, 0, 0)
+	ENDWHILE
+	STAT>CredA
+ENDSTATE
+
+TRIGGER Always
+	PlayerState = PS_ONPATH
+	DoCred(count)
+	TRIGFIN
+ENDTRIGGER
+
+STATE CredA
+	OBJECT>creditscenes\creda
+	MODELANIM>creditscenes\creda.rdo>Play>NOTWEEN
+	SetParentSem(0, 50)
+	SetParentSem(1, 49)	
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+	trans = 0.0
+	
+	LOOP (10)
+		MyFlag = MyFlag | NODISP
+	ENDLOOP
+	MyFlag = MyFlag & LNOT(NODISP)
+	i = 0
+	WHILE (i < FADEFRAME)
+		i = i + 1
+		trans = i * FADESPEED
+	ENDWHILE
+	trans = 1.0
+	i = 0 
+	WHILE (i < 288 - (FADEFRAME * 3))
+		i = i + 1
+	ENDWHILE
+	i = 0 
+	WHILE (i < FADEFRAME)
+		i = i + 1
+		trans = 1.0 - (i * FADESPEED)
+	ENDWHILE
+	count = count + 1
+	STAT>CredB
+ENDSTATE
+
+STATE CredB
+	OBJECT>creditscenes\credB
+	MODELANIM>creditscenes\credB.rdo>Play>NOTWEEN
+	SetParentSem(0, 30)
+	SetParentSem(1, 29)	
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+	trans = 0.0
+	
+	LOOP (10)
+		MyFlag = MyFlag | NODISP
+	ENDLOOP
+	MyFlag = MyFlag & LNOT(NODISP)
+	i = 0
+	WHILE (i < FADEFRAME)
+		i = i + 1
+		trans = i * FADESPEED
+	ENDWHILE
+	trans = 1.0
+	i = 0
+	WHILE (i < 358 - (FADEFRAME * 3))
+		i = i + 1
+	ENDWHILE
+	i = 0
+	WHILE (i < FADEFRAME)
+		i = i + 1
+		trans = 1.0 - (i * FADESPEED)
+	ENDWHILE
+	count = count + 1
+	STAT>CredC
+ENDSTATE
+
+
+STATE CredC
+	OBJECT>creditscenes\credC
+	MODELANIM>creditscenes\credC.rdo>Play>NOTWEEN
+	SetParentSem(0, 21)
+	SetParentSem(1, 20)	
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+	trans = 0.0
+	
+	LOOP (10)
+		MyFlag = MyFlag | NODISP
+	ENDLOOP
+	MyFlag = MyFlag & LNOT(NODISP)
+	i = 0
+	WHILE (i < FADEFRAME)
+		i = i + 1
+		trans = i * FADESPEED
+	ENDWHILE
+	trans = 1.0
+	i = 0
+	WHILE (i < 138 - (FADEFRAME * 3))
+		i = i + 1
+	ENDWHILE
+	i = 0
+	WHILE (i < FADEFRAME)
+		i = i + 1
+		trans = 1.0 - (i * FADESPEED)
+	ENDWHILE
+	count = count + 1
+	STAT>CredD
+ENDSTATE
+
+STATE CredD
+	OBJECT>creditscenes\credD
+	MODELANIM>creditscenes\credD.rdo>Play>NOTWEEN
+	SetParentSem(0, 29)
+	SetParentSem(1, 28)	
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+	trans = 0.0
+	
+	LOOP (10)
+		MyFlag = MyFlag | NODISP
+	ENDLOOP
+	MyFlag = MyFlag & LNOT(NODISP)
+	i = 0
+	WHILE (i < FADEFRAME)
+		i = i + 1
+		trans = i * FADESPEED
+	ENDWHILE
+	trans = 1.0
+	i = 0
+	WHILE (i < 172 - (FADEFRAME * 3))
+		i = i + 1
+	ENDWHILE
+	i = 0
+	WHILE (i < FADEFRAME)
+		i = i + 1
+		trans = 1.0 - (i * FADESPEED)
+	ENDWHILE
+	count = count + 1
+	STAT>CredE
+ENDSTATE
+
+STATE CredE
+	OBJECT>creditscenes\credE
+	MODELANIM>creditscenes\credE.rdo>Play>NOTWEEN
+	SetParentSem(0, 19)
+	SetParentSem(1, 18)	
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+	trans = 0.0
+	
+	LOOP (10)
+		MyFlag = MyFlag | NODISP
+	ENDLOOP
+	MyFlag = MyFlag & LNOT(NODISP)
+	i = 0
+	WHILE (i < FADEFRAME)
+		i = i + 1
+		trans = i * FADESPEED
+	ENDWHILE
+	trans = 1.0
+	i = 0
+	WHILE (i < 423 - (FADEFRAME * 3))
+		i = i + 1
+	ENDWHILE
+	i = 0
+	WHILE (i < FADEFRAME)
+		i = i + 1
+		trans = 1.0 - (i * FADESPEED)
+	ENDWHILE
+	count = count + 1
+	STAT>CredF
+ENDSTATE
+
+STATE CredF
+	OBJECT>creditscenes\credF
+	MODELANIM>creditscenes\credF.rdo>Play>NOTWEEN
+	SetParentSem(0, 17)
+	SetParentSem(1, 18)	
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+	trans = 0.0
+	
+	LOOP (10)
+		MyFlag = MyFlag | NODISP
+	ENDLOOP
+	MyFlag = MyFlag & LNOT(NODISP)
+	i = 0
+	WHILE (i < FADEFRAME)
+		i = i + 1
+		trans = i * FADESPEED
+	ENDWHILE
+	trans = 1.0
+	i = 0
+	WHILE (i < 120 - (FADEFRAME * 3))
+		i = i + 1
+	ENDWHILE
+	i = 0
+	WHILE (i < FADEFRAME)
+		i = i + 1
+		trans = 1.0 - (i * FADESPEED)
+	ENDWHILE
+	count = count + 1
+	STAT>CredG
+ENDSTATE
+
+STATE CredG
+	OBJECT>creditscenes\credG
+	MODELANIM>creditscenes\credG.rdo>Play>NOTWEEN
+	SetParentSem(0, 12)
+	SetParentSem(1, 13)	
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+	trans = 0.0
+	
+	LOOP (10)
+		MyFlag = MyFlag | NODISP
+	ENDLOOP
+	MyFlag = MyFlag & LNOT(NODISP)
+	i = 0
+	WHILE (i < FADEFRAME)
+		i = i + 1
+		trans = i * FADESPEED
+	ENDWHILE
+	trans = 1.0
+	i = 0
+	WHILE (i < 102 - (FADEFRAME * 3))
+		i = i + 1
+	ENDWHILE
+	i = 0
+	WHILE (i < FADEFRAME)
+		i = i + 1
+		trans = 1.0 - (i * FADESPEED)
+	ENDWHILE
+	count = count + 1
+	STAT>CredH
+ENDSTATE
+
+STATE CredH
+	OBJECT>creditscenes\credH
+	MODELANIM>creditscenes\credH.rdo>Play>NOTWEEN
+	SetParentSem(0, 24)
+	SetParentSem(1, 0)	
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+	trans = 0.0
+	
+	LOOP (10)
+		MyFlag = MyFlag | NODISP
+	ENDLOOP
+	MyFlag = MyFlag & LNOT(NODISP)
+	i = 0
+	WHILE (i < FADEFRAME)
+		i = i + 1
+		trans = i * FADESPEED
+	ENDWHILE
+	trans = 1.0
+	i = 0
+	WHILE (i < 288 - (FADEFRAME * 3))
+		i = i + 1
+	ENDWHILE 
+	 i = 0
+	WHILE (i < FADEFRAME)
+		i = i + 1
+		trans = 1.0 - (i * FADESPEED)
+	ENDWHILE
+	count = count + 1
+	STAT>CredI
+ENDSTATE
+
+STATE CredI
+	OBJECT>creditscenes\credI
+	MODELANIM>creditscenes\credI.rdo>Play>NOTWEEN
+	SetParentSem(0, 21)
+	SetParentSem(1, 22)	
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+	trans = 0.0
+
+	LOOP (10)
+		MyFlag = MyFlag | NODISP
+	ENDLOOP
+	MyFlag = MyFlag & LNOT(NODISP)
+	i = 0
+	WHILE (i < FADEFRAME)
+		i = i + 1
+		trans = i * FADESPEED
+	ENDWHILE
+	trans = 1.0
+	i = 0
+	WHILE (i < 288 - (FADEFRAME * 3))
+		i = i + 1
+	ENDWHILE
+	i = 0
+	WHILE (i < FADEFRAME)
+		i = i + 1
+		trans = 1.0 - (i * FADESPEED)
+	ENDWHILE
+	count = count + 1
+	STAT>CredA
+ENDSTATE

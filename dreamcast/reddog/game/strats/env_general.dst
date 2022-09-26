@@ -1,0 +1,62 @@
+PARAMINT	Collision		0
+PARAMINT	visible			1
+PARAMINT	FarFade			0
+PARAMINT	ParentDeadFade	0
+PARAMINT	NoCollObj01		0
+PARAMINT	NoBulletColl	0
+
+STATE Init 
+	IF (!(MyFlag2 & OWNIPARAMS))
+		Collision = 0
+		visible = 1
+		FarFade = 0
+		ParentDeadFade = 0
+		NoCollObj01 = 0
+		NoBulletColl = 0
+	ENDIF
+
+	IF (visible = 0)
+		MyFlag = MyFlag | NODISP
+	ENDIF
+
+	IF (FarFade = 0)
+		StrtNoFade()
+	ENDIF
+
+	IF (NoBulletColl > 0)
+		UpdateObjectCollFlag(NoBulletColl, NOBULLETCOLLIDE)
+	ENDIF
+
+	IF (Collision)
+		WHILE (!PNode)
+			MyFlag = MyFlag
+		ENDWHILE
+		MyFlag = MyFlag | ENEMY | STRATCOLL
+		RegisterCollision()		
+		IF (NoCollObj01 > 0)
+			NoCollObject(NoCollObj01)
+		ENDIF
+		InitHDC()
+		CalculateStratPolyData(1)
+	ENDIF
+	STAT> DoNothing
+ENDSTATE
+
+STATE DoNothing
+	IF (ParentDeadFade)
+		IF (ParentDeadFade = 1)
+			WHILE (MyParentInvalid())
+				MyFlag = MyFlag
+			ENDWHILE
+		ENDIF
+		WHILE (MyParentFlag)
+			MyFlag = MyFlag
+		ENDWHILE
+		MyFlag2 = MyFlag2 | TRANSLUCENT
+		trans = 1
+		LOOP (30)
+			trans = trans - 0.03333
+		ENDLOOP
+		Delete()
+	ENDIF
+ENDSTATE

@@ -1,0 +1,27 @@
+LOCALFLOAT KeepAwaySpeed
+
+STATE Init
+	SetFriction(0.0, 0.0, 0.0)
+	MyFlag = MyFlag | STRATCOLL | ENEMY
+	RegisterCollision()
+	health = 30.0
+	scalex = 2
+	scaley = 4
+	scalez = 2
+	InitPath()
+	InitSplineData()
+	SetObjectShadowState(1)
+	STAT> Start
+ENDSTATE 
+
+STATE Start
+	KeepAwaySpeed = PlayerDistXY() * -0.0042857 + 1.0
+	IF (KeepAwaySpeed > 1.0)
+		KeepAwaySpeed = 1.0
+	ENDIF
+	IF (KeepAwaySpeed < 0.5)
+		KeepAwaySpeed = 0.5
+	ENDIF
+	MoveAlongPath(KeepAwaySpeed)
+	FaceAlongPath(1)
+ENDSTATE

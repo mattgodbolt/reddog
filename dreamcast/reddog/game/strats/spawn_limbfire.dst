@@ -1,0 +1,76 @@
+// Red dog's boosting exhaust strat
+
+//LOCALFLOAT temp
+
+
+STATE Init
+
+	MyFlag = MyFlag | SPRITE | NOTEXPLODE
+ //	MyFlag2 = MyFlag2 | TRANSLUCENT
+ //	trans = RandRange (0.5, 1.0)
+ //	TRIGSET>KillOff PARENTDEAD
+
+	SetFriction(0.03,0.03,0.03)
+	
+  	scalex = MyParentScaleX * 2.5
+	scaley = scalex
+	scalez = scalex
+   	OBJECT> SFX\BURNPUFF
+   	ANIM> BURNPUFF>Smoke
+//	TRIGSET>KillOff WHENANIMOVER
+
+	MoveZ (0.002)
+	MyVar = RandRange(-0.33, -0.28) * 0.1
+	MoveY (MyVar)
+	MyVar = RandRange(-0.015, 0.015) * 0.5
+	MoveX (MyVar)
+
+	x = x + RandRange(-0.1, 0.1)
+	y = y + RandRange(-0.1, 0.1)
+
+	MyVar = ParentVar
+	LOOP 1
+		MyFlag = MyFlag
+	ENDLOOP
+
+	STAT>Wait
+ENDSTATE
+
+STATE Wait
+	MoveZ (0.02)
+	x = x + windX * 0.02 + parentabsspeedx * 0.7
+  	y = y + windY * 0.02 + parentabsspeedy * 0.7
+   
+	//MoveY(-MyVar)
+   	z = z + parentabsspeedz * 0.5
+   
+   IF (!(MyAnimFlag & RUNNING))
+		STAT>KillOff
+   ENDIF
+
+   
+   	
+
+ENDSTATE
+
+STATE KillOff
+  //	PauseTriggers(-1,FORGET)
+  //	MyFlag2 = MyFlag2 | STOPPED
+	absspeedz = RandRange (0.0,0.5)
+	WHILE (scalex > 0.1)
+    
+ 
+   		x = x + windX * 0.02 + absspeedx * 0.7
+ 		y = y + windY * 0.02 + absspeedy * 0.7
+   
+		scalex = scalex - 0.08
+		scaley = scalex
+		scalez = scalex
+   ENDWHILE
+
+
+  	Delete()
+ //	TRIGSTOP
+ENDSTATE
+
+

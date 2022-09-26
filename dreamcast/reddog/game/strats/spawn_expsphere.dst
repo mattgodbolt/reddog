@@ -1,0 +1,61 @@
+// Explosion sphere
+
+// XXX atm replacement for RDArmageddon - needs changing
+
+LOCALFLOAT ExplodeSize
+LOCALFLOAT ExpInc
+LOCALFLOAT Size
+
+DEFINE GroundWave	1
+DEFINE Sphere		2
+DEFINE CameraWave	3
+
+STATE Init
+	MyFlag = MyFlag | NOTEXPLODE
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+
+	OBJECT>Sfx\ShockwaveBlue
+
+	UnitiseMatrix()
+
+
+	trans = 0.5
+
+	ExplodeSize = 0.05
+	ExpInc = 0.2
+
+	AllocStratSoundBlock(1)
+	PLAYSOUND>EX_LARGE_BLAST1 0 1.0 0.0 0.0 0.0 0
+
+	SetObjectScale (GroundWave, 0.02, 0.02, 0.02)
+	SetObjectScale (CameraWave, 0.02, 0.02, 0.02)
+	SetObjectScale (Sphere, 0.02, 0.02, 0.02)
+	HideObject (GroundWave)
+	HideObject (CameraWave)
+
+	TRIGSET>GrowShockwave EVERY 1
+	STAT>ExplodeGrow
+ENDSTATE
+
+STATE GrowShockwave
+	ExplodeSize = ExplodeSize + ExpInc
+	Size = ExplodeSize * 0.045
+	SetObjectScale (Sphere, Size, Size, Size)
+	RotateObjectXYZ (Sphere, -0.01, 0.08, 0.1)
+	TRIGFIN
+ENDSTATE
+
+STATE ExplodeGrow
+
+	LOOP 10
+		ExpInc = ExpInc * 0.8
+	ENDLOOP
+
+	// Fade out at end
+	LOOP 10
+		ExpInc = ExpInc * 0.8
+		trans = trans - (1.0 / 5.0)
+	ENDLOOP
+
+	Delete()
+ENDSTATE

@@ -1,0 +1,17 @@
+STATE Init
+	MyFlag = MyFlag | ENEMY
+	CREATE SPAWN_ExplosionShard 0, 0, 0, 0, 0, PI, 0
+	OBJECT>ENEMIES\DEATH\Sefair2Death
+	MoveY(2.0)
+	LOOP (1)
+		MyFlag = MyFlag
+	ENDLOOP
+	IMMLOOP (3) 
+		CREATE SPAWN_EnemyDebris 0, 0, 0, 0, 0, 0, 0
+	IMMENDLOOP
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	DESTROYME SPAWN_EXPLODINGBITS
+ENDSTATE

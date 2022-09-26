@@ -1,0 +1,340 @@
+PARAMINT	type	0
+PARAMINT	time	90
+LOCALINT	Lightning
+LOCALINT	airTime
+LOCALFLOAT var
+DEFINE HEAD 10
+DEFINE WALK 1
+DEFINE STOP 0
+LOCALINT MODE
+LOCALINT	shocker
+
+STATE Init 
+	IF (!(MyFlag2 & OWNIPARAMS))
+		type = 0
+		time = 90
+	ENDIF
+	MakeMeTheLast()
+ 	//SET UP PATH INFO IF NEEDED
+	shocker = GetGlobalParamInt(0)
+ 	IF (MyPath)
+		SetGlobalParamInt(0,99)
+		InitPath()
+		ClearGlobalParams()
+	ENDIF
+
+	IF (shocker)
+		AllocStratSoundBlock(2)
+		SetAudibleRange(1,0,400)
+	  	PLAYSOUND>VBOSS_ZAP 1 1.0 0.0 0.0 0.0 0
+
+	ELSE
+		AllocStratSoundBlock(1)
+	ENDIF
+   	RegisterDanger(30.0)
+
+ 	MyFlag2 = MyFlag2 | TRANSLUCENT
+	MyFlag = MyFlag | FLOORCOLL | ENEMY | STRATCOLL | LOWCOLL | TARGETABLE | RELVELCALC
+	trans = 0.1
+   	OBJECT>BOSSES\SCORPIONBOSS\MINISCORPION
+ 	RegisterCollision()
+	RotationRestriction(1.0, 1.0, 1.0)
+	SetFriction(1.0, 0.3, 0.0)
+	damage = 20.0
+	health = 10.0
+	Lightning = 0
+	TRIGSET>Kill WHENDEAD
+	TRIGSET>HitProc	WHENHIT
+	TRIGSET>AliveLightning EVERY 1
+	WHILE(!(IAmOnFloor))
+		ApplyRelForce(1, 0, 0, -20, 0, 0, 0)
+	ENDWHILE
+	TRIGSET>KeepDown EVERY 1
+	IF (type = 1)
+		LOOP (time)
+			MoveY(0.06)
+			IF (!(IAmOnFloor))
+				airTime = airTime + 1
+				RelRotateX(-0.05) 
+			ELSE
+				FlattenToPoly(0.3)
+				airTime = 0
+			ENDIF
+		ENDLOOP
+	ENDIF
+   
+   	//IF WE ARE CONNECTED TO PATHS AND AREAS THEN RUN THE AREA COLLISION
+   	IF (MyPath)
+   		TRIGSET>CheckOutsideArea EVERY 1
+   		InsideCheck = 1
+   	ENDIF
+
+	PLAYSOUND>SCORPION 0 0.95 0.0 0.0 0.0 CONTINUOUS
+
+	STAT> Start
+ENDSTATE
+
+LOCALINT InsideCheck
+
+TRIGGER CheckOutsideArea
+
+	IF (InsideCheck)
+		//CHECK TO SEE IF WE'VE LEFT THE OUTER REGION
+		IF (InsideArea() < 0)
+			InsideCheck = 0
+ 			TRIGRESET
+			TRIGFIN
+		   	IF (PlayerOutSide())
+				//WE HAVE GONE OUTSIDE AND THE PLAYER IS OUTSIDE, SO WAIT
+				STAT>Wait
+			ELSE
+				//WE HAVE GONE OUTSIDE, SO GET TO OUR NEAREST CAMPPOINT AND ATTACK AGAIN
+				IF (GetNearestCampPoint(1))
+					STAT>WalkAway
+				ELSE
+					InsideCheck = 1
+					STAT>Start
+				ENDIF
+			ENDIF	
+		ENDIF
+	ENDIF
+
+
+	TRIGFIN
+ENDTRIGGER
+
+STATE WalkAway
+	MODELANIM>BOSSES\SCORPIONBOSS\MINISCORPION.RDO>Walk>REPEAT
+
+
+	WHILE (!NearCheckPos(1.5))
+		MoveY(0.06)
+		IF (!(IAmOnFloor))
+			airTime = airTime + 1
+			RelRotateX(-0.05) 
+		ELSE
+			FlattenToPoly(0.3)
+			airTime = 0
+		ENDIF
+
+		RelTurnTowardCheckPosXY(0.05)
+
+	ENDWHILE
+
+	InsideCheck = 1
+  
+  	STAT>Start
+ENDSTATE
+
+STATE Wait
+   	MyFlag = MyFlag & LNOT(FLOORCOLL | GRAVITYON)
+ 	TRIGKILL>KeepDown EVERY 1
+   	WHILE (PlayerOutSide())
+		MODELANIM>BOSSES\SCORPIONBOSS\MINISCORPION.RDO>Walk>REPEAT
+		KillMyVelocity()
+	ENDWHILE
+ 	MyFlag = MyFlag | FLOORCOLL	| GRAVITYON
+	TRIGSET>KeepDown EVERY 1
+
+	InsideCheck = 1
+	STAT>Start
+
+ENDSTATE
+
+
+
+
+//FIRST 2 SECS OF LIFE
+
+TRIGGER AliveLightning
+	
+	LOOP (60)
+		IF (trans < 1.0)
+			trans = trans + 0.1
+		ELSE
+			trans = 1.0
+		ENDIF
+		IF (shocker)
+			Lightning = DrawLightning (0, 0, 0, 0, Lightning,2)
+		ENDIF
+	ENDLOOP
+	Lightning = 0
+	TRIGSTOP
+ENDTRIGGER
+
+
+
+
+//TRIGGER TO KEEP THE CHAP ON THE FLOOR
+STATE KeepDown
+	ApplyRelForce(1, 0, 0, -20, 0, 0, 0)
+	//let's see if we are a spawn type from the boss
+
+	IF (IAmOnFloor)
+		SetVolume(0, 0.9)
+	ELSE
+		SetVolume(0, 0.0)
+	ENDIF
+
+   //	IF ((BossStrat) && (MyParent))
+	//shocker is set when spawned from the boss
+   	IF ((shocker) && (MyParent))
+	
+		IF (!(MyParentFlag))
+			frame = 0
+			TRIGRESET
+			TRIGSTOP
+			STAT>Die
+		ELSE
+			TRIGFIN
+		ENDIF
+
+	ELSE
+		TRIGFIN
+	ENDIF
+ENDSTATE
+
+
+
+STATE Start
+  	IF (NearPlayerXY(6.0))
+		WHILE (!(SeePlayerZ(TWOPI/32.0)))
+			KillMyVelocity()
+			RelTurnTowardPlayerXY(0.3)
+		ENDWHILE
+		MODELANIM>BOSSES\SCORPIONBOSS\MINISCORPION.RDO>Jump>0
+
+  
+	   //	IF (InPlayerZCone(0.2))
+		IF (VisibleFromPlayer(0.2))
+			STAT>Fall
+		ELSE
+  	 		STAT>Jump
+		ENDIF
+  	ELSE
+	MODELANIM>BOSSES\SCORPIONBOSS\MINISCORPION.RDO>walk>REPEAT
+
+	IF (trans < 1.0)
+		frame = 30.0
+		MoveY(0.06)
+	ELSE
+		frame = 10.0
+		MoveY(0.12)
+	ENDIF
+
+
+	IF (!(IAmOnFloor))
+		airTime = airTime + 1
+		RelRotateX(-0.05) 
+	ELSE
+		FlattenToPoly(0.3)
+		airTime = 0
+	ENDIF
+
+	IF (airTime > 100)
+		frame = 0
+	  	STAT>Die
+	ENDIF
+
+	var = var + 1.0
+	IF (var > frame)
+		var = RandRange(-0.8, 0.8)
+		PickCheckPosStratToPlayerAngleOffset(var)
+		var = 0.0
+	ENDIF
+	RelTurnTowardCheckPosXY(0.3)
+	ENDIF
+ENDSTATE
+
+LOCALFLOAT JumpMovement
+
+LOCALINT JUMPFRAMEMAX
+
+
+STATE Jump
+
+	//15 FRAMES OF JUMP
+	JUMPFRAMEMAX = 15
+
+	WHILE (MyAnimFlag & TWEEN)
+		KillMyVelocity()
+	ENDWHILE
+
+	SetFriction(0.0,0.0,0.0)
+
+//	JumpMovement = 2.5/20.0
+	JumpMovement = 5.6 / JUMPFRAMEMAX
+
+	frame = 0
+	WHILE (MyAnimFlag & RUNNING)
+		KillMyVelocity()
+  		IF (frame < JUMPFRAMEMAX)
+	 		MoveY(JumpMovement)
+			frame = frame + 1
+		ENDIF
+	ENDWHILE
+	//ensure the scorpion moves by the correct amount
+ 	KillMyVelocity()
+
+   
+   	SetFriction(1.0, 0.3, 0.0)
+  
+  	MODELANIM>BOSSES\SCORPIONBOSS\MINISCORPION.RDO>walk>REPEAT
+
+	STAT>Start
+
+ENDSTATE
+
+STATE Fall
+	UnitiseMatrix()
+	MyFlag = MyFlag | GRAVITYON
+	SetFriction(0.0, 0.0, 0.0)
+	MODELANIM>BOSSES\SCORPIONBOSS\MINISCORPION.RDO>walk>REPEAT
+	LOOP (60)
+		MyFlag
+	ENDLOOP
+	SetFriction(1.0, 0.3, 0.0)
+	MyFlag = MyFlag & LNOT(GRAVITYON)
+	STAT>Start
+ENDSTATE
+
+
+TRIGGER HitProc
+	
+
+	IF (MyFlag2 & PLAYERHIT)
+		TRIGRESET
+		TRIGSTOP
+		STAT>Die
+	ELSE
+		TRIGFIN
+	ENDIF
+
+ENDTRIGGER
+
+
+TRIGGER Kill
+
+	TRIGRESET
+	TRIGSTOP
+	frame = 0
+	STAT>Die
+ENDTRIGGER
+
+STATE Die	
+	PLAYSOUND>EX_HEAVY_IMPACT1 0 1.0 0.0 0.0 0.0 0
+	//ensure lightning is turned off
+	MyVar = 99.0
+	MakeFrags (0.1, 24)
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+	IF ((BossStrat) AND (MyParent))
+		ParentVar = ParentVar - 1.0
+	ENDIF
+//	adrelanin = adrelanin + 0.2
+	Score = Score + 500
+   	IF (Radius > 0.0)
+   		DESTROYME SPAWN_EXPLODINGBITS
+   	ELSE
+		Delete()
+   	ENDIF
+ENDSTATE

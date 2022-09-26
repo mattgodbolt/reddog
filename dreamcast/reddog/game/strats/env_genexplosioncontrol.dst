@@ -1,0 +1,155 @@
+
+TRIGGER EXP1
+	SetGlobalParamInt(1,99)
+	SetGlobalParamFloat(0,0.2)
+	SetGlobalParamFloat(1,0)
+	SetGlobalParamInt(2,9)
+   	SetGlobalParamInt(3,1)
+	CREATE ENV_EXPLOSION 0, 0, 0, 0, 0, 0, 0
+	ClearGlobalParams()
+
+	TRIGSTOP
+ENDTRIGGER
+
+TRIGGER EXP2
+	SetGlobalParamInt(1,99)
+	SetGlobalParamFloat(0,0.3)
+	SetGlobalParamFloat(1,0)
+	SetGlobalParamInt(2,20)
+   	SetGlobalParamInt(3,1)
+	CREATE ENV_EXPLOSION 0, 0, 0, 0, 0, 0, 0
+	ClearGlobalParams()
+
+	TRIGSTOP
+ENDTRIGGER
+
+TRIGGER EXP3
+	SetGlobalParamInt(1,99)
+	SetGlobalParamFloat(0,0.25)
+	SetGlobalParamFloat(1,0)
+	SetGlobalParamInt(2,46)
+   	SetGlobalParamInt(3,1)
+	CREATE ENV_EXPLOSION 0, 0, 0, 0, 0, 0, 0
+	ClearGlobalParams()
+
+	TRIGSTOP
+ENDTRIGGER
+
+TRIGGER EXP4
+	SetGlobalParamInt(1,99)
+	SetGlobalParamFloat(0,0.5)
+	SetGlobalParamFloat(1,0)
+	SetGlobalParamInt(2,53)
+   	SetGlobalParamInt(3,1)
+	CREATE ENV_EXPLOSION 0, 0, 0, 0, 0, 0, 0
+	ClearGlobalParams()
+
+	TRIGSTOP
+ENDTRIGGER
+
+
+TRIGGER EXP5
+	SetGlobalParamInt(1,99)
+	SetGlobalParamFloat(0,0.4)
+	SetGlobalParamFloat(1,0)
+	SetGlobalParamInt(2,52)
+   	SetGlobalParamInt(3,1)
+	CREATE ENV_EXPLOSION 0, 0, 0, 0, 0, 0, 0
+	ClearGlobalParams()
+	LinkToParentObject(52,0,0,0,0,0,0)
+	TRIGSET>SMOKEY EVERY 1
+	TRIGKILL>HoldPlayer EVERY 1
+	TRIGSTOP
+ENDTRIGGER
+
+TRIGGER HoldPlayer
+  	PlayerHeld = 1
+	PlayerState = PS_ONPATH
+   	FlattenHoldPlayer(100.0)
+	//DogX = STARTX
+	//DogY = STARTY
+	TRIGFIN
+ENDTRIGGER
+
+TRIGGER SMOKEY
+ SetGlobalParamFloat(0, 30.0)
+		SetGlobalParamFloat(1, 150.0)
+		SetGlobalParamFloat(2, 3000.0)
+		SetGlobalParamFloat(3, 5.0)
+		SetGlobalParamFloat(4, 1.0)
+		SetGlobalParamInt(0, 1)
+		SetGlobalParamInt(1, 0)
+		CREAIND SPAWN_FACTORY_SMOKE x, y, z - 10.0, 0, 0, 0
+		ClearGlobalParams()
+	TRIGFIN
+ENDTRIGGER
+
+
+LOCALFLOAT STARTX
+LOCALFLOAT STARTY
+
+
+STATE Init
+
+   
+   MyFlag = MyFlag | NODISP
+   IF (MyParent)
+		WHILE (MyParentInvalid())
+			MyFlag = MyFlag
+		ENDWHILE
+  	ENDIF
+
+	PNode = ParentPNode
+	ObjId = ParentObjId
+	Obj = ParentObj
+
+	LinkToParentObject(0,0,0,0,0,0,0)
+
+	TRIGSET>HoldPlayer EVERY 1
+
+	TRIGSET>EXP1 EVERY 1
+	TRIGSET>EXP2 EVERY 20
+	TRIGSET>EXP3 EVERY 44
+	TRIGSET>EXP4 EVERY 80
+	TRIGSET>EXP5 EVERY 90
+
+
+
+
+
+
+	frame = 0
+	WHILE (frame < 100.0)
+		frame = frame + 1.0
+	ENDWHILE
+
+
+	trans = 1.0
+	CheckX = 1.0
+
+   	WHILE (trans > 0.01)
+		
+		IF (CheckX > 0.1)
+			CheckX = CheckX - 0.02
+		ENDIF
+		SetObjectTrans(53,CheckX)
+		SetObjectTrans(25,CheckX)
+
+
+
+   		SetObjectTrans(57,trans)
+   		SetObjectTrans(58,trans)
+
+   		trans = trans - 0.01
+		
+   	ENDWHILE
+
+	//GEOSPHERES
+	HideObject(57)
+	HideObject(58)
+
+	PNode = NULL
+	ObjId = NULL
+	Obj = NULL
+	Delete()
+ENDSTATE

@@ -1,0 +1,674 @@
+PARAMINT CamPos
+PARAMINT CamLook
+
+
+DEFINE FIRE1BEAM1 25
+DEFINE FIRE1BIT1 13
+DEFINE FIRE1FLASH1 19
+DEFINE FIRE1FLASH2 14
+DEFINE FIRE1BEAM2 26
+DEFINE FIRE1BIT2 20
+
+DEFINE FIRE2BEAM1 22
+DEFINE FIRE2BIT1 16
+DEFINE FIRE2FLASH1 28
+DEFINE FIRE2BEAM2 21
+DEFINE FIRE2FLASH2 27
+DEFINE FIRE2BIT2 15
+
+DEFINE FIRE3BEAM1 18
+DEFINE FIRE3FLASH1 24
+DEFINE FIRE3BIT1 30
+
+DEFINE FIRE3FLASH2 29
+DEFINE FIRE3BIT2 17
+DEFINE FIRE3BEAM2 23
+
+
+
+
+
+
+LOCALFLOAT OldPlayerHealth
+//LOCALINT i
+LOCALFLOAT	MUSVOL
+LOCALFLOAT  tempO
+
+LOCALINT VALIDTOSPAWN
+TRIGGER MUSFADE
+	tempO = MUSVOL
+	WHILE (tempO > (MUSVOL / 3.0))
+		MusicFade((1.0 - tempO))
+		tempO = tempO * 0.3
+	ENDWHILE
+  	TRIGSTOP
+ENDTRIGGER
+
+
+TRIGGER Gun1
+	PLAYSOUND>ICEGUNMOVE 0 1.0 0.0 0.0 0.0 NOPOSITION
+	WHILE (IsPlaying(0))
+		MyFlag = MyFlag
+	ENDWHILE
+	
+	
+	LOOP (10)
+		MyFlag = MyFlag
+	ENDLOOP
+	PLAYSOUND>BOLT2 2 1.0 0.0 0.0 0.0 NOPOSITION
+   
+   	TRIGSTOP
+ENDTRIGGER
+
+TRIGGER Fire1
+	PLAYSOUND>ICEGUN2 0 1.0 0.0 0.0 0.0 NOPOSITION
+
+	LOOP (5)
+		MyFlag = MyFlag
+	ENDLOOP
+	PLAYSOUND>ICEGUN2 1 1.0 0.0 0.0 0.0 NOPOSITION
+
+	TRIGSTOP
+ENDTRIGGER
+TRIGGER Fire2
+	PLAYSOUND>ICEGUN2 0 1.0 0.0 0.0 0.0 NOPOSITION
+
+	LOOP (5)
+		MyFlag = MyFlag
+	ENDLOOP
+	PLAYSOUND>ICEGUN2 1 1.0 0.0 0.0 0.0 NOPOSITION
+
+	TRIGSTOP
+ENDTRIGGER
+
+
+
+TRIGGER Fire3
+	PLAYSOUND>ICEGUN2 0 1.0 0.0 0.0 0.0 NOPOSITION
+
+	LOOP (5)
+		MyFlag = MyFlag
+	ENDLOOP
+	PLAYSOUND>ICEGUN2 1 1.0 0.0 0.0 0.0 NOPOSITION
+
+	TRIGSTOP
+ENDTRIGGER
+
+TRIGGER LASERMISS1
+	PLAYSOUND>ICEGUNTRAIL 0 1.0 0.0 0.0 0.0 NOPOSITION
+	TRIGSTOP
+ENDTRIGGER
+
+TRIGGER LASERMISS2
+	PLAYSOUND>ICEGUNTRAIL 0 1.0 0.0 0.0 0.0 NOPOSITION
+	TRIGSTOP
+ENDTRIGGER
+
+TRIGGER LASERHIT
+	PLAYSOUND>ICEGUNTRAIL 0 1.0 0.0 0.0 0.0 NOPOSITION
+	TRIGSTOP
+ENDTRIGGER
+
+TRIGGER LASEREXP
+	PLAYSOUND>LARGEXPLO2 3 1.0 0.0 0.0 0.0 NOPOSITION
+	TRIGSTOP
+ENDTRIGGER
+
+
+
+
+
+
+
+
+
+
+
+
+
+TRIGGER SPAWNTRAIL
+  //	VALIDTOSPAWN = 0
+	IF (VALIDTOSPAWN)
+		SetGlobalParamInt(0,1)
+		CREAIND SPAWN_ENV_SHOOT_SAT x, y, z, 0, 0, 0
+		ClearGlobalParams()
+	ENDIF
+
+	TRIGFIN
+ENDTRIGGER
+
+
+
+LOCALINT temp
+
+STATE TRAILER
+	OBJECT>Sceneanims\ICE\GUNFIRE
+	StrtNoFade()
+	CopyParentAnim()
+	temp = 0
+	IMMLOOP (MyPNODEIDS + 1)
+		IF (temp)
+			HideObject(temp)
+		ENDIF
+		temp = temp + 1
+	IMMENDLOOP
+
+	IF (ParentSemaphore = 1.0)
+	 	UnhideObject(FIRE1BEAM1)
+		UnhideObject(FIRE1FLASH1)
+	   	UnhideObject(FIRE1BIT1)
+	ENDIF
+	IF (ParentSemaphore = 1.5)
+		UnhideObject(FIRE1BEAM2)
+		UnhideObject(FIRE1FLASH2)
+		UnhideObject(FIRE1BIT2)
+	ENDIF
+ 
+	IF (ParentSemaphore = 2.0)
+	 	UnhideObject(FIRE2BEAM1)
+		UnhideObject(FIRE2FLASH1)
+	   	UnhideObject(FIRE2BIT1)
+	ENDIF
+	IF (ParentSemaphore = 2.5)
+		UnhideObject(FIRE2BEAM2)
+		UnhideObject(FIRE2FLASH2)
+		UnhideObject(FIRE2BIT2)
+	ENDIF
+ 
+	IF (ParentSemaphore = 3.0)
+	 	UnhideObject(FIRE3BEAM1)
+		UnhideObject(FIRE3FLASH1)
+	   	UnhideObject(FIRE3BIT1)
+	ENDIF
+	IF (ParentSemaphore = 3.5)
+		UnhideObject(FIRE3BEAM2)
+		UnhideObject(FIRE3FLASH2)
+		UnhideObject(FIRE3BIT2)
+	ENDIF
+
+	MyFlag2 = MyFlag2 | SPECULAR | TRANSLUCENT
+
+	trans = 1.0
+	CheckZ = 1.2
+
+	WHILE (trans > 0.1)
+		CheckY = CheckY + TWOPI / 30.0
+
+		z = z + 1.0 * Ssin(CheckY)
+		CheckZ = CheckZ + 0.1
+		temp = 13
+		IMMLOOP (9)
+			SetObjectScale(temp,CheckZ, CheckZ, CheckZ)
+		IMMENDLOOP
+		trans = trans * 0.75
+		SetSpecularColour(0,1.0 - trans, 0, 0)
+	ENDWHILE
+
+	Delete()
+
+
+ENDSTATE
+
+DEFINE LASER11 53
+DEFINE LASER12 54
+DEFINE LASER21 55
+DEFINE LASER22 56
+DEFINE LASER31 57
+DEFINE LASER32 58
+
+
+
+
+
+
+LOCALFLOAT LASER1TRANS
+TRIGGER HideLaserSet1
+	LASER1TRANS = 1.0
+	WHILE (LASER1TRANS > 0.1)
+		LASER1TRANS = LASER1TRANS * 0.74
+		SetObjectTrans(LASER11,LASER1TRANS)
+		SetObjectTrans(LASER12,LASER1TRANS)
+	ENDWHILE
+
+	HideObject(LASER11)
+	HideObject(LASER12)
+	TRIGSTOP
+ENDTRIGGER
+
+LOCALFLOAT LASER2TRANS
+TRIGGER HideLaserSet2
+	LASER2TRANS = 1.0
+	WHILE (LASER2TRANS > 0.1)
+		LASER2TRANS = LASER2TRANS * 0.74
+		SetObjectTrans(LASER21,LASER2TRANS)
+		SetObjectTrans(LASER22,LASER2TRANS)
+	ENDWHILE
+
+	HideObject(LASER21)
+	HideObject(LASER22)
+	TRIGSTOP
+ENDTRIGGER
+
+DEFINE MAINPIECE 50
+
+LOCALFLOAT LASER3TRANS
+TRIGGER HideLaserSet3
+	LASER3TRANS = 1.0
+	HideObject(MAINPIECE)
+	MyVar = 2.0
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, MAINPIECE
+	WHILE (LASER3TRANS > 0.1)
+		LASER3TRANS = LASER3TRANS * 0.74
+		SetObjectTrans(LASER31,LASER3TRANS)
+		SetObjectTrans(LASER32,LASER3TRANS)
+	ENDWHILE
+
+	HideObject(LASER31)
+	HideObject(LASER32)
+	TRIGSTOP
+
+
+ENDTRIGGER
+
+LOCALFLOAT woff
+LOCALFLOAT ang
+
+TRIGGER MakeSnow
+
+	woff = Ssin(ang) * RandRange(3.0,4.0)
+	ang = ang + RandRange(0, TWOPI)
+
+	windX = windX + woff
+   	windY = windY + woff * RandRange(0.1, 0.3)
+	SetRainAmount (3000.0, 3000.0, 1)
+
+	TRIGFIN
+ENDTRIGGER
+
+
+
+LOCALFLOAT FADEVAL
+STATE Init
+	PlayerHealth = 100
+
+	IF (GetGlobalParamInt(0) = 1)
+		STAT>TRAILER
+	ENDIF
+
+	StopTheStrats()
+	StopSound(-1,-1)
+
+	AllocStratSoundBlock(4)
+	
+	MUSVOL = sfxGetCDVolume()
+	IF (sfxGetCDVolume() > 0.3)
+		TRIGSET>MUSFADE EVERY 1
+	ENDIF
+	windX = 10.0
+	windY  = 10.0
+
+
+	OldPlayerHealth = PlayerHealth
+	TRIGSET>HoldHealth EVERY 1
+	x = -1690.929
+	y = 125.523
+	z = 216.555
+
+	//ensure dome is on, with fog pushed out
+	//..and lens flare OFF
+	SetGlobalParamInt(0,100)
+    SetEnvironmentParms(0,3000.0,3000.0, 1,-1,-1,-1)
+	ClearGlobalParams()
+//    SetEnvironmentParms(125,200.0,-1, 0,0,0,0)
+   
+   //	IF (MyParent)
+   //		WHILE (MyParentInvalid())
+   //			MyFlag = MyFlag
+   //		ENDWHILE
+	
+	
+   //		MyParentParent = Me
+   //		IF (CamPos)
+   //			SetParentSem(0, CamPos)
+   //		ENDIF
+   //		IF (CamLook)
+   //			SetParentSem(1, CamLook)
+   //		ENDIF
+   //		ChangeCamStrat()
+   //	ENDIF
+
+	SetGlobalParamInt(0, 1)
+	SetGlobalParamInt(1, 1)
+	SetGlobalParamFloat(0, 0.7)
+	CREATE camTrack 0, 0, 0, 0, 0, 0, 0
+	ClearGlobalParams()
+  
+//  	SetGlobalParamFloat(0, 0)
+//	SetGlobalParamInt(0, 0)
+
+	SetParentSem(0, 11)
+	SetParentSem(1, 12)	
+
+
+	MyFlag = MyFlag | ENEMY
+	OBJECT>Sceneanims\ICE\GUNFIRE
+	ModelAnim>Sceneanims\ICE\GUNFIRE.rdo>play>0
+	ChangeCamStrat()
+	PLAYSOUND>WINDLOOP 3 1.0 0.0 0.0 0.0 CONTINUOUS | NOPOSITION
+
+	TRIGSET>MakeSnow EVERY 1
+
+	TRIGSET>Gun1 EVERY 195
+	TRIGSET>Fire1 EVERY 277
+	TRIGSET>Fire2 EVERY 315
+	TRIGSET>Fire3 EVERY 354
+
+
+
+
+
+
+
+   	DontFogMeOut()
+	StrtNoFade()
+   	frame = 275
+  
+ 	HideObject(FIRE1BEAM1)
+ 	HideObject(FIRE1BEAM2)
+ 	HideObject(FIRE1FLASH1)
+ 	HideObject(FIRE1FLASH2)
+ 	HideObject(FIRE1BIT1)
+ 	HideObject(FIRE1BIT2)
+ 	HideObject(FIRE2BEAM1)
+ 	HideObject(FIRE2BEAM2)
+ 	HideObject(FIRE2FLASH1)
+ 	HideObject(FIRE2FLASH2)
+ 	HideObject(FIRE2BIT1)
+ 	HideObject(FIRE2BIT2)
+ 	HideObject(FIRE3BEAM1)
+ 	HideObject(FIRE3BEAM2)
+ 	HideObject(FIRE3FLASH1)
+ 	HideObject(FIRE3FLASH2)
+ 	HideObject(FIRE3BIT1)
+ 	HideObject(FIRE3BIT2)
+
+
+
+   	WHILE (frame > 0)
+		frame = frame - 1.0
+	ENDWHILE
+
+	//CREATE LASER 1
+
+	
+   	TRIGSET>SPAWNTRAIL EVERY 1
+   	UnhideObject(FIRE1BEAM1)
+  	UnhideObject(FIRE1BEAM2)
+  	UnhideObject(FIRE1FLASH1)
+  	UnhideObject(FIRE1FLASH2)
+   	UnhideObject(FIRE1BIT1)
+  	UnhideObject(FIRE1BIT2)
+   
+//   	frame = 295 - 275 
+	frame = 33.0
+	VALIDTOSPAWN = 1
+	FADEVAL = 1.0
+	MyVar = 1.0
+
+	WHILE (frame > 0)
+		frame = frame - 1.0
+ 		IF (frame < 12.0)
+			VALIDTOSPAWN = 0
+	  	ENDIF
+
+		IF (frame < 20.0)
+		//	MyVar = 1.5
+		 	HideObject(FIRE1BEAM1)
+		 	HideObject(FIRE1BIT1)
+			HideObject(FIRE1FLASH1)
+	   	ENDIF
+		IF (frame < 15.0)
+			MyVar = 1.5
+		 	HideObject(FIRE1BEAM2)
+		 	HideObject(FIRE1BIT2)
+			HideObject(FIRE1FLASH2)
+	   	ENDIF
+	
+	
+	
+	ENDWHILE
+
+	VALIDTOSPAWN = 0
+
+ 	HideObject(FIRE1BEAM1)
+ 	HideObject(FIRE1BEAM2)
+ 	HideObject(FIRE1FLASH1)
+ 	HideObject(FIRE1FLASH2)
+ 	HideObject(FIRE1BIT1)
+ 	HideObject(FIRE1BIT2)
+
+  //	frame = 20.0
+  //	WHILE (frame > 0)
+  //		frame = frame - 1.0
+   //	ENDWHILE
+
+
+   
+   
+   	//CREATE LASER 2
+
+	frame = 334 - 314
+	frame = 33.0
+
+   	UnhideObject(FIRE2BEAM1)
+  	UnhideObject(FIRE2BEAM2)
+  	UnhideObject(FIRE2FLASH1)
+  	UnhideObject(FIRE2FLASH2)
+   	UnhideObject(FIRE2BIT1)
+  	UnhideObject(FIRE2BIT2)
+
+   	FADEVAL = 1.0
+	VALIDTOSPAWN = 1
+	MyVar = 2.0
+   	WHILE (frame)
+		frame = frame - 1.0
+ 		IF (frame < 12.0)
+			VALIDTOSPAWN = 0
+	  	ENDIF
+		IF (frame < 20.0)
+		  //	MyVar = 2.5
+		 	HideObject(FIRE2BEAM1)
+		 	HideObject(FIRE2FLASH1)
+			HideObject(FIRE2BIT1)
+	   	ENDIF
+		IF (frame < 15.0)
+		   	MyVar = 2.5
+		 	HideObject(FIRE2BEAM2)
+		 	HideObject(FIRE2BIT2)
+			HideObject(FIRE2FLASH2)
+	   	ENDIF
+
+	  //	IF (frame < 15.0)
+	  //		MyVar = 2.5
+	  //	ENDIF
+
+
+	ENDWHILE
+	VALIDTOSPAWN = 0
+
+ 	HideObject(FIRE2BEAM1)
+ 	HideObject(FIRE2BEAM2)
+ 	HideObject(FIRE2FLASH1)
+ 	HideObject(FIRE2FLASH2)
+ 	HideObject(FIRE2BIT1)
+ 	HideObject(FIRE2BIT2)
+
+   //	frame = 20.0
+   //	WHILE (frame > 0)
+   //		frame = frame - 1.0
+   //	ENDWHILE
+
+
+	//CREATE LASER 3
+
+	frame = 364 - 344
+	frame = 33.0
+
+   	UnhideObject(FIRE3BEAM1)
+  	UnhideObject(FIRE3BEAM2)
+  	UnhideObject(FIRE3FLASH1)
+  	UnhideObject(FIRE3FLASH2)
+   	UnhideObject(FIRE3BIT1)
+  	UnhideObject(FIRE3BIT2)
+
+	FADEVAL = 1.0
+	VALIDTOSPAWN  = 1
+	MyVar = 3.0
+	WHILE (frame)
+		frame = frame - 1.0
+ 		IF (frame < 12.0)
+			VALIDTOSPAWN = 0
+	  	ENDIF
+		IF (frame < 15.0)
+			MyVar = 3.5
+		 	HideObject(FIRE3BEAM1)
+		 	HideObject(FIRE3FLASH1)
+			HideObject(FIRE3BIT1)
+	   	ENDIF
+		IF (frame < 5.0)
+		 	HideObject(FIRE3BEAM2)
+		 	HideObject(FIRE3BIT2)
+			HideObject(FIRE3FLASH2)
+	   	ENDIF
+
+	ENDWHILE
+
+	VALIDTOSPAWN = 0
+
+   	TRIGKILL>SPAWNTRAIL EVERY 1
+
+ 	HideObject(FIRE3BEAM1)
+ 	HideObject(FIRE3BEAM2)
+ 	HideObject(FIRE3FLASH1)
+ 	HideObject(FIRE3FLASH2)
+ 	HideObject(FIRE3BIT1)
+ 	HideObject(FIRE3BIT2)
+
+
+	WHILE (MyAnimFlag & RUNNING)
+		MyFlag = MyFlag
+	ENDWHILE
+
+	StopSound(3,0)
+
+	OBJECT>Sceneanims\ice\SatelliteBlow
+	ModelAnim>Sceneanims\ice\SatelliteBlow.rdo>Play>NOTWEEN
+	DontFogMeOut()
+	StrtNoFade()
+  
+  	//ENSURE I'M UP IN THE SKY
+	z = 1000.0
+
+	StrtNoFade()
+	temp = 0
+	IMMLOOP (MyPNODEIDS + 1)
+		IF (temp)
+			UnhideObject(temp)
+		ENDIF
+		temp = temp + 1
+	IMMENDLOOP
+
+	SetGlobalParamInt(0, 1)
+	SetGlobalParamInt(1, 1)
+	SetGlobalParamFloat(0, (TWOPI / 360.0) * 45.0)
+	CREATE camTrack 0, 0, 0, 0, 0, 0, 0
+	ClearGlobalParams()
+	SetParentSem(0, 51)
+	SetParentSem(1, 52)	
+	
+	ChangeCamStrat()
+
+	//dome off, fog brought in 
+
+	//ensure this effect is immediate by setting the semaphore
+	SetGlobalParamInt(0,99)
+    //SetEnvironmentParms(0,100,-1, 0,0,0,0)
+    SetEnvironmentParms(-1,-1,-1, -1,-1,-1,-1)
+	ClearGlobalParams()
+	TRIGKILL>MakeSnow EVERY 1
+  	SetRainAmount(0,0,0)
+
+	TRIGSET>LASERMISS1 EVERY 63
+	TRIGSET>LASERMISS2 EVERY 79
+	TRIGSET>LASERHIT EVERY 97
+	TRIGSET>LASEREXP EVERY 101
+
+
+
+
+
+  //set the triggers to hide the lasers
+
+	TRIGSET>HideLaserSet1 EVERY 73
+	TRIGSET>HideLaserSet2 EVERY 93
+	TRIGSET>HideLaserSet3 EVERY 108
+	frame = 0
+	FADEVAL = 1.0
+	WHILE (MyAnimFlag & RUNNING)
+		frame = frame + 1.0
+		IF (frame > 120.0)
+			SetObjectTrans(21,FADEVAL)
+			SetObjectTrans(16,FADEVAL)
+			SetObjectTrans(17,FADEVAL)
+			SetObjectTrans(18,FADEVAL)
+			SetObjectTrans(19,FADEVAL)
+			SetObjectTrans(20,FADEVAL)
+			SetObjectTrans(22,FADEVAL)
+			SetObjectTrans(25,FADEVAL)
+
+
+
+
+
+
+
+
+			FADEVAL = FADEVAL * 0.6
+		ENDIF
+	  // 	MyFlag = MyFlag
+	ENDWHILE
+   //	IF (MyParent)
+		ChangeCam(0,0)
+   //		DeleteMyParent()
+   //	ENDIF
+
+	//ensure dome is off, first we restore the original params
+    SetEnvironmentParms(-1,-1,-1, -2,-1,-1,-1)
+
+    SetEnvironmentParms(-1,-1,-1, 0,-1,-1,-1)
+
+  	SetRainAmount(0,0,0)
+	TRIGKILL>HoldHealth EVERY 1
+	PlayerHeld = 0
+	PlayerState = PS_NORMAL
+	IF (Lives > 0)
+		Lives = Lives - 1
+		LevelReset = 1
+	ELSE
+		GameOver()
+	ENDIF
+	MusicFade((1.0 - MUSVOL))
+	Delete()
+ENDSTATE
+
+TRIGGER HoldHealth
+   //	IF (PlayerHealth != 0.0)
+		PlayerHeld = 1
+		PlayerState = PS_ONPATH
+		PlayerHealth = OldPlayerHealth
+   //	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+
+//LOCALFLOAT FADEVAL

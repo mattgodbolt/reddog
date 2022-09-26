@@ -1,0 +1,11 @@
+// Sound strat for Atmospheric Generator
+
+STATE Init
+	AllocStratSoundBlock(1)
+    // The x, y, z values is the should be radius of the sound emitter
+	PLAYSOUND>SPARKING 0 0.9 10.0 10.0 10.0 CONTINUOUS
+	STAT>Start
+ENDSTATE
+
+STATE Start
+ENDSTATE

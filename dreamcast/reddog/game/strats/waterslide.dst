@@ -1,0 +1,166 @@
+PARAMINT BossAttack 0
+
+//SPECIAL SET FOR BOSS ATTACK, TO CONTROL THE CHILD LOOK AT SPEED
+
+
+LOCALFLOAT	px
+LOCALFLOAT	py
+LOCALFLOAT	pz
+LOCALFLOAT	vx
+LOCALFLOAT	vy
+LOCALFLOAT	vz
+LOCALFLOAT	ang
+LOCALFLOAT	newSpeed
+LOCALFLOAT	temp
+LOCALFLOAT  PlayerRotationAcceleration
+LOCALINT	FastSpeedTime
+
+DEFINE	SPEED1	0.8
+DEFINE	SPEED2	1.2
+DEFINE	SPEED3	1.2
+DEFINE	SPEED4	1.0
+DEFINE	SPEED5	3.0
+DEFINE	ACC		0.006
+DEFINE	LAG		0.8
+
+STATE Init
+
+	IF (!(MyFlag2 & OWNIPARAMS))
+		BossAttack = 0
+	ENDIF
+
+
+	//WAIT FOR HOLD PLAYER MAIN TO GET SET UP
+
+	WHILE (!HoldPlayerMain)
+		MyFlag = MyFlag
+	ENDWHILE
+
+
+
+
+	MyFlag = MyFlag | NODISP
+	MyFlag = MyFlag
+	RotationRestriction(1.0, 1.0, 1.0)
+	PlayerState = PS_WATERSLIDE
+	PlayerRotationAcceleration = 0
+	OBJECT> ENEMIES\HOVERBOT
+	InitPath()
+	FastSpeedTime = 0
+	IAmWaterSlide
+	InitSplineData()
+	MoveAlongPath(0.1)
+	MoveAlongPath(0.1)
+	FaceAlongPath(1)
+	GetWaterSlideRelRotZ()
+
+	CREATE  SPAWN_WaterSlideCamLook 0, 0, 0, 0, 0, 0, 0
+
+	playerOffsetX = 0.0
+	ang = 0.0
+	MyVar = 0.1
+	vx = 0.0
+	vy = 0.0 
+	vz = 0.0
+	DogX = x
+	DogY = y
+	DogZ = z
+	newSpeed = 0.3
+	PlayerFlag = PlayerFlag & LNOT(GRAVITYON)
+	STAT>Start 
+ENDSTATE
+
+LOCALINT PATHMODE
+
+STATE Start
+
+   	IF (!BossAttack)
+	  	MoveAlongPath(MyVar)
+		IF (LastWay())
+			PlayerFlag = PlayerFlag | GRAVITYON
+			PlayerState = PS_NORMAL
+			SetPlayerOCP()
+			STAT>End
+		ENDIF
+   	ELSE
+		KillMyVelocity()
+		MyVar = 36.0
+		MoveY(MyVar)
+   	ENDIF
+
+	FaceAlongPath(1)
+	px = XRelPosX(playerOffsetX)	
+	py = XRelPosY(playerOffsetX)
+	pz = z
+   
+   	vx = (px - HoldDogX) * 0.1
+   	vy = (py - HoldDogY) * 0.1
+	//HoldDogAbsspeedx = (HoldDogAbsspeedx + vx) * LAG
+	//HoldDogAbsspeedy = (HoldDogAbsspeedy + vy) * LAG
+
+
+	IF (MyVar > 0.0)
+		FastSpeedTime = FastSpeedTime + 1
+		IF (PlayerFlag & HITFLOOR)
+			playerOffsetX = 0.0
+		ELSE
+			IF (FastSpeedTime > 30)
+				playerOffsetX = playerOffsetX + (JoyX * 0.5) + (ang * 10.0)
+			ELSE
+				playerOffsetX = playerOffsetX + (JoyX * 0.5) 
+			ENDIF
+		ENDIF
+		FacePlayerWaterSlide(playerOffsetX * 0.03, 0.0)
+		ang = GetWaterSlideRelRotZ()
+	ELSE
+		FastSpeedTime = 0
+		IF (PlayerFlag & HITFLOOR)
+			playerOffsetX = 0.0
+		ENDIF
+
+		PlayerRotationAcceleration = PlayerRotationAcceleration - JoyX * 0.004	
+
+		IF PlayerRotationAcceleration > 0.04
+			PlayerRotationAcceleration = 0.04
+		ENDIF
+
+		IF PlayerRotationAcceleration < -0.04
+			PlayerRotationAcceleration = -0.04
+		ENDIF
+
+		PlayerRotationAcceleration = PlayerRotationAcceleration * 0.9
+
+		HoldPlayerRelRotateXYZ(0.0, 0.0, PlayerRotationAcceleration) 
+		FlattenHoldPlayer(1.0)
+	ENDIF
+
+	IF (PlayerNearActivationXY(0))
+		newSpeed = SPEED1
+	ENDIF
+	IF (PlayerNearActivationXY(1))
+		newSpeed = SPEED2
+	ENDIF
+	IF (PlayerNearActivationXY(2))
+		newSpeed = SPEED3
+	ENDIF
+	IF (PlayerNearActivationXY(3))
+		newSpeed = SPEED4
+	ENDIF
+	IF (PlayerNearActivationXY(4))
+		newSpeed = SPEED5
+	ENDIF
+	IF (newSpeed > MyVar + ACC)
+		MyVar = MyVar + ACC
+	ELSE
+		IF (newSpeed < MyVar - ACC)
+			MyVar = MyVar - ACC
+		ELSE
+			MyVar = newSpeed
+		ENDIF
+	ENDIF
+ENDSTATE
+
+STATE End
+	PlayerHeld = 0
+	Delete()
+ENDSTATE

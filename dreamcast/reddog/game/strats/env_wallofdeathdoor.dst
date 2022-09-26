@@ -1,0 +1,110 @@
+//PAL FRIENDLY
+// Wall of death door
+// Closes when player passes through its activation circle
+// Re-opens when its parent dies
+
+LOCALFLOAT closedRot
+LOCALFLOAT temp
+LOCALINT parentdead
+
+DEFINE OpenAmount 1.6
+
+STATE Init
+	// Set up object
+	OBJECT>Scenery\Doors\ENV_HYDRO_WallOfDeathDoor
+
+	// Read position and open door
+	closedRot = GetObjectCrntRot(1,MODEZ)
+	SetObjectCrntRot(1, closedRot - OpenAmount, MODEZ)
+
+	// Set up collision
+	RegisterCollision()
+	InitHDC()
+	CalculateStratPolyData(1)
+
+	AllocStratSoundBlock(1)
+
+	// Flags
+	MyFlag = MyFlag | STRATCOLL | ENEMY
+  	MyFlag2 = MyFlag2 | COLLMOVE
+
+	// Wait for parent to become created
+	parentdead = 0
+	WHILE (MyParentInvalid())
+		MyFlag = MyFlag
+	ENDWHILE
+
+	// Set up a trigger looking for parent death
+	TRIGSET>ParentCheck EVERY 1
+
+	// Wait for activation
+	WHILE (!PlayerNearActivationXY(0))
+		MyFlag = MyFlag
+	ENDWHILE
+
+	PLAYSOUND>DOOR_ROUND_OPEN 0 1.0 0.0 0.0 0.0 0
+	STAT>Close
+ENDSTATE
+
+TRIGGER ParentCheck
+	IF (MyParentFlag = 0)
+		parentdead = 1
+		TRIGSTOP
+	ELSE
+		TRIGFIN
+	ENDIF
+ENDTRIGGER
+
+// Open the doors
+STATE Open
+	temp = GetObjectCrntRot (1, MODEZ)
+	IF (PAL)
+		temp = temp + (((closedRot - OpenAmount) - temp) * 0.05)
+	ELSE
+		temp = temp + (((closedRot - OpenAmount) - temp) * 0.05 * 1.2)
+	ENDIF
+   	SetObjectCrntRot(1, temp, MODEZ)
+	CalculateStratPolyData(1)
+	IF (FABS((closedRot - OpenAmount) - temp) < 0.005)
+		STAT>End
+	ENDIF
+ENDSTATE
+
+STATE Closed
+	// Wait for parent to die
+	WHILE (!parentdead)
+		MyFlag = MyFlag
+	ENDWHILE
+	// Open the doors
+	PLAYSOUND>DOOR_ROUND_OPEN 0 1.0 0.0 0.0 0.0 0
+	STAT>Open
+ENDSTATE
+
+// Close the doors
+STATE Close
+	temp = GetObjectCrntRot (1, MODEZ)
+	IF (PAL)
+		temp = temp + (((closedRot + 0.25) - temp) * 0.075 * 1.2)
+	ELSE
+		temp = temp + (((closedRot + 0.25) - temp) * 0.075)
+	ENDIF
+   	IF (temp > closedRot)
+		temp = closedRot
+	ENDIF
+	SetObjectCrntRot(1, temp, MODEZ)
+	CalculateStratPolyData(1)
+	IF (temp = closedRot)
+		LOOP (3)
+			MyVar = RandRange(-0.2, 0.2)
+			CamX = CamX + MyVar
+			MyVar = RandRange(-0.2, 0.2)
+			CamY = CamY + MyVar
+			MyVar = RandRange(-0.2, 0.2)
+			CamZ = CamZ + MyVar
+		ENDLOOP
+		STAT>Closed
+	ENDIF
+ENDSTATE
+
+STATE End
+ENDSTATE

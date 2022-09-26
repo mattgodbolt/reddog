@@ -1,0 +1,50 @@
+LOCALFLOAT i
+
+STATE Init
+	MyFlag = MyFlag | ENEMY
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	IF (DogZ < z)
+		IF (HasActivation(0))
+			IF (PlayerNearActivationXY(0))
+				STAT>FadeThenDie
+			ENDIF
+			IF (PlayerNearActivationXY(1))
+				STAT>FadeThenDie
+			ENDIF
+			IF (PlayerNearActivationXY(2))
+				STAT>FadeThenDie
+			ENDIF
+			IF (PlayerNearActivationXY(3))
+				STAT>FadeThenDie
+			ENDIF
+			IF (PlayerNearActivationXY(4))
+				STAT>FadeThenDie
+			ENDIF
+		ENDIF
+	ENDIF
+ENDSTATE
+
+STATE FadeThenDie
+	i = 0.0
+	WHILE (i < 60.0)
+		i = i + 1.0
+		SetScreenARGB(i/60.0, 0, 0, 0)
+	ENDWHILE
+
+	LOOP 10
+		SetScreenARGB(1.0, 0, 0, 0)
+	ENDLOOP
+
+	IF (Lives > 0)
+		Lives = Lives - 1
+		LevelReset = 1
+	ELSE
+		GameOver()
+	ENDIF
+	//Lives = Lives - 1
+	//LevelReset = 1
+	Delete()
+ENDSTATE

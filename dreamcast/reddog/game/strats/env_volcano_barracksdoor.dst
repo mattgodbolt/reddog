@@ -1,0 +1,55 @@
+STATE Init
+	MyFlag = MyFlag | ENEMY | STRATCOLL
+	RegisterCollision()
+	InitHDC()
+	CalculateStratPolyData(1)
+	AllocStratSoundBlock(1)
+	SetAudibleRange(0, 200, 500)
+	Stat>Start
+ENDSTATE
+
+LOCALFLOAT	ang
+ 
+STATE Start
+	ang = 0.0
+	WHILE (!EnemyInActivation(0, 3D))
+		MyFlag = MyFlag
+	ENDWHILE
+
+	PLAYSOUND>HANGAROPEN3 0 0.9 0.0 0.0 0.0 0
+	
+	IF (PAL)
+		LOOP (25)
+			RelRotateX(PI / 60.0)
+
+			CalculateStratPolyData(1)
+		ENDLOOP
+	ELSE
+		LOOP (30)
+			RelRotateX(PI / 60.0)
+
+			CalculateStratPolyData(1)
+		ENDLOOP
+	ENDIF
+
+	WHILE (EnemyInActivation(0, 3D))
+		MyFlag = MyFlag
+	ENDWHILE
+
+	PLAYSOUND>HANGAROPEN3 0 0.9 0.0 0.0 0.0 0
+
+	IF (PAL)
+		LOOP (25)
+			RelRotateX(-PI / 60.0)
+			CalculateStratPolyData(1)
+		ENDLOOP
+	ELSE
+		LOOP (30)
+			RelRotateX(-PI / 60.0)
+			CalculateStratPolyData(1)
+		ENDLOOP
+ 	ENDIF
+
+ENDSTATE
+		
+		

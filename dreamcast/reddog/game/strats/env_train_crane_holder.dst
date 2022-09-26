@@ -1,0 +1,40 @@
+LOCALFLOAT	height
+LOCALFLOAT	tempf
+LOCALFLOAT	time
+
+STATE Init
+	MyFlag = MyFlag | ENEMY | STRATCOLL
+	MyFlag2 = MyFlag2 | HOLDPLAYER
+	OBJECT>MISC\CRANE\HOLDER
+	InitHDC()
+	time = 0.0
+	height = -7.0
+	IAmHoldPlayer()
+	StickToParent(0, 0, 0, height, 0)
+	CalculateStratPolyData(1)
+	WHILE (GetParentSem(0) = 0)	
+		MyFlag = MyFlag
+	ENDWHILE
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	time = time + 1.0
+	IF (time <= 120.0)
+		tempf = SmoothFromTo(200.0, time, 120.0)	
+		CalculateStratPolyData(0)
+	ENDIF
+	IF ((time > 120.0) AND (time < 180.0))
+		tempf = SmoothFromTo(1.57, time - 120.0, 60.0)	
+		RelRotateZ(-tempf)
+		CalculateStratPolyData(0)
+	ENDIF
+	IF ((time > 240.0) AND (time < 360.0))
+		tempf = SmoothFromTo(200.0, time - 240.0, 120.0)	
+		CalculateStratPolyData(0)
+	ENDIF
+	height = -7.0 + tempf
+	StickToParent(0, 0, 0, height, 0)
+	HoldPlayer()
+	MyFlag = MyFlag
+ENDSTATE

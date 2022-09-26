@@ -1,0 +1,426 @@
+//
+// Canyon Boss Anim (music triggered by separate strat)
+//
+
+PARAMINT TYPE 0
+PARAMINT DELAY 0
+
+LOCALFLOAT	MUSVOL
+LOCALFLOAT	temp
+LOCALFLOAT	frame
+LOCALFLOAT ENG_FADE
+LOCALFLOAT ENG_START
+LOCALFLOAT ENG_NORMAL
+LOCALFLOAT ENG_FINISH
+LOCALFLOAT	ENG_VOLUME1
+LOCALFLOAT	ENG_VOLUME2
+LOCALFLOAT	ENG_PITCH1
+LOCALFLOAT	ENG_PITCH2
+LOCALINT	ENG_FETTLE
+LOCALINT	ENG_DIRECTION1
+LOCALINT	ENG_DIRECTION2
+LOCALINT	SND_DOLLY_OPEN1
+LOCALINT	SND_DOLLY_OPEN2
+LOCALINT	SND_DOLLY_OPEN3
+LOCALINT    SND_DOOR_OPEN1
+LOCALINT    SND_DOOR_OPEN2
+LOCALINT    SND_DOOR_OPEN3
+
+LOCALINT	SND_ENG_START  
+LOCALINT	SND_ENG_FADE   
+LOCALINT	SND_ENG_NORMAL 
+LOCALINT	SND_ENG_FINISH 
+
+TRIGGER MUSFADE
+	temp = MUSVOL
+	WHILE (temp > (MUSVOL / 2.0))
+		MusicFade(1.0 - temp)
+		temp = temp * 0.6
+	ENDWHILE
+  	TRIGSTOP
+ENDTRIGGER
+	
+TRIGGER FettleEngines
+	IF (ENG_FETTLE > 4)
+		// Part 2
+		IF (ENG_DIRECTION1 = 0)
+			ENG_VOLUME1 = ENG_VOLUME1 + 0.005
+			IF (ENG_VOLUME1 > 1.0)
+				ENG_VOLUME1 = 1.0
+			ENDIF
+			ENG_PITCH1 = ENG_PITCH1 + 0.005
+			IF (ENG_PITCH1 > 0.3)
+				ENG_PITCH1 = 0.3
+			ENDIF
+		ELSE
+			ENG_VOLUME1 = ENG_VOLUME1 - 0.005
+			IF (ENG_VOLUME1 < 0.0)
+				ENG_VOLUME1 = 0.0
+			ENDIF
+			ENG_PITCH1 = ENG_PITCH1 - 0.005
+			IF (ENG_PITCH1 < -0.3)
+				ENG_PITCH1 = -0.3
+			ENDIF
+		ENDIF
+		SetVolume(0, ENG_VOLUME1)
+		SetVolume(0, ENG_PITCH1)
+	
+		IF (ENG_FETTLE > 5)
+			IF (ENG_DIRECTION2 = 0)
+				ENG_VOLUME2 = ENG_VOLUME2 + 0.005
+				IF (ENG_VOLUME2 > 1.0)
+					ENG_VOLUME2 = 1.0
+				ENDIF
+				ENG_PITCH2 = ENG_PITCH2 + 0.005
+				IF (ENG_PITCH2 > 0.3)
+					ENG_PITCH2 = 0.3
+				ENDIF
+			ELSE
+				ENG_VOLUME2 = ENG_VOLUME2 - 0.005
+				IF (ENG_VOLUME2 < 0.0)
+					ENG_VOLUME2 = 0.0
+				ENDIF
+				ENG_PITCH2 = ENG_PITCH2 - 0.005
+				IF (ENG_PITCH2 < -0.3)
+					ENG_PITCH2 = -0.3
+				ENDIF
+			ENDIF
+			SetVolume(1, ENG_VOLUME2)
+			SetVolume(1, ENG_PITCH2)
+		ENDIF
+
+	ELSE
+		// Part 3
+		IF (ENG_FETTLE > 0)
+			ENG_PITCH1 = ENG_PITCH1 - 0.005
+			IF (ENG_PITCH1 < -0.3)
+				ENG_PITCH1 = -0.3
+			ENDIF
+			SetPitch(0, ENG_PITCH1)
+			IF (ENG_FETTLE > 1)
+				ENG_PITCH2 = ENG_PITCH2 - 0.005
+				IF (ENG_PITCH2 < -0.3)
+					ENG_PITCH2 = -0.3
+				ENDIF
+				SetPitch(3, ENG_PITCH2)
+				IF (ENG_FETTLE > 2)
+					ENG_VOLUME1 = ENG_VOLUME1 - 0.005
+					IF (ENG_VOLUME1 < 0.0)
+						ENG_VOLUME1 = 0.0
+					ENDIF
+					SetVolume(3, ENG_VOLUME1)
+				ENDIF
+			ENDIF
+		ENDIF
+	ENDIF
+
+	TRIGSTOP
+ENDTRIGGER
+
+STATE Init
+
+	IF (GetGlobalParamInt(0) = 99)
+		MyParent = MyParentParent
+		STAT>PART3_2
+	ENDIF
+	
+  	IF (!(MyFlag2 & OWNIPARAMS))
+		TYPE = 0
+		DELAY = 0
+    ENDIF
+   
+	MUSVOL = 0.0
+   	MyVar = DELAY
+	IF (PAL)
+		MyVar = MyVar / 1.2
+	ENDIF
+
+	IF (MyParent)
+		WHILE (MyParentInvalid())
+			MyFlag = MyFlag
+		ENDWHILE
+	ENDIF
+
+  	WHILE (MyVar > 0)
+		MyVar = MyVar - 1.0
+	ENDWHILE
+
+	IF ((TYPE = 0) OR (TYPE = 3))
+		//kill all existing sounds
+		StopSound(-1,-1)
+
+		MUSVOL = sfxGetCDVolume()
+
+		IF (sfxGetCDVolume() > 0.3)
+			TRIGSET>MUSFADE EVERY 1
+		ENDIF
+   	ENDIF
+
+
+   
+	AllocStratSoundBlock(4)
+
+	IF (TYPE = 0)
+		STAT>EMERGEANIM
+	ENDIF
+
+   	IF (TYPE = 1)
+		STAT>PART2_1
+	ENDIF
+
+   	IF (TYPE = 2)
+		STAT>PART2_2
+	ENDIF
+
+   	IF (TYPE = 3)
+		STAT>PART3
+	ENDIF
+
+ 	Delete()
+ENDSTATE
+
+
+LOCALINT SNDF1
+LOCALINT SNDF2
+LOCALINT SNDF3
+LOCALINT SNDF4
+LOCALINT SNDF5
+LOCALINT SNDF6
+LOCALINT SNDF7
+LOCALINT SNDF8
+
+
+STATE EMERGEANIM
+
+	//
+	// the canyon boss emerges from its hole
+	//
+	SNDF1 = 11
+	SNDF2 = 22
+	SNDF3 = 30
+	SNDF4 = 31
+	SNDF5 = 37
+	SNDF6 = 47
+	SNDF7 = 59
+	SNDF8 = 81
+
+	IF (!PAL)
+		SNDF1 = SNDF1 * 1.2
+		SNDF2 = SNDF2 * 1.2
+		SNDF3 = SNDF3 * 1.2
+		SNDF4 = SNDF4 * 1.2
+		SNDF5 = SNDF5 * 1.2
+		SNDF6 = SNDF6 * 1.2
+		SNDF7 = SNDF7 * 1.2
+		SNDF8 = SNDF8 * 1.2
+	ENDIF
+
+	frame = 0
+
+	//
+	// bunker opening sounds
+	//
+
+	PLAYSOUND>VLOPEN 0 1.0  0.0 0.0 0.0  NOPOSITION
+
+	WHILE (frame < SNDF1)
+		frame = frame + 1
+	ENDWHILE
+
+	PLAYSOUND>VLOPEN 0 1.0  0.0 0.0 0.0  NOPOSITION
+
+	WHILE (frame < SNDF2)
+		frame = frame + 1
+	ENDWHILE
+
+	PLAYSOUND>VLOPEN 0 1.0  0.0 0.0 0.0  NOPOSITION
+
+	WHILE (frame < SNDF3)
+		frame = frame + 1
+	ENDWHILE
+   
+	PLAYSOUND>BIGBOLT2 1 1.0  0.0 0.0 0.0  NOPOSITION
+
+	WHILE (frame < SNDF4)
+		frame = frame + 1
+	ENDWHILE
+   
+	PLAYSOUND>VLOPEN 0 1.0  0.0 0.0 0.0  NOPOSITION
+
+	WHILE (frame < SNDF5)
+		frame = frame + 1
+	ENDWHILE
+   
+	PLAYSOUND>BIGBOLT2 1 1.0  0.0 0.0 0.0  NOPOSITION
+
+	WHILE (frame < SNDF6)
+		frame = frame + 1
+	ENDWHILE
+   
+	PLAYSOUND>BIGBOLT2 1 1.0  0.0 0.0 0.0  NOPOSITION
+
+	WHILE (frame < SNDF7)
+		frame = frame + 1
+	ENDWHILE
+   
+	PLAYSOUND>BIGBOLT2 1 1.0  0.0 0.0 0.0  NOPOSITION
+
+	WHILE (frame < SNDF8)
+		frame = frame + 1
+	ENDWHILE
+   
+	PLAYSOUND>CLBOSSEMERGE2 0 1.0  0.0 0.0 0.0  CONTINUOUS | NOPOSITION
+
+	IF (PAL)
+		WHILE (frame < 175)
+			frame = frame + 1
+		ENDWHILE
+	ELSE
+		WHILE (frame < 210)
+			frame = frame + 1
+		ENDWHILE
+	ENDIF
+
+	StopSound(0, 0.0)
+
+	STAT>FINISHED
+
+ENDSTATE
+
+DEFINE DROPSHIP 9
+DEFINE BOSS 8 
+
+STATE PART2_1
+   	PLAYSOUND>DROPSHIP 0 1.0 0.0 0.0 0.0  CONTINUOUS
+	SetAudibleRange(0,0,500)
+	WHILE (MyParentFlag)
+		LinkToParentObject(DROPSHIP,0,0,0,0,0,0)
+	ENDWHILE
+	Delete()
+ENDSTATE
+
+
+STATE PART2_2
+   	PLAYSOUND>CANYONBOSS 0 0.9 0.0 0.0 0.0  CONTINUOUS
+	SetAudibleRange(0,100,800)
+	WHILE (MyParentFlag)
+		LinkToParentObject(BOSS,0,0,0,0,0,0)
+	ENDWHILE
+	Delete()
+ENDSTATE
+
+DEFINE LASTANIMDROPSHIP 4
+DEFINE LASTANIMBOSS 1
+
+TRIGGER LinkMe
+	IF (MyParentFlag)
+		LinkToParentObject(LASTANIMDROPSHIP,0,0,0,0,0,0)
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+STATE PART3
+	SetAudibleRange(0,0,500)
+	SetAudibleRange(1,0,500)
+	SetAudibleRange(2,0,500)
+	SetAudibleRange(3,0,500)
+	TRIGSET>LinkMe EVERY 1
+	//
+	// RedDog emerges from the back of the drop ship
+	//
+	IF (PAL)
+		SND_DOLLY_OPEN1 = 26
+		SND_DOLLY_OPEN2 = 52
+		SND_DOLLY_OPEN3 = 58
+		SND_ENG_FADE    = 179
+		SND_ENG_START   = 190
+		SND_ENG_NORMAL  = 233
+		SND_ENG_FINISH  = 400
+	ELSE
+		SND_DOLLY_OPEN1 = 31
+		SND_DOLLY_OPEN2 = 62
+		SND_DOLLY_OPEN3 = 70
+		SND_ENG_FADE    = 215
+		SND_ENG_START   = 229
+		SND_ENG_NORMAL  = 280
+		SND_ENG_FINISH  = 480
+	ENDIF
+
+	ENG_FETTLE = 0
+	ENG_PITCH1 = 0.0
+	ENG_PITCH2 = 0.0
+	ENG_VOLUME1 = 0.9
+
+	frame = 0
+
+	PLAYSOUND>DROPSHIP    0 0.5  0.0 0.0 0.0  CONTINUOUS  
+	PLAYSOUND>VLBOSSSTART 2 1.0  0.0 0.0 0.0  0 
+	PLAYSOUND>DOLLY       1 0.9  0.0 0.0 0.0  CONTINUOUS  
+
+	WHILE (frame < SND_DOLLY_OPEN1)
+		frame = frame + 1
+	ENDWHILE
+	PLAYSOUND>BOLT1 2 1.0  0.0 0.0 0.0  0
+
+	WHILE (frame < SND_DOLLY_OPEN2)
+		frame = frame + 1
+	ENDWHILE
+	PLAYSOUND>BOLT1 2 1.0  0.0 0.0 0.0  0
+
+	WHILE (frame < SND_DOLLY_OPEN3)
+		frame = frame + 1
+	ENDWHILE
+	PLAYSOUND>BOLT2 2 1.0  0.0 0.0 0.0  0
+	StopSound(1, 0.0)
+
+	WHILE (frame < SND_ENG_FADE)
+		frame = frame + 1
+	ENDWHILE
+	ENG_FETTLE = 1
+
+	WHILE (frame < SND_ENG_START)
+		frame = frame + 1
+	ENDWHILE
+
+	//CREATE THE STRAT TO CONTROL THE BOSS SOUND
+	SetGlobalParamInt(0,99)
+	CREATE ENV_ANIMCANYONBOSSSFX 0, 0, 0, 0, 0, 0, 0
+	ClearGlobalParams()
+
+  //	PLAYSOUND>CANYONBOSS 3 ENG_VOLUME1  0.5 0.0 0.0  NOPOSITION | CONTINUOUS
+	ENG_FETTLE = 2
+
+	WHILE (frame < SND_ENG_NORMAL)
+		frame = frame + 1
+	ENDWHILE
+	ENG_FETTLE = 3
+	
+	WHILE (frame < SND_ENG_FINISH)
+		frame = frame + 1
+	ENDWHILE
+
+	ENG_FETTLE = 0
+
+	STAT>FINISHED
+ENDSTATE
+
+
+//part3 anim the canyon boss sound
+STATE PART3_2
+	AllocStratSoundBlock(1)
+	SetAudibleRange(0,100,400)
+	PLAYSOUND>CANYONBOSS 0 1.0  0.0 0.0 0.0 CONTINUOUS
+	WHILE (MyParentFlag)
+		LinkToParentObject(LASTANIMBOSS,0,0,0,0,0,0)
+	ENDWHILE
+	Delete()
+ENDSTATE
+
+STATE FINISHED
+	//re-enable gamesounds
+	IF ((TYPE = 0) OR (TYPE = 3))
+		MusicFade(1.0 - MUSVOL)
+	ENDIF
+   	StopSound(-2,-2)
+  	Delete()
+ENDSTATE

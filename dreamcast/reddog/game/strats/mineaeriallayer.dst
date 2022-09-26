@@ -1,0 +1,76 @@
+LOCALINT	time
+LOCALFLOAT	upForce
+
+STATE Init 
+	MyFlag = MyFlag | STRATCOLL | ENEMY | TARGETABLE
+	RegisterCollision()
+	TRIGSET>SpeculatMadness EVERY 1
+	InitPath()
+	RotationRestriction(1.0, 1.0, 1.0)
+	SetFriction(0.1,0.1,0.1)
+	health = 2000.0
+	scalex = 0.6
+	scaley = 0.6
+	scalez = 0.6 
+	TRIGSET> Kill WHENDEAD
+	time = -100
+	STAT> Start
+ENDSTATE
+
+STATE Start
+//	IF (PlayerNearActivation() || NearPlayer(100.0))
+		STAT> Activate
+//	ENDIF
+ENDSTATE
+
+STATE Wait
+	IF (NearPlayer(75.0))
+		STAT> Activate
+	ENDIF
+	time = time + 1
+	IF (time > 45)
+		time = time - 45
+		IF (!NearActivationXY(1))
+			CREATE SPAWN_MINE 0, -3.0, -4.0, 0, 0, 0, 0
+		ENDIF
+	ENDIF
+ENDSTATE
+
+STATE Die
+	Delete()
+ENDSTATE
+
+STATE Activate
+	time = time + 1
+	IF (!NearPlayer(600.0))
+		STAT> Wait
+	ENDIF
+	IF (NearCheckPos(1.0))
+		IF (LastWay())
+			STAT>Die
+		ENDIF
+		GetNextWay()
+	ENDIF
+	RelTurnTowardCheckPosSmoothXY(0.03)
+	upForce = (z - CheckZ) * 6.0
+	ApplyRelForce(0, 0.0, 0.0, -upForce, 0.0, 0.0, 0.0)
+	IF (!NearCheckPosXY(1.0))
+		MoveY(0.06)
+	ENDIF
+
+	IF (time > 45)
+		time = time - 45
+		IF (!NearActivationXY(1))
+			CREATE SPAWN_MINE 0, -3.0, -4.0, 0, 0, 0, 0
+		ENDIF
+	ENDIF
+ENDSTATE
+
+
+STATE Kill
+	MyVar = 2.0
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+//	adrelanin = adrelanin + 0.2
+	TRIGSTOP
+	DESTROYME SPAWN_EXPLODINGBITS
+ENDSTATE 

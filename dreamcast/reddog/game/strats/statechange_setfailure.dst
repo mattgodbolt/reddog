@@ -1,0 +1,16 @@
+TRIGGER MakeSuccess
+	MissionFailure = 0
+ENDTRIGGER
+
+
+STATE Init
+	MyFlag = MyFlag & LNOT(ENEMY)
+	MyFlag = MyFlag | DELETECALLBACK
+	TRIGSET>MakeSuccess WHENDELETED
+	MissionFailure = 1
+	STAT>Wait
+ENDSTATE
+
+STATE Wait
+ENDSTATE
+

@@ -1,0 +1,260 @@
+//PAL FRIENDLY
+PARAMINT HideExplodePiece 0
+PARAMINT LowColl 0
+PARAMINT Flamable 1
+PARAMINT CamColl 0
+PARAMINT WaitForParentDeath 0
+
+PARAMFLOAT Damage	0.0	
+PARAMFLOAT Health	1.0
+PARAMFLOAT seconds	0.0
+PARAMFLOAT DamageRadius	0.0
+PARAMFLOAT DamageAmount	0.0
+
+LOCALFLOAT time
+LOCALINT ID
+LOCALINT temp
+
+
+STATE Init
+	
+	MyFlag = MyFlag | STRATCOLL | ENEMY
+	RegisterCollision()
+	AllocStratSoundBlock(1)
+	SetAudibleRange(0,50,100)
+	TRIGSET>SpecularMadness EVERY 1
+	MyFlag2 = MyFlag2 | COLLMOVE 
+	
+	trans = 1.0
+
+	IF (!(MyFlag & OWNFPARAMS))
+		Damage = 0.0
+		Health = 1.0
+		seconds = 0.0
+		DamageRadius = 0.0
+		DamageAmount = 0.0
+	ENDIF
+
+	IF (!(MyFlag2 & OWNIPARAMS))
+		HideExplodePiece = 0
+		LowColl = 0
+		Flamable = 1
+		CamColl = 0
+		WaitForParentDeath = 0
+   	ENDIF
+
+
+
+	IF (HideExplodePiece)
+		ID = MyPNODEIDS + 1
+
+		temp = 0
+		IMMLOOP (ID)
+			IF (temp)
+				InActivateObjectCollision(temp)
+			  	HideObject(temp)
+			ENDIF
+			temp = temp + 1
+	  	IMMENDLOOP
+	ENDIF
+
+	IF (WaitForParentDeath)
+		WHILE (MyParentInvalid())
+			MyFlag = MyFlag
+		ENDWHILE
+		WHILE (MyParentFlag)
+			MyFlag = MyFlag
+		ENDWHILE
+	ENDIF
+
+	IF (CamColl = 0)	
+		StratNoCamColl()
+	ENDIF
+	
+
+	damage = Damage
+
+
+	IF (seconds > 0.0)
+		MyFlag2 = MyFlag2 | RESPAWN
+	ENDIF
+
+	health = Health
+
+	IF (HasActivation(0))
+		WHILE (!PlayerNearActivationXY(0))
+			 MyFlag = MyFlag
+		ENDWHILE
+		health = Health
+  	ENDIF
+	
+	IF (LowColl)
+		MyFlag = MyFlag | LOWCOLL | NOMOVE
+	ELSE
+		InitHDC()
+		CalculateStratPolyData(1)
+	ENDIF
+	
+
+	STAT>Start
+ENDSTATE
+
+LOCALFLOAT SPECAMOUNT
+
+TRIGGER SpecularMadness
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+	IF ((MyFlag & HITSTRAT) AND (CollWithFlag & BULLETTYPE))
+		SPECAMOUNT = 1.0
+		PLAYSOUND>ENEMY_HIT 0 1.0 0.0 0.0 0.0 NODIRECTION
+	ENDIF
+	IF (SPECAMOUNT > 0)
+  		MyFlag2 = MyFlag2 | SPECULAR
+		SetSpecularColour(0, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		IF (PAL)
+			SPECAMOUNT = SPECAMOUNT - 0.12
+		ELSE
+			SPECAMOUNT = SPECAMOUNT - 0.1
+		ENDIF
+	ELSE
+		SPECAMOUNT = 0
+ 		MyFlag2 = MyFlag2 & LNOT(SPECULAR)
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+STATE Start
+	MyFlag = MyFlag
+
+   //	IF ((!Multiplayer) AND (MyFlag2 & PLAYERHIT) AND (PlayerSpeedY > 0.5))
+	IF ((!Multiplayer) AND (MyFlag2 & PLAYERHIT))
+		CheckY = OLDDogY - OLDOLDDogY
+		CheckZ = OLDDogX - OLDOLDDogX
+	    CheckY = CheckY * CheckY
+		CheckZ = CheckZ * CheckZ
+		CheckY = FSQRT(CheckY + CheckZ)
+
+		IF (CheckY > 0.6)
+			health = 0
+			CheckX = 1.0
+		ENDIF
+
+	ELSE
+		CheckX = 0.0
+	ENDIF
+
+	IF ((CheckX > 0.0) OR (health <= 0.0))
+		IF (MyFlag2 & RESPAWN)
+			health = Health
+			IF (HideExplodePiece)
+				ID = MyPNODEIDS + 1
+
+				temp = 0
+				IMMLOOP (ID)
+					IF (temp)
+						UnhideObject(temp)
+					ENDIF
+					temp = temp + 1
+				IMMENDLOOP
+			ENDIF
+
+			RadiusDamage(DamageRadius, DamageAmount)
+
+			MyFlag = MyFlag | NODISP
+			MyFlag = MyFlag & LNOT(STRATCOLL)
+
+
+			IF (Flamable)
+				CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+				IF (!IsChallengeLevel())
+					Score = Score + 50
+				ENDIF
+
+			   //	CREATE SPAWN_EXPLODINGBITS 0, 0, 0, 0, 0, 0, 0
+			   
+			   
+			   	DESTROYME SPAWN_EXPLODINGBITS
+			ELSE
+				SetGlobalParamInt(0, 1)
+				IF (!IsChallengeLevel())
+					Score = Score + 50
+				ENDIF
+			  //	CREATE SPAWN_EXPLODINGBITS 0, 0, 0, 0, 0, 0, 0
+			  	DESTROYME SPAWN_EXPLODINGBITS
+			   	SetGlobalParamInt(0, 0)
+			ENDIF
+	   
+			time = seconds * 30.0
+			IF (PAL)
+				time = time * 1.2
+			ENDIF
+
+		   	WHILE (time > 0.0)
+				time = time - 1.0
+			ENDWHILE
+			IF HasActivation(0)
+				WHILE MPPlayerNearActivation (0)
+					MyFlag = MyFlag
+				ENDWHILE
+			ENDIF
+			MyFlag = MyFlag | STRATCOLL
+			MyFlag = MyFlag & LNOT(NODISP)
+			MyFlag2 = MyFlag2 | TRANSLUCENT
+			time = 50
+		   	trans = 0.0
+			WHILE (time > 0.0)
+				IF (PAL)
+				  	trans = trans + 0.02 * 1.2	
+				ELSE
+				  	trans = trans + 0.02	
+
+				ENDIF
+				time = time - 1.0
+			ENDWHILE
+			trans = 1.0
+			MyFlag2 = MyFlag2 & LNOT(TRANSLUCENT)
+		ELSE
+			IF (HideExplodePiece)
+				ID = MyPNODEIDS + 1
+
+				temp = 0
+				IMMLOOP (ID)
+					IF (temp)
+						UnhideObject(temp)
+					ENDIF
+					temp = temp + 1
+				IMMENDLOOP
+			ENDIF
+
+			IF (!IsChallengeLevel())
+
+				IF (CheckX > 0)
+					CheckX = RandRange(CheckY * 50.0, CheckY * 200.0)
+					CamColl = TOINT(CheckX)
+					IF (CamColl < 10)
+						CamColl = 10
+					ENDIF
+					CamColl = (CamColl / 10 ) * 10
+
+					Score = Score + (CamColl)
+ 				ENDIF
+
+			ENDIF
+
+			RadiusDamage(DamageRadius, DamageAmount)
+			IF (Flamable)
+				CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+				IF (!IsChallengeLevel())
+					Score = Score + 50
+				ENDIF
+				DESTROYME SPAWN_EXPLODINGBITS
+			ELSE
+				SetGlobalParamInt(0, 1)
+				IF (!IsChallengeLevel())
+					Score = Score + 50
+				ENDIF
+				DESTROYME SPAWN_EXPLODINGBITS
+			 //	SetGlobalParamInt(0, 0)
+			ENDIF
+		ENDIF
+	ENDIF
+ENDSTATE 

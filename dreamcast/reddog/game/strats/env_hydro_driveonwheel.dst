@@ -1,0 +1,29 @@
+PARAMFLOAT Rotspeed
+
+STATE Init
+	MyFlag = MyFlag | STRATCOLL | ENEMY
+	MyFlag2 = MyFlag2 | COLLMOVE
+	OBJECT> P:\GAME\NEWOBJECTS\MISC\ENV_HYDRO_DRIVEONWHEEL
+	IAmHoldPlayer()
+	IF (Rotspeed = 0)
+		Rotspeed = 0.006
+	ENDIF
+	STAT> Test
+ENDSTATE
+
+STATE Test
+	HideObject (1)	
+	HideObject (2)	
+	HideObject (3)	
+	HideObject (4)	
+	HideObject (5)	
+	HideObject (6)	
+	STAT>RotateWheel
+ENDSTATE
+
+STATE RotateWheel
+	HoldPlayer()
+	NoCollObject(7)
+	RelRotateY (Rotspeed)
+ENDSTATE
+

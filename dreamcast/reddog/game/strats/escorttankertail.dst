@@ -1,0 +1,77 @@
+DEFINE	SPEED 0.2
+DEFINE  TOPSPEED 0.3
+ 
+STATE Init
+	SetFriction(1.0, 0.1, 0.05)
+	MyFlag = MyFlag | FRIENDLY
+	MyFlag = MyFlag & LNOT(ENEMY)
+	MyFlag2 = MyFlag2 | ENEMY_CF
+	InitPath()
+	InitSplineData()
+	NoCollObject(5)
+	InitHDC()
+	IAmHoldPlayer()
+	CalculateStratPolyData(1)
+	health = 100.0
+	HideObject(1)
+	HideObject(2)
+	HideObject(3)
+	HideObject(4)
+	
+	EscortTankerSpeed = 0
+	WHILE (MyParentInvalid())
+		MyFlag = MyFlag
+	ENDWHILE
+	WHILE (EscortTankerSpeed = 0)
+		MyFlag = MyFlag
+	ENDWHILE
+
+	MyFlag = MyFlag | GRAVITYON | FLOORCOLL | STRATCOLL 
+	TRIGSET>Always	EVERY 1
+	RotationRestriction(1.0, 1.0, 1.0)
+	STAT> Start
+ENDSTATE 
+
+TRIGGER Always
+
+	IF (EnemyInFrontXY(5, 5, 1))
+		IF (MyParent = EscortTanker)
+			SetParentSem(0, 1)
+		ELSE
+			SetParentSem(0, 2)
+		ENDIF	
+	ENDIF
+
+	IF (GetSem(0) = 2)
+		SetParentSem(0, 1)
+	ENDIF
+
+	SetSem(0, 0)
+	TRIGFIN
+ENDTRIGGER
+
+STATE Explode
+	OBJECT>Misc\BrokenEscortTanker
+	DESTROYME SPAWN_EXPLODINGBITS
+ENDSTATE
+
+STATE Start
+	IF (!MoveAlongPathXY(EscortTankerSpeed))
+		STAT>DoYourThingBaby
+	ENDIF
+
+	FaceAlongDirXY(1)
+	CalculateStratPolyData(0)
+	HoldPlayer()
+	IF (MyParentHealth <= 0.0)
+		health = 0.0
+		STAT>Explode
+	ENDIF
+ENDSTATE
+
+STATE DoYourThingBaby
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+	LOOP (10)
+		MyFlag = MyFlag
+	ENDLOOP
+ENDSTATE

@@ -1,0 +1,122 @@
+LOCALINT Temp
+LOCALINT dead
+LOCALINT type
+LOCALFLOAT cr
+LOCALFLOAT cg
+LOCALFLOAT cb
+LOCALFLOAT time
+
+STATE Init
+	type = GetGlobalParamInt(0)
+	SetGlobalParamInt(0, 0)
+	MakeMeTheLast()
+	time = 1.0
+	IF (type = 0)
+  		MyFlag = MyFlag | RELVELCALC | FLOORCOLL | STRATCOLL | FRIENDLY | NOTEXPLODE | BULLETTYPE | DIRECTMOVE 
+		MyFlag2 = MyFlag2 | BULLET_CF
+	ELSE
+		MyFlag = MyFlag | SPRITE
+	ENDIF
+
+	SetFriction(0.0, 0.0, 0.0)
+	IF (type = 0)
+		damage = 15.0
+		TRIGSET>KillOff	WHENHIT
+		TRIGSET>KillOffFloor	ONFLOOR
+		dead = 0
+
+		MyVar = GetParentPlayerNumber()
+		Temp = 0
+		MakeMeTheLast()
+		TRIGSET>Trail EVERY 1
+	ENDIF
+
+	IF (type = 0)
+		//OBJECT> weapon\RD_PLASMA_1
+		OBJECT> weapon\BlueSphere
+	ELSE
+		OBJECT> EXPLOSIONS\Explosion00
+		ANIM> Explosion00>BLUEBURN
+	ENDIF
+
+	IF (type = 0)
+		RegisterCollision()
+		ResetOCP()
+	ENDIF
+	MoveY(8.0)
+	IF (type = 0)
+		TRIGSET>Remove	EVERY 45
+	ELSE
+		TRIGSET>Remove	WHENANIMOVER
+	ENDIF
+ 	
+	IF (type = 0)
+		AllocStratSoundBlock(1)
+		// Record those collisions
+		RecordCollision(0)
+	ENDIF
+
+	STAT>SetPos
+ENDSTATE 
+
+TRIGGER Trail
+	time = time + 1.0
+	IF (time > 3.0)
+		SetGlobalParamInt(0, 1)
+		CREATE SPAWN_RD_PLASMA_2 0, -6.0 * (time - 2.0), 0, 0, 0, 0, 0
+		SetGlobalParamInt(0, 0)
+	ENDIF
+	IF (time > 8.0)
+		TRIGSTOP
+	ELSE
+		TRIGFIN
+	ENDIF
+ENDTRIGGER
+
+STATE SetPos
+	IF (type > 0)
+		scalez = scalez + 0.05
+	ENDIF
+	IF (!MyParentFlag)
+		Delete()
+	ELSE
+		IF (UnderWater)
+			SubParentSem(0, 1)
+			dead = 1
+			DoSpark(20, 0.0, 0.0, 1.0, 0.4, 1.0, 50, 255, 255, 255)
+			
+			Delete()
+		ENDIF
+	ENDIF
+ENDSTATE
+
+STATE KillOff
+   	SubParentSem(0, 1)
+	Delete()
+ENDSTATE
+
+STATE KillOffFloor
+	
+	Temp = RandRange(0, 1.99)
+	IF (!(MyFlag2 & HITHDC))
+		cr = cr * 0.5
+		cg = cg * 0.5
+		cb = cb * 0.5
+		IF (!(PolyType & NODECAL))
+			AddDecal(0, Temp, 0.5, 0.5, cr, cg, cb)
+		ENDIF
+	ENDIF
+
+	MoveBackOneFrame()
+	dead = 1
+	SubParentSem(0, 1)
+		
+	Delete()
+ENDSTATE
+
+STATE Remove
+	IF (type = 0)
+		SubParentSem(0, 1)
+	ENDIF
+	Delete()
+ENDSTATE

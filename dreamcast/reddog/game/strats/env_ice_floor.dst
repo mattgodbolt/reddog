@@ -1,0 +1,102 @@
+
+LOCALINT hits
+LOCALINT	objId
+LOCALINT	block1
+LOCALINT	block2
+LOCALINT	block3
+LOCALINT	block4
+LOCALFLOAT	temppx
+LOCALFLOAT	temppy
+LOCALFLOAT	temprx
+LOCALFLOAT	tempry
+
+DEFINE NHITS 2
+
+STATE Init
+	MyFlag = MyFlag & LNOT(ENEMY)
+   	MyFlag = MyFlag | FRIENDLY | STRATCOLL | NOSTRAT2STRAT
+	MyFlag2 = MyFlag2 | COLLMOVE
+	hits = 0
+	block1 = 0
+	block2 = 0
+	block3 = 0
+	block4 = 0
+	InitHDC()
+	CalculateStratPolyData(1)
+	UpdateObjectCollFlag(1, NOCAMERACOLLIDE)
+	UpdateObjectCollFlag(2, NOCAMERACOLLIDE)
+	UpdateObjectCollFlag(3, NOCAMERACOLLIDE)
+	UpdateObjectCollFlag(4, NOCAMERACOLLIDE)
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	IF ((CollWith) AND (CollWithParent = MyParent) AND (CollWithFlag & BULLETTYPE))
+		IF (ObjectHitStrat(1))
+			block1 = block1 + 1
+			IF (block1 >= NHITS)
+				HideObject(1)
+				NoCollObject(1)
+				IMMLOOP (4)
+					temppx = RandRange(-7.0, 7.0)
+					temppy = RandRange(-7.0, 7.0)
+					temprx = RandRange(-3.14, 3.14)
+					tempry = RandRange(-3.14, 3.14)
+					CREATE ENV_ICE_ROCK_FALL temppx, temppy, 0, temprx, tempry, 0, 1
+				IMMENDLOOP
+			ENDIF
+			SetSpecularColour(1, block1 * (1.0 / NHITS),0.0 , hits * 0.2)
+		ENDIF
+		IF (ObjectHitStrat(2))
+			block2 = block2 + 1
+			IF (block2 >= NHITS)
+				HideObject(2)
+				NoCollObject(2)
+				IMMLOOP (4)
+					temppx = RandRange(-7.0, 7.0)
+					temppy = RandRange(-7.0, 7.0)
+					temprx = RandRange(-3.14, 3.14)
+					tempry = RandRange(-3.14, 3.14)
+					CREATE ENV_ICE_ROCK_FALL temppx, temppy, 0, temprx, tempry, 0, 2
+				IMMENDLOOP
+
+			ENDIF
+			SetSpecularColour(2, block2 * (1.0 / NHITS),0.0 , hits * 0.2)
+		ENDIF
+		IF (ObjectHitStrat(3))
+			block3 = block3 + 1
+			SetSpecularColour(3, block3 * (1.0 / NHITS),0.0 , hits * 0.2)
+			IF (block3 >= NHITS)
+				HideObject(3)
+				NoCollObject(3)
+				IMMLOOP (4)
+					temppx = RandRange(-7.0, 7.0)
+					temppy = RandRange(-7.0, 7.0)
+					temprx = RandRange(-3.14, 3.14)
+					tempry = RandRange(-3.14, 3.14)
+					CREATE ENV_ICE_ROCK_FALL temppx, temppy, 0, temprx, tempry, 0, 3
+				IMMENDLOOP
+			ENDIF
+		ENDIF
+		IF (ObjectHitStrat(4))
+			block4 = block4 + 1
+			IF (block4 >= NHITS)
+				HideObject(4)
+				NoCollObject(4)
+				IMMLOOP (4)
+					temppx = RandRange(-7.0, 7.0)
+					temppy = RandRange(-7.0, 7.0)
+					temprx = RandRange(-3.14, 3.14)
+					tempry = RandRange(-3.14, 3.14)
+					CREATE ENV_ICE_ROCK_FALL temppx, temppy, 0, temprx, tempry, 0, 4
+				IMMENDLOOP
+			ENDIF
+			SetSpecularColour(4, block4 * (1.0 / NHITS),0.0 , hits * 0.2)
+		ENDIF
+		CollWith = 0
+		MyFlag2 = MyFlag2 | SPECULAR
+		IF ((block1 + block2 + block3 + block4) >= (NHITS * 4))
+			Delete()
+		ENDIF
+	ENDIF
+ENDSTATE

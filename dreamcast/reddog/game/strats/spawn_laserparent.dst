@@ -1,0 +1,240 @@
+// LASER FOR SWAMPBOSS
+
+STATE Init
+	//INHERIT THE SPEED OF THE PARENT STRAT
+//	absspeedx = parentabsspeedx
+	absspeedy = parentabsspeedy
+//	absspeedz = parentabsspeedz
+
+
+
+	MakeMeTheLast()
+	//INHERIT ANY TARGET INFORMATION FROM THE PARENT
+	MyTarget = MyParentTarget
+	//CHECK THE WHETHER WE ARE PARENT OR MAIN TYPE
+	IF (GetGlobalParamInt(0) = 1)
+		STAT>MainLaser
+	ENDIF
+   
+   	IF (GetGlobalParamInt(0) = 2)
+		STAT>TrailLaser
+	ENDIF
+   	
+	IF (GetGlobalParamInt(0) = 3)
+		STAT>TrailMuzzle
+	ENDIF
+
+
+
+
+  	scalex = scaley = scalez = 0.5
+
+  	OBJECT> BOSSES\SWAMPBOSSWEAPONS\LaserMuzzleFlash
+   	MODELANIM>BOSSES\SWAMPBOSSWEAPONS\LaserMuzzleFlash.rdo>Flash>REPEAT
+	SetObjectShadowState(0)
+	//TRIGSET>SetToParent EVERY 1
+	MyVar = GetGlobalParamFloat(0)
+	frame = GetGlobalParamFloat(1)
+	health = GetGlobalParamFloat(2)
+	STAT>Run
+ENDSTATE
+
+STATE TrailMuzzle
+
+   	scalex = scaley = scalez = MyParentScaleX - 0.1
+	damage = ParentDamage
+
+	MyVar = ParentSemaphore
+	health = MyParentHealth
+	frame = ParentFrame
+  	OBJECT> BOSSES\SWAMPBOSSWEAPONS\LaserMuzzleFlash
+   //	MODELANIM>BOSSES\SWAMPBOSSWEAPONS\LaserMuzzleFlash.rdo>Flash>REPEAT
+	CopyParentAnim()
+   	MyParent = MyParentsParent
+
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+	LOOP (30)
+	  	LinkToParentObject (MyVar, health,0,0, 0,frame,0)
+		RelRotateY(damage)
+
+	   	IF (trans > 0.1)
+	   		trans = trans - 0.05
+	   	ENDIF
+		
+	ENDLOOP
+
+	Delete()
+
+
+ENDSTATE
+
+
+STATE TrailLaser
+	scaley = MyParentScaleY
+	KillMyVelocity()
+	
+	OBJECT> BOSSES\SWAMPBOSSWEAPONS\SwampEnergyBall
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+	trans = 0.7
+
+	WHILE (trans > 0.1)
+		scalez = scalez - 0.1
+		trans = trans - 0.05
+	ENDWHILE
+	Delete()
+
+ENDSTATE
+
+
+LOCALINT innerBand
+LOCALINT outerBand
+
+//*****************
+//THE WEAPON ITSELF
+//*****************
+
+STATE MainLaser
+	OBJECT> BOSSES\SWAMPBOSSWEAPONS\SwampEnergyBall
+	scaley = 0.1
+   	SetFriction(0.0,0.0,0.0)
+	damage = 6.0
+	MakeMeTheLast()
+	SetObjectShadowState(0)
+	MyVar = GetGlobalParamFloat(0)
+	frame = GetGlobalParamFloat(1)
+	health = GetGlobalParamFloat(2)
+
+	TRIGSET>KillOff	WHENHIT
+	TRIGSET>KillOff	ONFLOOR
+	TRIGSET>KillOff	EVERY 500
+	innerBand = CreateBand (1, 16, 0, 1, 1, 0.4, 0.5, 0.5, 0.0, 0, 0.5)
+	outerBand = CreateBand (1, 16, 0, 1, 1, 0, 0, 0.4, 0, 0, 0)
+	AddBandSegment (innerBand, 0, 0, 0, 0.1)
+	AddBandSegment (outerBand, 0, 0, 0, 0.5)
+	
+	TRIGSET>BandTrigger EVERY 1 
+
+
+  //	TRIGSET>Spawner EVERY 1
+  
+  	MyFlag = MyFlag  | STRATCOLL | ENEMY | NOTEXPLODE | BULLETTYPE | LOWCOLL | FLOORCOLL
+    MyFlag2 = MyFlag2 | BULLET_CF
+	RegisterCollision()
+
+	//LINK TO GET THE ORIENTATION FROM THE GUN
+   //	LinkToParentObject(MyVar, 0, 0, 0, 0, 0, 0) 
+
+	//DERIVE VECTOR OFFSETS FOR FORWARD MOTION
+	//BY GETTING A POINT 1.0 METRE AHEAD OF ME
+
+	PointPlayer()
+	MoveY(4.0)
+	absspeedy = absspeedy + PlayerActVelY
+	STAT>SetPos		   
+ENDSTATE
+
+LOCALFLOAT offSx
+LOCALFLOAT StartX
+
+LOCALFLOAT deltx
+LOCALFLOAT delty
+LOCALFLOAT deltz
+
+
+STATE SetPos
+	//MOVEMENT, BUT HOW TO MAKE IT ACCURATE, IE: REACH REDDOG'S Y EXACTLY ?
+	//x = x + 35.0 * deltx
+	//y = y + 35.0 * delty
+	//z = z + 35.0 * deltz
+	//y = y + PlayerActVelY * 0.6
+
+
+ENDSTATE
+
+
+STATE Idle
+	IF (scaley < 3.0)
+		scaley = scaley + 0.1
+	ENDIF
+
+ENDSTATE
+
+STATE Move
+	IF (scaley < 3.0)
+		scaley = scaley + 0.1
+	ENDIF
+ 	y = y + PlayerActVelY
+ENDSTATE
+
+STATE KillOff
+	DeleteBand (innerBand)
+	DeleteBand (outerBand)
+	Delete()
+ENDSTATE
+
+STATE BandTrigger
+	AddBandSegment (innerBand, 0, 0, 0, 0.1)
+	AddBandSegment (outerBand, 0, 0, 0, 0.5)
+	TRIGFIN
+ENDSTATE
+
+
+
+TRIGGER Spawner
+	//NOW CREATE THE TRAIL LASER
+	SetGlobalParamInt(0,2)
+	CREATE SPAWN_LaserParent 0,0,0, 0,0,0, 0
+	ClearGlobalParams()
+
+
+	TRIGFIN
+ENDTRIGGER
+
+
+
+
+//MUZZLE FLASH LASER PARENT
+STATE SetToParent
+	
+	//WHILE PARENT IS STILL ALIVE, KEEP ME ALIVE
+	IF (MyParentFlag)
+		LinkToParentObject (MyVar, health,0,0, 0,frame,0)
+		 TRIGFIN
+	ELSE
+		Delete()
+	ENDIF
+
+ENDSTATE
+
+
+LOCALFLOAT ang
+
+STATE Run
+
+	TRIGSET>SpawnShard EVERY 3
+	RelRotateY(TWOPI/360.0)
+   	WHILE (MyAnimFlag & RUNNING)
+		LinkToParentObject (MyVar, health,0,0, 0,frame,0)
+		RelRotateY(damage)
+		damage = damage + (TWOPI/360.0 * 2.0)
+   	ENDWHILE
+
+	TRIGKILL>SpawnShard EVERY 3
+   	WHILE (scalex > 0.25)
+   		scalex = scalex - 0.05
+   		scaley = scalez = scalex
+   	ENDWHILE
+ 
+	GlobalVar2 = 100.0
+	Delete()
+ENDSTATE
+
+TRIGGER SpawnShard
+	//NOW CREATE THE TRAIL LASER
+	SetGlobalParamInt(0,3)
+	CREATE SPAWN_LaserParent 0,0,0, 0,0,0, 0
+	ClearGlobalParams()
+
+
+	TRIGFIN
+ENDTRIGGER

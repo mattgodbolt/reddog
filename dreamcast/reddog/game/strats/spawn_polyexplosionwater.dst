@@ -1,0 +1,66 @@
+LOCALINT	time
+LOCALINT	fadeStart
+LOCALFLOAT	dist
+LOCALFLOAT	tempf
+LOCALFLOAT	rnd
+
+STATE Init
+	MyFlag = MyFlag | FRIENDLY
+	MyVar = ParentVar
+	trans = 1.0
+	time = 0
+
+	IF (GetGlobalParamFloat(0))
+		scalex = scaley = scalez = GetGlobalParamFloat(0)
+	ENDIF
+
+
+	IF (MyVar < 1.0)
+		OBJECT> Explosions\PolyExplosion_ExplosionWater
+		MODELANIM>EXPLOSIONS\POLYEXPLOSION_EXPLOSIONWATER.RDO>EXPLODE>0
+		fadeStart = 30
+	ELSE
+		OBJECT> Explosions\PolyExplosion_AirBurst
+		MODELANIM>EXPLOSIONS\POLYEXPLOSION_AIRBURST.RDO>EXPLODE>0
+		fadeStart = 15
+	ENDIF
+
+	
+	UnitiseMatrix()
+	STAT>Start
+ENDSTATE  
+
+
+
+STATE Start
+	dist = PlayerDistXY()
+	rnd = dist
+	rnd = 10.0 / rnd
+	dist = FSQRT(dist)
+	LOOP (74)
+		time = time + 1
+		IF (time > fadeStart)
+			MyFlag2 = MyFlag2 | TRANSLUCENT
+			IF (trans >= 0.1)
+				trans = trans - 0.1
+			ELSE
+				trans = 0.0
+			ENDIF
+		ENDIF
+		IF ((time / dist) > 4.0)
+			IF ((time / dist) < 7.0)
+				tempf = (1 - (((time / dist) - 4) / 3)) * 0.75
+				Vibrate (2, 1, tempf, 0)
+				tempf = RandRange(-rnd, rnd)
+				CamX = CamX + tempf
+				tempf = RandRange(-rnd, rnd)
+				CamY = CamY + tempf
+				tempf = RandRange(-rnd, rnd)
+				CamZ = CamZ + tempf
+			ENDIF
+		ENDIF
+		MyFlag = MyFlag 
+	ENDLOOP
+	Delete()
+ENDSTATE
+

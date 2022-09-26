@@ -1,0 +1,233 @@
+; Strip renderer for both textured and non-textured
+
+				.CPU			SH4
+				.OUTPUT			DBG=DWARF
+				.SECTION		PRASTERISERS, CODE, ALIGN=16
+				.INCLUDE		"..\RedDog.pre"
+
+; Prototype: PKMDWORD ROUTINE (ModelContext *c, int numStrip, int material, PKMDWORD pkmCurrentPtr, 
+;							   float lX, float lY, float lZ);
+
+; FP Register allocation:
+				DEC_XYZW	l, 4, 5, 6, 7		; Lighting position
+				DEC_XYZW	v, 8, 9, 10, 11		; Vertex position
+				DEC_XYZW	n, 12, 13, 14, 15	; Normal position
+rW:				.FREG		FR0					; 1/w in FR0 for reasons of FMACcing
+intensity:		.FREG		FR1					; intensity offset
+midX:			.FREG		FR2					; midpoint in X
+midY:			.FREG		FR3					; midpoint in Y
+mid:			.FREG		DR2					; both midpoints
+tempF:			.FREG		FR7					; lighting register is free for temporary use
+
+; Integer register allocation:
+temp:			.REG		R0					; temporary register
+pcw:			.REG		R1					; paramcontrolword
+vertTab:		.REG		R2					; &vertex table
+normTab:		.REG		R3					; &normal table
+context:		.REG		R4
+numStrip:		.REG		R5
+material:		.REG		R6
+pkm:			.REG		R7
+strip:			.REG		R8					; strip information
+uvArray:		.REG		R9					; pointer to UV table
+temp2:			.REG		R10					; another temporary variable
+
+				.MACRO		pad
+				;NOP
+				.ENDM
+
+				.ALIGN		16
+				.EXPORT		ROUTINE
+ROUTINE
+				PUSH		R10	
+				MOVA		EndFPStack, R0		; store FP regs in our own aligned stack
+
+				PUSH		R9
+				FSCHG							; store FP at double power
+
+				PUSH		R8					; push r8
+				MOV			#h'E, pcw			; start building up the PCW
+
+				FMOV.D		DR14, @-R0			; push fr14 and fr 15
+				pad
+
+				FMOV.D		DR12, @-R0			; push fr12 and fr 13
+				pad
+
+				MOV.L		@context+, strip	; read the strip pointer
+				SHLL16		pcw					; pcw <<= 16
+
+				MOV.L		@context+, uvArray	; read the uv array
+				SHLL8		pcw					; pcw <<= 8
+
+				MOV.L		@context+, normTab	; the normal table is next
+				SHLL2		pcw					; pcw <<= 2 (totall << 26)
+
+				MOV.L		@context+, vertTab	; read the vertex table address
+				SHLL2		pcw					; pcw is now 0Xe0000000
+
+				FMOV.D		@context+, mid		; midpoint in X and Y
+				pad
+
+				FLDI0		nW					; normal W is zero therefore lW can be anything
+				FSCHG							; back to small loads and stores
+
+				FMOV.S		@context+, intensity; read the lighting intensity
+				pad
+
+?bigLoop		MOV.W		@strip+, temp		; read the vertex*12 into temp
+				pad
+
+				FLDI1		vW					; vW = 1 ready for the transformation
+				pad
+
+				MOV			temp, temp2			; take another copy of temp
+				ADD			vertTab, temp		; temp now points at the vertex in question
+
+				ADD			normTab, temp2		; temp2 points at the normal of this vertex
+?loop			FMOV.S		@temp+, vX			; read vertex X position in
+
+				FMOV.S		@temp+, vY			; read vertex Y position in
+				pad
+
+				FMOV.S		@temp+, vZ			; read vertex Z position in
+				pad
+
+				FMOV.S		@temp2+, nX			; read normal X
+				pad
+
+				FMOV.S		@temp2+, nY			; read normal Y
+				FTRV		XMTRX, v			; Transform the vertex - latency of 7
+				.AIF 1 EQ 2
+				FLDI0		nZ
+				FCMP/GT		nZ, vZ
+				BT			?bong
+				TRAPA		#0
+?bong
+				.AENDI
+
+;1
+				FMOV.S		@temp2+, nZ			; read normal Z
+				MOV			#1, temp			; temp is now 1, EX group, luvvit
+;2
+				FMOV.S		@uvArray+, tempF	; read U into a temporary register
+				CMP/EQ		temp, numStrip		; Are we on the last vertex?  Cunning this
+;3
+				MOV.L		@uvArray+, temp2	; read V into another temporary register
+				BF/S		?notLastVertex		; branch if not the last vertex, stall covered here
+;4
+				FLDI1		rW					; [slot] get ready for reciprocation
+;5ish...
+				SHAR		pcw					; If we're on the last vertex pcw = 0xf0000000
+;5 most of the time:
+?notLastVertex	PREF		@uvArray			; get that prefetch madness going for next time round
+				ADD			#24, pkm			; move pkm to point at the end of the UV values
+;6
+				MOV.L		temp2, @-pkm		; store V
+				pad
+;7 hooray!
+				FDIV		vW, rW				; rW = 1/w in 12...yes 12! cycle's time
+				FMOV.S		tempF, @-pkm		; store U value
+;1
+!LIT			FIPR		n, l				; result ends up in lW (which is tempF too) (ready in 4 cycles)
+!UNL			FLDI1		lW					; simpler for unlit
+				ADD			#3*4, pkm			; move pkm to point at specular intensity
+;2 [1]
+				FMOV.S		midX, @pkm			; store midX as the specular intensity...it's more than 1 after all
+				pad
+;3 [2]
+				MOV.W		@strip+, temp		; get the next vertex ready (which is bobbins if its the last one)
+				pad
+;4 [3]
+				MOV			temp, temp2			; copy that badger across
+				ADD			vertTab, temp		; temp now points at the *next* vertex, >or< is total bobbins
+;5 [4]
+				PREF		@temp				; prefetch that madness in
+				ADD			normTab, temp2		; temp2 points at the normal, which is nice
+;6 [5] lW (the lighting value) is now ready and waiting for yas
+				FLDI0		nZ					; nZ is now ready for use, so load buggerall into it
+				pad
+;7
+				FCMP/GT		nZ, lW				; is lW > 0 ??  So many questions, so few answers!
+				PREF		@temp2				; no more nasty cache misses in this renderer, baby
+;8 [1]
+				FMOV		midX, nX			; nX is ready for the FMAC
+				pad
+;9 [2]
+				FMOV		midY, nY			; nY is read for its FMAC too
+				pad
+;10 [3]
+				FADD		intensity, lW		; (hopefully) write after read == no stall
+				pad
+;11 [4] - the result of the compare now ready
+				BT			?overOne			; it's all OK if lW > 0
+				FMOV		intensity, lW		; otherwise, it's bad and lW has to set to I
+;12 - the divide result is ready
+?overOne		FMAC		rW, vY, nY			; nY = 1/w * Y
+				pad		
+; Y[1]
+				FMOV.S		lW, @-pkm			; store in the intensity
+				FMAC		rW, vX, nX			; nX = 1/w * X
+; Y[2] X[1]
+				ADD			#-2*4, pkm			; point pkm just past the madness of rW
+				pad
+
+; Y[3] X[2]		
+				FMOV.S		rW, @-pkm			; store 1/w like a good'un
+				pad
+; X[3]
+				FMOV.S		nY, @-pkm			; store Y like its going out of fashion
+				pad
+
+				FMOV		nX, @-pkm			; as is X
+				pad
+
+				MOV.L		pcw, @-pkm			; in goes the param control word
+				DT			numStrip			; Decrementationismalistically loop counterissimo
+
+				PREF		@pkm				; SQ blast that badger
+				ADD			#32, pkm			; move on
+
+				BF/S		?loop				; lets go round again..
+				FLDI1		vW					; [slot] maybe we can turn back the hands of time (reset vW)
+
+				MOV.W		@strip+, numStrip	; read in the number of the next strip
+				MOV			#-4, temp			; get -4 to read backwards
+
+				MOV.W		@(temp, strip), temp; read the material number
+				CMPZ		numStrip			; are we at a nenned?
+
+				BT			?tisTheEndLord		; we've had it
+				CMP/EQ		temp, material		; Must be the same mat-ear-hole
+
+				BT/S		?bigLoop			; back around then
+				SHLL		pcw					; [slot] pcw be 0xe0000000 which rocks
+
+?tisTheEndLord	ADD			#-5*4, context		; rewind to point just after uvArray
+				MOVA		FPStack, R0			; get ready to pop-a-lop
+
+				FSCHG							; pop FP @ biggus sizus
+				ADD			#-4, strip			; sort out the strip amount correctly
+
+				FMOV.D		@R0+, DR12			; pop the weazel
+
+				FMOV.D		@R0+, DR14			; pop some more
+
+				MOV.L		uvArray, @-context	; restore uvArray
+				MOV			pkm, R0				; R0 is our return value
+				
+				MOV.L		strip, @-context	; restore strip
+				FSCHG							; back to small but perfectly formed stores
+
+				POP			R8
+				pad
+
+				POP			R9
+				RTS
+				POP			R10					; [slot]
+
+				.ALIGN		8
+FPStack:		.RES.L		4
+EndFPStack:	
+
+				.END

@@ -1,0 +1,2069 @@
+DEFINE WALKBACK 0
+DEFINE WALKLEFT 1
+DEFINE WALKRIGHT 2
+DEFINE WALK 3
+DEFINE RUN 4
+DEFINE DIE 5
+DEFINE STOP 6
+DEFINE GUARD 7
+DEFINE HIT 16
+DEFINE TARGETTRACKING 32
+DEFINE HASVALIDSPOT 64
+DEFINE MAINPROCESSING 128	
+DEFINE SHIELDING 256
+DEFINE SHIELDENTRY 512
+DEFINE SHIELDEXIT  1024
+DEFINE SHIELDFIRE  2048
+DEFINE SHIELDMODE  4096
+DEFINE IMHIT	   8192	
+DEFINE FIRING	   16384
+	
+//MODEL DEFINES
+
+DEFINE SHIELDARM 2
+DEFINE GUNARM 5
+DEFINE CHEST   9
+DEFINE HEAD 1
+DEFINE FEET 10
+//SPEED DEFINES
+DEFINE RUNSPEED	0.028
+
+  
+LOCALINT MODE
+LOCALINT STATUS
+LOCALINT Moving
+//LOCALINT Firing
+LOCALINT WaitingForClearance
+LOCALINT CollidingWithStrat
+LOCALINT NearReddog
+LOCALINT MainTarget
+LOCALINT	isGenerated
+LOCALINT	GeneratorTeleportTime
+LOCALFLOAT NearRange
+
+STATE TeleMeIn
+	frame = 0
+	OBJECT> SFX\FSOLDIERTELEPORTLEVEL2
+	MODELANIM>SFX\FSOLDIERTELEPORTLEVEL2.RDO>Play>0
+	AllocStratSoundBlock(1)
+	PLAYSOUND>ENEMY_TELEPORT 0 1.0  0.0 0.0 0.0  RANDOM
+	WHILE (MyAnimFlag & RUNNING)
+		frame = frame + 1
+		IF (frame = 11)
+			HideObject(1)
+		ENDIF
+	ENDWHILE
+	Delete()
+
+ENDSTATE
+
+LOCALINT TELEPORTTIME
+STATE Init
+	
+	//type teleport ?
+	IF (GetGlobalParamInt(4))
+		STAT>TeleMeIn
+	ENDIF
+
+
+	//set up the near range if not uniquely specified
+
+	IF (GetGlobalParamFloat(3))
+		NearRange = GetGlobalParamFloat(3)
+	ENDIF
+	frame = 0
+	STATUS = 0
+	fireshieldtimer = 0
+	WaitingForClearance = 0
+	CollidingWithStrat = 0
+	NearReddog = 0
+	Moving = 1
+	isGenerated = 0
+	IF (GetGlobalParamFloat(0) = 1)
+		isGenerated = 1
+		GeneratorTeleportTime = 0
+		trans = 0.0
+		TRIGSET>GeneratorTeleport EVERY 1
+	ENDIF
+	MyVar = RandRange(0.0,4.0)
+	direction = TOINT(MyVar) 
+	directionX = direction
+
+	RotationRestriction(0.0, 0.0, 1.0)
+	oldhealth = health = 30.0
+   	MyFlag = MyFlag | IMPACT | STRATCOLL |  ENEMY | LOWCOLL | HOVERMOVE | GRAVITYON | FLOORCOLL | TARGETABLE
+	
+	MyFlag2 = MyFlag2 | TRANSLUCENT	| COLLMOVE
+	OBJECT> ENEMIES\footsoldierlevel2
+   
+   	//EL DODGO HACK FOR SOFT COLLISION
+	mass = 4001.0
+
+  	InActivateObjectCollision(0)
+  	InActivateObjectCollision(HEAD)
+  //	InActivateObjectCollision(FEET)
+	MODELANIM>ENEMIES\footsoldierlevel2.RDO>footSoldierRun>REPEAT
+	TRIGSET>SpecularMadness EVERY 1
+	MODE = WALK
+	InsideCheck = 1
+	OutsideMap = 0
+   
+	MyFlag = MyFlag | NODISP
+    InheritMyParent()
+
+	//DO I NOW HAVE A PATH..IF SO RUN FROM IT..IF MY PARENT LET'S ME
+	IF ((MyPath) AND (MyVar != CHILDIGNOREPATH))
+		InitPath() 
+	ENDIF
+
+	//WAIT FOR FEET TO HIT FLOOR
+
+   //	WHILE (!(MyFlag & HITFLOOR))
+	WHILE (!(IAmOnFloor))
+	   	TowardPlayer(0.1,0.0)
+	ENDWHILE
+
+	ActivateObjectCollision(0)
+  	InActivateObjectCollision(FEET)
+	//NOW KILLABLE
+	RegisterCollision()
+	AllocStratSoundBlock(3)
+	RegisterDanger(50.0)
+	//TEST TO SEE IF WE'VE BEEN 'DROPPED' IN
+	IF ((MyPath) AND (MyVar = CHILDIGNOREPATH))
+		 IF (PAL)
+			TELEPORTTIME = 25
+		 ELSE
+			TELEPORTTIME = 25
+		 ENDIF
+
+		 SetGlobalParamInt(4,1)
+		 CREATE SPAWN_FOOTSOLDIERLEVEL2 0,0,0,0,0,0,0
+		 ClearGlobalParams()
+
+		 LOOP (TELEPORTTIME)
+			MyFlag = MyFlag
+		 ENDLOOP
+
+
+	ENDIF
+
+
+
+ 	MyFlag = MyFlag & LNOT(NODISP)
+
+   	TRIGSET>FadeIn EVERY 1
+//	TRIGSET>CheckHealth EVERY 1
+
+//  teleport block taken out
+
+//	IF (MyParentParent)
+//		TRIGSET>Telport EVERY 15
+//		trans = 0.0
+	
+//		MyVar = 0.0
+//		LOOP (100)
+//	  		MyFlag = MyFlag
+//		ENDLOOP
+
+//		TRIGKILL>Telport EVERY 15
+
+//		LOOP (50)
+//			MyFlag = MyFlag
+//		ENDLOOP
+//	ENDIF
+
+  //	SetFriction(1.0,0.1,0.0)
+	SetFriction(0.4,0.1,0.0)
+
+
+	SetObjectShadowState(1)
+
+
+	IF (PAL)
+	WALK1SOUND = 5
+	WALK2SOUND = 20
+	BWALK1SOUND	= 7
+	BWALK2SOUND	= 22
+	RUN1SOUND =	6
+	RUN2SOUND =	18
+	LEFT1SOUND = 14
+	LEFT2SOUND = 24
+	RIGHT1SOUND	= 12
+	RIGHT2SOUND	= 20
+	DIESOUND = 12
+
+	ELSE
+	WALK1SOUND = 6
+	WALK2SOUND = 24
+	BWALK1SOUND	= 9
+	BWALK2SOUND	= 27
+	RUN1SOUND =	8
+	RUN2SOUND =	23
+	LEFT1SOUND = 17
+	LEFT2SOUND = 29
+	RIGHT1SOUND	= 15
+	RIGHT2SOUND	= 24
+	DIESOUND = 15
+	ENDIF
+
+  	TRIGSET>HitCheck EVERY 1 
+  	TRIGSET>SoundTrigger EVERY 1 
+ 
+	//DO I NOW HAVE A PATH..IF SO RUN FROM IT..IF MY PARENT LET'S ME
+	IF ((MyPath) AND (MyVar != CHILDIGNOREPATH))
+		STAT>StartPath
+	ENDIF
+
+	TRIGSET>StartMove EVERY 1
+
+	STAT>Walk
+ENDSTATE
+
+LOCALFLOAT SPECAMOUNT
+
+TRIGGER SpecularMadness
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+	IF ((MyFlag & HITSTRAT) AND (CollWithFlag & BULLETTYPE))
+		SPECAMOUNT = 1.0
+		PLAYSOUND>ENEMY_HIT2 2 1.0 0.0 0.0 0.0 RANDOM
+	ENDIF
+	IF (SPECAMOUNT > 0)
+  		MyFlag2 = MyFlag2 | SPECULAR
+		SetSpecularColour(0, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		SPECAMOUNT = SPECAMOUNT - 0.1
+	ELSE
+		SPECAMOUNT = 0
+ 		MyFlag2 = MyFlag2 & LNOT(SPECULAR)
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+TRIGGER GeneratorTeleport
+	IF (SpecialStrat)
+		DrawShock(x, y, z, SpecialStratX, SpecialStratY, SpecialStratZ, 1, 1, 1)
+	ENDIF
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+	trans = (GeneratorTeleportTime / 90.0)
+	GeneratorTeleportTime = GeneratorTeleportTime + 1
+	IF (GeneratorTeleportTime > 90)
+		trans = 1.0
+		MyFlag2 = MyFlag2 & LNOT(TRANSLUCENT)
+		TRIGSTOP
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+
+STATE Telport
+	IF (MyVar)
+	 	CREATE SPAWN_FXTELEPORT 0.0, 0.0, 3.0, TWOPI/4.0, 0.0, 0.0, 0
+		MyVar = 0.0
+	ELSE
+		CREATE SPAWN_FXTELEPORT 0.0, 0.0, 2.0, TWOPI/4.0, 0.0, 0.0, 0
+		MyVar = 1.0
+	ENDIF
+	TRIGFIN
+ENDSTATE
+
+STATE StartPath
+	IF (NearCheckPosXY(3.0))
+		IF (LastWay())
+			LeaveFixedPath()
+		   	TRIGSET>StartMove EVERY 1 
+
+   
+		 	IF (AnyFreeTargets())
+				ParentSemaphore = STOPSTRAT
+		 		STATUS = STATUS | TARGETTRACKING
+				MainTarget = SaveTarget()
+				TRIGSET>ReCheckTargets EVERY 3
+		 	  	STAT>TargetTrack
+		   	ELSE
+				MainTarget = GetPlayerStrat(0)
+   			 	STAT>Walk
+		 	ENDIF
+		ENDIF
+		GetNextWay()
+	ENDIF
+//	MoveTowardCheckPosXY(0.4)
+
+	MoveY(RUNSPEED)
+	RelTurnTowardCheckPosXY(0.05)	
+ENDSTATE
+
+LOCALINT ReCheckTarget
+
+TRIGGER ReCheckTargets
+	ReCheckTarget = SaveTarget()
+	RestoreTarget(MainTarget)
+ 	IF (!TargetStillValid())
+		IF (!AnyFreeTargets())
+			MainTarget = GetPlayerStrat(0)
+			OutsideMap = 0
+		  	STATUS = STATUS & LNOT(TARGETTRACKING)
+			ParentSemaphore = GOSTRAT
+			parentx = x
+			parenty = y
+		  	TRIGRESET
+			TRIGSTOP
+			STAT>Walk
+		ELSE
+			MainTarget = SaveTarget()
+		ENDIF
+	ENDIF
+	RestoreTarget(ReCheckTarget)
+	TRIGFIN
+ENDTRIGGER
+
+STATE TargetTrack
+	IF (STATUS & HASVALIDSPOT)
+   	WHILE (!NearCheckPosXY(0.0))
+		IF (!NearCheckPosXY(10.0) AND (SeeWayZ(TWOPI/8.0)))
+			MODE = RUN
+			IF (!(MyAnimFlag & TWEEN))
+  				MoveY(RUNSPEED)
+				TowardWay(0.10,0.10)
+			ENDIF
+		   	IF (!(MyAnimFlag & RUNNING))
+				MODELANIM>ENEMIES\FOOTSOLDIERLEVEL2.RDO>footSoldierRun>REPEAT
+		   	ENDIF
+		   //	MODELANIM>ENEMIES\footsoldierlevel2.RDO>footSoldierRun>REPEAT
+		   //	MoveY(RUNSPEED)
+		ELSE
+			MODE = WALK
+			IF (!(MyAnimFlag & TWEEN))
+  				MoveY(RUNSPEED/2.0)
+				TowardWay(0.05,0.05)
+			ENDIF
+		   	IF (!(MyAnimFlag & RUNNING))
+				MODELANIM>ENEMIES\FOOTSOLDIERLEVEL2.RDO>footSoldierWalk>REPEAT
+		   	ENDIF
+		   //	MODELANIM>ENEMIES\footsoldierlevel2.RDO>footSoldierWalk>REPEAT
+		   //	MoveY(RUNSPEED/2.0)
+		ENDIF
+	ENDWHILE
+	ENDIF
+	
+
+	MODE = STOP 
+	MODELANIM>ENEMIES\footsoldierlevel2.RDO>footSoldierStop>REPEAT
+	Moving = 0
+
+
+	WHILE (!SeeTargetZ(0.05))
+			TowardTarget(0.1,0.0)
+	ENDWHILE
+	Moving = 1
+
+ENDSTATE
+
+
+TRIGGER FadeIn
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+	trans =  trans + 0.02
+
+	IF (trans > 0.98)
+		MyFlag2 = MyFlag2 & LNOT(TRANSLUCENT) 
+		trans = 1.0
+		TRIGSTOP
+	ELSE
+		TRIGFIN
+	ENDIF
+ENDTRIGGER
+
+
+LOCALINT FireChance
+LOCALINT FIRESAVETARGET
+
+TRIGGER FireCheck
+	IF ((!(STATUS & TARGETTRACKING)) && (!(STATUS & SHIELDMODE)))
+		IF (NearPlayerXY (NearRange + 5.0))
+			IF ((MODE = STOP) OR (MODE = GUARD))
+				FireChance = RandRange (0, 50)
+			ELSE
+				FireChance = RandRange (0, 100)
+			ENDIF
+   
+   			IF ((FireChance < 30) && SeePlayerZ(TWOPI/8.0) && FireSightPlayer())
+				Moving = 0
+				STATUS =  STATUS | FIRING
+				 		   
+		   		PauseTriggers(WHENHIT,REMEMBER)
+		    
+			   	WHILE (!SeePlayerZ(0.05))
+			 		TowardPlayer(0.1,0.0)
+				ENDWHILE
+
+				MODELANIM>ENEMIES\footsoldierlevel2.RDO>footSoldierShoot>0
+			  //WE AWAIT THE TWEEN TO STOP
+				WHILE (MyAnimFlag & TWEEN)
+					MyFlag = MyFlag
+					TowardPlayer(0.1,0.0)
+				ENDWHILE
+
+		 		LOOP (16)
+					MyFlag = MyFlag
+					TowardPlayer(0.1,0.0)
+				ENDLOOP					
+
+			   //	MyVar = 1.0
+
+				//SAVE OUT TARGET INFO, PRE-FIRE
+				FIRESAVETARGET = SaveTarget()
+				   
+				//SET TARGET TO BE THE TARGET SAVED EARLIER										  
+				RestoreTarget(MainTarget)
+			  
+			  	//..AND FIRE
+				CREATE SPAWN_FOOTSOLDIERLASERPARENT 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, GUNARM
+			 
+			  
+			  	RestoreTarget(FIRESAVETARGET)
+
+			  	WHILE  (MyAnimFlag & RUNNING)
+			  		MyFlag = MyFlag
+			 	ENDWHILE
+			   
+			   	MODELANIM>ENEMIES\footsoldierlevel2.RDO>footSoldierStop>REPEAT
+			   
+			   	//IF (MODE = RUN)   
+				//	MODELANIM>ENEMIES\footsoldierlevel2.RDO>footSoldierRun>REPEAT
+				//ENDIF
+
+
+				//IF (MODE = WALK)   
+				//	MODELANIM>ENEMIES\footsoldierlevel2.rdo>footSoldierWalk>REPEAT
+				//ENDIF
+
+				Moving = 1
+				STATUS = STATUS & LNOT(FIRING)
+				FIREPAUSE = 60
+				UnPauseTriggers()
+				TRIGFIN
+			ENDIF
+		ENDIF
+   	ELSE
+		IF (NearTargetXY (100.0) AND TargetStillValid() AND FireSightTarget())
+			IF ((MODE = STOP) OR (MODE = GUARD))
+				FireChance = RandRange (0, 10)
+			ELSE
+				FireChance = RandRange (0, 10)
+			ENDIF
+			IF ((FireChance < 30) && SeeTargetZ(TWOPI/8.0))
+				Moving = 0 
+				STATUS =  STATUS | FIRING
+				 		   
+			 	PauseTriggers(WHENHIT,REMEMBER)
+
+			   	WHILE (!SeeTargetZ(0.05))
+					TowardTarget(0.1,0.0)
+				ENDWHILE
+
+				MODELANIM>ENEMIES\footsoldierlevel2.rdo>footSoldierShoot>0
+			  //WE AWAIT THE TWEEN TO STOP
+				WHILE (MyAnimFlag & TWEEN)
+					MyFlag = MyFlag
+				ENDWHILE
+		  
+		 		LOOP (16)
+					MyFlag = MyFlag
+				ENDLOOP					
+
+			   //	MyVar = 1.0
+				//SAVE OUT TARGET INFO, PRE-FIRE
+				FIRESAVETARGET = SaveTarget()
+				   
+				//SET TARGET TO BE THE TARGET SAVED EARLIER										  
+				RestoreTarget(MainTarget)
+			   
+			   	CREATE SPAWN_ENEMYMISSILEFOOTSOLDIER 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, GUNARM
+
+			  	RestoreTarget(FIRESAVETARGET)
+
+			  	WHILE  (MyAnimFlag & RUNNING)
+			  		MyFlag = MyFlag
+			 	ENDWHILE
+			   
+				MODELANIM>ENEMIES\footsoldierlevel2.rdo>footSoldierStop>REPEAT
+				//IF (MODE = RUN)   
+				//	MODELANIM>ENEMIES\footsoldierlevel2.rdo>footSoldierRun>REPEAT
+				//ENDIF
+
+
+				//IF (MODE = WALK)   
+				//	MODELANIM>ENEMIES\footsoldierlevel2.rdo>footSoldierWalk>REPEAT
+				//ENDIF
+
+				Moving = 1
+				STATUS = STATUS & LNOT(FIRING)
+				FIREPAUSE = 60
+
+				UnPauseTriggers()
+				TRIGFIN
+			ENDIF
+		ENDIF
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+//A DEBOUNCE TO STOP THE STOP--WALK--STOP MADNESS WAREZ
+LOCALINT FIREPAUSE
+
+//TRIGGER DeactivateCheck
+//	IF (PlayerState != PS_SCRIPTHELD)
+//		IF (!NearPlayer(330.0) AND (MODE != DIE))
+//			TRIGFIN
+//			TRIGRESET
+//			STAT>WaitActive
+//		ENDIF
+//	ENDIF
+//	TRIGFIN
+//ENDTRIGGER
+
+//STATE WaitActive
+//	KillMyVelocity()
+//	OutsideMap = 0
+//	InsideCheck = 1
+//  	PauseTriggers(WHENHIT,REMEMBER)
+
+//	MyFlag = MyFlag & LNOT(STRATCOLL)
+//	MyFlag = MyFlag | NODISP
+
+//	WHILE (!NearPlayer(325.0))
+//		MyFlag = MyFlag
+//	ENDWHILE
+
+//	MyFlag = MyFlag & LNOT(NODISP)
+//	MyFlag = MyFlag | STRATCOLL   
+	
+//  	UnPauseTriggers()
+
+//	MODE = WALK
+//	STAT>Walk
+//ENDSTATE
+
+LOCALFLOAT seeval
+TRIGGER MoveHead
+    //ensure that this trigger can never be paused	
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+	seeval = TWOPI/360.0 * 60.0
+  	IF ((MODE != DIE) AND (!(STATUS & IMHIT)) AND SeePlayerZ(seeval))
+  		ObjectTowardPlayerXZ(CHEST,0.1,(TWOPI/360.0) * 3.0,(TWOPI/360.0) * 22.5, TWOPI)
+  		CrntRotToIdleRotX(CHEST, 0.05)
+  		CrntRotToIdleRotZ(CHEST, 0.05)
+  	ELSE
+		ReturnToStartTransform(CHEST)
+ 	  	CrntRotToIdleRotX(CHEST, 0.025)
+ 		CrntRotToIdleRotZ(CHEST, 0.025)
+  	ENDIF
+
+	TRIGFIN
+ENDTRIGGER
+
+TRIGGER GravControl
+    //ensure that this trigger can never be paused	
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+	IF (Moving)
+		MyFlag = MyFlag | (GRAVITYON + FLOORCOLL)
+	 ELSE
+		IF (MyFlag & HITFLOOR)
+		   	KillMyVelocity()
+			MyFlag = MyFlag & LNOT(GRAVITYON + FLOORCOLL)
+		ENDIF
+   	ENDIF
+
+	MyFlag2 = MyFlag2 & LNOT(STOPPED)
+
+	IF (STATUS & FIRING)
+		MyFlag2 = MyFlag2 | STOPPED
+	ENDIF
+
+	IF (WaitingForClearance)
+		MyFlag2 = MyFlag2 | STOPPED
+	ENDIF
+
+	IF (CollidingWithStrat)
+		MyFlag2 = MyFlag2 | STOPPED
+	ENDIF
+
+	IF (NearReddog)
+		MyFlag2 = MyFlag2 | STOPPED
+	ENDIF
+	IF (STATUS & SHIELDMODE)
+		MyFlag2 = MyFlag2 | STOPPED
+	ENDIF
+	IF (STATUS & IMHIT)
+		MyFlag2 = MyFlag2 | STOPPED
+	ENDIF
+
+	TRIGFIN
+ENDTRIGGER
+
+STATE StartMove
+		//CREATE THE SHIELD
+		MyVar = 0.05
+   		CREATE SPAWN_SOLDIERSHIELD 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, SHIELDARM
+		
+		STATUS = STATUS | MAINPROCESSING
+		TRIGSET>ShieldCheck EVERY 1
+		TRIGSET>GravControl EVERY 1
+	   	TRIGSET>MoveHead  EVERY 1
+	   	TRIGSET>FireCheck EVERY 40 
+  	   	TRIGSET>InsideCheck EVERY 1
+ //	   	TRIGSET>DeactivateCheck EVERY 5
+	   	TRIGSET>NearDog EVERY 1
+	  	TRIGSET>CollStrat EVERY 1
+	   	TRIGSET>WaitForClearance EVERY 1
+	   	IF (STATUS & TARGETTRACKING)
+	   		TRIGSET>GetCamp EVERY 2
+	   	ENDIF
+	TRIGSTOP
+ENDSTATE
+
+
+LOCALINT timer
+LOCALFLOAT newsavex
+LOCALFLOAT newsavey
+LOCALINT directionX
+LOCALINT Cleared
+LOCALINT fireshieldtimer
+LOCALINT Seen
+
+TRIGGER ShieldFire
+	//RESET THE MONITOR ON PLAYER FIRING
+	IF (GetPadPush(0) & PADFIRE)
+		fireshieldtimer = 0
+	ENDIF
+
+
+	IF (fireshieldtimer > 30)
+		FireChance = RandRange (0, 100)
+		fireshieldtimer = 0
+ 	ELSE
+		FireChance = 100.0
+		fireshieldtimer = fireshieldtimer + 1
+	ENDIF
+
+
+	//FUNCTION OF DISTANCE TO PLAYER CLOSER MORE FIRING 
+	IF ((FireChance < 45.0))
+		frame = 1.0
+		STATUS = STATUS & LNOT(SHIELDING)
+
+		STATUS = STATUS | SHIELDFIRE
+
+	   	Seen = SeePlayerZ(0.05) 
+	   	WHILE (!Seen)
+	 		Seen = SeePlayerZ(0.05)
+	 	ENDWHILE
+
+	   	MODELANIM>ENEMIES\footsoldierlevel2.rdo>FootFireMain>0
+	    //WE AWAIT THE TWEEN TO STOP
+	   	WHILE (MyAnimFlag & TWEEN)
+	   		MyFlag = MyFlag
+			TowardPlayer(0.1,0.0)
+	   	ENDWHILE
+
+
+	   	LOOP (16)
+			TowardPlayer(0.1,0.0)
+	   		MyFlag = MyFlag
+	   	ENDLOOP					
+
+	   	CREATE SPAWN_FOOTSOLDIERLASERPARENT 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, GUNARM
+
+
+	   	WHILE  (MyAnimFlag & RUNNING)
+	   		MyFlag = MyFlag
+			TowardPlayer(0.1,0.0)
+	   	ENDWHILE
+	  
+	   	MODELANIM>ENEMIES\FOOTSOLDIERLEVEL2.RDO>footSoldierShieldMain>REPEAT
+			   
+	ENDIF
+	frame = 0
+
+	STATUS = STATUS | SHIELDING
+	STATUS = STATUS & LNOT(SHIELDFIRE)
+
+	TRIGFIN
+
+
+ENDTRIGGER
+
+
+TRIGGER ShieldCheck
+	IF (IAmAimStrat())
+		Moving = 0
+		STATUS = STATUS | SHIELDENTRY | SHIELDMODE
+	  	PauseTriggers(WHENHIT,REMEMBER)
+
+	   //	KillMyVelocity()
+	   //	MyFlag = MyFlag & LNOT ( FLOORCOLL | GRAVITYON)
+   
+   		//GO INTO SHIELD MODE
+	   
+	    MyVar = 0.1
+		WHILE (MyVar < 1.0)
+			MyVar = MyVar + 0.1
+		ENDWHILE
+
+
+
+	   	MODELANIM>ENEMIES\FOOTSOLDIERLEVEL2.RDO>footSoldierShieldEnter>0
+		
+		WHILE (MyAnimFlag & RUNNING)
+			MyFlag = MyFlag
+		ENDWHILE	 
+
+		STATUS = STATUS & LNOT(SHIELDENTRY)
+		TRIGSET>ShieldFire EVERY 1
+
+	  
+	   	MODELANIM>ENEMIES\FOOTSOLDIERLEVEL2.RDO>footSoldierShieldMain>REPEAT
+	  
+		timer = 0
+  		STATUS = STATUS | SHIELDING
+	  	WHILE ((STATUS & SHIELDFIRE) || IAmAimStrat() || (timer < 30) || VisibleFromPlayer(TWOPI/16.0))
+			timer = timer + 1
+		   	TowardPlayer(0.1,0.0)
+		   
+		ENDWHILE
+		STATUS = STATUS & LNOT(SHIELDING)
+		STATUS = STATUS | SHIELDEXIT
+	   
+		TRIGKILL>ShieldFire EVERY 1
+	  
+	  
+	   	MODELANIM>ENEMIES\FOOTSOLDIERLEVEL2.RDO>footSoldierShieldExit>0
+	   	frame = 1.0
+	   	WHILE (MyAnimFlag & RUNNING)
+			MyFlag = MyFlag
+		ENDWHILE	 
+
+		WHILE (MyVar >= 0.1)
+			MyVar = MyVar - 0.1
+		ENDWHILE
+		MyVar = 0.05
+		
+		STATUS = STATUS & LNOT(SHIELDEXIT)
+		STATUS = STATUS & LNOT(SHIELDMODE)
+		UnPauseTriggers()
+		Moving = 1
+	  //	MyFlag = MyFlag | FLOORCOLL | GRAVITYON
+	ENDIF
+
+
+
+	TRIGFIN
+
+ENDTRIGGER
+
+
+
+LOCALINT NEAREXIT
+
+TRIGGER WaitForClearance
+   	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+
+	IF ((MyFlag2 & STRATCOLLIDED) AND (!(STATUS & FIRING)) AND (MODE != DIE))
+
+		//ENSURE WE ARE NOT SHIELDING
+		OLDSTATUS = STATUS
+	  	STATUS = STATUS & LNOT(SHIELDMODE | SHIELDING | SHIELDENTRY | SHIELDEXIT)
+		MyVar = 0.05
+
+		WaitingForClearance = 1
+		newsavex = CheckX
+		newsavey = CheckY
+
+		PauseTriggers(WHENHIT,REMEMBER)
+	  
+	 	MODELANIM>ENEMIES\footsoldierlevel2.rdo>footSoldierStop>REPEAT
+
+		Moving = 0
+		WHILE (!GetFreeCollisionSpace(RUNSPEED/2.0,directionX))
+ 			MODELANIM>ENEMIES\footsoldierlevel2.rdo>footSoldierStop>REPEAT
+ 			TowardPlayer(0.1,0.0)
+ 			directionX = directionX + 1
+ 			IF (directionX = 4)
+ 				directionX = 0
+ 			ENDIF
+		ENDWHILE
+		MyFlag2 = MyFlag2 & LNOT(STRATCOLLIDED)
+				
+		Cleared = 0		 
+		Moving = 1		 
+		timer  = 0
+
+		WHILE (!Cleared)
+
+		   	HitWall(UPDATE)
+ 			AvoidSurround(FORCE_POS_AND_WAYPOS_AWAY)
+    		//IS THE SPACE BEHIND ME ?
+			IF (!SeeWayZ(TWOPI/16.0))
+				IF (!SeeWayZ(TWOPI/4.0))
+				MoveTowardXY(CheckX,CheckY,RUNSPEED/2.0)
+					MODE = WALKBACK
+		   	   	 	MODELANIM>ENEMIES\footsoldierlevel2.rdo>footSoldierWalkBack>REPEAT
+				ELSE
+					IF (!directionX)
+					MoveX(RUNSPEED)
+					MODE = WALKRIGHT
+		   	   	 	MODELANIM>ENEMIES\footsoldierlevel2.rdo>footSoldierStepRight>REPEAT
+
+					ELSE
+					MoveX(-RUNSPEED )
+					MODE = WALKLEFT
+		   	   	 	MODELANIM>ENEMIES\footsoldierlevel2.rdo>footSoldierStepLeft>REPEAT
+
+					ENDIF
+			   
+			    ENDIF
+			   	TowardPlayer(0.1,0.0)
+			ELSE
+				
+		 
+		 
+				MODE = WALK
+		 		MODELANIM>ENEMIES\footsoldierlevel2.rdo>footSoldierWalk>REPEAT
+
+ 				TowardWay(0.05,0.05)
+ 				MoveY(RUNSPEED/2.0)
+			ENDIF
+
+		   //	NEAREXIT = NearCheckPosXY(0.0) OR NearPlayerXY(NearRange / 3.0)
+
+		   //	IF ( (MyFlag2 & STRATCOLLIDED) OR NEAREXIT)
+		   	IF ( (MyFlag2 & STRATCOLLIDED) OR (NearCheckPosXY(0.0)))
+				Cleared = 1
+			ELSE
+
+				IF (CollideStratNew(3))
+					Cleared = 1
+				ELSE
+					IF (timer > 50)
+						Cleared = 1
+					ENDIF
+				ENDIF
+			ENDIF
+			timer = timer + 1
+		ENDWHILE
+
+		STATUS = OLDSTATUS
+		//GET BACK INTO SHIELD MODE IF NEEDED
+		IF ((STATUS & SHIELDMODE) AND (!(STATUS & SHIELDEXIT)))
+		 MyVar = 0.1
+			WHILE (MyVar < 1.0)
+				MyVar = MyVar + 0.1
+			ENDWHILE
+		
+
+			MODELANIM>ENEMIES\FOOTSOLDIERLEVEL2.RDO>footSoldierShieldEnter>0
+		
+			WHILE (MyAnimFlag & RUNNING)
+				MyFlag = MyFlag
+			ENDWHILE	 
+
+  
+	   		MODELANIM>ENEMIES\FOOTSOLDIERLEVEL2.RDO>footSoldierShieldMain>REPEAT
+		ELSE	   
+		IF (MODE <= WALK)
+			MODELANIM>ENEMIES\footsoldierlevel2.rdo>footSoldierWalk>REPEAT
+		ELSE
+			IF (MODE = RUN)
+				MODELANIM>ENEMIES\footsoldierlevel2.rdo>footSoldierRun>REPEAT
+			ENDIF
+		ENDIF
+		ENDIF	 
+	 
+		UnPauseTriggers()
+		Moving = 1
+		CheckX = newsavex
+		CheckY = newsavey 
+
+	ENDIF
+	WaitingForClearance = 0
+	TRIGFIN
+ENDTRIGGER
+
+LOCALINT StillTargetHit
+
+
+LOCALINT StillMovingToPoint
+LOCALINT NeedDirection
+LOCALINT OLDSTATUS
+
+
+TRIGGER CollStrat
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+	//SAVE OUT TARGET INFO
+	SAVETARGET = MainTarget   										  
+
+	IF ((!WaitingForClearance) AND ((!(MyFlag2 & STRATCOLLIDED)) AND (!(STATUS & FIRING)) AND (MODE != GUARD) AND (MODE != STOP) AND (MODE != DIE)) AND CollideStratNew(0))
+			
+		ClearBusy()
+		    	   
+		LASTX = CheckX
+		LASTY = CheckY
+			
+		//ENSURE WE ARE NOT SHIELDING
+		OLDSTATUS = STATUS
+		STATUS = STATUS & LNOT(SHIELDMODE | SHIELDING | SHIELDENTRY | SHIELDEXIT)
+		MyVar = 0.05
+
+		PauseTriggers(WHENHIT,REMEMBER)
+
+	 	Moving = 0 
+		CollidingWithStrat = 1 
+		
+		StillTargetHit = 1			  												   
+
+		WHILE (StillTargetHit)
+
+			NeedDirection = 1
+
+			WHILE (NeedDirection)
+				MODELANIM>ENEMIES\footsoldierlevel2.rdo>footSoldierStop>REPEAT
+				TowardPlayer(0.1,0.0)
+			   	direction = direction + 1
+			   	IF (direction = 4)
+			   		direction = 0
+			   	ENDIF
+				IF ( (!(MyFlag2 & STRATCOLLIDED)) AND (!GetFreeCollisionSpace(RUNSPEED/2.0,direction)))
+					NeedDirection = 1
+				ELSE
+					NeedDirection = 0
+				ENDIF
+		
+			ENDWHILE
+						 
+
+		 	Moving = 1
+
+			//NOW MOVING TO FREE SPACE
+
+			timer = 0
+
+			StillMovingToPoint = 1
+
+		 //	WHILE (!NearPlayerXY(NearRange / 3.0) AND (StillMovingToPoint))
+		  	WHILE (StillMovingToPoint)
+					timer = timer + 1
+				  	HitWall(UPDATE)
+	 				AvoidSurround(FORCE_POS_AND_WAYPOS_AWAY)
+		    		//IS THE SPACE BEHIND ME ?
+				   	IF (!SeeWayZ(TWOPI/16.0))
+						IF (direction = 3)
+   				   		MoveTowardXY(CheckX,CheckY,RUNSPEED/2.0)
+						
+				   	 	MODELANIM>ENEMIES\footsoldierlevel2.rdo>footSoldierWalkBack>REPEAT
+				   	  	ENDIF
+						IF (!direction)
+					   	MoveX(RUNSPEED )
+						MODE = WALKRIGHT
+				   	 	MODELANIM>ENEMIES\footsoldierlevel2.rdo>footSoldierStepRight>REPEAT
+				   	  	ENDIF
+						IF (direction = 1)
+					  	MoveX(-RUNSPEED)
+						
+						MODE = WALKLEFT
+				   	 	MODELANIM>ENEMIES\footsoldierlevel2.rdo>footSoldierStepLeft>REPEAT
+				   	  	ENDIF
+						
+						
+						
+						TowardPlayer(0.1,0.0)
+   				   	 //	MoveTowardXY(CheckX,CheckY,RUNSPEED/2.0)
+				   	ELSE
+						MODE = WALK
+						MODELANIM>ENEMIES\footsoldierlevel2.rdo>footSoldierWalk>REPEAT
+
+	 					TowardWay(0.05,0.05)
+	 					MoveY(RUNSPEED/2.0)
+				   	ENDIF
+
+					IF ((!(MyFlag2 & STRATCOLLIDED)) AND (timer < 150) AND (!CollideStratNew(1)))
+						StillMovingToPoint = 1
+					ELSE
+						StillMovingToPoint = 0
+					ENDIF
+		   	ENDWHILE
+			
+			IF ((!(MyFlag2 & STRATCOLLIDED)) AND (CollideStratNew(2)))		
+				StillTargetHit = 1
+			ELSE
+				StillTargetHit = 0
+			ENDIF
+		ENDWHILE
+
+		MyFlag = MyFlag
+
+		STATUS = OLDSTATUS
+		//GET BACK INTO SHIELD MODE IF NEEDED
+		IF ((STATUS & SHIELDMODE) AND (!(STATUS & SHIELDEXIT)))
+		 MyVar = 0.1
+			WHILE (MyVar < 1.0)
+				MyVar = MyVar + 0.1
+			ENDWHILE
+		
+
+			MODELANIM>ENEMIES\FOOTSOLDIERLEVEL2.RDO>footSoldierShieldEnter>0
+		
+			WHILE (MyAnimFlag & RUNNING)
+				MyFlag = MyFlag
+			ENDWHILE	 
+
+  
+	   		MODELANIM>ENEMIES\FOOTSOLDIERLEVEL2.RDO>footSoldierShieldMain>REPEAT
+			   
+		ELSE
+
+
+			IF (MODE <= WALK)
+				MODELANIM>ENEMIES\footsoldierlevel2.rdo>footSoldierWalk>REPEAT
+			ELSE
+				IF (MODE = RUN)
+					MODELANIM>ENEMIES\footsoldierlevel2.rdo>footSoldierRun>REPEAT
+				ENDIF
+			ENDIF
+		ENDIF	 
+
+	   	ClearLastStratCollision()
+	 	CheckX = LASTX
+	 	CheckY = LASTY
+
+	 	UnPauseTriggers()
+		CollidingWithStrat = 0
+	ENDIF
+ 	TRIGFIN
+	RestoreTarget(SAVETARGET)
+ENDTRIGGER
+
+
+TRIGGER GetCamp
+	IF (GetNearestCampPoint(1))
+		STATUS = STATUS | HASVALIDSPOT
+	ELSE
+		STATUS = STATUS & LNOT(HASVALIDSPOT)
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+
+LOCALFLOAT LASTX
+LOCALFLOAT LASTY
+LOCALINT SAVETARGET
+
+LOCALINT direction
+
+LOCALFLOAT xdiff
+LOCALFLOAT ydiff
+
+TRIGGER NearDog
+  	IF (NearPlayerXY(NearRange / 3.0))
+
+		//ENSURE WE HAVE GRAVITY AND SHIT
+		MyFlag = MyFlag | GRAVITYON | FLOORCOLL
+
+		NearReddog = 1
+
+		//ENSURE FIRING VAR SWITCHED OFF
+		STATUS = STATUS & LNOT(FIRING)
+//	   	Firing = 0
+
+		//ENSURE WE ARE NOT SHIELDING
+		STATUS = STATUS & LNOT(SHIELDMODE | SHIELDING | SHIELDENTRY | SHIELDEXIT)
+		//MyVar = 0.05
+		frame = 0
+
+		//TURN SHIELD ON
+
+		MyVar = 0.1
+
+		//ENSURE WE ARE FLOOR COLLIDING AS SHIELD SYSTEM TURNS IT OFF
+	  //	MyFlag = MyFlag | FLOORCOLL | GRAVITYON
+
+		PauseTriggers(WHENHIT,FORGET)
+		Savex = CheckX
+		Savey = CheckY
+		xdiff = x - DogX
+		ydiff = y - DogY
+
+		CheckX = x + xdiff * PlayerDistXY()
+		CheckY = y + ydiff * PlayerDistXY()
+
+
+		MODE = WALKBACK
+		MODELANIM>ENEMIES\footsoldierlevel2.rdo>footSoldierWalkBack>REPEAT
+
+		WHILE (!NearCheckPosXY(0.0) AND (PlayerDistXY() < NearRange / 2.5))
+			IF (MyVar < 1.0)
+				MyVar = MyVar + 0.1
+			ENDIF
+		  	Moving = 1
+		   	xdiff = x - DogX
+			ydiff = y - DogY
+
+			CheckX = x + xdiff * PlayerDistXY()
+			CheckY = y + ydiff * PlayerDistXY()
+	  
+			HitWall(UPDATE)
+			AvoidSurround(FORCE_POS_AND_WAYPOS_AWAY)
+		  
+		  	TowardPlayer(0.1,0.0)
+   			MoveTowardXY(CheckX,CheckY,RUNSPEED/2.0)
+		ENDWHILE
+	  
+		parentx = x
+		parenty = y
+		UnPauseTriggers()
+		CheckX = Savex
+		CheckY = Savey
+
+	   		  
+		//FLAGS THAT NEED TO BE CORRECTLY SET UP
+		OutsideMap = 0
+		InsideCheck = 1
+		NearReddog = 0
+
+		//TURN SHIELD OFF
+		//MyVar = 0.05
+		WHILE (MyVar >= 0.1)
+			MyVar = MyVar - 0.1
+		ENDWHILE
+		MyVar = 0.05
+
+
+		TRIGRESET
+	   	TRIGFIN
+		IF (STATUS & TARGETTRACKING)
+			STAT>TargetTrack
+	 	ELSE
+			MODE = GUARD
+			STAT>Guard
+	   	ENDIF
+
+  	ENDIF
+
+	TRIGFIN
+ENDTRIGGER
+
+LOCALINT InsideCheck
+LOCALINT Counter
+LOCALINT OutsideMap
+
+TRIGGER InsideCheck
+	IF ((InsideCheck))
+      	IF (AvoidSurround(FORCE_POS_AWAY))
+			TRIGRESET
+   		  	TRIGFIN
+			ParentSemaphore = GOSTRAT
+			STAT>Outside
+	 	ENDIF
+   		IF (HitWall(SET))
+   			TRIGRESET
+   		  	TRIGFIN
+			ParentSemaphore = GOSTRAT
+
+   		 	STAT>Collide
+   		ENDIF
+  	ENDIF
+  	TRIGFIN
+ENDTRIGGER
+
+LOCALINT endreached
+LOCALFLOAT ttoldx
+LOCALFLOAT ttoldy
+LOCALFLOAT toldx
+LOCALFLOAT toldy
+
+
+
+
+STATE Outside
+	ClearBusy()
+	KillMyVelocity()
+	OutsideMap =1  
+	InsideCheck = 0
+	Moving = 1
+
+	//TRAVERSE THE SPLINE THAT YOU HIT
+	//TRIGGERS WILL BE KEPT ON
+
+	endreached = GetNearestCollideWay(0.0)
+  	toldx = x
+  	toldy = y
+
+
+
+	IF (endreached)
+		WHILE (!NearCheckPosXY(0.0))
+  		
+				ttoldx = CheckX
+				ttoldy = CheckY
+				CheckX = toldx
+				CheckY = toldy	   	  
+
+		  //	AvoidSurround(FORCE_AWAY_FROM_LAST_COLLIDED)
+							  		   
+			IF (!NearCheckPosXY(2.0))
+			   	CheckX = ttoldx
+			  	CheckY = ttoldy	   	  
+
+			 	AvoidSurround(FORCE_AWAY_FROM_LAST_COLLIDED)
+			ENDIF
+
+		   	CheckX = ttoldx
+		   	CheckY = ttoldy	   	  
+
+			HitWall(UPDATE)
+
+			IF (NearCheckPosXY(0.0))
+				//record the old pos
+				toldx = x
+				toldy = y
+
+				endreached = GetNearestCollideWayFound(0.0)
+				
+
+			ENDIF
+	
+				IF (!NearCheckPosXY(10.0) AND (SeeWayZ(TWOPI/8.0)))
+					MODE = RUN
+					MODELANIM>ENEMIES\FOOTSOLDIERLEVEL2.RDO>footSoldierRun>REPEAT
+					MoveY(RUNSPEED)
+					TowardWay(0.10,0.10)
+				ELSE
+					MODE = WALK
+					MODELANIM>ENEMIES\FOOTSOLDIERLEVEL2.RDO>footSoldierWalk>REPEAT
+					MoveY(RUNSPEED/2.0)
+					TowardWay(0.05,0.05)
+				ENDIF
+		ENDWHILE
+	ELSE
+	 // 	WHILE ((!endreached)  AND (!LineSightPlayer()))
+	  	WHILE (!endreached)
+				ttoldx = CheckX
+				ttoldy = CheckY
+				CheckX = toldx
+				CheckY = toldy	   	  
+
+
+			IF (!NearCheckPosXY(2.0))
+			 	CheckX = ttoldx
+			 	CheckY = ttoldy	   	  
+
+			 	AvoidSurround(FORCE_AWAY_FROM_LAST_COLLIDED)
+			ENDIF
+
+		   	CheckX = ttoldx
+		   	CheckY = ttoldy	   	  
+
+
+			IF (NearCheckPosXY(0.0))
+				//record the old pos
+				toldx = x
+				toldy = y
+				endreached = GetNearestCollideWayFound(0.0)
+		   	ENDIF
+		   
+		   	HitWall(UPDATE)
+		
+			IF (!NearCheckPosXY(10.0) AND (SeeWayZ(TWOPI/8.0)))
+				MODE = RUN
+				MODELANIM>ENEMIES\FOOTSOLDIERLEVEL2.RDO>footSoldierRun>REPEAT
+	   			MoveY(RUNSPEED)
+				TowardWay(0.10,0.10)
+			ELSE
+				MODE = WALK
+				MODELANIM>ENEMIES\FOOTSOLDIERLEVEL2.RDO>footSoldierWalk>REPEAT
+				MoveY(RUNSPEED/2.0)
+				TowardWay(0.05,0.05)
+			ENDIF
+
+		ENDWHILE
+	ENDIF
+
+
+   //x = CheckX
+   //y = CheckY
+	//ENSURE WE ARE BACK INSIDE THE MAP
+	AvoidSurround(FORCE_POS_AWAY)
+
+	InsideCheck = 1
+
+   	OutsideMap = 0
+  
+
+	//IF WE HAVE A TARGET GO BACK TO TRACKING IT
+	IF (STATUS & TARGETTRACKING)
+		STAT>TargetTrack
+   	ENDIF
+
+   parentx = x
+   parenty = y
+  
+  	//IF THE PLAYER IS OUTSIDE ALL VALID AREAS THEN STOP AND GUARD THIS POINT
+	IF ((PlayerAvoidSurround()))
+		MODE = GUARD
+		STAT>PlayerOutsideGuard
+	ELSE
+
+		IF (NearPlayerXY(NearRange * 0.5) AND FireSightPlayer())
+			MODE = GUARD
+			STAT>Guard
+		ELSE
+			endreached = GetNearestCollideWayFound(0.0)
+			IF ((endreached) AND (NearPlayerXY(NearRange * 0.5)))
+				MODE = GUARD
+				STAT>Guard
+	 		ELSE
+  				MODE = WALK
+				STAT>Walk
+			ENDIF
+	   	ENDIF
+   ENDIF
+ENDSTATE
+
+
+STATE Outside2
+	ClearBusy()
+	KillMyVelocity()
+	OutsideMap =1  
+	InsideCheck = 0
+	Moving = 1
+
+	//TRAVERSE THE SPLINE THAT YOU HIT
+	//TRIGGERS WILL BE KEPT ON
+
+	endreached = GetNearestCollideWay(0.0)
+
+	IF (endreached)
+		WHILE (!NearCheckPosXY(0.0))
+
+		  	AvoidSurround(FORCE_AWAY_FROM_LAST_COLLIDED)
+							  		   
+			HitWall(UPDATE)
+
+			IF (NearCheckPosXY(0.0))
+				endreached = GetNearestCollideWayFound(0.0)
+			ENDIF
+	
+				IF (!NearCheckPosXY(10.0) AND (SeeWayZ(TWOPI/8.0)))
+					MODE = RUN
+					MODELANIM>ENEMIES\footsoldierlevel2.rdo>footSoldierRun>REPEAT
+					MoveY(RUNSPEED)
+					TowardWay(0.10,0.10)
+				ELSE
+					MODE = WALK
+					MODELANIM>ENEMIES\footsoldierlevel2.rdo>footSoldierWalk>REPEAT
+					MoveY(RUNSPEED/2.0)
+					TowardWay(0.05,0.05)
+				ENDIF
+		ENDWHILE
+	ELSE
+		WHILE ((!endreached)  AND (!LineSightPlayer()))
+		  	AvoidSurround(FORCE_AWAY_FROM_LAST_COLLIDED)
+
+			IF (NearCheckPosXY(0.0))
+				endreached = GetNearestCollideWayFound(0.0)
+			ENDIF
+			HitWall(UPDATE)
+		
+			IF (!NearCheckPosXY(10.0) AND (SeeWayZ(TWOPI/8.0)))
+				MODE = RUN
+				MODELANIM>ENEMIES\footsoldierlevel2.rdo>footSoldierRun>REPEAT
+				MoveY(RUNSPEED)
+				TowardWay(0.10,0.10)
+			ELSE
+				MODE = WALK
+				MODELANIM>ENEMIES\footsoldierlevel2.rdo>footSoldierWalk>REPEAT
+				MoveY(RUNSPEED/2.0)
+				TowardWay(0.05,0.05)
+			ENDIF
+
+		ENDWHILE
+	ENDIF
+
+	//ENSURE WE ARE BACK INSIDE THE MAP
+	AvoidSurround(FORCE_POS_AWAY)
+
+	InsideCheck = 1
+
+   	OutsideMap = 0
+  
+	//IF WE HAVE A TARGET GO BACK TO TRACKING IT
+	IF (STATUS & TARGETTRACKING)
+		STAT>TargetTrack
+   	ENDIF
+
+    parentx = x
+	parenty = y
+  
+  	//IF THE PLAYER IS OUTSIDE ALL VALID AREAS THEN STOP AND GUARD THIS POINT
+	IF ((PlayerAvoidSurround()))
+		MODE = GUARD
+		STAT>PlayerOutsideGuard
+	ELSE
+
+		IF (NearPlayerXY(NearRange * 0.5) AND FireSightPlayer())
+			MODE = GUARD
+			STAT>Guard
+		ELSE
+			endreached = GetNearestCollideWayFound(0.0)
+			IF ((endreached) AND (NearPlayerXY(NearRange  * 0.5)))
+				MODE = GUARD
+				STAT>Guard
+	 		ELSE
+  				MODE = WALK
+				STAT>Walk
+			ENDIF
+	   	ENDIF
+   ENDIF
+ENDSTATE
+
+/*** INTERRUPT CODE THAT RUNS EVERY TIME STRAT HITS A WALL ***/
+
+TRIGGER Collide
+	ParentSemaphore = STOPSTRAT
+	ClearBusy()
+	MODE = WALK
+	MODELANIM>ENEMIES\footsoldierlevel2.rdo>footSoldierWalk>REPEAT
+ 	
+	OutsideMap = 1
+   
+	Counter = 0
+	KillMyVelocity()
+	InsideCheck = 0
+	Moving = 1
+
+	//TURN TO DEFLECTION POINT
+
+	WHILE (!(SeeWayZ(0.05)))
+		RelTurnTowardCheckPosXY(0.05)	
+	ENDWHILE
+   
+   	//WALK TO THE DEFLECTION POINT FOR A FEW FRAMES
+
+  	WHILE (!NearCheckPosXY(1.0) AND (Counter < 60))
+		MoveY(RUNSPEED/2.0)
+		RelTurnTowardCheckPosXY(0.05)	
+		Counter = Counter + 1
+	ENDWHILE
+
+   //	parentx = x
+   //	parenty = y
+	InsideCheck = 1
+
+	ParentSemaphore = GOSTRAT
+	
+	OutsideMap =0
+	//IF WE HAVE A TARGET GO BACK TO TRACKING IT
+	IF (STATUS & TARGETTRACKING)
+		STAT>TargetTrack
+   	ELSE
+	 	MODE = WALK
+		STAT>Walk
+	ENDIF
+ENDTRIGGER
+
+LOCALFLOAT dist
+LOCALFLOAT NEWDIST
+
+LOCALFLOAT Savex
+LOCALFLOAT Savey
+
+STATE PlayerOutsideGuard
+	OutsideMap = 1	 
+	InsideCheck = 0
+	KillMyVelocity()
+
+	//PLAYER IS OUTSIDE THE VALID AREA
+	//SEE IF HE'S COMPLETELY OUTSIDE THE OUTER BBOX
+	//IF SO, AND WE'RE NOT AT OUR NEAREST CAMPING POINT, THEN GO TO IT
+	//ELSE, JUST WAIT AND FIRE UNTIL HE COMES BACK IN
+
+	IF (PlayerOutSide() AND (GetNearestCampPoint(0)))
+		Savex = CheckX
+		Savey = CheckY
+   
+		WHILE (!NearPosXY(0.0,Savex,Savey))
+		 	AvoidSurround(FORCE_POS_AND_WAYPOS_AWAY)
+
+		 	HitWall(UPDATE)
+		   
+		   	CheckX = Savex
+		   	CheckY = Savey
+
+			//CAN I SEE THE PLAYER
+		  	IF (FireSightPlayer() AND NearPlayerXY(NearRange * 0.25))
+	  			MODE = WALK
+	  			MODELANIM>ENEMIES\footsoldierlevel2.rdo>footSoldierWalk>REPEAT
+
+		  		TowardPlayer(0.1,0.0)
+   				MoveTowardXY(CheckX,CheckY,RUNSPEED/2.0)
+
+		  	ELSE
+  		  	  	IF (!NearCheckPosXY(10.0) AND (SeeWayZ(TWOPI/8.0)))
+			  		MODE = RUN
+			  		MODELANIM>ENEMIES\footsoldierlevel2.rdo>footSoldierRun>REPEAT
+  			  		IF (SeeWayZ(TWOPI/8.0))
+			  			MoveY(RUNSPEED)
+			  		ENDIF
+			  	   	TowardWay(0.10,0.10)
+	  			ELSE
+	  				MODE = WALK
+	  				MODELANIM>ENEMIES\footsoldierlevel2.rdo>footSoldierWalk>REPEAT
+  					IF (SeeWayZ(TWOPI/8.0))
+	  					MoveY(RUNSPEED/2.0)
+					ENDIF
+					TowardWay(0.05,0.05)
+	  			ENDIF
+			ENDIF
+
+		ENDWHILE
+
+	ENDIF
+
+	Moving = 0
+
+	//NEED TO WAIT UNTIL THE CONDITIONS BELOW ARE MET OR THE NEAREST CAMP POINT CHANGES
+
+	ParentSemaphore = STOPSTRAT
+	//parentx = x
+   //	parenty = y
+	MODE = STOP
+
+	WHILE (PlayerAvoidSurround())
+		IF (!SeePlayerZ(0.2))
+			TowardPlayer(0.1,0.0)
+			MODELANIM>ENEMIES\footsoldierlevel2.rdo>footSoldierWalk>REPEAT
+		ELSE
+			MODELANIM>ENEMIES\footsoldierlevel2.rdo>footSoldierStop>REPEAT
+		ENDIF
+	ENDWHILE
+
+	Moving = 1
+	ParentSemaphore = GOSTRAT
+	
+	ClearBusy()
+	InsideCheck = 1
+	OutsideMap = 0	 
+
+	/*CHECK TO SEE IF WE MUST DO OTHER PROCESSING*/
+
+	MODE = WALK
+	STAT>Walk 
+ENDSTATE
+
+STATE Guard
+	OutsideMap = 1	 
+	InsideCheck = 0
+
+  	WHILE (!SeePlayerZ(0.2))
+  		TowardPlayer(0.1,0.0)
+  		MODELANIM>ENEMIES\footsoldierlevel2.rdo>footSoldierWalk>REPEAT
+   	ENDWHILE
+
+	Moving = 0
+
+	//ParentVar = STOPSTRAT	
+	MODE = GUARD
+	MODE = STOP
+	
+   	dist = PlayerDistXY() + 5.0
+	NEWDIST = PlayerDistXY()
+	CheckX = parentx
+	CheckY = parenty
+
+	WHILE ((NEWDIST <= (dist)) AND LineSightPlayer() AND (NEWDIST > 10.0) AND (SeeWayZ(TWOPI/4.0)))
+		CheckX = parentx
+   		CheckY = parenty
+
+		NEWDIST = PlayerDistXY()
+		IF (!SeePlayerZ(0.2))
+			TowardPlayer(0.1,0.0)
+			MODELANIM>ENEMIES\footsoldierlevel2.rdo>footSoldierWalk>REPEAT
+		ELSE
+			MODELANIM>ENEMIES\footsoldierlevel2.rdo>footSoldierStop>REPEAT
+		ENDIF
+	ENDWHILE
+	Moving = 1
+
+	InsideCheck = 1
+	OutsideMap = 0	 
+
+	ClearBusy()
+	MODE = WALK
+	STAT>Walk 
+
+ENDSTATE
+
+//STATE PlayerOutside
+//	IF (!ReturningToStart)
+//		IF (PlayerOutSide())
+//			TRIGRESET
+//			TRIGFIN
+//			STAT>ReturnToStart
+//		ENDIF
+//	ENDIF
+//	TRIGFIN
+//ENDSTATE
+
+STATE Walk
+	ParentSemaphore = GOSTRAT
+	InsideCheck =1
+	
+  //	IF ( !NearParentXY(25.0) OR NearPlayerXY (NearRange + 5.0))
+  	IF (!NearParentXY(25.0) OR FIREPAUSE)
+		IF (NearPlayerXY (NearRange + 5.0))
+			MODE = STOP
+					MODELANIM>ENEMIES\footsoldierlevel2.rdo>footSoldierStop>REPEAT
+		ELSE
+	   
+	   	antime = 30
+		MODELANIM>ENEMIES\footsoldierlevel2.rdo>footSoldierRun>REPEAT
+  		MODE = RUN
+		ENDIF
+  	ELSE
+	  	IF ((!NearParentXY(5.0)))
+			antime = 30
+		   	MODELANIM>ENEMIES\footsoldierlevel2.rdo>footSoldierWalk>REPEAT
+			MODE = WALK	
+		ELSE
+			Moving = 0
+			IF (!SeePlayerZ(0.2))
+				TowardPlayer(0.1,0.0)
+				MODELANIM>ENEMIES\footsoldierlevel2.rdo>footSoldierWalk>REPEAT
+				antime = 30 
+		   	ELSE
+			 	IF (!antime)
+					MODELANIM>ENEMIES\footsoldierlevel2.rdo>footSoldierStop>REPEAT
+					antime = 30
+			  	ENDIF
+		   	ENDIF
+
+		   	antime = antime - 1
+			InsideCheck = 0
+		  //	MODELANIM>ENEMIES\footsoldierlevel2.rdo>footSoldierStop>REPEAT
+			MODE = STOP
+		ENDIF
+	ENDIF
+
+	IF ((MODE != STOP) AND (MODE != GUARD) AND (!OutsideMap) AND (!(STATUS & TARGETTRACKING)))
+  		CheckX = parentx
+   		CheckY = parenty
+		Moving = 1
+
+		IF (SeeWayZ(TWOPI/4.0) AND SeePlayerZ(TWOPI/4.0))
+			IF (MODE <= WALK)
+				TowardWay(0.05,0.05)
+				MoveY(RUNSPEED/2.0)
+			ELSE
+				TowardWay(0.1,0.1)
+				MoveY(RUNSPEED)
+			ENDIF
+		ELSE
+		
+		IF (!NearCheckPosXY(10.0))
+			MoveTowardXY(CheckX,CheckY,RUNSPEED/2.0)
+		ENDIF
+
+		TowardPlayer(0.1,0.0)
+		ENDIF
+	   	MyFlag = MyFlag | FLOORCOLL | GRAVITYON
+	ENDIF
+
+	IF (FIREPAUSE)
+		FIREPAUSE = FIREPAUSE - 1
+	ENDIF
+ENDSTATE
+
+
+LOCALINT antime
+
+LOCALFLOAT oldhealth
+LOCALFLOAT deathvel
+LOCALINT BIG
+
+TRIGGER HitCheck
+    //ensure that this trigger can never be paused	
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+
+	//get shield status
+	IF ((MyFlag2 & BIGDAMAGE))
+	// OR (frame = 66.0))
+		
+		health = 0
+		MyFlag2 = MyFlag2 | BIGDAMAGE
+		BIG = 1
+	ENDIF
+
+   //	IF ((BIG) OR  (((MyFlag & HITSTRAT) || (health <= 0.0)) AND (!(STATUS & SHIELDING))))
+	IF ((MyFlag2 & PLAYERHIT) OR (BIG) OR  (((MyFlag & HITSTRAT) || (health <= 0.0)) ))
+	   	oldhealth = health
+
+		IF ((!(MyFlag2 & PLAYERHIT)) AND (health > 0.0))
+			//handle the get hit state
+			STATUS = STATUS | IMHIT
+			Moving = 0
+			PauseTriggers(-1,REMEMBER)
+			//WAS I IN ANY WAY ENTERING OR EXITING SHIELD?
+		   //	IF ((STATUS & SHIELDMODE))
+		   //		MODELANIM>ENEMIES\FOOTSOLDIERLEVEL2.RDO>footMarkGetHit>NOTWEEN 
+		   //	ELSE
+		   //		MODELANIM>ENEMIES\FOOTSOLDIERLEVEL2.RDO>footSoldierGetHit>NOTWEEN 
+		   //	ENDIF
+		   
+		   
+		   //	WHILE (MyAnimFlag & RUNNING)
+		   //		MyFlag = MyFlag
+		   //	ENDWHILE
+		
+		   //	IF (STATUS & SHIELDING)
+		   //		MODELANIM>ENEMIES\FOOTSOLDIERLEVEL2.RDO>footSoldierShieldMain>REPEAT
+		   //	ENDIF
+			health = oldhealth
+			UnPauseTriggers()
+			STATUS = STATUS & LNOT(IMHIT)
+			Moving = 1
+
+		ELSE
+			//DEAD
+
+			health = 0.0
+
+			//ELSE DIE
+			//FLAG UP FOR SHIELD
+
+		   	IF (!(MyFlag2 & BIGDAMAGE))
+		   		frame = 99.0
+		   	ENDIF
+			MyFlag = MyFlag | FLOORCOLL | GRAVITYON
+			SetFriction(1.0,0.4,1.0)
+			PauseTriggers(-1,FORGET)
+			MyFlag = MyFlag & LNOT(STRATCOLL)
+			IF (STATUS & MAINPROCESSING)
+				TRIGKILL>CollStrat EVERY 1
+				TRIGKILL>WaitForClearance EVERY 1
+				TRIGKILL>GravControl EVERY 1
+			ENDIF
+			MyFlag2 = MyFlag2 & LNOT(STOPPED)
+			IF (MyFlag2 & PLAYERHIT)
+				PLAYSOUND>ENEMY_HIT3 1 1.0 0.0 0.0 0.0 RANDOM
+		   
+			   	deathvel = FABS(PlayerRelVelY) * 1.2
+				//AM I FACING THE PLAYER ?
+				IF (SeePlayerZ(TWOPI/4.0))
+		   			SetFriction(0.4,0.1,0.5)
+				 	MoveY(-deathvel)
+					MoveZ(0.5)
+				ELSE
+		  			SetFriction(0.4,0.1,0.0)
+					DieForward = 1
+					IF (deathvel < 0.5)
+						deathvel = 0.5
+		   			ENDIF
+					MoveY(deathvel * 1.5)
+					MoveZ(0.25)
+				ENDIF
+			ENDIF
+			IF (MyFlag2 & BIGDAMAGE)
+				//ENSURE CORRECT FRICTION
+		   		SetFriction(0.4,0.1,0.0)
+
+				MoveY(0.5) 
+				MoveZ(0.5)
+			ENDIF
+
+			MODE = DIE
+			TRIGRESET
+			TRIGSTOP
+			STAT>Wait
+		ENDIF 	
+	ELSE
+		health = oldhealth
+
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+LOCALINT endSound
+LOCALINT WALK1SOUND
+LOCALINT WALK2SOUND
+LOCALINT BWALK1SOUND
+LOCALINT BWALK2SOUND
+LOCALINT RUN1SOUND
+LOCALINT RUN2SOUND
+LOCALINT LEFT1SOUND
+LOCALINT LEFT2SOUND
+LOCALINT RIGHT1SOUND
+LOCALINT RIGHT2SOUND
+LOCALINT DIESOUND
+
+
+
+
+
+
+
+
+TRIGGER SoundTrigger
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+
+	IF (MODE <= DIE)
+		// Wait until the start of the animation
+		WHILE ((MyAnimFrame) OR (MyAnimFlag & TWEEN))
+			MyFlag = MyFlag
+		ENDWHILE
+	ENDIF
+
+	endSound = 0
+	
+//	IF (PAL)
+		IF (MODE = WALK)
+			WHILE ((MODE = WALK) AND (MyAnimFrame < WALK1SOUND))
+				MyFlag = MyFlag
+			ENDWHILE
+			IF (MODE = WALK)
+				PLAYSOUND>SMLSTEP18 0 0.8 0.0 0.0 0.0 RANDOM
+			ENDIF
+			WHILE ((MODE = WALK) AND (MyAnimFrame < WALK2SOUND))
+				MyFlag = MyFlag
+			ENDWHILE
+			IF (MODE = WALK)
+				PLAYSOUND>SMLSTEP7 0 0.8 0.0 0.0 0.0 RANDOM
+			ENDIF
+		ENDIF
+
+		IF (MODE = WALKBACK)
+			WHILE ((MODE = WALKBACK) AND (MyAnimFrame < BWALK1SOUND))
+				MyFlag = MyFlag
+			ENDWHILE
+			IF (MODE = WALKBACK)
+				PLAYSOUND>SMLSTEP18 0 0.8 0.0 0.0 0.0 RANDOM
+			ENDIF
+			WHILE ((MODE = WALKBACK) AND (MyAnimFrame < BWALK2SOUND))
+				MyFlag = MyFlag
+			ENDWHILE
+			IF (MODE = WALKBACK)
+				PLAYSOUND>SMLSTEP7 0 0.8 0.0 0.0 0.0 RANDOM
+			ENDIF
+		ENDIF
+
+		IF (MODE = RUN)
+			WHILE ((MODE = RUN) AND (MyAnimFrame < RUN1SOUND))
+				MyFlag = MyFlag
+			ENDWHILE
+			IF (MODE = RUN)
+				PLAYSOUND>SOLDIER_RUNL 0 0.8 0.0 0.0 0.0 RANDOM
+			ENDIF
+			WHILE ((MODE = RUN) AND (MyAnimFrame < RUN2SOUND))
+				MyFlag = MyFlag
+			ENDWHILE
+			IF (MODE = RUN)
+				PLAYSOUND>SOLDIER_RUNR 0 0.8 0.0 0.0 0.0 RANDOM
+			ENDIF
+		ENDIF
+				
+		IF (MODE = WALKLEFT)
+			WHILE ((MODE = WALKLEFT) AND (MyAnimFrame < LEFT1SOUND))
+				MyFlag = MyFlag
+			ENDWHILE
+			IF (MODE = WALKLEFT)
+				PLAYSOUND>SMLSTEP18 0 0.8 0.0 0.0 0.0 RANDOM
+			ENDIF
+			WHILE ((MODE = WALKLEFT) AND (MyAnimFrame < LEFT2SOUND))
+				MyFlag = MyFlag
+			ENDWHILE
+			IF (MODE = WALKLEFT)
+				PLAYSOUND>SMLSTEP7 0 0.8 0.0 0.0 0.0 RANDOM
+			ENDIF
+		ENDIF 
+
+		IF (MODE = WALKRIGHT)
+			WHILE ((MODE = WALKRIGHT) AND (MyAnimFrame < RIGHT1SOUND))
+				MyFlag = MyFlag
+			ENDWHILE
+			IF (MODE = WALKRIGHT)
+				PLAYSOUND>SMLSTEP7 0 0.8 0.0 0.0 0.0 RANDOM
+			ENDIF
+			WHILE ((MODE = WALKRIGHT) AND (MyAnimFrame < RIGHT2SOUND))
+				MyFlag = MyFlag
+			ENDWHILE
+			IF (MODE = WALKRIGHT)
+				PLAYSOUND>SMLSTEP18 0 0.8 0.0 0.0 0.0 RANDOM
+			ENDIF
+		ENDIF 
+
+		IF (MODE = DIE)						
+			WHILE ((MODE = DIE) AND (MyAnimFrame < DIESOUND))
+				MyFlag = MyFlag
+			ENDWHILE
+			IF (MODE = DIE)
+				PLAYSOUND>SOLDIER_FALL 0 1.0 0.0 0.0 0.0 RANDOM	
+			ENDIF
+			endSound = 1
+		ENDIF
+
+	IF (endSound)
+		TRIGSTOP
+	ELSE
+		TRIGFIN
+	ENDIF
+ENDTRIGGER
+
+LOCALINT ACTIVECOLL
+LOCALINT DieForward
+LOCALINT time
+//NUM OF FRAMES TO ALLOW ON PLAYER HIT DEATH BEFORE WE START POLLING FOR SPLAT CONDITIONS
+LOCALINT DEATHTIME
+STATE Wait
+	MODE = DIE
+  //let new ones pop out of generator
+	IF ((isGenerated = 1.0) AND (MyParentParentFlag))
+		ParentParentVar = ParentParentVar + 1.0
+	ENDIF
+
+	//ensure soldiers dont try to avoid us
+	MyFlag = MyFlag | NOSTRAT2STRAT
+
+ 	//to turn off lock-on
+	health = 0.0
+	IF ((MyFlag2 & PLAYERHIT) || (MyFlag2 & BIGDAMAGE))
+		IF (MyFlag2 & PLAYERHIT)
+			MODELANIM>ENEMIES\footsoldierlevel2.rdo>footSoldierDie>NOTWEEN
+		ELSE
+			MODELANIM>ENEMIES\footsoldierlevel2.rdo>footSoldierHitBlast>NOTWEEN
+		ENDIF
+   	ELSE
+		IF ((MyFlag2 & HIT_LEFT) AND (MyFlag2 & HIT_RIGHT))
+			MODELANIM>ENEMIES\footsoldierlevel2.rdo>footSoldierDie>NOTWEEN
+		ELSE
+			IF (MyFlag2 & HIT_LEFT)
+				MODELANIM>ENEMIES\footsoldierlevel2.rdo>footSoldierHitLeft>NOTWEEN
+			ELSE
+				IF (MyFlag2 & HIT_RIGHT)
+					MODELANIM>ENEMIES\footsoldierlevel2.rdo>footSoldierHitRight>NOTWEEN
+				ELSE
+					MODELANIM>ENEMIES\footsoldierlevel2.rdo>footSoldierDie>NOTWEEN
+			   	ENDIF
+			ENDIF
+		ENDIF
+	ENDIF
+
+ 	IF (!(MyFlag2  & BIGDAMAGE))
+		IF (MyFlag2 & PLAYERHIT)
+			MyFlag = MyFlag | REALGRAVITYON
+			InActivateObjectCollision(0)
+
+			//IF WE'RE DYING IN A FORWARD MANNER, THE ACTIVE COLLISION SPOT IS THE FEET
+			//ELSE, THE ACTIVE COLLISION IS THE HEAD
+		//	IF (DieForward)
+		//		ACTIVECOLL = FEET
+		//	ELSE
+				ACTIVECOLL = HEAD
+		//ENDIF
+			
+	   
+		 	ActivateObjectCollision(ACTIVECOLL)
+			time = 0
+			//WHILE WE'RE DYING AND NOT HITTING, CONTINUE
+		
+			IF (PAL)
+				IF (DieForward)
+					DEATHTIME = 28
+				ELSE
+					DEATHTIME = 14
+				ENDIF
+	   		ELSE
+				IF (DieForward)
+					DEATHTIME = 35
+				ELSE
+					DEATHTIME = 15
+				ENDIF
+			ENDIF
+		
+
+
+
+			WHILE ((time < DEATHTIME) AND (!ObjectHitFloor(ACTIVECOLL))) 
+				time = time + 1
+			ENDWHILE
+
+			PLAYSOUND>SOLDIER_FALL 0 1.0 0.0 0.0 0.0 RANDOM
+
+			MyAnimFlag = MyAnimFlag | PAUSED
+
+			time = 0
+			WHILE (!ObjectHitFloor(ACTIVECOLL) AND time < 200)
+ 				IF (DieForward)
+					z = z - 0.3
+					MoveY(0.2)
+				ELSE
+					z = z - 0.2
+				ENDIF
+				time = time + 1
+		 	ENDWHILE
+
+			PLAYSOUND>SOLDIER_FALL 0 1.0 0.0 0.0 0.0 RANDOM
+
+			MyAnimFlag = MyAnimFlag & LNOT(PAUSED)
+
+			WHILE (MyAnimFlag & RUNNING)
+				MyFlag = MyFlag
+			ENDWHILE
+
+			MakeFrags (1.2, 10)
+			speedz = - speedz/2.0
+			SetFriction(0.1,0.1,0.0)
+		ELSE
+			WHILE (MyAnimFlag & RUNNING)
+				MODE = DIE
+			ENDWHILE
+		ENDIF
+  	ELSE
+		SetFriction(0.0,0.0,0.0)
+		MyFlag = MyFlag | GRAVITYON | FLOORCOLL
+		//KEEP GOING FOR 5 SECONDS
+		InActivateObjectCollision(0)
+		ActivateObjectCollision(1)
+		time = 0
+		WHILE (!ObjectHitFloor(1) AND time < 200) 
+			time = time + 1
+		   //	MyFlag = MyFlag
+		ENDWHILE
+		PLAYSOUND>SOLDIER_FALL 0 1.0 0.0 0.0 0.0 RANDOM
+		MakeFrags (1.2, 10)
+		speedz = - speedz/2.0
+	  	SetFriction(0.1,0.1,0.0)
+		ActivateObjectCollision(1)
+		WHILE (!ObjectHitFloor(1) AND time < 200) 
+ 			time = time + 1
+		  // 	MyFlag = MyFlag
+		ENDWHILE
+		PLAYSOUND>SOLDIER_FALL 0 1.0 0.0 0.0 0.0 RANDOM
+  		KillMyVelocity()
+	ENDIF
+
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+	WHILE (trans > 0.02)
+		trans = trans - 0.02
+	ENDWHILE
+
+//	IF (isGenerated = 1.0)
+//		ParentParentVar = ParentParentVar + 1.0
+//	ENDIF
+
+
+   	DeleteMyParent()
+	IF (IsChallengeLevel())
+		Score = Score - 1
+	ELSE
+		Score = Score + 1000
+	ENDIF
+
+	Delete()
+ENDSTATE

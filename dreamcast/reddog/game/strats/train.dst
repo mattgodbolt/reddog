@@ -1,0 +1,199 @@
+LOCALFLOAT	PlayerPosY
+LOCALFLOAT	PlayerSpeedY
+LOCALFLOAT	tempf
+LOCALFLOAT	speed
+LOCALFLOAT	time 
+LOCALFLOAT	xtime 
+LOCALINT	pad
+LOCALINT	check
+DEFINE	TRAIN_ACC	0.005
+DEFINE	PLAYER_ACC	0.05
+DEFINE	TOPSPEED	1.5
+
+STATE Init 
+	
+	IF (PlayerState = PS_NORMAL)
+		MyFlag = MyFlag | STRATCOLL | ENEMY
+		MyFlag2 = MyFlag2 | HOLDPLAYER
+		//IAmHoldPlayerMain()
+		IAmHoldPlayer()
+		SetFriction(0.2,0.2,0.2)
+		SetSem(2, 0)
+		time = 0.0
+		health = 100.0
+		InitPath()
+		InitSplineData()
+		MoveAlongPath(0.1)
+		MoveAlongPath(0.1)
+		
+		speed = 0.0
+		FaceAlongPath(1)
+		MoveAlongPath(0.01)
+		oldoldx = oldx = x
+		oldoldy = oldy = y
+		oldoldz = oldz = z
+
+
+		SetSem(0, 1)
+		SetSem(1, 1)
+		CREATE CARRIAGE 0, 0, 0, 0, 0, 0, 0 
+		SetSem(0, 2)
+		SetSem(1, 2)
+		CREATE CARRIAGE 0, 0, 0, 0, 0, 0, 0 
+		SetSem(0, 3)
+		CREATE CARRIAGE 0, 0, 0, 0, 0, 0, 0 
+		SetSem(0, 4)
+		CREATE CARRIAGE 0, 0, 0, 0, 0, 0, 0 
+		SetSem(0, 5)
+		CREATE CARRIAGE 0, 0, 0, 0, 0, 0, 0 
+		SetSem(0, 7)
+		SetSem(1, 3)
+		CREATE CARRIAGE 0, 0, 0, 0, 0, 0, 0 
+		SetSem(0, 8)
+		CREATE CARRIAGE 0, 0, 0, 0, 0, 0, 0 
+		SetSem(0, 9)
+		CREATE CARRIAGE 0, 0, 0, 0, 0, 0, 0 
+		SetSem(0, 10)
+		CREATE CARRIAGE 0, 0, 0, 0, 0, 0, 0 
+		SetSem(0, 11)
+		CREATE CARRIAGE 0, 0, 0, 0, 0, 0, 0 
+		SetSem(0, 0)
+		SetSem(1, 0)
+		InitHDC()
+		CalculateStratPolyData(1)
+		WHILE (!(MyFlag2 & PLAYERHIT))
+			MyFlag = MyFlag
+		ENDWHILE
+		
+			
+		PlayerPosY = 0.0
+		PlayerSpeedY = 0.0
+		PlayerHeld = 1
+		PlayerState = PS_ONTRAIN
+		PlayerFlag = PlayerFlag & LNOT(FLOORCOLL)
+		xtime = 0.0
+		
+		SetSem(2, 1)
+
+		LOOP(1)
+			HoldPlayerPos(0, 0.0, PlayerPosY, 2.9)
+			HoldPlayerRot(0, 0.0, 0.0, 0.0)
+		ENDLOOP
+		TRIGSET>Always EVERY 1
+		TRIGSET>Test EVERY 1
+		STAT> MoveTrain
+	ENDIF
+ENDSTATE
+ 
+TRIGGER Always
+	MoveAlongPath(speed)
+	FaceAlongPath(1)
+	xtime = xtime + speed
+	tempf = speed * Ssin(xtime * 0.1) * 0.02
+	RelRotateY(tempf)
+	TRIGFIN
+ENDTRIGGER
+
+STATE MoveTrain
+	time = time + 1.0
+	pad = GetPadPress(0)
+	//HoldPlayerPos(0, 0.0, PlayerPosY, 2.9)
+	//HoldPlayerRot(0, 0.0, 0.0, 0.0)
+	
+	IF (speed < TOPSPEED)
+		speed = speed + TRAIN_ACC
+	ELSE
+		speed = TOPSPEED 
+	ENDIF
+	
+  	//MoveAlongPath(speed)
+   	//FaceAlongPath(1)
+	//CalculateStratPolyData(0)
+	HoldPlayer()
+
+	IF (PlayerNearActivationXY(0))
+		SetSem(3, 1)
+		LOOP (1)
+			MyFlag = MyFlag
+		ENDLOOP
+		STAT>StopTrain
+	ENDIF
+ENDSTATE
+
+STATE StopTrain
+	time = time + 1.0
+	pad = GetPadPress(0)
+	HoldPlayerPos(0, 0.0, PlayerPosY, 2.9)
+	HoldPlayerRot(0, 0.0, 0.0, 0.0)
+	
+	IF (speed > 0.0)
+		speed = speed - TRAIN_ACC
+	ELSE
+		speed = 0.0
+		PlayerFlag = PlayerFlag | FLOORCOLL
+		PlayerState = PS_NORMAL
+		PlayerHeld = 0
+		SetPlayerOCP()
+		STAT>Finish
+	ENDIF
+	
+  	//MoveAlongPath(speed)
+   	//FaceAlongPath(1)
+	CalculateStratPolyData(0)
+	HoldPlayer()
+ENDSTATE
+
+STATE Finish
+ENDSTATE
+
+STATE Test
+	IF (PlayerState = PS_ONTRAIN)
+		HoldPlayerPos(0, 0.0, PlayerPosY, 2.8)
+		HoldPlayerRot(0, 0.0, 0.0, 0.0)
+	ELSE
+		PlayerFlag = PlayerFlag | FLOORCOLL
+		PlayerHeld = 0
+	ENDIF
+	tempf = -PlayerSpeedY / 0.75
+	check = 0
+	IF (PlayerPosY < 4.5)
+		IF (pad & PADFORWARD)
+			IF (PlayerSpeedY < TOPSPEED)
+				PlayerSpeedY = PlayerSpeedY + PLAYER_ACC
+			ENDIF			
+		ENDIF 
+	ELSE
+		check = 1
+	ENDIF
+
+	IF (PlayerPosY > -4.4)
+		IF (pad & PADBACKWARD)
+			IF (PlayerSpeedY > -TOPSPEED)
+				PlayerSpeedY = PlayerSpeedY - PLAYER_ACC
+			ENDIF
+		ENDIF
+	ELSE
+		check = -1
+	ENDIF
+
+	IF  (((pad & PADBACKWARD) && (check = -1)) || ((pad & PADFORWARD) && (check = 1)) || (!((pad & PADFORWARD) || (pad & PADBACKWARD))))
+		IF (PlayerSpeedY > PLAYER_ACC)
+			PlayerSpeedY = PlayerSpeedY - PLAYER_ACC
+		ELSE
+			IF (PlayerSpeedY < -PLAYER_ACC)
+				PlayerSpeedY = PlayerSpeedY + PLAYER_ACC
+			ELSE
+				PlayerSpeedY = 0.0
+			ENDIF
+		ENDIF	
+	ENDIF
+
+	PlayerSpeedY = PlayerSpeedY * 0.9
+
+	//CalculateStratPolyData()
+	PlayerPosY = PlayerPosY + PlayerSpeedY
+	PlayerObjectRelRotateXYZ(1, tempf, 0, 0)
+	PlayerObjectRelRotateXYZ(2, tempf, 0, 0)
+	PlayerObjectRelRotateXYZ(3, tempf, 0, 0)
+	PlayerObjectRelRotateXYZ(4, tempf, 0, 0)
+ENDSTATE   

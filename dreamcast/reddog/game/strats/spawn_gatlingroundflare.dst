@@ -1,0 +1,43 @@
+LOCALFLOAT a
+LOCALFLOAT b
+LOCALFLOAT c
+LOCALFLOAT tempf
+
+STATE Init
+	IF (GetGlobalParamInt(0) = 1)
+		STAT>GroundFlare
+	ELSE
+		STAT>GunFlare
+	ENDIF
+ENDSTATE
+
+STATE GroundFlare
+	MyFlag = MyFlag | ENEMY
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+
+	a = GetGlobalParamFloat(0)
+	b = GetGlobalParamFloat(1)
+	c = GetGlobalParamFloat(2)
+	OBJECT>Weapon\GatlinGroundFlare
+	SetStratMatrixVector(a, b, c)
+	trans = 1.0
+	scalez = RandRange(0.5, 2.0)
+	LOOP(10)
+		trans = trans - 0.1
+	ENDLOOP
+	Delete()
+ENDSTATE
+
+STATE GunFlare
+	MyFlag = MyFlag | ENEMY
+	OBJECT>Weapon\GatlinGroundFlare
+	tempf = RandRange(-PI, PI)
+	RelRotateZ(tempf)
+	scalez = RandRange(0.5, 2.0)
+
+	LOOP (1)
+		MyFlag = MyFlag
+	ENDLOOP
+	Delete()
+ENDSTATE
+	

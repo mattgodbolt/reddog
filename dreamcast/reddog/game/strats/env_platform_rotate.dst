@@ -1,0 +1,14 @@
+PARAMFLOAT	rotS
+
+STATE Init
+	MyFlag = MyFlag | ENEMY | STRATCOLL 
+	IAmHoldPlayer()
+	InitHDC()
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	CalculateStratPolyData(0)
+	HoldPlayer()
+	RelRotateZ(rotS)
+ENDSTATE

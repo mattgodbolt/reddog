@@ -1,0 +1,39 @@
+PARAMINT WaitTime 0
+LOCALINT DoorTime 
+LOCALFLOAT Tempf
+
+STATE Init
+	MyFlag = MyFlag | ENEMY | STRATCOLL | LOWCOLL
+	RegisterCollision()
+	InitHDC()
+	DoorTime = 0
+	SetSem (0,0)
+	CalculateStratPolyData(1)
+	STAT> WaitForClose
+ENDSTATE
+
+STATE WaitForClose
+
+	IF (GetParentSem(0) = 1)
+		STAT>CloseDoor
+	ENDIF
+
+ENDSTATE
+
+STATE CloseDoor
+	WHILE (WaitTime > DoorTime)
+		DoorTime = DoorTime + 1
+	ENDWHILE
+	DoorTime = 0
+	WHILE (DoorTime < 60)
+		MoveZ (-0.01)
+		CalculateStratPolyData(0)
+		DoorTime = DoorTime + 1
+	ENDWHILE
+	KillMyVelocity()
+	DoorTime = 0
+	STAT>Finish
+ENDSTATE
+
+STATE Finish
+ENDSTATE

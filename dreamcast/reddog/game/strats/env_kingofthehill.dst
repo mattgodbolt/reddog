@@ -1,0 +1,12 @@
+// Deletes itself if not KOTH
+// You need to give it an RDO though
+
+STATE Init
+	IF (!KingOfTheHillGame())
+		Delete()
+	ELSE
+		WHILE (1)
+			MyFlag = MyFlag
+		ENDWHILE
+	ENDIF
+ENDSTATE

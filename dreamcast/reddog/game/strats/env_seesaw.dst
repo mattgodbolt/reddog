@@ -1,0 +1,25 @@
+PARAMFLOAT	range	0.5
+PARAMFLOAT	time	1.0
+
+LOCALFLOAT	tempf
+LOCALFLOAT	ca
+LOCALFLOAT	da
+
+STATE Init
+	IF (range = 0.0)
+		range = 0.5
+	ENDIF
+	range = range / 3.14159
+	IF (time = 0.0)
+		time = 1.0
+	ENDIF
+	ca = 1.570795
+	da = 6.28318 / (time * 30.0)
+	STAT> Start
+ENDSTATE
+
+STATE Start
+	tempf = Ssin(ca)
+	ca = ca + da
+	RelRotateY(tempf * range)
+ENDSTATE

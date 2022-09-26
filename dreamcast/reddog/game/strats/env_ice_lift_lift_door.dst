@@ -1,0 +1,56 @@
+LOCALINT	i
+LOCALFLOAT	tempf
+LOCALFLOAT	tempf2
+
+STATE Init
+	MyFlag = MyFlag | ENEMY | STRATCOLL
+	IF (MyParent)
+		WHILE (MyParentInvalid())
+			MyFlag = MyFlag
+		ENDWHILE
+	ENDIF
+	RegisterCollision()
+	InitHDC()
+	CalculateStratPolyData(1)
+	AllocStratSoundBlock(1)
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	WHILE (GetParentSem(0) = 0)
+		MyFlag = MyFlag
+	ENDWHILE
+	SetParentSem(0, 0)
+	i = 0
+	PLAYSOUND>LIFT_DOOR_OPEN 0 1.0 0.0 0.0 0.0 0
+	WHILE (i < 30)
+		tempf = SmoothFromTo(4.0, i, 30)
+		i = i + 1
+		tempf2 = GetObjectCrntPos(1, MODEX)
+		SetObjectCrntPos(1, tempf2 - tempf, MODEX)
+		tempf2 = GetObjectCrntPos(2, MODEX)
+		SetObjectCrntPos(2, tempf2 + tempf, MODEX)
+		CalculateStratPolyData(1)
+	ENDWHILE
+
+	WHILE (GetParentSem(0) != 2)
+		MyFlag = MyFlag
+	ENDWHILE 
+
+	i = 0
+	PLAYSOUND>LIFT_DOOR_CLOSE 0 1.0 0.0 0.0 0.0 0
+	WHILE (i < 30)
+		tempf = SmoothFromTo(4.0, i, 30)
+		i = i + 1
+		tempf2 = GetObjectCrntPos(1, MODEX)
+		SetObjectCrntPos(1, tempf2 + tempf, MODEX)
+		tempf2 = GetObjectCrntPos(2, MODEX)
+		SetObjectCrntPos(2, tempf2 - tempf, MODEX)
+		CalculateStratPolyData(1)
+	ENDWHILE
+
+	LOOP (20)
+		MyFlag = MyFlag
+	ENDLOOP
+ENDSTATE
+

@@ -1,0 +1,42 @@
+LOCALINT ID
+LOCALINT temp
+
+STATE Init
+	MyFlag = MyFlag | ENEMY
+
+	ID = MyPNODEIDS + 1
+
+	temp = 0
+	IMMLOOP (ID)
+		IF (temp)
+			InActivateObjectCollision(temp)
+			HideObject(temp)
+		ENDIF
+		temp = temp + 1
+	IMMENDLOOP
+
+	STAT>Start
+ENDSTATE
+
+STATE Explode
+	MakeFrags (0.1, 24)
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+	TRIGSTOP
+	DESTROYME SPAWN_EXPLODINGBITS
+ENDSTATE
+
+STATE Start
+
+	IF (PlayerNearActivationXY(0))
+		ID = MyPNODEIDS + 1
+
+		temp = 0
+		IMMLOOP (ID)
+			IF (temp)
+				UnhideObject(temp)
+			ENDIF
+			temp = temp + 1
+		IMMENDLOOP
+		STAT>Explode
+	ENDIF
+ENDSTATE 

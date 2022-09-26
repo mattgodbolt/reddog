@@ -1,0 +1,75 @@
+LOCALFLOAT	vx
+LOCALFLOAT	vy
+LOCALFLOAT	vz
+DEFINE lambda 0.1
+
+DEFINE RIVERCENTRE 333.0
+
+STATE Init
+  	MyFlag = MyFlag | FRIENDLY | NODISP
+	OBJECT> ENEMIES\HOVERBOT
+
+	//scalex = scaley = scalez = 10.0
+ 	IAmWaterSlideCamLook
+	InheritMyParent()
+	InitPath()
+	InitSplineData()
+
+	MoveAlongPath(80.0)
+
+	STAT>Start
+ENDSTATE
+
+LOCALFLOAT deltx
+
+STATE Start
+	IF (!BossStrat)
+		MoveAlongPath(ParentVar)
+	ELSE
+		MoveY(ParentVar)
+
+	ENDIF
+ 
+ 	FaceAlongPath(1)
+   	IF (!BossStrat)
+		vx = (CamLookX - x) * lambda
+		vy = (CamLookY - y) * lambda
+		vz = (CamLookZ - z) * lambda
+	   	CamLookX = CamLookX - vx 
+	   	CamLookY = CamLookY - vy
+	   	CamLookZ = CamLookZ - vz
+  	ELSE
+	 //  	CamLookX = BossX 
+	 //  	CamLookY = BossY
+	 //  	CamLookZ = BossZ
+
+
+   //	ENDIF
+
+	  	MyVar = FABS(DogX - BossX)
+
+
+  	  	IF (MyVar < 10.0)
+	   		frame = MyVar * 0.05
+	 		CamLookX = CamLookX + ((BossX - CamLookX) * frame)
+	   		CamLookY = CamLookY + ((BossY - CamLookY) * frame)
+	   	ELSE
+	 		MyVar = FABS(DogX - CamLookX)
+	  		frame = (1.0 / MyVar) * 0.003
+	 		MyVar = FABS(DogY - BossY)
+	 	 	CamLookX = CamLookX + ((DogX + (-20.0 * JoyX) - CamLookX) * frame)
+	  	  	CamLookY = CamLookY + (((DogY - MyVar) - CamLookY) * frame)
+   	  	ENDIF
+
+		CamLookX = DogX
+		CamLookY = DogY - 50.0
+
+   //	 x = BossX
+  // 	 y = BossY
+  // 	 z = BossZ
+   	ENDIF
+	IF (PlayerState = PS_NORMAL)
+		Delete()
+	ENDIF
+ENDSTATE
+

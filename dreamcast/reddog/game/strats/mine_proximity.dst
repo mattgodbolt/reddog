@@ -1,0 +1,102 @@
+
+LOCALFLOAT RandomCreation
+LOCALINT MineHeight
+LOCALINT Countdown
+LOCALINT charged
+
+define FIVESECS 15
+
+define CHARGERANGE 4
+
+STATE Init
+	MineHeight = 0
+	RandomCreation = 0
+	RotationRestriction(0.1, 0.1, 0.1)
+	charged = 0
+	MyFlag = MyFlag | LOWCOLL | STRATCOLL | ENEMY | HOVERMOVE  | FLOORCOLL | NOTEXPLODE | TARGETABLE | NODISP
+	
+	IF (!PNode)
+		OBJECT> ENEMIES\A00STATICMINE
+		MyFlag = MyFlag | AGGRESSIVE
+	ENDIF
+	RegisterCollision()
+	AllocStratSoundBlock(1)
+	RegisterDanger(30.0)
+	TRIGSET>SpecularMadness EVERY 1
+	SetFriction(1.0, 1.0, 0.0)
+	health = 20.0
+//	TRIGSET>Kill WHENDEAD 
+	IF (MyPath)
+		InitPath()
+	ENDIF
+	STAT>WaitToBeDropped
+ENDSTATE
+
+STATE WaitToBeDropped
+
+	//ONLY RUN THIS BIT IF A PARENT HAS BEEN SET FOR THE MINE
+
+	IF (MyParent)
+		//WHILE (!(MyFlag & PARENTCREATED))
+		//	MyFlag = MyFlag
+		//ENDWHILE
+		WHILE (MyParentInvalid())
+			MyFlag = MyFlag
+		ENDWHILE
+
+		IF (NearParentXY(2))
+			MyFlag = MyFlag & LNOT(NODISP)
+			STAT>MineFlat
+		ENDIF
+	ELSE
+		MyFlag = MyFlag & LNOT(NODISP)
+		STAT>MineFlat
+	ENDIF
+
+ENDSTATE
+
+STATE MineFlat
+	MyFlag = MyFlag | GRAVITYON
+	LOOP (120)
+		IF (IAmOnFloor)
+			FlattenToPoly(0.1)
+		ENDIF
+	ENDLOOP
+	MyFlag = MyFlag & LNOT(GRAVITYON)
+	VelZ = 0.0
+	MyFlag = MyFlag & LNOT(FLOORCOLL)
+	STAT>WaitToExplode
+ENDSTATE
+
+STATE WaitToExplode
+
+  	IF (NearPlayer(CHARGERANGE))
+   		charged = 1
+	ENDIF
+
+	IF (charged)
+		IF ((Countdown > FIVESECS))
+			STAT>Kill
+		ELSE
+			Yaw(0.088)
+			Countdown = Countdown + 1
+		ENDIF
+		IF (NearPlayer(2))
+			STAT>Kill
+		ENDIF
+	ENDIF
+
+ENDSTATE
+
+STATE Kill
+	IF (RandRange(0, 1) = 0)
+		PLAYSOUND>EX_MINE1 0 1.0 0.0 0.0 0.0 0
+	ELSE
+		PLAYSOUND>EX_MINE2 0 1.0 0.0 0.0 0.0 0
+	ENDIF
+	CREATE SPAWN_BLASTRAD 0, 0, 0, 0, 0, 0, 0
+	Explosion(80.0, 10.0)
+   //	TRIGSTOP
+	Delete()		
+ENDSTATE
+ 

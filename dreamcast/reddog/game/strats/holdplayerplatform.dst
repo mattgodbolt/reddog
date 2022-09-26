@@ -1,0 +1,210 @@
+PARAMINT	type  0
+PARAMINT	bob		0
+PARAMINT	fade_when_stop 0
+
+//NEEDSOUND = 1 FOR PLATFORM
+//NEEDSOUND = 2 FOR DOOR ON ALIEN LEVEL OPENING
+//NEEDSOUND = 3 FOR DOOR ON ALIEN LEVEL CLOSING
+PARAMINT	NeedSound 0
+
+
+PARAMFLOAT	speed 0.0
+
+LOCALFLOAT	time
+LOCALFLOAT	cs
+LOCALFLOAT	oldCheckX
+LOCALFLOAT	oldCheckY
+LOCALFLOAT	oldCheckZ 
+
+STATE Init
+	MyFlag = MyFlag | STRATCOLL | ENEMY
+	MyFlag2 = MyFlag2 | HOLDPLAYER
+
+	IF (!(MyFlag2 & OWNIPARAMS))
+		type = 0
+		bob = 0
+		fade_when_stop = 0
+		NeedSound = 0
+	ENDIF
+	IF (!(MyFlag & OWNFPARAMS))
+		speed = 0.0
+	ENDIF
+
+	IF (NeedSound)
+		AllocStratSoundBlock(1)
+		SetAudibleRange(0,0,50)
+	ENDIF
+
+	trans = 1.0
+	cs = 0.0
+	IF (MyPath)
+	time = RandRange(0.0, 7.0)
+	RegisterCollision()
+   	MyFlag2 = MyFlag2 | COLLMOVE
+	SetFriction(0.1, 0.1, 0.1)
+	IF (bob)
+		RotationRestriction(1.0, 1.0, 1.0)
+	ELSE
+		RotationRestriction(0.0, 0.0, 0.0)
+	ENDIF
+	InitPath()
+	IAmHoldPlayer()
+	InitHDC()
+	TRIGSET>Always EVERY 1
+	STAT>Middle
+	ELSE
+		Delete()
+	ENDIF
+
+	
+ENDSTATE
+
+STATE Middle
+	MyFlag = MyFlag | TRANSLUCENT
+	absspeedx = 0.0
+	absspeedy = 0.0
+	absspeedz = 0.0
+	LOOP (30)
+		IF (trans < 0.966666)
+			trans = trans + 0.03333
+		ELSE
+			trans = 1.0
+		ENDIF
+	ENDLOOP
+	MyFlag2 = MyFlag2 & LNOT(TRANSLUCENT)
+	CalculateStratPolyData(1)
+
+	IF (HasActivation(0))
+		WHILE (!PlayerNearActivationXY(0))
+			MyFlag = MyFlag
+		ENDWHILE
+	ENDIF
+
+	IF (NeedSound)
+		IF (NeedSound = 3)
+	   		PLAYSOUND>DOOR_HUGE_ROLL 0 0.65 0.0 0.0 0.0 CONTINUOUS | NOPOSITION
+		ENDIF
+		IF (NeedSound = 2)
+	   		PLAYSOUND>ICE_BIG_DOOR_OPEN 0 1.0 0.0 0.0 0.0 NOPOSITION 
+		ENDIF
+		IF (NeedSound = 1)
+			PLAYSOUND>PLATFORM 0 0.8 0.0 0.0 0.0 CONTINUOUS | NODIRECTION
+		ENDIF
+	ENDIF
+	
+	STAT> Test
+ENDSTATE
+
+TRIGGER Always
+	IF (HasActivation(1))
+		oldCheckX = CheckX
+		oldCheckY = CheckY
+		oldCheckZ = CheckZ
+		GetActivationPos(1)
+		RelTurnTowardCheckPosXY(0.05)
+		CheckX = oldCheckX
+		CheckY = oldCheckY
+		CheckZ = oldCheckZ
+	ENDIF
+	IF (bob)
+		time = time + 0.1 
+		z = z + Ssin(time) * 0.02
+	ENDIF
+ENDTRIGGER 
+
+STATE Test
+	WHILE (CheckPosDist() > 0.5)
+		CalculateStratPolyData(0)
+		IF (PAL)
+			MoveTowardCheckPos(cs * 0.005 * 1.44)
+		ELSE
+			MoveTowardCheckPos(cs * 0.005)
+		ENDIF
+		IF (cs < speed)
+			cs = cs + 0.2
+		ENDIF
+		HoldPlayer()
+		IF (type = 3)
+			IF (!NearPlayerXY(20.0))
+				MyFlag2 = MyFlag2 | TRANSLUCENT
+				IF (trans >= 0.03333)
+					trans = trans - 0.03333
+				ELSE
+					IF (NeedSound)
+						StopSound(0,0)
+					ENDIF
+					trans = 0.0
+					ResetPath()
+					GetFirstWay()
+					x = CheckX
+					y = CheckY
+					z = CheckZ
+					ResetOCP()
+					GetNextWay()
+					STAT>Middle
+				ENDIF
+			ENDIF
+		ENDIF
+		//FlattenHoldPlayer(3.0)
+	ENDWHILE
+	IF (LastWay())
+		IF (type = 0)
+			ResetPath()
+		ENDIF
+		IF ((type = 1) OR (type = 3))
+			LOOP (60)
+				absspeedx = absspeedx * 0.95
+				absspeedy = absspeedy * 0.95
+				absspeedz = absspeedz * 0.95
+				CalculateStratPolyData(0)
+				HoldPlayer()
+			ENDLOOP
+			IF (NeedSound)
+				StopSound(0,0)
+			ENDIF
+			CalculateStratPolyData(1)
+			STAT>Wait
+		ENDIF
+		IF (type = 2)
+			IF (NearCheckPosXY(5.0))
+				SetGlobalParamInt(0, 98)
+				InitPath()	
+				SetGlobalParamInt(0, 0)
+			ENDIF
+		ENDIF
+	ELSE
+		GetNextWay()
+		MoveTowardCheckPos(cs * 0.005)
+	ENDIF
+	HoldPlayer()
+	FlattenHoldPlayer(3.0)
+	CalculateStratPolyData(0)
+ENDSTATE
+
+STATE Wait
+	IF (fade_when_stop)
+		WHILE (MyFlag2 & PLAYERHIT)
+			MyFlag = MyFlag
+		ENDWHILE
+
+		LOOP (60)
+			MyFlag = MyFlag 
+		ENDLOOP
+		MyFlag2 = MyFlag2 | TRANSLUCENT
+		trans = 1.0
+		LOOP (30)
+			trans = trans - 0.033333
+		ENDLOOP
+		ResetPath()
+		GetFirstWay()
+		x = CheckX
+		y = CheckY
+		z = CheckZ
+		ResetOCP()
+		GetNextWay()
+		cs = 0.0
+		STAT>Middle
+	ENDIF
+ENDSTATE
+
+

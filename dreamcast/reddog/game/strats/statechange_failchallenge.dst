@@ -1,0 +1,8 @@
+// Creates, sets failure flag then deletes itself
+STATE Init
+	MissionFailure = 1
+	LOOP 1
+		MyFlag = MyFlag
+	ENDLOOP
+	Delete()
+ENDSTATE

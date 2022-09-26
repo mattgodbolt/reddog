@@ -1,0 +1,1275 @@
+//PAL FRIENDLY
+/* Moves the player about a bit*/
+/* Checks for Z bounds */
+
+
+DEFINE MECH	0 
+DEFINE TANK 1
+
+DEFINE MECHMOD 1 
+DEFINE TANKMOD 5 
+ 
+DEFINE ACTIVE_BULLETS 0
+
+
+DEFINE		NONE					0
+DEFINE		BOMB					1
+DEFINE		VULCAN					2
+DEFINE		HOMING_BULLET			3
+DEFINE		ALL_ROUND_SHOCKWAVE		4
+DEFINE		ARMOUR					5
+DEFINE		ROCKET					6
+DEFINE		MINE					7
+DEFINE		HOVERON					8
+DEFINE		SWARM					9
+DEFINE		LASER					10
+DEFINE		ELECTRO					11
+DEFINE		CLOAKING				12
+DEFINE		STORMING_SHIELD			13
+DEFINE		FLAMER					14
+
+DEFINE		MISSILE_SPAWN_Y			1.5
+DEFINE		MISSILE_SPAWN_YY		1.0
+
+   
+
+LOCALINT var1
+LOCALINT var2
+LOCALINT trail
+LOCALINT af
+//LOCALINT underWater
+LOCALINT splash
+LOCALINT currentPickup
+LOCALINT objFlag
+LOCALINT LavaHurt
+LOCALINT SkidOn
+LOCALINT leftGF
+LOCALINT rightGF
+LOCALINT donef
+LOCALFLOAT fallTime
+LOCALFLOAT VOLUME
+LOCALFLOAT tempf
+LOCALFLOAT tempf2
+LOCALFLOAT tempf3
+LOCALFLOAT leftGunRS
+LOCALFLOAT rightGunRS
+
+
+LOCALINT fireTime
+LOCALINT temp
+LOCALFLOAT oldHealth
+LOCALFLOAT ftemp
+LOCALFLOAT ftemp2
+LOCALFLOAT engineAmt
+LOCALFLOAT speedAmt
+LOCALFLOAT skidAmt
+LOCALFLOAT splashAmt
+LOCALINT exhaust  
+LOCALINT	leftFire
+LOCALINT	lastFire
+LOCALINT	tempi
+LOCALINT CHEATMODE
+ 
+STATE Init 
+	fireTime = 100
+	currentPickup = NONE
+	MakeMeTheLast()
+	health = 100.0
+	bad_cheat = 0
+	HoldPlayerVX = 0.0
+	HoldPlayerVY = 0.0
+	HoldPlayerVZ = 0.0
+	HideObject(12)
+	HideObject(18)
+	HideObject(19)
+	IF (PlayerReward(0, UPGRADE_ARMOUR_1))
+		health = UPGRADE_ARMOUR_1_HEALTH
+	ENDIF
+	IF (PlayerReward(0, UPGRADE_ARMOUR_2))
+		health = UPGRADE_ARMOUR_2_HEALTH
+	ENDIF
+	leftGF = 0
+	rightGF = 0
+	af = 0
+	oldHealth = health
+  	OBJECT> REDDOG\REDDOG
+	SetPlayer()
+
+	IF (PAL)
+		FIREDELAY = PAL_FIREDELAY
+	ELSE
+		FIREDELAY = NTSC_FIREDELAY
+	ENDIF
+
+	IF (RestartSet)
+		x = RestartX
+		y = RestartY
+		z = RestartZ
+		PlayerCheckX = RestartLookX
+		PlayerCheckY = RestartLookY
+		PlayerCheckZ = RestartLookZ
+	  	PointToXY(PlayerCheckX,PlayerCheckY,PlayerCheckZ)
+   		SetPlayerOCP()
+		RestartEnvParams(1)
+		// Restore times
+		//ASK ABOUT THIS
+		TimeFunction (-4)
+
+	ENDIF
+
+	TRIGSET>SpecularMadness EVERY 1
+
+	// Don't fade me with the boss whiteouts
+	DontWhiteMeOut()
+	// No shadows - they're special cased for Red Dog
+	SetObjectShadowState(0)
+	leftFire = 0
+	MyVar = 0.0
+	trail = 0
+  	PlayerShieldEnergy = 1.0
+	MyFlag = MyFlag | (FLOORCOLL + GRAVITYON + RELVELCALC + STRATCOLL + FRIENDLY + LOWCOLL) 
+	MyFlag2 = MyFlag2 | COLLMOVE | RESPAWN | PLAYER_CF | SPECULAR
+	RegisterCollision()
+	// Start up the sound
+	// 0  == missile
+	// 1  == engine low
+	// 2  == afterburner
+	// 3  == shield
+	// 4  == engine growl
+	// 5  == pickups
+	// 6  == skid loops
+	// 7  == reddog hit
+	// 8  == reddog bumps and splashes
+	// 9  == reddog submerged loops
+	// 10 == Missile bay open and close
+	// 11 == gun1
+	// 12 == gun2
+	AllocStratSoundBlock(16)
+	PLAYSOUND>RDSTEADY2 1 1.0 0.0 0.0 0.0 CONTINUOUS
+	PLAYSOUND>RD-DEEPM  4 0.2 0.0 0.0 0.0 CONTINUOUS
+	engineAmt = 0.1
+	skidAmt   = 0.0
+	splashAmt = 0.0
+	speedAmt  = 0.0
+	fallTime  = 0.0
+	splash    = 0
+ 
+	TRIGSET>FireTest	EVERY	1
+	TRIGSET>Exhausting	EVERY	1
+	TRIGSET>Skidding	EVERY	1
+	TRIGSET>PickUpTest	EVERY	1
+	//TRIGSET>Cheat		EVERY	1
+	TRIGSET>Sound		EVERY	1
+
+	IF (PlayerReward(0, CHEAT_BOT_1))
+		SetSecondaryWeaponType(0, HOVERON)		
+		LOOP (1)
+			MyFlag = MyFlag
+		ENDLOOP
+		SetSecondaryWeaponType(0, 0)
+		LOOP (1)
+			MyFlag = MyFlag
+		ENDLOOP
+	ENDIF
+	IF (PlayerReward(0, CHEAT_BOT_2))
+		SetSecondaryWeaponType(0, HOVERON)		
+		LOOP (1)
+			MyFlag = MyFlag
+		ENDLOOP
+	ENDIF
+	
+	IF (PlayerReward(0, SPECIAL_WEAP_SWARM))
+		SetSecondaryWeaponType(0, SWARM)
+		SetSecondaryWeaponAmount(0, 9999)
+		LOOP (1)
+			MyFlag = MyFlag
+		ENDLOOP
+	ENDIF
+
+	IF (PlayerReward(0, SPECIAL_WEAP_HOMING))
+		SetSecondaryWeaponType(0, HOMING_BULLET)
+		SetSecondaryWeaponAmount(0, 9999)
+		LOOP (1)
+			MyFlag = MyFlag
+		ENDLOOP
+	ENDIF
+
+	IF (PlayerReward(0, SPECIAL_WEAP_VULCAN))
+		SetSecondaryWeaponType(0, VULCAN)
+		SetSecondaryWeaponAmount(0, 9999)
+		LOOP (1)
+			MyFlag = MyFlag
+		ENDLOOP
+	ENDIF
+
+	IF (PlayerReward(0, SPECIAL_WEAP_CHARGE))
+		SetSecondaryWeaponType(0, ELECTRO)
+		SetSecondaryWeaponAmount(0, 9999)
+		LOOP (1)
+			MyFlag = MyFlag
+		ENDLOOP
+	ENDIF
+
+	IF (PlayerReward(0, SPECIAL_WEAP_ULTRALASER))
+		SetSecondaryWeaponType(0, LASER)
+		SetSecondaryWeaponAmount(0, 9999)
+		LOOP (1)
+			MyFlag = MyFlag
+		ENDLOOP
+	ENDIF
+
+	IF (PlayerReward(0, SPECIAL_WEAP_LOCKON))
+		SetSecondaryWeaponType(0, ROCKET)
+		SetSecondaryWeaponAmount(0, 9999)
+		LOOP (1)
+			MyFlag = MyFlag
+		ENDLOOP
+	ENDIF
+
+	IF (PlayerReward(0, SPECIAL_WEAP_SHELL))
+		SetSecondaryWeaponType(0, BOMB)
+		SetSecondaryWeaponAmount(0, 9999)
+		LOOP (1)
+			MyFlag = MyFlag
+		ENDLOOP
+	ENDIF
+
+
+	HideObject(7)
+	HideObject(8)
+
+ 	CREATE SPAWN_GAMECAMERA 0, -10, 0, 0, 0, 0, TANKMOD
+	//CREATE SPAWN_REDDOGHUD 0, 0, 0, 0, 0, 0, 0
+	SetGlobalParamInt(0, 0)
+	CREATE SPAWN_RDHM		0, 0, 0, 0, 0, 0, 0
+	CREATE SPAWN_REDDOGSHIELD 0, 0, 0, 0, 0, 0, 0
+	
+	
+	RotationRestriction(1.0, 1.0, 1.0)
+//	SetExpRot(0.005)
+	ExpRot = 0.005
+	SetFriction(1.0, 0.0, 0.0)
+	NoCollObject(12)
+	NoCollObject(18)
+	NoCollObject(19)
+	HideObject(11)
+	HideObject(12)
+
+	// Set up a timer badger
+	TRIGSET>CheckTimer EVERY 1
+
+	CameraState0 = PlayerCameraState0
+	STAT>Main
+ENDSTATE  
+ 
+TRIGGER CheckTimer
+	IF (!BeingBriefed)
+	
+	IF (PlayerState & PS_NORMAL)
+		// Start timer
+		TimeFunction(0)
+		// restore gun juice 
+		TimeFunction(-4)
+		TRIGSTOP
+	ELSE
+		TRIGFIN
+	ENDIF
+	ELSE
+		TRIGFIN
+	ENDIF
+ENDTRIGGER
+
+LOCALFLOAT SPECAMOUNT
+LOCALFLOAT LAVASPECAMOUNT
+
+TRIGGER SpecularMadness
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+	IF (!PlayerOnHoldPlayer)
+		HoldPlayerVX = 0.0
+		HoldPlayerVY = 0.0
+		HoldPlayerVZ = 0.0
+	ENDIF
+	IF (PlayerReward(0, CHEAT_INVUL) AND (!UnderWater))
+		health = 100.0
+		IF (PlayerReward(0, UPGRADE_ARMOUR_1))
+			health = 120.0
+		ENDIF
+		IF (PlayerReward(0, UPGRADE_ARMOUR_2))
+			health = 140.0
+		ENDIF
+	ENDIF
+	IF ((MyFlag & HITSTRAT) AND !(CollWithFlag2 & PICKUP))
+		IF (CollWithFlag & ENEMY) AND (CollWithFlag & BULLETTYPE) 
+			VOLUME = RandRange(0.7,0.9)
+			PLAYSOUND>HITMETAL2_M 7 VOLUME 0.0 0.0 0.0 0
+		ENDIF
+   	ENDIF
+
+	SetSpecularColour(6, EngineHeat * 0.25, 0.0, 0.0)
+	
+	IF (oldHealth != health)
+		IF (oldHealth > health)
+			health = health - (1.0 * (EngineHeat * EngineHeat) * (oldHealth - health))
+		ENDIF
+		oldHealth = health
+		IF (LavaHurt)
+			IF (LAVASPECAMOUNT < 0.4)
+				IF (PAL)
+					LAVASPECAMOUNT = LAVASPECAMOUNT + 0.0333 * 1.2
+				ELSE
+					LAVASPECAMOUNT = LAVASPECAMOUNT + 0.0333
+				ENDIF
+			ENDIF
+		ELSE
+			SPECAMOUNT = 0.4
+		ENDIF
+	ENDIF
+
+	IF ((SPECAMOUNT > 0) OR (LAVASPECAMOUNT > 0))
+		IF (SPECAMOUNT > 0)
+			SetSpecularColour(0, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+			IF (PAL)
+				SPECAMOUNT = SPECAMOUNT - 0.02
+			ELSE
+				SPECAMOUNT = SPECAMOUNT - 0.02 * 1.2
+		 	ENDIF
+		ENDIF
+		IF (LAVASPECAMOUNT > 0)
+			SetSpecularColour(0, LAVASPECAMOUNT,0,0)
+			IF (!LavaHurt)
+				IF (PAL)
+					LAVASPECAMOUNT = LAVASPECAMOUNT - 0.02 * 1.2
+				ELSE
+				 	LAVASPECAMOUNT = LAVASPECAMOUNT - 0.02
+				ENDIF
+			ENDIF
+		ENDIF
+	ELSE
+		SPECAMOUNT = 0
+	ENDIF
+
+	
+	TRIGFIN
+ENDTRIGGER
+
+TRIGGER PickUpTest
+	
+
+	IF (currentPickup != GetSecondaryWeaponType(0))
+		currentPickup = GetSecondaryWeaponType(0)
+		tempi = GetSecondaryWeaponAmount(0)
+		SetGlobalParamInt(0, tempi)
+
+		IF (currentPickup = BOMB)	
+			CREATE SPAWN_REDDOG_BOMB 0, 0, 0, 0, 0, 0, 0
+		ENDIF
+		IF (currentPickup = VULCAN)
+			CREATE SPAWN_REDDOG_VULCAN 0, 0, 0, 0, 0, 0, 0
+		ENDIF
+		IF (currentPickup = HOMING_BULLET)
+			CREATE SPAWN_REDDOG_HomingBullet 0, 0, 0, 0, 0, 0, 0
+		ENDIF
+		IF (currentPickup = ALL_ROUND_SHOCKWAVE)
+			CREATE SPAWN_REDDOG_ALL_ROUND_SHOCKWAVE 0, 0, 0, 0, 0, 0, 0
+		ENDIF
+		IF (currentPickup = ROCKET)
+			CREATE SPAWN_REDDOG_ROCKET 0, 0, 0, 0, 0, 0, 0
+		ENDIF
+		IF (currentPickup = HOVERON)
+			CREATE SPAWN_REDDOG_HOVERON 0, 0, 0, 0, 0, 0, 0
+		ENDIF
+		IF (currentPickup = SWARM)
+			CREATE SPAWN_REDDOG_SWARM 0, 0, 0, 0, 0, 0, 0
+		ENDIF
+		IF (currentPickup = LASER)
+			CREATE SPAWN_REDDOG_LASER 0, 0, 0, 0, 0, 0, 0
+		ENDIF
+		IF (currentPickup = ELECTRO)
+			CREATE SPAWN_REDDOG_ELECTRO 0, 0, 0, 0, 0, 0, 0
+		ENDIF
+		SetGlobalParamInt(0, 0)
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+LOCALINT fired 
+
+//FIRE DELAY IS 1 SIXTH OF A SEC
+DEFINE NTSC_FIREDELAY 5
+DEFINE PAL_FIREDELAY 4
+
+LOCALINT FIREDELAY
+
+TRIGGER FireTest
+	fireTime = fireTime + 1
+
+   //	PlayerWeaponType = 1
+
+
+	IF (((var2 and PADFIRE) AND (!ShieldHold)) OR fired)
+		IF (MyVar < 64.0)
+			IF (fireTime > FIREDELAY)
+				fired = 0
+				fireTime = 0
+				PlayerWeaponCharge = PlayerWeaponCharge - 0.006
+			ELSE
+				fired = 1
+			ENDIF
+		ENDIF
+	ENDIF
+
+	IF (PlayerWeaponType = 0)
+		IF (PlayerWeaponPower = 0)
+			IF (fireTime = 0)
+				PLAYSOUND>RD_RUGER39 11 0.9 0.0 0.0 0.0 0
+				CREATE SPAWN_MISSILE 0.5, MISSILE_SPAWN_Y, 0.2, 0, 0, 0, TANKMOD
+				AddSem(ACTIVE_BULLETS, 1)
+				ftemp = MyVar
+				MyVar = 6.0
+				CREATE SPAWN_BLASTEXP 0.5, 1.5, 0.2, 0, 0, 0, TANKMOD
+ 				MyVar = ftemp
+				
+				rightGF = 1
+			ENDIF
+		ENDIF
+
+		IF (PlayerWeaponPower = 1)
+			IF (fireTime = 0)
+				PLAYSOUND>RD_RUGER39 11 0.9 0.0 0.0 0.0 0
+				CREATE SPAWN_MISSILE 0.5, MISSILE_SPAWN_Y, 0.2, 0, 0, 0, TANKMOD
+				AddSem(ACTIVE_BULLETS, 1)
+				ftemp = MyVar
+				MyVar = 6.0
+				
+				CREATE SPAWN_BLASTEXP 0.5, 1.5, 0.2, 0, 0, 0, TANKMOD
+ 				MyVar = ftemp
+				
+				rightGF = 1
+			ENDIF 
+			IF (fireTime = 2)
+				PLAYSOUND>RD_RUGER39 11 0.9 0.0 0.0 0.0 0
+				CREATE SPAWN_MISSILE 0.3, MISSILE_SPAWN_Y, 0.2, 0, 0, 0.05, TANKMOD
+				CREATE SPAWN_MISSILE 0.7, MISSILE_SPAWN_Y, 0.2, 0, 0, -0.05, TANKMOD
+				AddSem(ACTIVE_BULLETS, 2)
+				ftemp = MyVar
+				MyVar = 6.0
+				
+				CREATE SPAWN_BLASTEXP 0.5, 1.5, 0.2, 0, 0, 0, TANKMOD
+ 				MyVar = ftemp
+				
+				rightGF = 1
+			ENDIF 
+		ENDIF
+
+
+
+
+		IF (PlayerWeaponPower = 2)
+			IF (fireTime = 0)
+				PLAYSOUND>RD_RUGER39 11 0.9 0.0 0.0 0.0 0
+				CREATE SPAWN_MISSILE 0.5, MISSILE_SPAWN_Y, 0.2, 0, 0, 0, TANKMOD
+				AddSem(ACTIVE_BULLETS, 1)
+				ftemp = MyVar
+				MyVar = 6.0
+				CREATE SPAWN_BLASTEXP 0.5, 1.5, 0.2, 0, 0, 0, TANKMOD
+ 				MyVar = ftemp
+				
+				rightGF = 1
+			ENDIF
+			IF (fireTime = 2)
+				PLAYSOUND>RD_RUGER39 11 0.9 0.0 0.0 0.0 0
+				CREATE SPAWN_MISSILE 0.7, MISSILE_SPAWN_Y, 0.2, 0, 0, -0.05, TANKMOD
+				CREATE SPAWN_MISSILE 0.3, MISSILE_SPAWN_Y, 0.2, 0, 0, 0.05, TANKMOD
+				AddSem(ACTIVE_BULLETS, 2)
+				ftemp = MyVar
+				MyVar = 6.0
+				CREATE SPAWN_BLASTEXP 0.5, 1.5, 0.2, 0, 0, 0, TANKMOD
+ 				MyVar = ftemp
+				
+				rightGF = 1
+			ENDIF
+			IF (fireTime = 4)
+				PLAYSOUND>RD_RUGER39 11 0.9 0.0 0.0 0.0 0
+				CREATE SPAWN_MISSILE 0.9, MISSILE_SPAWN_Y, 0.2, 0, 0, -0.1, TANKMOD
+				CREATE SPAWN_MISSILE 0.1, MISSILE_SPAWN_Y, 0.2, 0, 0, 0.1, TANKMOD
+				AddSem(ACTIVE_BULLETS, 2)
+				ftemp = MyVar
+				MyVar = 6.0
+				CREATE SPAWN_BLASTEXP 0.5, 1.5, 0.2, 0, 0, 0, TANKMOD
+ 				MyVar = ftemp
+				
+				rightGF = 1
+			ENDIF			
+		ENDIF
+		IF (rightGF = 1)
+			rightGF = 0
+			tempf = GetObjectIdlePos(33, MODEY)
+			SetObjectCrntPos(33, tempf - 0.3, MODEY)
+		ELSE
+			IF (PlayerWeaponPower = 0)
+				tempf3 = 0.5
+			ENDIF
+			IF (PlayerWeaponPower = 1)
+				tempf3 = 0.7
+			ENDIF
+			IF (PlayerWeaponPower = 2)
+				tempf3 = 1.0
+			ENDIF
+			tempf = GetObjectIdlePos(33, MODEY)
+			tempf2 = GetObjectCrntPos(33, MODEY)
+			SetObjectCrntPos(33, tempf2 + (tempf - tempf2) * tempf3, MODEY)
+		ENDIF
+	ENDIF
+
+	IF (PlayerWeaponType = 1) 
+		IF (PlayerWeaponPower = 0)
+			IF (fireTime = 0)
+				IF (leftFire = 0)
+					leftFire = 1
+					leftGF = 1
+				ELSE
+					leftFire = 0
+					rightGF = 1
+				ENDIF
+			ENDIF
+		ENDIF
+  
+		IF (PlayerWeaponPower = 1)
+			IF (fireTime = 0)
+				IF (leftFire = 0)
+					leftFire = 1
+					leftGF = 1
+				ELSE
+					leftFire = 0
+					rightGF = 1
+				ENDIF
+			ENDIF
+			IF (fireTime = 3)
+				IF (leftFire = 0)
+					leftFire = 1
+					leftGF = 1
+				ELSE
+					leftFire = 0
+					rightGF = 1
+				ENDIF
+			ENDIF
+		ENDIF
+
+		
+		IF (PlayerWeaponPower = 2)
+			IF (leftFire = 0)
+				IF (fireTime = 0)
+					CREATE SPAWN_SecondWB -0.5, MISSILE_SPAWN_Y, 0.2, 0, 0.7, 0.05, TANKMOD
+					AddSem(ACTIVE_BULLETS, 1)
+					leftFire = 1
+					leftGF = 1
+				ENDIF
+				IF (fireTime = 2)
+					CREATE SPAWN_SecondWB -0.5, MISSILE_SPAWN_Y, 0.2, 0, -0.7, -0.05, TANKMOD
+					AddSem(ACTIVE_BULLETS, 1)
+					leftFire = 1
+					leftGF = 1
+				ENDIF
+				IF (fireTime = 4)
+					CREATE SPAWN_SecondWB -0.5, MISSILE_SPAWN_Y, 0.2, 0, 0.7, 0, TANKMOD
+					AddSem(ACTIVE_BULLETS, 1)
+					leftFire = 1
+					leftGF = 1
+				ENDIF
+			ELSE
+				IF (fireTime = 0)
+					CREATE SPAWN_SecondWB 0.5, MISSILE_SPAWN_Y, 0.2, 0, -0.7, 0.05, TANKMOD
+					AddSem(ACTIVE_BULLETS, 1)
+					leftFire = 0
+					rightGF = 1
+				ENDIF
+				IF (fireTime = 2)
+					CREATE SPAWN_SecondWB 0.5, MISSILE_SPAWN_Y, 0.2, 0, 0.7, -0.05, TANKMOD
+					AddSem(ACTIVE_BULLETS, 1)
+					rightGF = 1
+					leftFire = 0
+				ENDIF
+				IF (fireTime = 4)
+					CREATE SPAWN_SecondWB 0.5, MISSILE_SPAWN_Y, 0.2, 0, -0.7, 0, TANKMOD
+					AddSem(ACTIVE_BULLETS, 1)
+					leftFire = 0
+					rightGF = 1
+				ENDIF
+			ENDIF
+		ENDIF
+
+		IF (leftGF = 1)
+		   	PLAYSOUND>RDPLASMA 11 1.0 0.0 0.0 0.0 0
+			IF (PlayerWeaponPower != 2)
+				IF (af = 1)
+					CREATE SPAWN_SecondWB -0.5, MISSILE_SPAWN_Y, 0.2, 0, -0.7, 0, TANKMOD
+					AddSem(ACTIVE_BULLETS, 1)
+					af = 0
+				ELSE
+					CREATE SPAWN_SecondWB -0.5, MISSILE_SPAWN_Y, 0.2, 0, 0.7, 0, TANKMOD
+					AddSem(ACTIVE_BULLETS, 1)
+					af = 1
+				ENDIF
+			ENDIF
+			leftGF = 0
+			tempf = GetObjectIdlePos(29, MODEY)
+			SetObjectCrntPos(29, tempf - 0.4, MODEY)
+			
+		ELSE
+			tempf = GetObjectIdlePos(29, MODEY)
+			tempf2 = GetObjectCrntPos(29, MODEY)
+			SetObjectCrntPos(29, tempf2 + (tempf - tempf2) * 0.5, MODEY)
+		ENDIF
+
+		IF (rightGF = 1)
+		   	PLAYSOUND>RDPLASMA 11 1.0 0.0 0.0 0.0 0
+			IF (PlayerWeaponPower != 2)
+				IF (af = 0)
+					CREATE SPAWN_SecondWB 0.5, MISSILE_SPAWN_Y, 0.2, 0, 0.7, 0, TANKMOD
+					AddSem(ACTIVE_BULLETS, 1)
+					af = 1
+				ELSE
+					CREATE SPAWN_SecondWB 0.5, MISSILE_SPAWN_Y, 0.2, 0, -0.7, 0, TANKMOD
+					AddSem(ACTIVE_BULLETS, 1)
+					af = 0
+				ENDIF
+			ENDIF
+			rightGF = 0
+			tempf = GetObjectIdlePos(30, MODEY)
+			SetObjectCrntPos(30, tempf - 0.4, MODEY)
+			
+		ELSE
+			IF (PlayerWeaponPower = 0)
+				tempf3 = 0.5
+			ENDIF
+			IF (PlayerWeaponPower = 1)
+				tempf3 = 0.5
+			ENDIF
+			IF (PlayerWeaponPower = 2)
+				tempf3 = 0.5
+			ENDIF
+			tempf = GetObjectIdlePos(30, MODEY)
+			tempf2 = GetObjectCrntPos(30, MODEY)
+			SetObjectCrntPos(30, tempf2 + (tempf - tempf2) * tempf3, MODEY)
+		ENDIF
+		
+	ENDIF
+
+	IF (PlayerWeaponType = 2) 
+		IF (PlayerWeaponPower = 0)
+			IF ((fireTime = 0) OR (fireTime = 3))
+				IF (leftFire = 0)
+					leftGF = 1
+					leftFire = 1
+				ELSE
+					leftFire = 0
+					rightGF = 1
+				ENDIF
+			ENDIF
+		ENDIF
+		IF (PlayerWeaponPower = 1)
+			IF ((fireTime = 0) OR (fireTime = 2) OR (fireTime = 4))
+				IF (leftFire = 0)
+					leftGF = 1
+					leftFire = 1
+				ELSE
+					leftFire = 0
+					rightGF = 1
+				ENDIF
+			ENDIF
+		ENDIF
+		IF (PlayerWeaponPower = 2)
+			IF ((fireTime = 0) OR (fireTime = 2) OR (fireTime = 4))
+				IF (leftFire = 0)
+					leftGF = 1
+					leftFire = 1
+					rightGF = 1
+				ELSE
+					leftFire = 0
+					rightGF = 1
+					leftGF = 1
+				ENDIF
+			ENDIF
+		ENDIF
+		IF (leftGF = 1)
+			PLAYSOUND>RD_RUGER39 11 0.9 0.0 0.0 0.0 0
+			ftemp2 = DistToAim(0)
+			ftemp = Satan(0.5 / ftemp2)
+			CREATE SPAWN_RD_V -0.5, MISSILE_SPAWN_YY, 0.1, 0, 0, ftemp, TANKMOD
+			CREATE SPAWN_GatlinGroundFlare -0.5, MISSILE_SPAWN_YY, 0.2, -3.14159*0.5, 0, 0, TANKMOD
+			SetGlobalParamFloat(0, ftemp2)
+			CREATE SPAWN_YellowBeam -0.5, MISSILE_SPAWN_YY, 0.1, 0, 0, -ftemp, TANKMOD
+			SetGlobalParamFloat(0, 0.0)
+			leftGunRS = 0.5
+			leftGF = 0
+		ELSE
+			IF (leftGunRS >= 0.01)
+				leftGunRS = leftGunRS - 0.01
+			ELSE
+				leftGunRS = 0.0
+			ENDIF
+		ENDIF
+		IF (rightGF = 1)
+			PLAYSOUND>RD_RUGER39 12 0.9 0.0 0.0 0.0 0
+			ftemp2 = DistToAim(0)
+			ftemp = Satan(0.5 / ftemp2)
+			SetGlobalParamInt(0, 1)
+			CREATE SPAWN_RD_V 0.5, MISSILE_SPAWN_YY, 0.1, 0, 0, ftemp, TANKMOD
+			SetGlobalParamInt(0, 0)
+			SetGlobalParamFloat(0, ftemp2)
+			CREATE SPAWN_YellowBeam 0.5, MISSILE_SPAWN_YY, 0.1, 0, 0, ftemp, TANKMOD
+			SetGlobalParamFloat(0, 0.0)
+			CREATE SPAWN_GatlinGroundFlare 0.5, MISSILE_SPAWN_YY, 0.2, -3.14159*0.5, 0, 0, TANKMOD
+			rightGunRS = 0.5
+			rightGF = 0
+		ELSE
+			IF (rightGunRS >= 0.01)
+				rightGunRS = rightGunRS - 0.01
+			ELSE
+				rightGunRS = 0.0
+			ENDIF
+		ENDIF
+		tempf = GetObjectCrntRot(31, MODEY)
+		SetObjectCrntRot(31, tempf - leftGunRS, MODEY)
+		tempf = GetObjectCrntRot(32, MODEY)
+		SetObjectCrntRot(32, tempf + rightGunRS, MODEY)
+	ENDIF
+
+
+	IF (PlayerWeaponType = 3) 
+		IF (fireTime = 0) 
+			IF (PlayerWeaponPower = 0)
+				IF (leftFire = 0)
+					PLAYSOUND>RDPLASMA 11 1.0 0.0 0.0 0.0 0
+					AddSem(ACTIVE_BULLETS, 1)
+					CREATE SPAWN_TRAIL_FIRE -0.5, MISSILE_SPAWN_Y, 0.2, 0, 0, 0, TANKMOD
+					leftFire = 1
+					leftGF = 1
+				ELSE
+					PLAYSOUND>RDPLASMA 11 1.0 0.0 0.0 0.0 0
+					leftFire = 0
+					AddSem(ACTIVE_BULLETS, 1)
+					CREATE SPAWN_TRAIL_FIRE 0.5, MISSILE_SPAWN_Y, 0.2, 0, 0, 0, TANKMOD
+					rightGF = 1
+				ENDIF
+			ENDIF
+
+			IF (PlayerWeaponPower = 1)
+				PLAYSOUND>RDPLASMA 11 1.0 0.0 0.0 0.0 0
+				AddSem(ACTIVE_BULLETS, 2)
+				CREATE SPAWN_TRAIL_FIRE -0.5, MISSILE_SPAWN_Y, 0.2, 0, 0, 0, TANKMOD
+				CREATE SPAWN_TRAIL_FIRE 0.5, MISSILE_SPAWN_Y, 0.2, 0, 0, 0, TANKMOD
+				leftGF = 1
+				rightGF = 1
+				
+			ENDIF
+		ENDIF
+
+		IF (PlayerWeaponPower = 2)
+			IF (leftFire = 0)
+				IF (fireTime = 0)
+					PLAYSOUND>RDPLASMA 11 1.0 0.0 0.0 0.0 0
+					AddSem(ACTIVE_BULLETS, 1)
+					CREATE SPAWN_TRAIL_FIRE -0.5, MISSILE_SPAWN_Y, 0.2, 0, 0, 0.05, TANKMOD
+					leftFire = 1
+					leftGF = 1
+				ENDIF
+				IF (fireTime = 2)
+					PLAYSOUND>RDPLASMA 11 1.0 0.0 0.0 0.0 0
+					AddSem(ACTIVE_BULLETS, 1)
+					CREATE SPAWN_TRAIL_FIRE -0.5, MISSILE_SPAWN_Y, 0.2, 0, 0, -0.05, TANKMOD
+					leftFire = 1
+					leftGF = 1
+				ENDIF
+				IF (fireTime = 4)
+					PLAYSOUND>RDPLASMA 11 1.0 0.0 0.0 0.0 0
+					AddSem(ACTIVE_BULLETS, 1)
+					CREATE SPAWN_TRAIL_FIRE -0.5, MISSILE_SPAWN_Y, 0.2, 0, 0, 0, TANKMOD
+					leftFire = 1
+					leftGF = 1
+				ENDIF
+			ELSE
+				IF (fireTime = 0)
+					PLAYSOUND>RDPLASMA 11 1.0 0.0 0.0 0.0 0
+					AddSem(ACTIVE_BULLETS, 1)
+					CREATE SPAWN_TRAIL_FIRE 0.5, MISSILE_SPAWN_Y, 0.2, 0, 0, 0.05, TANKMOD
+					leftFire = 0
+					rightGF = 1
+				ENDIF
+				IF (fireTime = 2)
+					PLAYSOUND>RDPLASMA 11 1.0 0.0 0.0 0.0 0
+					AddSem(ACTIVE_BULLETS, 1)
+					CREATE SPAWN_TRAIL_FIRE 0.5, MISSILE_SPAWN_Y, 0.2, 0, 0, -0.05, TANKMOD
+					rightGF = 1
+					leftFire = 0
+				ENDIF
+				IF (fireTime = 4)
+					PLAYSOUND>RDPLASMA 11 1.0 0.0 0.0 0.0 0
+					AddSem(ACTIVE_BULLETS, 1)
+					CREATE SPAWN_TRAIL_FIRE 0.5, MISSILE_SPAWN_Y, 0.2, 0, 0, 0, TANKMOD
+					leftFire = 0
+					rightGF = 1
+				ENDIF
+			ENDIF
+		ENDIF
+		IF (leftGF = 1)
+			leftGF = 0
+			tempf = GetObjectIdlePos(27, MODEY)
+			SetObjectCrntPos(27, tempf - 0.4, MODEY)
+		ELSE
+			IF (PlayerWeaponPower = 0)
+				tempf3 = 0.5
+			ENDIF
+			IF (PlayerWeaponPower = 1)
+				tempf3 = 0.5
+			ENDIF
+			IF (PlayerWeaponPower = 2)
+				tempf3 = 0.5
+			ENDIF
+			tempf = GetObjectIdlePos(27, MODEY)
+			tempf2 = GetObjectCrntPos(27, MODEY)
+			SetObjectCrntPos(27, tempf2 + (tempf - tempf2) * tempf3, MODEY)
+		ENDIF
+
+		IF (rightGF = 1)
+			rightGF = 0
+			tempf = GetObjectIdlePos(28, MODEY)
+			SetObjectCrntPos(28, tempf - 0.4, MODEY)
+		ELSE
+			IF (PlayerWeaponPower = 0)
+				tempf3 = 0.5
+			ENDIF
+			IF (PlayerWeaponPower = 1)
+				tempf3 = 0.5
+			ENDIF
+			IF (PlayerWeaponPower = 2)
+				tempf3 = 0.5
+			ENDIF
+			tempf = GetObjectIdlePos(28, MODEY)
+			tempf2 = GetObjectCrntPos(28, MODEY)
+			SetObjectCrntPos(28, tempf2 + (tempf - tempf2) * tempf3, MODEY)
+		ENDIF
+	ENDIF
+ 
+	IF (GetSecondaryWeaponAmount(0) <= 0)
+		IF (GetSecondaryWeaponType(0) != LASER)
+			IF (GetPlayerArmageddon(0) = 0)
+				SetSecondaryWeaponType(0, 0)
+				SetSecondaryWeaponAmount(0, 0)
+			ENDIF
+		ENDIF
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+STATE Exhausting
+	IF (MyFlag & NODISP)
+		TRIGFIN
+	ELSE
+		IF (CHEATMODE)
+			health = 100.0 
+		ENDIF 
+   		IF (health <= 0.0)
+   			TRIGSTOP
+   		ELSE
+			IF ((PlayerOnBoat = 0) AND (PlayerState != PS_WATERSLIDE) AND (PlayerState != PS_INDROPSHIP))	
+				IF (StratSpeed() < 0.1)
+					CREATE SPAWN_REDDOGEXHAUST -0.187, -1.437, -0.39, 0, 0, 0, 6
+					CREATE SPAWN_REDDOGEXHAUST  0.187, -1.437, -0.39, 0, 0, 0, 6
+				ENDIF
+			ENDIF
+			TRIGFIN
+		ENDIF
+	ENDIF
+ENDSTATE
+
+LOCALINT VALID
+
+STATE Main
+
+  //	health = 100.0
+	IF (health <= 0.0)
+		STAT>Destroy 
+	ENDIF
+				 
+	var1 = GetPadPress(0)
+
+	VALID = !((PlayerState & PS_SCRIPTHELD) | (PlayerState & PS_INDROPSHIP) )
+	IF (VALID)
+		var2 = GetPadPush(0)
+	ELSE
+		var2 = 0
+	ENDIF
+
+	IF	((UnderWater) AND (PlayerOnBoat = 0))
+		ReduceHealth(1.0)
+	ENDIF
+
+	IF (var1 and PADFORWARD)
+		IF !(var1 and PADBACKWARD)
+			engineAmt = engineAmt + 0.02		
+		ENDIF
+	ELSE
+		IF (var1 and PADBACKWARD)
+			engineAmt = engineAmt + 0.02
+		ENDIF
+	ENDIF
+
+	//IF (var2 and PADY)
+	//	PAL = ! PAL
+	//ENDIF
+
+//	IF (var2 and PADUP)
+//		CHEATMODE = !CHEATMODE
+//	ENDIF
+
+	lastFire = lastFire + 1
+
+	
+ENDSTATE
+
+STATE Destroy
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+
+	absspeedx = 0.0
+	absspeedy = 0.0
+	absspeedz = 0.0
+	
+
+	DESTROYME SPAWN_EXPLODINGBITS
+
+	// On the last life hang around a bit if we're on a challenge level
+	IF (IsChallengeLevel())
+		IF (Lives = 0)
+			STAT>HangAround
+		ENDIF
+	ENDIF
+
+//	LOOP (90)
+//		MyFlag = MyFlag
+//	ENDLOOP
+//	IF (Lives > 0)
+//		Lives = Lives - 1
+//		LevelReset = 1
+//	ELSE
+//		GameOver()
+//	ENDIF
+ENDSTATE
+
+STATE HangAround
+	LOOP (40)
+		MyFlag = MyFlag
+	ENDLOOP
+	GameOver()
+	WHILE (1)
+		MyVar = 12345
+	ENDWHILE
+ENDSTATE
+
+STATE Skidding		
+	SkidOn = 0
+	IF (!(MyFlag & NODISP))
+		IF (MyFlag2 & HITHDC)
+			RedDogFLS = 0
+			RedDogFRS = 0
+			RedDogRLS = 0
+			RedDogRRS = 0
+		ELSE
+			RedDogSkid()
+		ENDIF
+
+		SetGlobalParamFloat (0,1)
+		IF (RedDogFLS = 1)
+			CREAIND SPAWN_REDDOGSANDTRAIL  RDFLWX, RDFLWY, RDFLWZ + 0.2, 0, 0, 0			
+			SkidOn = 1
+		ENDIF
+		IF (RedDogFRS = 1)			     
+			CREAIND SPAWN_REDDOGSANDTRAIL  RDFRWX, RDFRWY, RDFRWZ + 0.2, 0, 0, 0			
+			SkidOn = 1
+		ENDIF
+		IF (RedDogRLS = 1)
+			CREAIND SPAWN_REDDOGSANDTRAIL  RDRLWX, RDRLWY, RDRLWZ + 0.2, 0, 0, 0			
+			SkidOn = 1
+		ENDIF
+		IF (RedDogRRS = 1) 
+			CREAIND SPAWN_REDDOGSANDTRAIL  RDRRWX, RDRRWY, RDRRWZ + 0.2, 0, 0, 0			
+			SkidOn = 1
+		ENDIF
+
+		LavaHurt = 0
+		IF (GetObjectFlag(1) & OBJECT_IN_LAVA)
+			CREAIND SPAWN_REDDOGSANDTRAIL  RDFLWX, RDFLWY, RDFLWZ + 0.2, 0, 0, 0
+			health = health - 0.1
+			LavaHurt = 1
+		ENDIF
+		IF (GetObjectFlag(2) & OBJECT_IN_LAVA)
+			CREAIND SPAWN_REDDOGSANDTRAIL  RDFRWX, RDFRWY, RDFRWZ + 0.2, 0, 0, 0
+			health = health - 0.1
+			LavaHurt = 1
+		ENDIF
+		IF (GetObjectFlag(3) & OBJECT_IN_LAVA)
+			CREAIND SPAWN_REDDOGSANDTRAIL  RDRRWX, RDRRWY, RDRRWZ + 0.2, 0, 0, 0
+			health = health - 0.1
+			LavaHurt = 1
+		ENDIF
+		IF (GetObjectFlag(4) & OBJECT_IN_LAVA)
+			CREAIND SPAWN_REDDOGSANDTRAIL  RDRLWX, RDRLWY, RDRLWZ + 0.2, 0, 0, 0
+			health = health - 0.1
+			LavaHurt = 1
+		ENDIF 
+		objFlag = GetObjectFlag(1)
+		objFlag = objFlag & LNOT(OBJECT_IN_LAVA)
+		SetObjectFlag(1, objFlag)
+
+		objFlag = GetObjectFlag(2)
+		objFlag = objFlag & LNOT(OBJECT_IN_LAVA)
+		SetObjectFlag(2, objFlag)
+
+		objFlag = GetObjectFlag(3)
+		objFlag = objFlag & LNOT(OBJECT_IN_LAVA)
+		SetObjectFlag(3, objFlag)
+
+		objFlag = GetObjectFlag(4)
+		objFlag = objFlag & LNOT(OBJECT_IN_LAVA)
+		SetObjectFlag(4, objFlag)
+ 
+		SetGlobalParamFloat (0,0)
+	ENDIF
+
+	TRIGFIN
+ENDSTATE
+
+TRIGGER Sound
+	speedAmt = StratSpeed()
+
+	// Play some skid sounds if we are skidding along the ground
+	IF ((SkidOn > 0) AND (IAmOnFloor))
+		skidAmt = (4.0 * engineAmt) * speedAmt
+		IF (skidAmt > 0.7)
+			skidAmt = 0.7
+		ENDIF
+		IF (!IsPlaying(6))
+			IF (((PolyType & 31) = SURFACE_SNOW) OR ((PolyType & 31) = SURFACE_ICE))
+				PLAYSOUND>SKIDSNOW 6 skidAmt 0.0 0.0 0.0 CONTINUOUS | RANDOM
+			ELSE
+				IF ((PolyType & 31) = SURFACE_METAL)
+					PLAYSOUND>SKIDSMOOTH 6 skidAmt 0.0 0.0 0.0 CONTINUOUS | RANDOM
+				ELSE
+					PLAYSOUND>SKIDLOOP	 6 skidAmt 0.0 0.0 0.0 CONTINUOUS | RANDOM
+				ENDIF
+			ENDIF
+		ELSE
+			SetVolume(6, skidAmt)
+		ENDIF
+	ELSE
+		// Not on the ground or not skidding
+		IF (IsPlaying(6))
+			skidAmt = skidAmt * 0.8
+			IF (skidAmt < 0.02)
+				skidAmt = 0.0
+				StopSound(6,0.0)
+			ELSE
+				SetVolume(6, skidAmt)
+			ENDIF
+		ENDIF
+	ENDIF
+
+	// Play some splash sounds whenever we enter or leave the water
+	IF (UnderWater)
+		IF (!splash)
+			PLAYSOUND>splash 8 1.0 0.0 0.0 0.0 RANDOM
+			splash = 1
+		ENDIF
+	ELSE
+		IF (splash)
+			PLAYSOUND>splash 8 0.75 0.0 0.0 0.0 RANDOM
+			splash = 0
+		ENDIF
+	ENDIF		
+
+	// Make some bump and creak sounds 
+	// Uses splash channel but won't cut splash out if it is playing
+	IF (IAmOnFloor)
+		IF (fallTime > 0.0)
+			tempf = RandRange(0.0, 1.0)
+			IF (!IsPlaying(8))
+				IF (fallTime > 0.9)
+					PLAYSOUND>RDHEAVYLAND 8 1.0 0.0 0.0 0.0 RANDOM
+				ELSE
+					IF (tempf > 0.5) 
+						PLAYSOUND>BUMP1 8 0.9 0.0 0.0 0.0 RANDOM
+					ELSE
+						PLAYSOUND>BUMP2 8 0.9 0.0 0.0 0.0 RANDOM
+					ENDIF
+				ENDIF
+			ENDIF
+			fallTime = 0.0
+		ENDIF
+	ELSE
+		fallTime = fallTime + 0.08
+	ENDIF
+
+	// If we have fallen into lava then play some lavary sounds
+	IF (LavaHurt)
+		splashAmt = 0.9
+		IF (!IsPlaying(9))
+			PLAYSOUND>SIZZLE1 9 splashAmt 0.0 0.0 0.0 CONTINUOUS
+		ELSE 
+			SetVolume(9, splashAmt)
+		ENDIF
+	ENDIF
+
+	// If we are driving through water then play some watery sounds
+	IF ((GetObjectFlag(1) & COLL_ON_WATER) OR (GetObjectFlag(2) & COLL_ON_WATER) OR (GetObjectFlag(3) & COLL_ON_WATER) OR (GetObjectFlag(4) & COLL_ON_WATER))
+		splashAmt = speedAmt
+		IF (!IsPlaying(9))
+			PLAYSOUND>SPLASHLOOP 9 splashAmt 0.0 0.0 0.0 CONTINUOUS
+		ELSE
+			SetVolume(9, splashAmt)
+		ENDIF
+	ELSE
+		// Not in water or lava anymore
+		IF (IsPlaying(9) AND (LavaHurt = 0))
+			splashAmt = splashAmt * 0.8
+			IF (splashAmt < 0.01)
+				splashAmt = 0.0
+				StopSound(9, 0.0)
+			ELSE
+				SetVolume(9, splashAmt)
+			ENDIF
+		ENDIF
+	ENDIF
+	
+	// The main engine sounds
+	engineAmt = 0.95 * engineAmt
+	IF (engineAmt > 1.0)
+		engineAmt = 1.0
+	ENDIF
+	SetPitch (1, (engineAmt * 1.5) - 0.5)
+	SetVolume(4, 1.0 - (speedAmt * 0.5))
+	SetPitch (4, speedAmt)
+
+	TRIGFIN
+ENDTRIGGER
+
+TRIGGER Cheat
+	donef = 0
+	IF (bad_cheat < 8)
+		IF ((bad_cheat = 0) AND (donef = 0))
+			IF (var2)
+				IF (var2 & PADFIRE)
+					bad_cheat = bad_cheat + 1		
+					donef = 1
+				ELSE
+					bad_cheat = 0
+				ENDIF
+			ENDIF
+		ENDIF
+		IF ((bad_cheat = 1) AND (donef = 0))
+			IF (var2)
+				IF (var2 & PADB)
+					bad_cheat = bad_cheat + 1
+					donef = 1
+				ELSE
+					IF (var2 & PADFIRE)
+						bad_cheat = 1
+						donef = 1
+					ELSE	
+						bad_cheat = 0
+					ENDIF
+				ENDIF
+			ENDIF
+		ENDIF
+		IF ((bad_cheat = 2) AND (donef = 0))
+			IF (var2)
+				IF (var2 & PADFIRE)
+					bad_cheat = bad_cheat + 1
+					donef = 1
+				ELSE
+					IF (var2 & PADFIRE)
+						donef = 1
+						bad_cheat = 1
+					ELSE	
+						bad_cheat = 0
+					ENDIF
+				ENDIF
+			ENDIF
+		ENDIF
+		IF ((bad_cheat = 3) AND (donef = 0))
+			IF (var2)
+				IF (var2 & PADB)
+					bad_cheat = bad_cheat + 1
+					donef = 1
+				ELSE
+					IF (var2 & PADFIRE)
+						bad_cheat = 1
+						donef = 1
+					ELSE	
+						bad_cheat = 0
+					ENDIF
+				ENDIF
+			ENDIF
+		ENDIF
+		IF ((bad_cheat = 4) AND (donef = 0))
+			IF (var2)
+				IF (var2 & PADX)
+					bad_cheat = bad_cheat + 1
+					donef = 1
+				ELSE
+					IF (var2 & PADFIRE)
+						bad_cheat = 1
+						donef = 1
+					ELSE	
+						bad_cheat = 0
+					ENDIF
+				ENDIF
+			ENDIF
+		ENDIF
+		IF ((bad_cheat = 5) AND (donef = 0))
+			IF (var2)
+				IF (var2 & PADY)
+					bad_cheat = bad_cheat + 1
+					donef = 1
+				ELSE
+					IF (var2 & PADFIRE)
+						bad_cheat = 1
+						donef = 1
+					ELSE	
+						bad_cheat = 0
+					ENDIF
+				ENDIF
+			ENDIF
+		ENDIF
+		IF ((bad_cheat = 6) AND (donef = 0))
+			IF (var2)
+				IF (var2 & PADX)
+					bad_cheat = bad_cheat + 1
+					donef = 1
+				ELSE
+					IF (var2 & PADFIRE)
+						bad_cheat = 1
+						donef = 1
+					ELSE	
+						bad_cheat = 0
+					ENDIF
+				ENDIF
+			ENDIF
+		ENDIF
+		IF ((bad_cheat = 7) AND (donef = 0))
+			IF (var2)
+				IF (var2 & PADY)
+					bad_cheat = bad_cheat + 1
+					donef = 1
+				ELSE
+					IF (var2 & PADFIRE)
+						bad_cheat = 1
+						donef = 1
+					ELSE	
+						bad_cheat = 0
+					ENDIF
+				ENDIF
+			ENDIF
+		ENDIF
+	ENDIF
+	TRIGFIN
+ENDTRIGGER

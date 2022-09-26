@@ -1,0 +1,161 @@
+LOCALINT targetNo
+LOCALINT trail
+LOCALFLOAT	xSpeed
+LOCALFLOAT	zSpeed
+LOCALFLOAT	tempf
+LOCALINT	pn
+LOCALINT	tempi
+LOCALINT	dead
+LOCALINT	parentDead
+
+STATE Init
+  	MyFlag = MyFlag | FLOORCOLL | STRATCOLL | FRIENDLY | NOTEXPLODE |  BULLETTYPE | PLANEMOVE | NODISP	
+	MyFlag2 = MyFlag2 | BULLET_CF
+	parentDead = 0
+	TRIGSET>Always EVERY 1
+	RegisterCollision()
+	SetFriction(0.5,0.5,0.5)
+	OBJECT> WEAPON\MISSILE06
+	SetObjectShadowState(1)
+	TRIGSET>KillOff	WHENHIT
+	TRIGSET>KillOffFloor	ONFLOOR
+	TRIGSET>KillOffFloor	EVERY 150
+	damage = GetGlobalParamFloat(0)
+	dead = 0
+	frame = 0
+	IF (damage > 101.0)
+		damage = 101.0
+	ENDIF
+	damage = 10.0
+	tempi = GetGlobalParamInt(0)
+	targetNo = GetSwarmTarget(tempi)
+	SetGlobalParamInt(0, 0)
+	xSpeed = RandRange(-1.0, 1.0)
+	zSpeed = RandRange(0.0, 1.0)
+
+	trail = CreateBand (1, 8, 0, 1, 1, 0, 0, 1, 0, 0, 0)
+	SetBandRotXYZandScaling (trail, 0.0, 0, 0.2, 0.9, 0.9, 0.9)
+	AddBandSegment (trail, 0, 0, 0, 0.2)
+	AddBandSegment (trail, 0, 0, 0, 0.2)
+	TRIGSET>Trailer EVERY 1
+	TRIGSET>BandTrigger EVERY 2
+	
+	IF (targetNo = -1)
+		IF (dead = 0)
+			DeleteBand (trail)
+			IF (!parentDead)
+				SubParentSem(0, 1)
+			ENDIF
+			dead = 1
+			Delete()
+		ENDIF
+	ELSE
+		STAT>Start
+	ENDIF
+ENDSTATE 
+
+TRIGGER Always
+	IF (!MyParentFlag)
+		parentDead = 1
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+STATE BandTrigger
+	AddBandSegment (trail, 0, 0, 0, 0.2)
+	TRIGFIN
+ENDSTATE
+
+STATE Trailer
+	RubberBand (trail, 0, 0, 0, 0.1)
+	TRIGFIN
+ENDSTATE
+
+LOCALFLOAT SaveX
+LOCALFLOAT SaveY
+
+STATE Start
+  //	IF (!MyVar)
+	IF (ValidSwarmTarget(targetNo))
+		//AM I STILL ALLOWED TO UPDATE MY POSITION ?
+ 		IF (!MyVar)
+			GetSwarmTargetPos(targetNo)
+			//HAVE I RUN AT LEAST ONCE?
+			//IF SO WE MONITOR THE DISTANCE BETWEEN THE LAST TRACKING POINT
+			//AND THE CURRENT ONE, (IN CASE THE TARGET TELEPORTS ABOUT
+			IF (frame)
+				//IF THE DISTANCE CHANGE IS TOO GREAT, SET THE SWARM
+				//TO 'LOCK OFF'
+				IF ((FABS(CheckX - SaveX) > 25.0) OR (FABS(CheckY - SaveY) > 25.0))
+				  	CheckX = SaveX
+					CheckY = SaveY
+					MyVar = 1.0
+				ENDIF
+			ENDIF
+		ENDIF
+	ELSE
+		MyVar = 1.0
+	   //	STAT>KillOff
+	ENDIF
+
+	tempf = RandRange(-1.0, 1.0)
+	MoveZ(zSpeed + tempf)
+	tempf = RandRange(-1.0, 1.0)
+	MoveX(xSpeed + tempf)
+	MoveY(1.0)
+
+	IF(xSpeed > 0.1)
+		xSpeed = xSpeed - 0.1
+	ELSE
+		IF (xSpeed < -0.1)
+			xSpeed = xSpeed + 0.1
+		ELSE
+			xSpeed = 0.0
+		ENDIF
+	ENDIF
+
+	IF(zSpeed > 0.1)
+		zSpeed = zSpeed - 0.1
+	ELSE
+		zSpeed = 0.0
+	ENDIF
+
+	//IF STILL TRACKING THE TARGET, FOLLOW IT
+	IF (!MyVar)
+		PointTo(CheckX, CheckY, CheckZ)
+		SaveX = CheckX
+		SaveY = CheckY
+	ENDIF
+
+	frame = 1.0
+ENDSTATE
+
+
+STATE KillOff
+	MyFlag = MyFlag | NODISP  
+	MyFlag = MyFlag & LNOT(STRATCOLL)
+	IF (dead = 0)
+		DeleteBand (trail)
+		IF (!parentDead)
+			SubParentSem(0, 1)
+		ENDIF
+		dead = 1
+		MyVar = 7.0
+		CREATE SPAWN_BLASTEXP 0.0, 3.0, -2.0, 0.0, 0.0, 0.0, 0
+		Delete()
+	ENDIF	
+ENDSTATE
+
+
+STATE KillOffFloor
+	IF (dead = 0)
+		IF (!parentDead)
+			SubParentSem(0, 1)
+		ENDIF
+		dead = 1
+		DeleteBand (trail)
+		MyVar = 7.0
+		CREATE SPAWN_BLASTEXP 0.0, 3.0, -2.0, 0.0, 0.0, 0.0, 0
+		Delete()
+	ENDIF	
+ENDSTATE

@@ -1,0 +1,23 @@
+//PAL FRIENDLY
+PARAMFLOAT speed
+
+STATE Init
+	MyFlag = MyFlag | ENEMY | STRATCOLL 
+	RegisterCollision()
+	InitHDC()
+	ObjectNoCull(1)
+	ObjectNoCull(2)
+	ObjectNoCull(3)
+	ObjectNoCull(4)
+	UpdateObjectCollFlag(1, NOCAMERACOLLIDE)
+	UpdateObjectCollFlag(2, NOCAMERACOLLIDE)
+	UpdateObjectCollFlag(3, NOCAMERACOLLIDE)
+	UpdateObjectCollFlag(4, NOCAMERACOLLIDE)
+	UpdateObjectCollFlag(5, NOCAMERACOLLIDE)
+	STAT> StartRotate
+ENDSTATE
+
+STATE StartRotate
+	RelRotateY(speed)
+	CalculateStratPolyData(0)
+ENDSTATE

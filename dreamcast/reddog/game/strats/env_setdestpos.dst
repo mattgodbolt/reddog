@@ -1,0 +1,34 @@
+LOCALFLOAT	tx
+LOCALFLOAT	ty
+LOCALFLOAT	tz
+LOCALFLOAT tempf
+
+LOCALINT i
+
+STATE Init
+	MyFlag = MyFlag | ENEMY
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	IF (PlayerNearActivationXY(0) OR PlayerNearActivationXY(1) OR PlayerNearActivationXY(2) OR PlayerNearActivationXY(3) OR PlayerNearActivationXY(4))
+		IF ((DestX != x) OR (DestY != y) OR (DestZ != z))
+			tx = x - DestX
+			ty = y - DestY
+			tz = z - DestZ
+			i = 0
+			WHILE (i < 60)
+				tempf = SmoothFromTo(tx, i, 60)
+				DestX = DestX + tempf
+				tempf = SmoothFromTo(ty, i, 60)
+				DestY = DestY + tempf
+				tempf = SmoothFromTo(tz, i, 60)
+				DestZ = DestZ + tempf
+				i = i + 1
+			ENDWHILE
+			DestX = x
+			DestY = y
+			DestZ = z
+		ENDIF
+	ENDIF
+ENDSTATE

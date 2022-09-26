@@ -1,0 +1,69 @@
+
+//LOCALINT innerBand
+//LOCALFLOAT co   
+
+
+LOCALINT ID
+
+STATE Init
+
+   //	MyFlag2 = MyFlag2 | TRANSLUCENT
+ 	SetFriction(0.0,0.0,0.0)
+  //	OBJECT> WEAPON\REDDOGLASER
+   	TRIGSET>MakeTrail	EVERY 4
+	TRIGSET>KillOff PARENTDEAD
+   //	trans = 0.2
+
+	// Hide object, and use the trails instead
+	MyFlag = MyFlag | NODISP
+
+  //	co = RandRange (0.3,0.9)
+  //	innerBand = CreateBand (0, 12, 1, 1, co, co,0 , 0, co, 0, co)
+   
+  // 	TRIGSET>BandTrigger EVERY 1
+  //	col = MyParentRadius + 0.7
+	ID = TOINT(ParentSemaphore)
+
+
+
+	STAT>Move
+ENDSTATE
+ 
+//LOCALFLOAT col
+
+STATE MakeTrail
+//	MyVar = (-0.28)
+  	CREATE SPAWN_LIMBFIRE 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0
+	TRIGFIN
+
+ENDSTATE
+
+
+
+//STATE BandTrigger
+//    AddBandSegment (innerBand, 0, 0, 0, col)
+   
+//	TRIGFIN
+//ENDSTATE
+
+STATE Move
+	x = x + windX * 0.02 + parentabsspeedx * 0.7
+  	y = y + windY * 0.02 + parentabsspeedy * 0.7
+   
+   	z = z + parentabsspeedz * 0.5
+	LinkToParentObject(ID,0,0,0,0,0,0)
+
+
+ENDSTATE
+
+
+
+//ON DYING TRIGGER CHANGE THE MAIN RUN ADDRESS TO DEATH
+STATE KillOff
+   
+	PauseTriggers(-1,FORGET)
+//   	DeleteBand (innerBand)
+	Delete()
+ENDSTATE
+
+

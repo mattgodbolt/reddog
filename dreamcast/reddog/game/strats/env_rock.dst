@@ -1,0 +1,39 @@
+LOCALFLOAT speed
+LOCALFLOAT scale
+LOCALFLOAT	rx
+LOCALFLOAT	ry
+LOCALFLOAT	rz
+LOCALINT	time
+LOCALINT	aliveTime
+
+STATE Init
+	MyFlag = MyFlag | REALGRAVITYON
+	time = 0
+	OBJECT> SCENERY\ROCKS\Rock6
+	speed = GetGlobalParamFloat(0)
+	scale = GetGlobalParamFloat(1)
+	aliveTime = 30 * GetGlobalParamInt(0)
+	scalex = scale
+	scaley = scale
+	scalez = scale
+	MoveZ(speed)
+	LOOP (2)
+		MyFlag = MyFlag
+	ENDLOOP
+	rx = RandRange (-0.5, 0.5)
+	ry = RandRange (-0.5, 0.5)
+	rz = RandRange (-0.5, 0.5)
+	
+	STAT>Start
+ENDSTATE
+ 
+STATE Start
+	time = time + 1
+	RelRotateX(rx)
+	RelRotateY(ry)
+	RelRotateZ(rz)
+	IF (time > aliveTime)
+		Delete()
+	ENDIF
+ENDSTATE
+ 

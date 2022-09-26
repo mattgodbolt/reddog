@@ -1,0 +1,89 @@
+LOCALFLOAT	speed
+
+STATE Init
+	MyFlag = MyFlag & LNOT(ENEMY)
+	MyFlag = MyFlag | FRIENDLY
+	InitPath()
+	speed = 0.0
+	STAT> Start
+ENDSTATE
+
+STATE Start
+	IF (PlayerNearActivationXY(0))
+		PlayerState = PS_ONPATH
+		SetPlayerBoostButtonCount(0, 0)
+		GetPrevWay()
+		PlayerCheckX = CheckX
+		PlayerCheckY = CheckY
+		PlayerCheckZ = CheckZ
+		STAT> FollowPath
+	ENDIF
+ENDSTATE
+
+STATE FollowPath
+	PlayerTurnTowardPlayerCheckPosXY()
+	PlayerControlPadPress = PADSHOULDERR | PADFORWARD
+	IF (LastWay())
+		speed = PlayerDistPlayerCheckXY() * 0.01
+		IF (speed > 1.0)
+			speed = 1.0
+		ENDIF
+	ELSE
+		speed = 1.0
+	ENDIF
+	PlayerControlPlayerAcc = speed
+	IF (LastWay())
+		IF (PlayerNearPlayerCheckPosXY(0.0))
+			PlayerControlPadPress = 0
+			PlayerControlPlayerAcc = 0.0
+			GetActivationPos(1)
+			PlayerCheckX = CheckX
+			PlayerCheckY = CheckY
+			PlayerCheckZ = CheckZ
+			//LOOP (15)
+			//	PlayerControlPlayerAcc = 0.1
+			//ENDLOOP
+			STAT> FacePlayerCheckPos
+		ENDIF
+	ELSE
+		IF (PlayerNearPlayerCheckPosXY(5.0))
+			GetNextWay()
+			PlayerCheckX = CheckX
+			PlayerCheckY = CheckY
+			PlayerCheckZ = CheckZ
+		ENDIF
+	ENDIF
+ENDSTATE
+
+STATE FacePlayerCheckPos
+	PlayerControlPlayerAcc = 0.0
+	PlayerTurnTowardPlayerCheckPosXY()
+	IF(PlayerSeePlayerCheckPosXY(0.03))
+		STAT> MoveForward 
+	ENDIF
+ENDSTATE
+
+STATE MoveForward
+	PlayerTurnTowardPlayerCheckPosXY()
+	LOOP (20)
+		PlayerControlPadPress = PADSHOULDERL | PADBACKWARD
+		PlayerControlPlayerAcc = 1.0
+	ENDLOOP
+	STAT> MoveBack 
+ENDSTATE
+
+STATE MoveBack
+	LOOP (30)
+		PlayerControlPadPress = PADSHOULDERL | PADBACKWARD
+		PlayerControlPlayerAcc = -1.0
+	ENDLOOP
+	PlayerControlPlayerAcc = 0.0
+	LOOP (10)
+		PlayerRotSpeed = PlayerRotSpeed * 0.7
+		PlayerVelZ = PlayerVelZ * 0.7
+		MyFlag = MyFlag
+	ENDLOOP
+	PlayerState = PS_TOWERLIFT
+	Delete()
+	//STAT>Init
+ENDSTATE

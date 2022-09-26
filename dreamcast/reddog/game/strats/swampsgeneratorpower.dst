@@ -1,0 +1,24 @@
+
+STATE Init
+	MyFlag = MyFlag | ENEMY | STRATCOLL 
+	WHILE (!PNode)
+		MyFlag = MyFlag
+	ENDWHILE
+	RegisterCollision()
+   	TRIGSET>Explode WHENDEAD
+	InitHDC()
+	CalculateStratPolyData(1)
+	health = 100
+	STAT> Wait
+ENDSTATE
+
+STATE Wait
+	MyFlag = MyFlag
+ENDSTATE
+
+STATE Explode
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+	AddParentSem (0,1)
+	Delete()
+	TRIGSTOP
+ENDSTATE

@@ -1,0 +1,108 @@
+
+//FLOORCOLL FLAG MODIFIED COS OF BOSS BEAM ATTACK
+
+LOCALINT	pad
+LOCALINT Trail1
+LOCALINT Trail2
+LOCALINT Trail3
+LOCALINT Trail4
+LOCALINT	stopTime
+LOCALFLOAT	tempf
+
+DEFINE STOPTIME	400
+DEFINE SLOWTIME 90
+
+STATE Init 
+	PlayerState = PS_WATERSLIDE
+  	MyFlag = MyFlag | GRAVITYON | FLOORCOLL
+	MyFlag2 = MyFlag2 | ENEMY_CF | PLAYER_CF
+	RotationRestriction(1.0, 1.0, 1.0)
+	SetFriction(0.0, 0.0, 0.0)
+	PlayerHeld = 1
+	stopTime = 0
+	IAmHoldPlayerMain()
+	InitPath()
+	InitSplineData()
+	MakeMeTheLast()
+	SetObjectShadowState(1)
+	WHILE (!WaterSlideCamLookStrat)
+		MyFlag = MyFlag
+	ENDWHILE
+	STAT> MoveRaft 
+ENDSTATE
+  
+STATE MoveRaft
+	PlayerState = PS_WATERSLIDE
+	pad = GetPadPress(0)
+
+	IF (BossStrat)
+		MoveXFlat(-JoyX * 0.15)
+	ELSE
+		IF (PlayerNearActivationXY(0))	
+			stopTime = stopTime + 1
+		ELSE
+			MoveXFlat(JoyX * 0.1)
+		ENDIF
+	ENDIF
+
+
+
+	IF (PlayerNearActivationXY(0))
+		IF (stopTime > STOPTIME)
+			tempf = 1.0 - SmoothFromToSum(1.0, stopTime - STOPTIME, SLOWTIME)
+		ELSE
+			tempf = 1.0
+		ENDIF
+		absspeedx = (absspeedx + (parentx - x) * 0.01) * tempf
+		absspeedy = (absspeedy + (parenty - y) * 0.01) * tempf
+		IF (stopTime > STOPTIME + SLOWTIME)
+			PlayerHeld = 0
+			PlayerState = PS_NORMAL
+			HoldPlayerMain = 0
+			SetPlayerOCP()
+			InitHDC()
+			CalculateStratPolyData(1)
+			PlayerFlag = PlayerFlag | GRAVITYON | FLOORCOLL
+			MyFlag = MyFlag | STRATCOLL
+			RegisterCollision()
+			STAT>DoNothing
+		ENDIF
+	ELSE
+		tempf = (WaterSlideCamLookDist() - 80.0) * 0.1
+		IF (BossStrat)
+			IF (tempf < 0.1)
+				tempf = 0.1
+			ENDIF
+   			IF (tempf > 0.2) 
+				tempf = 0.2
+			ENDIF
+   		ELSE
+			IF (tempf < 0.05)
+				tempf = 0.05
+			ENDIF
+			IF (tempf > 0.4) 
+				tempf = 0.4
+			ENDIF
+		ENDIF
+		MoveYFlat(tempf)
+	ENDIF
+   	
+	HoldPlayerPos(0, 0.0, 0.0, 1.0)
+	HoldPlayerRot(0, 0.0, 0.0, 0.0) 
+ 	PlayerFlag = PlayerFlag & LNOT(FLOORCOLL)
+	//IF (PlayerHeld = 0)
+   	//	PlayerFlag = PlayerFlag | FLOORCOLL
+	//	STAT> End
+	//ENDIF
+ENDSTATE 
+
+STATE End   
+	PlayerState = PS_NORMAL
+	HoldPlayerMain = 0
+	SetPlayerOCP()
+	Delete()
+ENDSTATE
+
+STATE DoNothing
+	CalculateStratPolyData(0)
+ENDSTATE

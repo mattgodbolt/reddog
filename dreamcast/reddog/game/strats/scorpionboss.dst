@@ -1,0 +1,2667 @@
+//ACTIVATION POINT 0 -  THE ARENA POINT THAT THE SCORPION FACES WHEN WALKING AROUND THE DISK 
+//ACTIVATION POINT 1 -  FOR THE FOCUS POINT OF MINI-SCOPION ATTACK
+//WAYPATH NEEDED AROUND THE RING
+
+//TEMP EASY DIFFICULTY
+DEFINE PHASE0HEALTH		250.0
+DEFINE PHASE1HEALTH		350.0
+DEFINE PHASE2HEALTH		350.0
+DEFINE PHASE3HEALTH		350.0
+
+//TEMP HARD DIFFICULTY
+DEFINE HPHASE0HEALTH		1400.0
+DEFINE HPHASE1HEALTH		1400.0
+DEFINE HPHASE2HEALTH		1400.0
+DEFINE HPHASE3HEALTH		1400.0
+
+DEFINE WAITCOUNT 175
+
+DEFINE HEAD 29
+DEFINE DAMAGEDHEAD 31
+DEFINE BODY 30
+DEFINE NOSE	29
+DEFINE GUARD 28
+
+DEFINE LEFTGUNLOWER		24
+DEFINE LEFTGUNUPPER		25
+DEFINE RIGHTGUNLOWER	27
+DEFINE RIGHTGUNUPPER	26
+DEFINE FOCALLASER		1
+DEFINE TAILTIP			3
+
+DEFINE TAILMID			5
+DEFINE LLEGBIT1			12
+DEFINE LLEGBIT2			13
+DEFINE LLEGBIT3			14
+DEFINE RLEGBIT1			15
+DEFINE RLEGBIT2			16
+DEFINE RLEGBIT3			17
+
+
+   
+
+LOCALINT phase 
+//DEFINE OFFSET TIME FOR FIRE ANIM, MUST BE A VAR AS IT WILL CHANGE FOR PAL
+LOCALINT FIREFRAMEOFF 
+
+LOCALFLOAT Cang
+LOCALFLOAT col
+LOCALINT BEAMFIRING
+LOCALFLOAT barAlpha
+
+TRIGGER ENVCONT
+
+	IF (!phase)
+	  	Cang  = Cang + 0.09
+	ELSE
+		IF (phase = 1)
+		  	Cang  = Cang + 0.12
+		ELSE
+
+			//IF (phase >= 2)
+				Cang  = Cang + 0.23
+			//ENDIF
+
+			IF (phase = 3)
+			 	Cang  = Cang + 0.3
+			ENDIF
+		ENDIF
+	ENDIF
+
+
+	IF (!BEAMFIRING)
+		col = (Ssin(Cang) * 0.18) + (0.05 * phase)
+		SetEnvironmentParms(5.0,150.0,-1,0,0.70 + col,0.15,0.15)
+	ELSE
+		col = (Ssin(Cang) * 0.1)
+		//NICE GREEN SETTING
+	   //	SetEnvironmentParms(5.0,150.0,-1,0,0.65 + col,0.9 + col,0.60 + col)
+	   	SetEnvironmentParms(5.0,150.0,-1,0,0.65 + col,0.6 + col,0.9 + col)
+
+
+
+	ENDIF
+
+
+
+	TRIGFIN
+ENDTRIGGER
+
+//RUNS 
+
+//LOCALFLOAT ANGLE 
+//LOCALFLOAT FIELDSPEC
+//LOCALFLOAT SPECTOGO
+LOCALINT SHIELDACTIVATED
+
+DEFINE BEAMUP 2
+STATE ShieldType
+	MakeMeTheLast()
+   	OBJECT> BOSSES\SCORPIONWEAPONS\SCORPIONENERGYFIELD
+	InitHDC()
+	InActivateObjectCollision(BEAMUP)
+	damage = 0.5
+	AllocStratSoundBlock(1)
+	SetAudibleRange(0,800,1000)
+	//PLAYSOUND>VBOSS_SHIELD 0 1.0 0.0 0.0 0.0 CONTINUOUS | NOPOSITION
+		
+	STAT>ShieldMain
+
+ENDSTATE
+LOCALFLOAT fang
+
+LOCALFLOAT TRANSTOGO
+//LOCALFLOAT fang
+LOCALINT SHIELDON
+
+STATE ShieldMain
+//	IF (MyParentFlag)
+	IF (ParentFrame != 1000.0)
+
+		LinkToParentObject(0,0,0,0,0,0,0)
+		IF (NearPlayerXY(40.0))
+			IF (!SHIELDON)
+
+				IF (!SHIELDACTIVATED)
+				   	MODELANIM>BOSSES\SCORPIONWEAPONS\SCORPIONENERGYFIELD.RDO>Activate>NOTWEEN
+   					PLAYSOUND>VBOSS_SHIELD 0 1.0 0.0 0.0 0.0 CONTINUOUS | NOPOSITION
+					MyVar = -8.0
+					SHIELDACTIVATED = 1
+				ENDIF
+				   	//IF (MyVar < 0)
+				   	//	MyVar = MyVar + 1.0
+					//ENDIF
+				   //	SetPitch(0,MyVar)
+				IF (!(MyAnimFlag & RUNNING))
+					SHIELDON = 1
+				ENDIF
+			ELSE
+			  	MODELANIM>BOSSES\SCORPIONWEAPONS\SCORPIONENERGYFIELD.RDO>Idle>REPEAT
+
+			ENDIF
+
+
+		  	fang = fang + 0.01
+		  	CalculateStratPolyData(0)
+			MyFlag = MyFlag | ENEMY | STRATCOLL
+			MyFlag = MyFlag & LNOT(NODISP)
+
+		ELSE
+		 	MyFlag = MyFlag & LNOT(ENEMY | STRATCOLL)
+			IF (SHIELDON)
+				MODELANIM>BOSSES\SCORPIONWEAPONS\SCORPIONENERGYFIELD.RDO>DeActivate>NOTWEEN
+		  
+				WHILE (MyAnimFlag & RUNNING)
+				   //	IF (MyVar > -8.0)
+					
+				   //	MyVar = MyVar - 1.0
+				   //	ENDIF
+				   //	SetPitch(0,MyVar)
+				 	CalculateStratPolyData(0)
+				 	LinkToParentObject(0,0,0,0,0,0,0)
+				ENDWHILE
+			ENDIF
+			StopSound(0,0)
+			SHIELDON = 0
+			SHIELDACTIVATED = 0
+
+		//	IF (trans < 0.02)
+				MyFlag = MyFlag | NODISP
+		//	ENDIF
+			TRANSTOGO = 0.0
+			trans = trans + (TRANSTOGO - trans) * 0.1
+		ENDIF
+	ELSE
+
+		Delete()
+	ENDIF
+
+ENDSTATE
+
+TRIGGER Appear
+	WHILE (PlayerState = PS_NORMAL)
+	   //	MyFlag = MyFlag
+		TRIGFIN
+	ENDWHILE
+
+	MyFlag = MyFlag & LNOT(NODISP)
+	TRIGSTOP
+
+ENDTRIGGER
+
+
+STATE DeathType
+	MyParentHealth = 1000.0
+	Score = Score + 20000
+   	OBJECT> BOSSES\SCORPIONBOSS\SCORPION-DEATH
+
+	MyFlag = MyFlag | NODISP
+	TRIGSET>Appear EVERY 1
+   	//test MATT
+
+//	LOOP (2)
+//		MyFlag = MyFlag
+//	ENDLOOP
+
+   	MODELANIM>BOSSES\SCORPIONBOSS\SCORPION-DEATH.RDO>Death>0
+
+	WHILE (MyAnimFlag & RUNNING)
+		MyFlag = MyFlag
+	ENDWHILE
+	Delete()
+
+ENDSTATE
+
+TRIGGER VolRiseFall
+	IF (CheckY)
+		IF (CheckX < 0.6)
+			CheckX = CheckX + 0.05
+			SetVolume(0, CheckX)
+			TRIGFIN
+		ELSE
+			CheckY = 0.0
+		ENDIF		
+	ELSE
+		IF (CheckX < 0.0)
+			TRIGSTOP
+		ELSE
+			SetVolume(0, CheckX)
+			CheckX = CheckX - 0.05
+			TRIGFIN
+		ENDIF
+	ENDIF
+ENDTRIGGER
+
+
+TRIGGER Explosion
+	HEADDEAD = 0
+	IF (!IsPlaying(1))
+		HEADDEAD = 1
+	ELSE
+		IF (!IsPlaying(2))
+			HEADDEAD = 2
+	//	ELSE
+	//		IF (!IsPlaying(2))
+	//			HEADDEAD = 3
+	//		ENDIF
+		ENDIF
+	ENDIF
+	
+
+
+	IF (HEADDEAD = 1)
+		IF ((RandRange(0,5.0) > 3.0))
+			PLAYSOUND>EX_LARGE_BLAST1 1 1.0 0.0 0.0 0.0 NOPOSITION
+
+		ELSE
+			IF (RandRange(0,5.0) > 2.0)
+				PLAYSOUND>EX_MEDIUM_BLAST1 1 1.0 0.0 0.0 0.0 NOPOSITION
+		 	ELSE
+				PLAYSOUND>EX_HEAVY_IMPACT2 1 1.0 0.0 0.0 0.0 NOPOSITION
+			ENDIF
+		ENDIF
+	ENDIF
+
+	IF (HEADDEAD = 2)
+		IF ((RandRange(0,5.0) > 3.0))
+			PLAYSOUND>EX_LARGE_BLAST1 2 1.0 0.0 0.0 0.0 NOPOSITION
+
+		ELSE
+			IF (RandRange(0,5.0) > 2.0)
+				PLAYSOUND>EX_MEDIUM_BLAST1 2 1.0 0.0 0.0 0.0 NOPOSITION
+		 	ELSE
+				PLAYSOUND>EX_HEAVY_IMPACT2 2 1.0 0.0 0.0 0.0 NOPOSITION
+			ENDIF
+		ENDIF
+	ENDIF
+
+  //	IF (HEADDEAD = 3)
+  //		IF ((RandRange(0,5.0) > 3.0))
+  //			PLAYSOUND>EX_LARGE_BLAST1 3 1.0 0.0 0.0 0.0 NOPOSITION
+
+  //		ELSE
+  //			IF (RandRange(0,5.0) > 2.0)
+  //				PLAYSOUND>EX_MEDIUM_BLAST1 3 1.0 0.0 0.0 0.0 NOPOSITION
+  //		 	ELSE
+  //				PLAYSOUND>EX_HEAVY_IMPACT2 3 1.0 0.0 0.0 0.0 NOPOSITION
+  //			ENDIF
+  //		ENDIF
+  //	ENDIF
+
+
+
+
+
+
+	TRIGFIN
+ENDTRIGGER
+
+
+//TRIGGER WHITEME
+//			WHITETOGO = 1.0
+//			TRIGSET>Explosion EVERY 12
+
+//		  	TRIGSET>WhiteOut EVERY 1
+
+//	TRIGSTOP
+//ENDTRIGGER
+
+//runs till end then deletes the bossstrat
+STATE DeathType2
+	AllocStratSoundBlock(3)
+   	PLAYSOUND>EXPLOLOOP 0 0.01 0.0 0.0 0.0 (CONTINUOUS | NOPOSITION)
+	SetAudibleRange(0,10,200)
+  	TRIGSET>VolRiseFall EVERY 1
+   	CheckX = 0.5
+	CheckY = 1.0
+  	MyParentHealth = 1000.0
+   	OBJECT> BOSSES\SCORPIONBOSS\SCORPION-SHARD
+
+	MyFlag = MyFlag | NODISP
+	TRIGSET>Appear EVERY 1
+	//TRIGSET>WHITEME EVERY 65
+   	MODELANIM>BOSSES\SCORPIONBOSS\SCORPION-SHARD.RDO>Explode>0
+
+	WHILE (MyAnimFlag & RUNNING)
+		frame = frame + 1
+   		IF (frame = 65)
+   			WHITETOGO = 1.0
+   			TRIGSET>Explosion EVERY 6
+
+   		  	TRIGSET>WhiteOut EVERY 1
+   		ENDIF
+
+	  //	MyFlag = MyFlag
+	ENDWHILE
+
+
+	MyFlag = MyFlag | NODISP
+ 
+ 	WHILE (!WHITEDONE)
+		MyFlag = MyFlag
+	ENDWHILE
+
+  
+  
+   	WHITEDONE = 0
+	WHITETOGO = 0
+
+	WHILE (!WHITEDONE)
+		MyFlag = MyFlag
+	ENDWHILE
+	Delete()
+
+ENDSTATE
+
+//TRIGGER DEATHSOUND
+//   	PLAYSOUND>VLDEATH 5 1.0 0.0 0.0 0.0 NOPOSITION
+
+//	TRIGSTOP
+//ENDTRIGGER
+
+STATE Die
+	spitch = 0
+	//SEMAPHORE FOR MY SHIELD
+	frame = 1000.0
+   	MODELANIM>BOSSES\SCORPIONBOSS\SCORPIONBOSS.RDO>Death>0
+
+	WHILE (MyAnimFlag & TWEEN)
+		KillMyVelocity()
+		MyFlag = MyFlag
+	ENDWHILE
+
+  //	TRIGSET>DEATHSOUND EVERY 20
+	WHILE (MyAnimFlag & RUNNING)
+	   	IF (MyAnimFrame = 20)
+	   		PLAYSOUND>VLDEATH 5 1.0 0.0 0.0 0.0 NOPOSITION
+	   	ENDIF
+	
+		KillMyVelocity()
+		MyFlag = MyFlag
+	ENDWHILE
+
+
+
+	IF (!HEADDESTROYED)
+		TRIGKILL>DestroyHead EVERY 1
+	ENDIF
+
+	TRIGKILL>CalcData EVERY 1
+	MyFlag = MyFlag & LNOT(FLOORCOLL | STRATCOLL)
+
+   	//CREATE THE DEATH OBJECTS
+	WHILE (health != 1000.0)
+		KillMyVelocity()
+	   	SetGlobalParamInt(0,100)
+		CREAIND SCORPIONBOSS startx, starty, startz, 0, 0, 0
+		ClearGlobalParams()
+	ENDWHILE
+   	health = 0
+	WHILE (health != 1000.0)
+		KillMyVelocity()
+	 	SetGlobalParamInt(0,200)
+	 	CREAIND SCORPIONBOSS startx, starty, startz, 0, 0, 0
+		ClearGlobalParams()
+   	ENDWHILE
+	MyFlag = MyFlag | NODISP
+  //	LOOP (200)
+  //	LOOP (50)
+  //		MyFlag = MyFlag
+  //	ENDLOOP
+
+
+	//ENSURE THE DOME IS ON	and fog is reset
+	SetEnvironmentParms(-1,-1,-1, -2,-1,-1,-1)
+
+	TimeFunction(2)
+	BossStrat = 0
+	Delete()
+ENDSTATE
+
+
+LOCALFLOAT startx
+LOCALFLOAT starty
+LOCALFLOAT startz
+
+
+
+
+
+STATE Init 
+
+	//CHECK TO SEE IF I'M THE FIELD TYPE
+	IF (GetGlobalParamInt(0) = 99)
+		STAT>ShieldType
+	ENDIF
+
+	//CHECK TO SEE IF I'M THE DEATH TYPE 1
+	IF (GetGlobalParamInt(0) = 100)
+		STAT>DeathType
+	ENDIF
+
+	//CHECK TO SEE IF I'M THE DEATH TYPE 2
+	IF (GetGlobalParamInt(0) = 200)
+		STAT>DeathType2
+	ENDIF
+
+
+	startx = x
+	starty = y
+	startz = z
+
+
+	AllocStratSoundBlock(8)
+	SetAudibleRange(0, 0, 300)
+	SetAudibleRange(1, 0, 300)
+	SetAudibleRange(2, 0, 300)
+	SetAudibleRange(3, 0, 300)
+	SetAudibleRange(4, 0, 300)
+	SetAudibleRange(5, 0, 300)
+   	SetAudibleRange(6, 0, 300)
+   	SetAudibleRange(7, 0, 300)
+
+
+
+
+
+	//NTSC
+	FIREFRAMEOFF = 63
+
+	//ENSURE THE DOME IS OFF
+	SetEnvironmentParms(5.0,150.0,-1,0,0.70,0.15,0.15)
+
+	MyFlag = MyFlag | RELVELCALC | HOVERMOVE | FLOORCOLL | GRAVITYON | ENEMY | STRATCOLL
+	MyFlag2 = MyFlag2 | COLLMOVE
+   	OBJECT> BOSSES\SCORPIONBOSS\SCORPIONBOSS
+	SetObjectShadowState(1)
+	RegisterCollision()
+	//MAKE IMMUNE TO WHITE OUT + FOG
+	DontWhiteMeOut()
+	DontFogMeOut()
+
+	TRIGSET>ENVCONT EVERY 1
+   	InitHDC()
+  	RotationRestriction(1.0,1.0,1.0)
+  
+	IF (Hard)
+		SetObjectHealth(HEAD,HPHASE0HEALTH)
+	ELSE
+		SetObjectHealth(HEAD,PHASE0HEALTH)
+   	ENDIF
+	
+	ObjectTargetable(HEAD)
+
+	ObjectNotTargetable(BODY)
+
+
+	//DEFAULT TURN OFFS FOR BACK LEGS AND TAIL 
+	InActivateObjectCollision(TAILTIP)
+	InActivateObjectCollision(TAILMID)
+	InActivateObjectCollision(LLEGBIT1)
+	InActivateObjectCollision(LLEGBIT2)
+	InActivateObjectCollision(LLEGBIT3)
+	InActivateObjectCollision(RLEGBIT1)
+	InActivateObjectCollision(RLEGBIT2)
+	InActivateObjectCollision(RLEGBIT3)
+
+	// Health bar
+	barAlpha = 0
+	TRIGSET>DrawBar EVERY 1
+	TRIGSET>DrawBar WHENPAUSED
+
+	//TURN OFF THE DAMAGED HEAD
+	InActivateObjectCollision(DAMAGEDHEAD)
+	ObjectNotTargetable(DAMAGEDHEAD)
+	HideObject(DAMAGEDHEAD)
+
+
+
+
+
+
+	//ENSURE THE SET UP FOR PHASE 1 MAKES LASER'S TARGETTABLE
+  //	ObjectTargetable(LEFTGUNLOWER)
+  //	ObjectTargetable(LEFTGUNUPPER)
+  //	ObjectTargetable(RIGHTGUNUPPER)
+  //	ObjectTargetable(RIGHTGUNLOWER)
+
+
+	phase = 0
+	//IF (HasActivation(0) AND MyPath)	
+		InitPath()
+	  //	MyFlag = MyFlag & LNOT(GRAVITYON + FLOORCOLL)
+		TRIGSET>CalcData EVERY 1
+		IF ((!(MyFlag & HITFLOOR)) AND (!(MyFlag & HITSTRAT)))
+			
+	 		MyFlag = MyFlag
+
+		ENDIF
+
+
+
+		IAmDaBoss
+
+		MODELANIM>BOSSES\SCORPIONBOSS\SCORPIONBOSS.RDO>Stand>REPEAT
+		WHILE (MyAnimFlag & RUNNING)
+			MyFlag = MyFlag
+		ENDWHILE
+		//WAS 0.9
+	   
+	   	PLAYSOUND>VLPOWER 0 0.01 0.0 0.0 0.0 CONTINUOUS | NODOPPLER
+	   
+		//HUM PROVIDES A QUITE NICE AMBIENT NOISE
+	   //	PLAYSOUND>VBOSS_SHIELD 1 0.6 0.0 0.0 0.0 CONTINUOUS | NOPOSITION
+	   
+	   //	StopSound(0,0)
+	   //	SetPitch(0,0.5)
+	    spitch = 0
+		fireTime = 120
+		fireTime = 0
+		TRIGSET>PhaseControl1 EVERY 1
+		//CREATE THE EXPULSION BALL
+		SetGlobalParamInt(0,99)
+		CREATE SCORPIONBOSS 0, 0, 0, 0, 0, 0, 0
+		ClearGlobalParams()
+		TimeFunction(1)
+	   	endreached = 1
+		STAT>WaitForFire
+	//ELSE
+	//	STAT>Test1
+	//ENDIF
+	//Delete()
+ENDSTATE
+
+LOCALFLOAT spitchoff
+LOCALFLOAT spitchang
+
+TRIGGER CalcData
+  //	NOWPITCH = NOWPITCH + (((spitch + spitchoff) - NOWPITCH) * 0.05)
+  //	IF (NOWPITCH < 0)
+  //		NOWPITCH = 0
+  //	ENDIF
+   
+   	//SetPitch(0,NOWPITCH)
+
+   //	spitchang = spitchang + 0.01
+   //	spitchoff = Ssin(spitchang) * 0.3
+	//TRIGFIN
+
+ 	CalculateStratPolyData(0)
+	TRIGFIN
+ENDTRIGGER
+
+LOCALINT fireTime
+LOCALINT FIREMODE
+
+
+
+LOCALFLOAT SPECAMOUNT
+
+TRIGGER DamageHead
+	SPECAMOUNT = 1.0 / 10
+	PLAYSOUND>ENEMY_HIT3 2 1.0 0.0 0.0 0.0 RANDOM
+	LOOP (10)
+		SetSpecularColour(HEAD, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		SPECAMOUNT = SPECAMOUNT + 1.0 / 10.0
+		ObjectSpecularFlash(HEAD,1)
+	ENDLOOP
+	ObjectSpecularFlash(HEAD,0)
+	headLightning = 0
+	TRIGSTOP
+ENDTRIGGER
+
+TRIGGER DamageNose
+	SPECAMOUNT = 1.0 / 10
+	PLAYSOUND>ENEMY_HIT4 2 1.0 0.0 0.0 0.0 RANDOM
+	LOOP (10)
+		SetSpecularColour(NOSE, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		SPECAMOUNT = SPECAMOUNT + 1.0 / 10.0
+		ObjectSpecularFlash(NOSE,1)
+	ENDLOOP
+	ObjectSpecularFlash(NOSE,0)
+	headLightning = 0
+	TRIGSTOP
+ENDTRIGGER
+
+TRIGGER DamageBody
+	SPECAMOUNT = 1.0 / 10
+	MyFlag2 = MyFlag2 | SPECULAR
+	PLAYSOUND>ENEMY_HIT2 2 1.0 0.0 0.0 0.0 RANDOM
+	LOOP (10)
+		SetSpecularColour(0, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		SPECAMOUNT = SPECAMOUNT + 1.0 / 10.0
+	ENDLOOP
+	MyFlag2 = MyFlag2 & LNOT(SPECULAR)
+	headLightning = 0
+	TRIGSTOP
+ENDTRIGGER
+
+
+
+LOCALINT headLightning
+LOCALINT HEADDEAD
+
+LOCALINT LEFTGUNLOWERWaitFrame
+LOCALINT LEFTGUNLOWERFireState
+
+TRIGGER DestroyLeftGunLower
+	MyVar = 2.0
+	HideObject(LEFTGUNLOWER)
+	ObjectNotTargetable(LEFTGUNLOWER)
+	InActivateObjectCollision(LEFTGUNLOWER)
+	LGUNLOWERINPROG = 1
+
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, LEFTGUNLOWER
+  	CREATE SPAWN_ENEMYDEBRIS 0, 0, 0, 0, 0, 0,  LEFTGUNLOWER
+	LEFTGUNLOWERFireState = 2
+  	LEFTGUNLOWERWaitFrame = WAITCOUNT
+  	WHILE ((LEFTGUNLOWERWaitFrame) AND (LEFTGUNLOWERFireState))
+		IF (LEFTGUNLOWERFireState = 2)
+			MyVar = 2.0
+		ELSE
+			MyVar = 0.0
+		ENDIF
+	    SetGlobalParamInt(0,LEFTGUNLOWER)
+		SetGlobalParamFloat(0,0)
+		SetGlobalParamFloat(1,0)
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, LEFTGUNLOWER
+	  //	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, LEFTGUNLOWER
+	  	IF (LEFTGUNLOWERFireState = 2)
+	  		MyVar = 3.0
+	  	ELSE
+	  		MyVar = 1.0
+	  	ENDIF
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, LEFTGUNLOWER
+		ClearGlobalParams()
+	  	LEFTGUNLOWERWaitFrame = LEFTGUNLOWERWaitFrame - 1 
+	  	IF ((!(LEFTGUNLOWERWaitFrame)) AND (LEFTGUNLOWERFireState))
+			LEFTGUNLOWERWaitFrame = WAITCOUNT
+			LEFTGUNLOWERFireState = LEFTGUNLOWERFireState - 1
+		ENDIF
+				   
+  	ENDWHILE
+
+	LGUNLOWERINPROG = 0
+
+	TRIGSTOP
+ENDTRIGGER
+
+LOCALINT LEFTGUNUPPERWaitFrame
+LOCALINT LEFTGUNUPPERFireState
+
+TRIGGER DestroyLeftGunUpper
+	MyVar = 2.0
+	HideObject(LEFTGUNUPPER)
+	ObjectNotTargetable(LEFTGUNUPPER)
+	InActivateObjectCollision(LEFTGUNUPPER)
+
+	LGUNUPPERINPROG = 1
+
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, LEFTGUNUPPER
+  	CREATE SPAWN_ENEMYDEBRIS 0, 0, 0, 0, 0, 0,  LEFTGUNUPPER
+	LEFTGUNUPPERFireState = 2
+  	LEFTGUNUPPERWaitFrame = WAITCOUNT
+  	WHILE ((LEFTGUNUPPERWaitFrame) AND (LEFTGUNUPPERFireState))
+		IF (LEFTGUNUPPERFireState = 2)
+			MyVar = 2.0
+		ELSE
+			MyVar = 0.0
+		ENDIF
+	    SetGlobalParamInt(0,LEFTGUNUPPER)
+		SetGlobalParamFloat(0,0)
+		SetGlobalParamFloat(1,0)
+	   	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, LEFTGUNUPPER
+	   //	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, LEFTGUNUPPER
+	  	IF (LEFTGUNUPPERFireState = 2)
+	  		MyVar = 3.0
+	  	ELSE
+	  		MyVar = 1.0
+	  	ENDIF
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, LEFTGUNUPPER
+		ClearGlobalParams()
+	  	LEFTGUNUPPERWaitFrame = LEFTGUNUPPERWaitFrame - 1 
+	  	IF ((!(LEFTGUNUPPERWaitFrame)) AND (LEFTGUNUPPERFireState))
+			LEFTGUNUPPERWaitFrame = WAITCOUNT
+			LEFTGUNUPPERFireState = LEFTGUNUPPERFireState - 1
+		ENDIF
+				   
+  	ENDWHILE
+	LGUNUPPERINPROG = 0
+
+
+	TRIGSTOP
+ENDTRIGGER
+
+
+LOCALINT RIGHTGUNLOWERWaitFrame
+LOCALINT RIGHTGUNLOWERFireState
+
+TRIGGER DestroyRightGunLower
+	MyVar = 2.0
+	HideObject(RIGHTGUNLOWER)
+	ObjectNotTargetable(RIGHTGUNLOWER)
+	InActivateObjectCollision(RIGHTGUNLOWER)
+
+	RGUNLOWERINPROG = 1
+
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, RIGHTGUNLOWER
+  	CREATE SPAWN_ENEMYDEBRIS 0, 0, 0, 0, 0, 0,  RIGHTGUNLOWER
+	RIGHTGUNLOWERFireState = 2
+  	RIGHTGUNLOWERWaitFrame = WAITCOUNT
+	WHILE ((RIGHTGUNLOWERWaitFrame) AND (RIGHTGUNLOWERFireState))
+		IF (RIGHTGUNLOWERFireState = 2)
+			MyVar = 2.0
+		ELSE
+			MyVar = 0.0
+		ENDIF
+	    SetGlobalParamInt(0,RIGHTGUNLOWER)
+		SetGlobalParamFloat(0,0)
+		SetGlobalParamFloat(1,0)
+	  //	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, RIGHTGUNLOWER
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, RIGHTGUNLOWER
+	  	IF (RIGHTGUNLOWERFireState = 2)
+	  		MyVar = 3.0
+	  	ELSE
+	  		MyVar = 1.0
+	  	ENDIF
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, RIGHTGUNLOWER
+		ClearGlobalParams()
+	  	RIGHTGUNLOWERWaitFrame = RIGHTGUNLOWERWaitFrame - 1 
+	  	IF ((!(RIGHTGUNLOWERWaitFrame)) AND (RIGHTGUNLOWERFireState))
+			RIGHTGUNLOWERWaitFrame = WAITCOUNT
+			RIGHTGUNLOWERFireState = RIGHTGUNLOWERFireState - 1
+		ENDIF
+				   
+  	ENDWHILE
+
+	RGUNLOWERINPROG = 0
+
+	TRIGSTOP
+ENDTRIGGER
+
+
+LOCALINT RIGHTGUNUPPERWaitFrame
+LOCALINT RIGHTGUNUPPERFireState
+
+TRIGGER DestroyRightGunUpper
+	MyVar = 2.0
+	HideObject(RIGHTGUNUPPER)
+	ObjectNotTargetable(RIGHTGUNUPPER)
+	InActivateObjectCollision(RIGHTGUNUPPER)
+
+	RGUNUPPERINPROG = 1
+
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, RIGHTGUNUPPER
+  	CREATE SPAWN_ENEMYDEBRIS 0, 0, 0, 0, 0, 0,  RIGHTGUNUPPER
+	RIGHTGUNUPPERFireState = 2
+  	RIGHTGUNUPPERWaitFrame = WAITCOUNT
+  	WHILE ((RIGHTGUNUPPERWaitFrame) AND (RIGHTGUNUPPERFireState))
+		IF (RIGHTGUNUPPERFireState = 2)
+			MyVar = 2.0
+		ELSE
+			MyVar = 0.0
+		ENDIF
+	    SetGlobalParamInt(0,RIGHTGUNUPPER)
+		SetGlobalParamFloat(0,0)
+		SetGlobalParamFloat(1,0)
+	  // 	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, RIGHTGUNUPPER
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, RIGHTGUNUPPER
+	  	IF (RIGHTGUNUPPERFireState = 2)
+	  		MyVar = 3.0
+	  	ELSE
+	  		MyVar = 1.0
+	  	ENDIF
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, RIGHTGUNUPPER
+		ClearGlobalParams()
+	  	RIGHTGUNUPPERWaitFrame = RIGHTGUNUPPERWaitFrame - 1 
+	  	IF ((!(RIGHTGUNUPPERWaitFrame)) AND (RIGHTGUNUPPERFireState))
+			RIGHTGUNUPPERWaitFrame = WAITCOUNT
+			RIGHTGUNUPPERFireState = RIGHTGUNUPPERFireState - 1
+		ENDIF
+				   
+  	ENDWHILE
+	RGUNUPPERINPROG = 0
+
+
+	TRIGSTOP
+ENDTRIGGER
+
+
+
+
+
+
+
+
+TRIGGER PhaseControl1
+	ObjectTowardPlayerXZ(HEAD, 0.75, 0.75, (TWOPI/360.0) * 45.0, (TWOPI/360.0) * 45.0)
+   	CrntRotToIdleRotX(HEAD, 0.75)
+  	CrntRotToIdleRotZ(HEAD, 0.75)
+
+
+
+   	IF (SCORPFIREVALID)
+  			IF (!(ObjectSeePlayerZ(TWOPI/64.0,HEAD,0,0,0)))
+  				SCORPFIREDONE = 1
+ 			  //	fireTime = 0
+ 			ENDIF
+
+		//EVERY 30
+		IF ((!fireTime)) 
+			
+			SetGlobalParamInt(0,1)
+			CREATE SPAWN_SCORPIONBALL 0.0, 3.0, 0.0, 0.0, 0.0, 0.0, LEFTGUNUPPER
+		 	CREATE SPAWN_SCORPIONBALL 0.0, 3.0, 0.0, 0.0, 0.0, 0.0, RIGHTGUNUPPER
+			//SMALLER BALLS SPAWNED FROM LOWER
+			SetGlobalParamInt(0,3)
+			CREATE SPAWN_SCORPIONBALL 0.0, 3.0, 0.0, 0.0, 0.0, 0.0, LEFTGUNLOWER
+			CREATE SPAWN_SCORPIONBALL 0.0, 3.0, 0.0, 0.0, 0.0, 0.0, RIGHTGUNLOWER
+			ClearGlobalParams()
+			fireTime = 30
+			FIREMODE = FIREMODE -1
+			SCORPFIRECOUNT = SCORPFIRECOUNT + 1
+		 ELSE
+			fireTime = fireTime -1
+
+		 ENDIF
+
+		IF (SCORPFIRECOUNT = 3)
+			SCORPFIREDONE = 1
+		ENDIF
+
+
+   //	ENDIF
+
+
+	ENDIF
+
+
+	//CHECK FOR DAMAGE
+
+	IF (ObjectHitStrat (HEAD))
+		IF (GetObjectHealth(HEAD) < 0)
+			HEADDEAD = 1
+		ELSE
+			IF (!headLightning)
+				TRIGSET>DamageHead EVERY 1 		  
+			ENDIF
+		ENDIF
+	   	ClearObjCollFlag(HEAD,HITSTRAT)
+   	ENDIF
+
+
+
+	IF ((HEADDEAD))
+		TRIGSET>DestroyLeftGunLower EVERY 1
+		TRIGSET>DestroyLeftGunUpper EVERY 1
+		TRIGSET>DestroyRightGunLower EVERY 1
+		TRIGSET>DestroyRightGunUpper EVERY 1
+		TRIGSET>StartBeam EVERY 1
+		phase = 1
+		IF (Hard)
+			SetObjectHealth(NOSE,HPHASE1HEALTH)
+		ELSE
+			SetObjectHealth(NOSE,PHASE1HEALTH)
+		ENDIF
+		TRIGSTOP
+	ELSE
+		TRIGFIN
+	ENDIF
+ENDTRIGGER
+
+LOCALINT BEAMCREATED
+LOCALINT lval
+TRIGGER MoveBeam
+	IF (BeamSemaphore)
+		MODELANIM>BOSSES\SCORPIONBOSS\SCORPIONBOSS.RDO>EnterBeam>0
+		WHILE (MyAnimFlag & RUNNING)
+			MyFlag = MyFlag
+		ENDWHILE
+	  
+	  	MODELANIM>BOSSES\SCORPIONBOSS\SCORPIONBOSS.RDO>BeamMain>REPEAT
+
+		//RIGHT DISTANCE TO PLAYER
+		SetCheckPosRel(0,50.0,0,0)
+
+		SaveX = DogX - CheckX
+		SaveY = DogY - CheckY
+
+		SaveZ = ((SaveX * SaveX) + (SaveY * SaveY))
+
+		//LEFT DISTANCE TO PLAYER
+		SetCheckPosRel(0,-50.0,0,0)
+
+		SaveX = DogX - CheckX
+		SaveY = DogY - CheckY
+
+		//SEE IF LEFTWAYS IS FURTHER THAN RIGHT WAYS
+		IF (((SaveX * SaveX) + (SaveY * SaveY)) > SaveZ)
+			MODE = LEFT
+			fang = - (TWOPI / 180.0)
+		ELSE
+			MODE = RIGHT
+			fang =  (TWOPI / 180.0)
+		ENDIF
+
+		PLAYSOUND>MECHANILOOP 4 1.0 0.0 0.0 0.0 CONTINUOUS
+
+		//MOVE ONE SIDE QUICK
+		LOOP (32)
+			 ang = GetObjectCrntRot(HEAD,MODEZ)
+			 ang = ang + fang
+			 SetObjectCrntRot(HEAD, ang,MODEZ)
+		ENDLOOP
+	
+		//PAUSE
+		LOOP (25)
+			MyFlag = MyFlag
+		ENDLOOP
+	
+		IF (MODE = LEFT)
+		//MOVE ONE SIDE QUICK
+	   //	LOOP (32)
+	   //		 ang = GetObjectCrntRot(HEAD,MODEZ)
+	   //		 ang = ang - (TWOPI /180.0)
+		//	 SetObjectCrntRot(HEAD, ang,MODEZ)
+		//ENDLOOP
+	
+		//PAUSE
+	   //	LOOP (25)
+	   //		MyFlag = MyFlag
+	   //	ENDLOOP
+	
+		
+		//ACTIVATE BEAM
+		//SETS MYVAR TO BE HIGH FOR THE BEAM TO USE
+	   	MyVar = 1.0
+		BEAMFIRING = 1
+		IF (!BEAMCREATED)
+
+			//CREATE THE MAIN BEAM
+			CREATE SPAWN_SCORPIONBOSSBEAM 0, 0, 0, 0, 0, 0, HEAD
+
+			BEAMCREATED = 1
+		ENDIF
+
+		//FULL TO OTHER SIDE
+	   //	LOOP (260)
+		lval = 260
+		WHILE (lval)
+			 lval = lval - 1
+			 ang = GetObjectCrntRot(HEAD,MODEZ)
+			 ang = ang + (TWOPI /720.0)
+			 SetObjectCrntRot(HEAD, ang,MODEZ)
+		ENDWHILE
+	  //	ENDLOOP
+
+		//BACK TO MIDDLE
+
+		LOOP (130)
+			 ang = GetObjectCrntRot(HEAD,MODEZ)
+			 ang = ang - (TWOPI /720.0)
+			 SetObjectCrntRot(HEAD, ang,MODEZ)
+	   	ENDLOOP
+
+		ELSE
+		//MOVE ONE SIDE QUICK
+	   //	LOOP (32)
+	   //		 ang = GetObjectCrntRot(HEAD,MODEZ)
+	   //		 ang = ang + (TWOPI /180.0)
+	   //		 SetObjectCrntRot(HEAD, ang,MODEZ)
+	   //	ENDLOOP
+		
+		//PAUSE
+	   //	LOOP (25)
+	   //		MyFlag = MyFlag
+	   //	ENDLOOP
+	  
+	  	//ACTIVATE BEAM
+		//SETS MYVAR TO BE HIGH FOR THE BEAM TO USE
+	   	MyVar = 1.0
+		BEAMFIRING = 1
+		IF (!BEAMCREATED)
+			CREATE SPAWN_SCORPIONBOSSBEAM 0, 0, 0, 0, 0, 0, HEAD
+			BEAMCREATED = 1
+		ENDIF
+
+		//FULL TO OTHER SIDE
+		lval = 260
+		WHILE (lval)
+			 lval = lval - 1
+			 ang = GetObjectCrntRot(HEAD,MODEZ)
+			 ang = ang - (TWOPI /720.0)
+			 SetObjectCrntRot(HEAD, ang,MODEZ)
+		ENDWHILE
+
+		//BACK TO MIDDLE
+
+		LOOP (130)
+			 ang = GetObjectCrntRot(HEAD,MODEZ)
+			 ang = ang + (TWOPI /720.0)
+			 SetObjectCrntRot(HEAD, ang,MODEZ)
+	   	ENDLOOP
+
+
+
+		ENDIF
+		
+		//BEAM OFF
+		//MAKES MYVAR LOW FOR THE BEAM TO USE
+		GlobalVar = 100.0
+	   	MyVar = 0
+		BEAMFIRING = 0
+		BEAMCREATED = 0
+		MODELANIM>BOSSES\SCORPIONBOSS\SCORPIONBOSS.RDO>ExitBeam>0
+		WHILE (MyAnimFlag & RUNNING)
+			MyFlag = MyFlag
+		ENDWHILE
+	  	BeamSemaphore  = 0
+
+	ENDIF
+	StopSound(4,0)
+	TRIGFIN
+
+ENDTRIGGER
+
+
+//PROCESSES THE STATE FOR THE BEAM PHASE 1
+
+TRIGGER BeamControl
+
+	IF (ObjectHitStrat(NOSE))
+		IF (GetObjectHealth(NOSE) < 0)
+			HEADDEAD = 1
+		ELSE
+			IF (!headLightning)
+				TRIGSET>DamageNose EVERY 1 		  
+			ENDIF
+		ENDIF
+	   	ClearObjCollFlag(NOSE,HITSTRAT)
+	ENDIF
+	
+	IF (HEADDEAD)
+	//ENSURE FLAMES FROM PHASE 1 ARE DEFINATELY OFF
+	IF (LGUNLOWERINPROG)
+		TRIGKILL>DestroyLeftGunLower EVERY 1
+	ENDIF
+	IF (LGUNUPPERINPROG)
+		TRIGKILL>DestroyLeftGunUpper EVERY 1
+	ENDIF
+	IF (RGUNLOWERINPROG)
+		TRIGKILL>DestroyRightGunLower EVERY 1
+	ENDIF
+	IF (RGUNUPPERINPROG)
+		TRIGKILL>DestroyRightGunUpper EVERY 1
+	ENDIF
+	  	TRIGSET>DestroyGuard EVERY 1
+		TRIGKILL>MoveBeam EVERY 1
+		
+	   //	IF (MyTarget)
+	   //		MyTargetVar = 99.0
+	   //	ENDIF
+	   	BeamSemaphore = 0
+		phase = 2
+		TRIGSTOP
+	ELSE
+		TRIGFIN
+	ENDIF
+ENDTRIGGER
+
+LOCALFLOAT ang
+LOCALFLOAT ang2
+
+
+
+TRIGGER StartBeam
+	//RETURN HEAD'S X ROTATION
+	ang  = GetObjectCrntRot(HEAD,MODEX)
+	ang2 = GetObjectCrntRot(HEAD,MODEZ)
+	WHILE ((FABS(ang) > 0.0001) OR (FABS(ang2) > 0.0001))
+		ang = ang * 0.25
+		SetObjectCrntRot(HEAD, ang,MODEX)
+		ang2 = ang2 * 0.25
+		SetObjectCrntRot(HEAD, ang2,MODEZ)
+	ENDWHILE
+
+  //	SetGlobalParamInt(0,2)
+
+  //	CREATE SPAWN_SCORPIONBOSSBEAM 0, 0, 0, 0, 0, 0, HEAD
+  //	ClearGlobalParams()
+   //	CREATE SPAWN_SCORPIONBOSSBEAM 0, 0, 0, 0, 0, 0, HEAD
+	HEADDEAD = 0
+	
+	ObjectTargetable(NOSE)
+
+	IF (Hard)
+		SetObjectHealth(NOSE,HPHASE1HEALTH)
+	ELSE
+		SetObjectHealth(NOSE,PHASE1HEALTH)
+	ENDIF
+
+	TRIGSET>MoveBeam EVERY 1
+	TRIGSET>BeamControl EVERY 1
+	
+	TRIGSTOP
+ENDTRIGGER
+
+
+LOCALFLOAT SaveX
+LOCALFLOAT SaveY
+LOCALFLOAT SaveZ
+
+DEFINE LEFT 0
+DEFINE RIGHT 1
+DEFINE STAND 2
+
+
+LOCALINT MODE
+LOCALINT endreached
+LOCALINT BeamSemaphore
+LOCALFLOAT tx
+
+
+LOCALINT SCORPFIREVALID
+
+LOCALINT SCORPFIREDONE
+LOCALINT SCORPFIRECOUNT
+
+
+DEFINE PHASEFIREWAIT 90
+
+STATE WaitForFire
+	SCORPFIREVALID = 1
+	SCORPFIRECOUNT = 0
+
+	WHILE (!SCORPFIREDONE)
+//	LOOP (PHASEFIREWAIT)
+		IF (phase = 1)
+			BeamSemaphore = 1
+			//ensure the whir is off
+		   	StopSound(4,0)
+			spitch = 0
+			STAT>Attack
+		ENDIF	 
+  // 	ENDLOOP
+   ENDWHILE
+	SCORPFIREVALID = 0
+
+   SCORPFIREDONE = 0
+		//RIGHT DISTANCE TO PLAYER
+		SetCheckPosRel(0,50.0,0,0)
+
+		SaveX = DogX - CheckX
+		SaveY = DogY - CheckY
+
+		SaveZ = ((SaveX * SaveX) + (SaveY * SaveY))
+
+		//LEFT DISTANCE TO PLAYER
+		SetCheckPosRel(0,-50.0,0,0)
+
+		SaveX = DogX - CheckX
+		SaveY = DogY - CheckY
+
+		//SEE IF LEFTWAYS IS FURTHER THAN RIGHT WAYS
+		IF (((SaveX * SaveX) + (SaveY * SaveY)) > SaveZ)
+			MODE = LEFT
+			MODELANIM>BOSSES\SCORPIONBOSS\SCORPIONBOSS.RDO>StepLeft>0
+			frame = 0
+		//	MODE =  LEFT
+		ELSE
+			MODE = RIGHT
+		   	MODELANIM>BOSSES\SCORPIONBOSS\SCORPIONBOSS.RDO>StepRight>0
+			frame = 0
+		//	MODE = RIGHT
+		ENDIF
+		  //	   IF (MODE = LEFT)
+		  //	   		MODELANIM>BOSSES\SCORPIONBOSS\SCORPIONBOSS.RDO>StepLeft>0
+		  //	 		frame = 0
+		  //			MODE =  LEFT
+		  //	 	ELSE
+		  //			MODELANIM>BOSSES\SCORPIONBOSS\SCORPIONBOSS.RDO>StepRight>0
+		  //			frame = 0
+		  //			MODE = RIGHT
+		  //		ENDIF
+
+		WHILE (MyAnimFlag & TWEEN)
+			MyFlag = MyFlag
+		ENDWHILE
+
+
+	STAT>Main
+
+ENDSTATE
+
+LOCALINT STOMPY
+
+LOCALFLOAT spitch
+LOCALFLOAT NOWPITCH
+
+//TRIGGER ChangePitch
+//	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+//	NOWPITCH = NOWPITCH + ((spitch - NOWPITCH) * 0.05)
+//	SetPitch(0,NOWPITCH)
+//	TRIGFIN
+
+//ENDTRIGGER
+
+
+STATE Main
+
+	endreached = 0
+	SCORPFIREVALID = 0
+
+	STEP = 0
+	spitch = 0.5
+	WHILE (!endreached)
+		IF (phase = 1)
+			BeamSemaphore = 1
+		 	//ensure the whir fct is off
+		   spitch = 0
+		   	StopSound(4,0)
+			STAT>Attack
+		ENDIF	 
+
+		GetActivationPos(0)
+		CheckZ = z
+		TowardWay(TWOPI, TWOPI)
+		absspeedx = absspeedy = speedx = speedy = 0
+
+
+		IF (NearPlayerXY(40.0))
+		//RIGHT DISTANCE TO PLAYER
+		SetCheckPosRel(0,50.0,0,0)
+
+		SaveX = DogX - CheckX
+		SaveY = DogY - CheckY
+
+		SaveZ = ((SaveX * SaveX) + (SaveY * SaveY))
+
+		//LEFT DISTANCE TO PLAYER
+		SetCheckPosRel(0,-50.0,0,0)
+
+		SaveX = DogX - CheckX
+		SaveY = DogY - CheckY
+
+		//SEE IF LEFTWAYS IS FURTHER THAN RIGHT WAYS
+		IF (((SaveX * SaveX) + (SaveY * SaveY)) > SaveZ)
+			MODE = LEFT
+		ELSE
+			MODE = RIGHT
+		ENDIF
+		ENDIF
+
+
+
+
+		IF ((STEP > 4))
+			endreached = 1
+		ELSE
+			IF (!(MyAnimFlag & RUNNING))
+			    IF (MODE = LEFT)
+			   		MODELANIM>BOSSES\SCORPIONBOSS\SCORPIONBOSS.RDO>StepLeft>0
+				   	STEP = STEP + 1
+			 		frame = 0
+					MODE =  LEFT
+			 	ELSE
+					MODELANIM>BOSSES\SCORPIONBOSS\SCORPIONBOSS.RDO>StepRight>0
+					frame = 0
+					STEP = STEP + 1
+					MODE = RIGHT
+				ENDIF
+			ENDIF
+
+
+			IF (MODE = RIGHT)
+					tx = AnimMoveOffset(SCORPIONBOSSWALK)
+					MoveX(tx)
+			ELSE
+		   //	IF (MODE = LEFT)
+					tx = AnimMoveOffset(SCORPIONBOSSWALK)
+					MoveX(-tx)
+			ENDIF
+
+			IF (!(MyAnimFlag & TWEEN))
+				IF (MyAnimFrame = 18)
+					IF (STOMPY)
+						PLAYSOUND>VLMOVE1 3 1.0 0.0 0.0 0.0 0
+						
+					ELSE
+						PLAYSOUND>VLMOVE2 3 1.0 0.0 0.0 0.0 0
+
+					ENDIF
+					//SetVolume(3,0.5)
+					STOMPY = !STOMPY
+				
+				ENDIF
+				IF (MyAnimFrame = 21)
+					PLAYSOUND>VLSTOMP 4 1.0 0.0 0.0 0.0 0
+				ENDIF
+
+
+			ENDIF
+
+		ENDIF
+	
+	ENDWHILE
+
+	spitch = 0   
+ //  SetPitch(0,0.5)
+	//StopSound(4,0)
+   	MODELANIM>BOSSES\SCORPIONBOSS\SCORPIONBOSS.RDO>Stand>REPEAT
+
+	STAT>WaitForFire
+
+
+ENDSTATE
+
+
+STATE Attack
+
+	//WAITS FOR THE BEAM SEMAPHORE TO GO LOW
+	WHILE (BeamSemaphore)
+		KillMyVelocity()
+  //		MyFlag = MyFlag & LNOT(GRAVITYON + FLOORCOLL)
+	ENDWHILE
+
+	MyFlag = MyFlag | (GRAVITYON + FLOORCOLL)
+
+	endreached  = 0
+	//RIGHT DISTANCE TO PLAYER
+	SetCheckPosRel(0,50.0,0,0)
+
+	SaveX = DogX - CheckX
+	SaveY = DogY - CheckY
+
+	SaveZ = ((SaveX * SaveX) + (SaveY * SaveY))
+
+	//LEFT DISTANCE TO PLAYER
+	SetCheckPosRel(0,-50.0,0,0)
+
+	SaveX = DogX - CheckX
+	SaveY = DogY - CheckY
+
+	//SEE IF LEFTWAYS IS FURTHER THAN RIGHT WAYS
+	IF (((SaveX * SaveX) + (SaveY * SaveY)) > SaveZ)
+		MODE = LEFT
+	ELSE
+		MODE = RIGHT
+	ENDIF
+
+	//GOT WHICH WAY TO WALK, NOW DO IT
+	STEP = 0
+
+	STAT>MovePoint
+ENDSTATE
+
+//DESTROYS THE SCORPION'S HEAD
+LOCALINT HEADWaitFrame
+LOCALINT HEADFireState
+LOCALINT HEADDESTROYED
+
+LOCALINT LGUNLOWERINPROG
+LOCALINT LGUNUPPERINPROG
+LOCALINT RGUNLOWERINPROG
+LOCALINT RGUNUPPERINPROG
+
+
+TRIGGER DestroyHead
+	MyVar = 2.0
+	HideObject(HEAD)
+	ObjectNotTargetable(HEAD)
+	InActivateObjectCollision(HEAD)
+	
+	//ENSURE FLAMES FROM PHASE 1 ARE DEFINATELY OFF
+  //	IF (LGUNLOWERINPROG)
+  //		TRIGKILL>DestroyLeftGunLower EVERY 1
+  //	ENDIF
+  //	IF (LGUNUPPERINPROG)
+  //		TRIGKILL>DestroyLeftGunUpper EVERY 1
+  //	ENDIF
+  //	IF (RGUNLOWERINPROG)
+  //		TRIGKILL>DestroyRightGunLower EVERY 1
+  //	ENDIF
+  //	IF (RGUNUPPERINPROG)
+  //		TRIGKILL>DestroyRightGunUpper EVERY 1
+  //	ENDIF
+	
+	//ACTIVATE THE DAMAGED HEAD MODEL
+	ObjectTargetable(DAMAGEDHEAD)
+	UnhideObject(DAMAGEDHEAD)
+	ActivateObjectCollision(DAMAGEDHEAD)
+
+	HEADDESTROYED = 0
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, HEAD
+  	CREATE SPAWN_ENEMYDEBRIS 0, 0, 0, 0, 0, 0,  HEAD
+	HEADFireState = 2
+  	HEADWaitFrame = WAITCOUNT
+  	WHILE ((HEADWaitFrame) AND (HEADFireState))
+		IF (HEADFireState = 2)
+			MyVar = 2.0
+		ELSE
+			MyVar = 0.0
+		ENDIF
+	    SetGlobalParamInt(0,DAMAGEDHEAD)
+		SetGlobalParamFloat(0,20.0)
+		SetGlobalParamFloat(1,0)
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, DAMAGEDHEAD
+	  	IF (HEADFireState = 2)
+	  		MyVar = 3.0
+	  	ELSE
+	  		MyVar = 1.0
+	  	ENDIF
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, DAMAGEDHEAD
+		ClearGlobalParams()
+	  	HEADWaitFrame = HEADWaitFrame - 1 
+	  	IF ((!(HEADWaitFrame)) AND (HEADFireState))
+			HEADWaitFrame = WAITCOUNT
+			HEADFireState = HEADFireState - 1
+		ENDIF
+				   
+  	ENDWHILE
+
+	HEADDESTROYED = 1
+
+	TRIGSTOP
+ENDTRIGGER
+
+//DESTROYS THE SCORPION'S NOSE
+LOCALINT NOSEWaitFrame
+LOCALINT NOSEFireState
+
+TRIGGER DestroyGuard
+	//to ensure the beam is off
+			//beam must go now for sure
+			GlobalVar = 100.0
+
+			//SetObjectHealth(HEAD,PHASE2HEALTH)
+			//NOW AWAIT A REPLY
+			//IF (BEAMFIRING)
+			//	WHILE (GlobalVar != 99.0)
+			//		MyFlag = MyFlag
+			//	ENDWHILE
+				BEAMFIRING = 0
+			//ENDIF
+
+	MyVar = 2.0
+	HideObject(GUARD)
+	ObjectNotTargetable(GUARD)
+	InActivateObjectCollision(GUARD)
+
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, GUARD
+	CREATE SPAWN_ENEMYDEBRIS 0, 0, 0, 0, 0, 0,  NOSE
+	NOSEFireState = 2
+  	NOSEWaitFrame = WAITCOUNT
+  	WHILE ((NOSEWaitFrame) AND (NOSEFireState))
+		IF (NOSEFireState = 2)
+			MyVar = 2.0
+		ELSE
+			MyVar = 0.0
+		ENDIF
+	    SetGlobalParamInt(0,GUARD)
+		SetGlobalParamFloat(0,10.0)
+		SetGlobalParamFloat(1,0)
+	   //	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, GUARD
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, GUARD
+	  	IF (NOSEFireState = 2)
+	  		MyVar = 3.0
+	  	ELSE
+	  		MyVar = 1.0
+	  	ENDIF
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, GUARD
+		ClearGlobalParams()
+	  	NOSEWaitFrame = NOSEWaitFrame - 1 
+	  	IF ((!(NOSEWaitFrame)) AND (NOSEFireState))
+			NOSEWaitFrame = WAITCOUNT
+			NOSEFireState = NOSEFireState - 1
+		ENDIF
+				   
+  	ENDWHILE
+
+	TRIGSTOP
+ENDTRIGGER
+
+
+//DESTROYS THE SCORPION'S FOCAL LASER
+LOCALINT FOCALLASERWaitFrame
+LOCALINT FOCALLASERFireState
+
+TRIGGER DestroyFocalLaser
+	MyVar = 2.0
+	HideObject(FOCALLASER)
+	ObjectNotTargetable(FOCALLASER)
+	InActivateObjectCollision(FOCALLASER)
+
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, FOCALLASER
+  	CREATE SPAWN_ENEMYDEBRIS 0, 0, 0, 0, 0, 0,  FOCALLASER
+	FOCALLASERFireState = 2
+  	FOCALLASERWaitFrame = WAITCOUNT
+  	WHILE ((FOCALLASERWaitFrame) AND (FOCALLASERFireState))
+		IF (FOCALLASERFireState = 2)
+			MyVar = 2.0
+		ELSE
+			MyVar = 0.0
+		ENDIF
+	    SetGlobalParamInt(0,FOCALLASER)
+		SetGlobalParamFloat(0,0)
+		SetGlobalParamFloat(1,0)
+	   //	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, FOCALLASER
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, FOCALLASER
+	  	IF (FOCALLASERFireState = 2)
+	  		MyVar = 3.0
+	  	ELSE
+	  		MyVar = 1.0
+	  	ENDIF
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, FOCALLASER
+		ClearGlobalParams()
+	  	FOCALLASERWaitFrame = FOCALLASERWaitFrame - 1 
+	  	IF ((!(FOCALLASERWaitFrame)) AND (FOCALLASERFireState))
+			FOCALLASERWaitFrame = WAITCOUNT
+			FOCALLASERFireState = FOCALLASERFireState - 1
+		ENDIF
+				   
+  	ENDWHILE
+
+	TRIGSTOP
+ENDTRIGGER
+
+
+LOCALINT STEP
+
+//CONTROLS THE HEAD MOVEMENT IN PHASE 2, AND ENSURES THE SCORPION IS FIXED TO FLOOR
+//ALSO CONTROLS DAMAGE
+TRIGGER MoveHead
+
+	ObjectTowardPlayerXZ(HEAD, 0.75, 0.75, (TWOPI/360.0) * 45.0, (TWOPI/360.0) * 45.0)
+   	CrntRotToIdleRotX(HEAD, 0.75)
+  	CrntRotToIdleRotZ(HEAD, 0.75)
+	IF (MyFlag & HITFLOOR)
+		KillMyVelocity()
+	ENDIF
+
+	IF (ObjectHitStrat(HEAD))
+		IF (GetObjectHealth(HEAD) < 0)
+			HEADDEAD = 1
+		ELSE
+			IF (!headLightning)
+				TRIGSET>DamageHead EVERY 1 		  
+			ENDIF
+		ENDIF
+	   	ClearObjCollFlag(HEAD,HITSTRAT)
+	ENDIF
+	
+   	IF (HEADDEAD)
+		TRIGSET>DestroyHead EVERY 1
+		//TRIGSET>DestroyFocalLaser EVERY 1
+
+		IF (SHOCKSET)
+			IF (IsPlaying(6))
+	   			StopSound(6,0)
+			ENDIF
+			TRIGKILL>ShockDraw EVERY 1
+		ENDIF
+		TRIGSET>Phase3Controller EVERY 1
+		//SEMAPHORE BEAM TO DIE
+   		MyVar = 0
+   		phase = 3
+   	   	MODELANIM>BOSSES\SCORPIONBOSS\SCORPIONBOSS.RDO>TailFire>REPEAT
+		ObjectTargetable(BODY)
+		IF (Hard)
+			SetObjectHealth(BODY,HPHASE3HEALTH)
+			SetObjectHealth(DAMAGEDHEAD,HPHASE3HEALTH)
+		ELSE
+			SetObjectHealth(BODY,PHASE3HEALTH)
+			SetObjectHealth(DAMAGEDHEAD,PHASE3HEALTH)
+		ENDIF
+		//ENSURE ANY RESIDUAL TRANSLUCENCY HAS GONE
+	   	MyFlag2 = MyFlag2 & LNOT(TRANSLUCENT | SPECULAR)
+		trans = 1.0
+   		TRIGRESET
+   		TRIGSTOP
+		spitch = 0
+	   	STAT>TailAttack
+   	ELSE
+		TRIGFIN
+   	ENDIF
+
+ENDTRIGGER
+
+STATE MovePoint
+	spitch = 0.5
+	WHILE (!endreached)
+		IF (phase = 2)
+			//TRIGSET>DestroyNose EVERY 1
+		  //	TRIGKILL>MoveBeam EVERY 1
+		   //	TRIGKILL>BeamControl EVERY 1
+
+			spitch = 0
+			//CLEAR MY SEMAPHORE AGAIN
+			MyVar = 0
+			//beam must go now for sure
+		   //	GlobalVar = 100.0
+
+		   //	BEAMFIRING = 0		  
+			HEADDEAD = 0
+			IF (Hard)
+				SetObjectHealth(HEAD,HPHASE2HEALTH)
+			ELSE
+				SetObjectHealth(HEAD,PHASE2HEALTH)
+			ENDIF
+			//NOW AWAIT A REPLY
+			//IF (BEAMFIRING)
+			//	WHILE (GlobalVar != 99.0)
+			//		MyFlag = MyFlag
+			//	ENDWHILE
+			//ENDIF
+		 
+		 
+		 
+		 	TRIGSET>MoveHead EVERY 1
+		   	//ensure the whir fct is off
+			StopSound(4,0)
+			spitch = 0
+		   	STAT>AttackOfTheMutantMinis
+		ENDIF
+
+
+		GetActivationPos(0)
+		CheckZ = z
+		TowardWay(TWOPI, TWOPI)
+		absspeedx = absspeedy = speedx = speedy = 0
+
+		IF (NearPlayerXY(40.0))
+	//RIGHT DISTANCE TO PLAYER
+	SetCheckPosRel(0,50.0,0,0)
+
+	SaveX = DogX - CheckX
+	SaveY = DogY - CheckY
+
+	SaveZ = ((SaveX * SaveX) + (SaveY * SaveY))
+
+	//LEFT DISTANCE TO PLAYER
+	SetCheckPosRel(0,-50.0,0,0)
+
+	SaveX = DogX - CheckX
+	SaveY = DogY - CheckY
+
+	//SEE IF LEFTWAYS IS FURTHER THAN RIGHT WAYS
+	IF (((SaveX * SaveX) + (SaveY * SaveY)) > SaveZ)
+		MODE = LEFT
+	ELSE
+		MODE = RIGHT
+	ENDIF
+
+		//	IF (MODE = LEFT)
+		//		MODE = RIGHT
+		//	ELSE
+		//		MODE = LEFT
+		//	ENDIF
+
+		ENDIF
+
+		IF ((STEP > 10))
+			endreached = 1
+		ELSE
+			IF (!(MyAnimFlag & RUNNING))
+			   IF (MODE = LEFT)
+			   		MODELANIM>BOSSES\SCORPIONBOSS\SCORPIONBOSS.RDO>StepLeft>0
+					STEP = STEP + 1
+			 		frame = 0
+					MODE =  LEFT
+			 	ELSE
+					MODELANIM>BOSSES\SCORPIONBOSS\SCORPIONBOSS.RDO>StepRight>0
+					frame = 0
+					STEP = STEP + 2
+					MODE = RIGHT
+				ENDIF
+			ENDIF
+
+
+			IF (MODE = RIGHT)
+					tx = AnimMoveOffset(SCORPIONBOSSWALK)
+					MoveX(tx)
+			ELSE
+		   //	IF (MODE = LEFT)
+					tx = AnimMoveOffset(SCORPIONBOSSWALK)
+					MoveX(-tx)
+			ENDIF
+			IF (!(MyAnimFlag & TWEEN))
+				IF (MyAnimFrame = 18)
+					IF (STOMPY)
+						PLAYSOUND>VLMOVE1 3 1.0 0.0 0.0 0.0 0
+					ELSE
+						PLAYSOUND>VLMOVE2 3 1.0 0.0 0.0 0.0 0
+
+					ENDIF
+					//SetVolume(3,0.5)
+					STOMPY = !STOMPY
+				
+				ENDIF
+				IF (MyAnimFrame = 21)
+					PLAYSOUND>VLSTOMP 4 1.0 0.0 0.0 0.0 0
+				ENDIF
+
+
+			ENDIF
+
+		ENDIF
+	
+	ENDWHILE
+   spitch = 0
+   //SetPitch(0,0.5)
+	StopSound(4,0)
+	BeamSemaphore = 1
+	STAT>Attack
+
+ENDSTATE
+
+//PHASE 2 ATTACKS
+
+LOCALFLOAT ODogX
+LOCALFLOAT ODogY
+LOCALFLOAT ODogZ
+LOCALINT SeePoint
+
+DEFINE FOCALTURRETLENGTH 0.0
+
+LOCALINT SHOCKSET
+LOCALINT LinkComplete
+//FIRST ENSURE THE BEAM CHAPPY IS POINTING AT OUR ACTIVATION POINT
+
+STATE AttackOfTheMutantMinis
+   
+   	MODELANIM>BOSSES\SCORPIONBOSS\SCORPIONBOSS.RDO>Stand>REPEAT
+
+  	//HAS THE ACT GONE IN ?
+	IF (!HasActivation(1))
+		GetActivationPos(0)
+
+		ODogX = DogX
+		ODogY = DogY
+		ODogZ = DogZ
+
+		//overload the player position warez so we can turn toward it
+		DogX = SaveX = CheckX
+		DogY = SaveY = CheckY
+		DogZ = SaveZ = CheckZ + 30.0
+	ELSE
+		GetActivationPos(1)
+
+		ODogX = DogX
+		ODogY = DogY
+		ODogZ = DogZ
+
+		//overload the player position warez so we can turn toward it
+		DogX = SaveX = CheckX
+		DogY = SaveY = CheckY
+		DogZ = SaveZ = CheckZ
+
+	ENDIF
+
+	SeePoint = ObjectSeePlayerZ(TWOPI/128.0,FOCALLASER,0,0,0)
+  
+	DogX = ODogX
+	DogY = ODogY
+	DogZ = ODogZ
+
+
+
+	WHILE (!SeePoint)
+		
+		ODogX = DogX
+		ODogY = DogY
+		ODogZ = DogZ
+
+		DogX = SaveX
+		DogY = SaveY
+		DogZ = SaveZ
+
+		ObjectTowardPlayerXZ(FOCALLASER, 0.75, 0.75, (TWOPI/360.0) * 45.0, (TWOPI/360.0) * 45.0)
+	 	CrntRotToIdleRotX(FOCALLASER, 0.75)
+		CrntRotToIdleRotZ(FOCALLASER, 0.75)
+
+		SeePoint = ObjectSeePlayerZ(TWOPI/128.0,FOCALLASER,0,0,0)
+
+
+		DogX = ODogX
+		DogY = ODogY
+		DogZ = ODogZ
+
+
+	ENDWHILE
+	
+	DogX = ODogX
+	DogY = ODogY
+	DogZ = ODogZ
+
+	//CREATE MY FOCAL BEAM
+
+//	SetGlobalParamInt(0,1)
+//	CREATE SPAWN_SCORPIONBOSSBEAM 0, 0, 0, 0, 0, 0, HEAD
+//	ClearGlobalParams()
+	LShockTime = 30
+	LinkComplete = 0
+
+	TRIGSET>ShockDraw EVERY 1
+ 	SHOCKSET = 1
+	//NOW AWAIT SEMAPHORE BACK FROM THE BEAM TO SAY IT'S FULLY OUT
+//   	WHILE (MyVar != 3.0)
+//   		MyFlag = MyFlag
+//   	ENDWHILE
+
+  	PLAYSOUND>VBOSS_ARCLOOP 6 1.0 0.0 0.0 0.0 CONTINUOUS
+	//WAIT FOR THE SHOCK TO OCCUR
+	WHILE (!LinkComplete)
+		MyFlag = MyFlag
+	ENDWHILE
+ 	MyVar = 0.0
+	ShockTime = 30
+	HEADDEAD = 0
+	trans = 1.0
+	MyFlag2 = MyFlag2 & LNOT(TRANSLUCENT) 
+	SetObjectHealth(HEAD,PHASE2HEALTH)
+	IF (Hard)
+		SetObjectHealth(HEAD,HPHASE2HEALTH)
+	ELSE
+		SetObjectHealth(HEAD,PHASE2HEALTH)
+	ENDIF
+   	STAT>BringForthMyChildrenBWAAHAHA
+
+
+
+ENDSTATE
+
+
+LOCALINT ShockTime
+LOCALINT LShockTime
+LOCALFLOAT boffx
+LOCALFLOAT boffy
+LOCALFLOAT boffz
+
+TRIGGER ShockDraw
+	IF (LinkComplete != 2)
+  
+		SetCheckPosRel(FOCALLASER,0,FOCALTURRETLENGTH,0)
+		SaveX = CheckX
+		SaveY = CheckY
+		SaveZ = CheckZ
+		GetActivationPos(1)
+
+		boffx = CheckX - ((CheckX - SaveX) / LShockTime)
+		boffy = CheckY - ((CheckY - SaveY) / LShockTime)
+		boffz = CheckZ - ((CheckZ - SaveZ) / LShockTime)
+		SetGlobalParamInt(0,1)
+	   //mid color - white
+	   	SetGlobalParamFloat(0,0.99)
+		SetGlobalParamFloat(1,0.95)
+		SetGlobalParamFloat(2,0.95)
+		SetGlobalParamFloat(3,0.95)
+		//outer - green/blue
+		SetGlobalParamFloat(4,0.85)
+		SetGlobalParamFloat(5,0)
+		SetGlobalParamFloat(6,0.8)
+		SetGlobalParamFloat(7,0.7)
+
+
+
+
+		DrawShock(CheckX,CheckY,CheckZ,boffx, boffy,boffz,0.01 * (31 - LShockTime),1.2,10.0 )
+  
+		ClearGlobalParams()
+  
+  		IF (LShockTime > 1)
+			LShockTime = LShockTime - 1
+		//	TRIGFIN
+		ELSE
+			LinkComplete = 1
+		//	TRIGFIN
+		ENDIF
+		ENDIF
+	TRIGFIN
+
+
+ENDTRIGGER
+
+
+
+
+DEFINE MAXSCORP 5
+
+
+DEFINE SNOUTLENGTH 27.0
+DEFINE SNOUTHEIGHT -1.0
+
+
+STATE BringForthMyChildrenBWAAHAHA
+
+	endreached = 0
+   	SetCheckPosRel(HEAD,0,SNOUTLENGTH,SNOUTHEIGHT)
+	SaveX = CheckX
+	SaveY = CheckY
+	SaveZ = CheckZ
+
+	WHILE (!endreached)
+
+		SetCheckPosRel(0,0,0,-10.0)
+
+		boffx = SaveX - ((SaveX - CheckX) / ShockTime)
+		boffy = SaveY - ((SaveY - CheckY) / ShockTime)
+		boffz = SaveZ - ((SaveZ - CheckZ) / ShockTime)
+
+		DrawShock(SaveX,SaveY,SaveZ,boffx, boffy,boffz,0.01 * (31 - ShockTime),1.2,2.0 )
+	
+		SetCheckPosRel(0,10.0,30.0,-5.0)
+
+		boffx = SaveX - ((SaveX - CheckX) / ShockTime)
+		boffy = SaveY - ((SaveY - CheckY) / ShockTime)
+		boffz = SaveZ - ((SaveZ - CheckZ) / ShockTime)
+
+		DrawShock(SaveX,SaveY,SaveZ,boffx, boffy,boffz,0.01 * (31 - ShockTime),1.2,2.0 )
+	
+		SetCheckPosRel(0,10.0,30.0,-5.0)
+
+		boffx = SaveX - ((SaveX - CheckX) / ShockTime)
+		boffy = SaveY - ((SaveY - CheckY) / ShockTime)
+		boffz = SaveZ - ((SaveZ - CheckZ) / ShockTime)
+
+		DrawShock(SaveX,SaveY,SaveZ,boffx, boffy,boffz,0.01 * (31 - ShockTime),1.2,2.0 )
+	
+		SetCheckPosRel(0,-5.0,50.0,-5.0)
+
+		boffx = SaveX - ((SaveX - CheckX) / ShockTime)
+		boffy = SaveY - ((SaveY - CheckY) / ShockTime)
+		boffz = SaveZ - ((SaveZ - CheckZ) / ShockTime)
+
+		DrawShock(SaveX,SaveY,SaveZ,boffx, boffy,boffz,0.01 * (31 - ShockTime),1.2,2.0 )
+	
+		SetCheckPosRel(0,5.0,50.0,-5.0)
+
+		boffx = SaveX - ((SaveX - CheckX) / ShockTime)
+		boffy = SaveY - ((SaveY - CheckY) / ShockTime)
+		boffz = SaveZ - ((SaveZ - CheckZ) / ShockTime)
+
+		DrawShock(SaveX,SaveY,SaveZ,boffx, boffy,boffz,0.01 * (31 - ShockTime),1.2,2.0 )
+	
+	
+	
+	
+		IF (ShockTime > 1)
+			ShockTime = ShockTime - 1
+		ELSE
+			endreached = 1
+		ENDIF
+
+
+	ENDWHILE
+
+	
+
+	//first set
+
+
+	SetGlobalParamInt(0, 1)
+	CREATE SCORPION_MINI 0, 0, -3.2, 0, 0, 0, 0
+
+	//REL LEFT POINT
+	CREATE SCORPION_MINI -10.0, 30.0, -3.2, 0, 0, 0, 0
+
+	//REL RIGHT POINT
+	CREATE SCORPION_MINI 10.0, 30.0, -3.2, 0, 0, 0, 0
+
+	//REL LEFT FRONT POINT
+	CREATE SCORPION_MINI -5.0, 50.0, -3.2, 0, 0, 0, 0
+
+	//REL RIGHT FRONT POINT
+	CREATE SCORPION_MINI 5.0, 50.0, -3.2, 0, 0, 0, 0
+	SetGlobalParamInt(0, 0)
+
+	WaitVar = 50
+	MyVar = MAXSCORP
+	STAT>WhenScorpionsAttack
+ENDSTATE
+
+LOCALINT TotDie
+LOCALINT WaitVar
+
+
+DEFINE LONGSHOCK 30
+
+LOCALFLOAT wang
+
+STATE WhenScorpionsAttack
+
+	IF (MyVar <= 1.0)
+		WHILE (!VisibleFromPlayer(TWOPI/360.0 * 16.0))
+			MyFlag = MyFlag
+	    ENDWHILE
+
+		endreached = 0
+		ShockTime = LONGSHOCK		
+	   	MyFlag2 = MyFlag2 | SPECULAR | TRANSLUCENT
+	   	trans = 0.5
+	  
+  	 //	PLAYSOUND>VBOSS_ARCLOOP 6 1.0 0.0 0.0 0.0 CONTINUOUS
+
+		WHILE (!endreached)
+			frame = Ssin(wang) * 0.25
+			wang = wang + 0.2
+			SetSpecularColour(0, 0.25 + frame,0.35 + frame,0.5 + frame)
+			SetCheckPosRel(0,0,0,-10.0)
+
+			boffx = SaveX - ((SaveX - CheckX) / ShockTime)
+			boffy = SaveY - ((SaveY - CheckY) / ShockTime)
+			boffz = SaveZ - ((SaveZ - CheckZ) / ShockTime)
+
+			DrawShock(SaveX,SaveY,SaveZ,boffx, boffy,boffz,0.01 * ((LONGSHOCK + 1) - ShockTime),1.2,2.0 )
+		
+			SetCheckPosRel(0,10.0,30.0,-4.2)
+
+			boffx = SaveX - ((SaveX - CheckX) / ShockTime)
+			boffy = SaveY - ((SaveY - CheckY) / ShockTime)
+			boffz = SaveZ - ((SaveZ - CheckZ) / ShockTime)
+
+			DrawShock(SaveX,SaveY,SaveZ,boffx, boffy,boffz,0.01 * ((LONGSHOCK + 1) - ShockTime),1.2,2.0 )
+	
+			SetCheckPosRel(0,10.0,30.0,-4.2)
+
+			boffx = SaveX - ((SaveX - CheckX) / ShockTime)
+			boffy = SaveY - ((SaveY - CheckY) / ShockTime)
+			boffz = SaveZ - ((SaveZ - CheckZ) / ShockTime)
+
+			DrawShock(SaveX,SaveY,SaveZ,boffx, boffy,boffz,0.01 * ((LONGSHOCK + 1) - ShockTime),1.2,2.0 )
+	
+			SetCheckPosRel(0,-5.0,50.0,-4.2)
+
+			boffx = SaveX - ((SaveX - CheckX) / ShockTime)
+			boffy = SaveY - ((SaveY - CheckY) / ShockTime)
+			boffz = SaveZ - ((SaveZ - CheckZ) / ShockTime)
+
+			DrawShock(SaveX,SaveY,SaveZ,boffx, boffy,boffz,0.01 * ((LONGSHOCK + 1) - ShockTime),1.2,2.0 )
+	
+			SetCheckPosRel(0,5.0,50.0,-4.2)
+
+			boffx = SaveX - ((SaveX - CheckX) / ShockTime)
+			boffy = SaveY - ((SaveY - CheckY) / ShockTime)
+			boffz = SaveZ - ((SaveZ - CheckZ) / ShockTime)
+
+			DrawShock(SaveX,SaveY,SaveZ,boffx, boffy,boffz,0.01 * ((LONGSHOCK + 1) - ShockTime),1.2,2.0 )
+	
+	
+	
+	
+			IF (ShockTime > 1)
+				ShockTime = ShockTime - 1
+			ELSE
+				endreached = 1
+			ENDIF
+
+
+		ENDWHILE
+
+	  	MyFlag2 = MyFlag2 & LNOT(TRANSLUCENT | SPECULAR)
+	  	trans = 1.0
+
+		TotDie = TotDie + 1
+		
+		MyVar = MAXSCORP
+		SetGlobalParamInt(0, 1)
+		CREATE SCORPION_MINI 0, 0, -3.2, 0, 0, 0, 0
+
+		//REL LEFT POINT
+		CREATE SCORPION_MINI -10.0, 30.0, -3.2, 0, 0, 0, 0
+
+		//REL RIGHT POINT
+		CREATE SCORPION_MINI 10.0, 30.0, -3.2, 0, 0, 0, 0
+
+		//REL LEFT FRONT POINT
+		CREATE SCORPION_MINI -5.0, 50.0, -3.2, 0, 0, 0, 0
+
+		//REL RIGHT FRONT POINT
+		CREATE SCORPION_MINI 5.0, 50.0, -3.2, 0, 0, 0, 0
+	   ClearGlobalParams()
+
+		IF (TotDie % 4)
+			IF (WaitVar > 10)
+				WaitVar = WaitVar - 5
+			ENDIF
+			TotDie = 0
+		ENDIF
+
+		LOOP (WaitVar)
+			MyFlag = MyFlag
+		ENDLOOP		
+
+		endreached  = 0
+		//RIGHT DISTANCE TO PLAYER
+		SetCheckPosRel(0,50.0,0,0)
+
+		SaveX = DogX - CheckX
+		SaveY = DogY - CheckY
+
+		SaveZ = ((SaveX * SaveX) + (SaveY * SaveY))
+
+		//LEFT DISTANCE TO PLAYER
+		SetCheckPosRel(0,-50.0,0,0)
+
+		SaveX = DogX - CheckX
+		SaveY = DogY - CheckY
+
+		//SEE IF LEFTWAYS IS FURTHER THAN RIGHT WAYS
+		IF (((SaveX * SaveX) + (SaveY * SaveY)) > SaveZ)
+			MODE = LEFT
+		ELSE
+			MODE = RIGHT
+		ENDIF
+
+		//GOT WHICH WAY TO WALK, NOW DO IT
+		STEP = 0
+		//TURN OFF MY LINK
+		IF (IsPlaying(6))
+			StopSound(6,0)
+		ENDIF
+		LinkComplete = 2
+		frame = 0
+		STAT>WalkNext
+	ENDIF	
+
+
+
+ENDSTATE
+
+
+STATE WalkNext
+
+   //SetPitch(0,1.0)
+   spitch = 0.5
+
+	WHILE (!endreached)
+
+
+		GetActivationPos(0)
+		CheckZ = z
+		TowardWay(TWOPI, TWOPI)
+		absspeedx = absspeedy = speedx = speedy = 0
+
+		IF (NearPlayerXY(40.0))
+			//RIGHT DISTANCE TO PLAYER
+			SetCheckPosRel(0,50.0,0,0)
+
+			SaveX = DogX - CheckX
+			SaveY = DogY - CheckY
+
+			SaveZ = ((SaveX * SaveX) + (SaveY * SaveY))
+
+			//LEFT DISTANCE TO PLAYER
+			SetCheckPosRel(0,-50.0,0,0)
+
+			SaveX = DogX - CheckX
+			SaveY = DogY - CheckY
+
+			//SEE IF LEFTWAYS IS FURTHER THAN RIGHT WAYS
+			IF (((SaveX * SaveX) + (SaveY * SaveY)) > SaveZ)
+				MODE = LEFT
+			ELSE
+				MODE = RIGHT
+			ENDIF
+
+
+		ENDIF
+
+		IF ((STEP > 10))
+			endreached = 1
+		ELSE
+			IF (!(MyAnimFlag & RUNNING))
+			   IF (MODE = LEFT)
+			   		MODELANIM>BOSSES\SCORPIONBOSS\SCORPIONBOSS.RDO>StepLeft>0
+					STEP = STEP + 1
+			 		frame = 0
+					MODE =  LEFT
+			 	ELSE
+					MODELANIM>BOSSES\SCORPIONBOSS\SCORPIONBOSS.RDO>StepRight>0
+					frame = 0
+					STEP = STEP + 2
+					MODE = RIGHT
+				ENDIF
+			ENDIF
+
+			IF (MODE = RIGHT)
+					tx = AnimMoveOffset(SCORPIONBOSSWALK)
+					MoveX(tx)
+			ELSE
+			//IF (MODE = LEFT)
+					tx = AnimMoveOffset(SCORPIONBOSSWALK)
+				  	MoveX(-tx)
+			 ENDIF
+
+			IF (!(MyAnimFlag & TWEEN))
+				IF (MyAnimFrame = 18)
+					IF (STOMPY)
+						PLAYSOUND>VLMOVE1 3 1.0 0.0 0.0 0.0 0
+					ELSE
+						PLAYSOUND>VLMOVE2 3 1.0 0.0 0.0 0.0 0
+
+					ENDIF
+					//SetVolume(3,0.5)
+					STOMPY = !STOMPY
+				
+				ENDIF
+				IF (MyAnimFrame = 21)
+					PLAYSOUND>VLSTOMP 4 1.0 0.0 0.0 0.0 0
+				ENDIF
+
+
+			ENDIF
+
+		ENDIF			 
+	
+	ENDWHILE
+  	PLAYSOUND>VBOSS_ARCLOOP 6 1.0 0.0 0.0 0.0 CONTINUOUS
+   spitch = 0
+   //SetPitch(0,0.5)
+  //	StopSound(4,0)
+   	MODELANIM>BOSSES\SCORPIONBOSS\SCORPIONBOSS.RDO>Stand>REPEAT
+
+	LShockTime = 30
+	LinkComplete = 0
+	WHILE (!LinkComplete)
+		MyFlag = MyFlag
+	ENDWHILE
+
+	STAT>WhenScorpionsAttack
+ENDSTATE
+
+LOCALFLOAT AMORTBODY
+LOCALFLOAT AMORTHEAD
+
+//CONTROLS THE HEAD MOVEMENT IN PHASE 3, AND ENSURES THE SCORPION IS FIXED TO FLOOR
+//ALSO CONTROLS DAMAGE
+TRIGGER Phase3Controller
+
+
+	IF (ObjectHitStrat (BODY) OR ObjectHitStrat (DAMAGEDHEAD) )
+		AMORTBODY = GetObjectHealth(BODY)
+		AMORTHEAD = GetObjectHealth(DAMAGEDHEAD)
+
+		IF (AMORTHEAD < AMORTBODY)
+			SetObjectHealth(BODY,AMORTHEAD)
+		ELSE
+			SetObjectHealth(DAMAGEDHEAD, AMORTBODY)
+		ENDIF
+
+
+		IF ((AMORTBODY < 0) OR (AMORTHEAD < 0))
+   //		IF ((GetObjectHealth(BODY) < 0) OR (GetObjectHealth(DAMAGEDHEAD) < 0))
+			//ensure the whir fct is off
+		   //	StopSound(4,0)
+			spitch = 0
+			TRIGRESET
+			TRIGSTOP
+//			PLAYSOUND>VLDEATH 0 1.0 0.0 0.0 0.0 0
+	 		STAT>Die
+	   //		HEADDEAD = 1
+	   	ELSE
+	   		IF (!headLightning)
+	   			TRIGSET>DamageBody EVERY 1 		  
+			ENDIF
+		ENDIF
+	   	ClearObjCollFlag(BODY,HITSTRAT)
+	   	ClearObjCollFlag(BODY,DAMAGEDHEAD)
+   	ENDIF
+
+
+
+  
+  	IF (MyFlag & HITFLOOR)
+		KillMyVelocity()
+	ENDIF
+
+	IF (BeamSemaphore)
+
+	 	SetCheckPosRel(TAILMID,0,0,0)
+		SaveX = CheckX
+		SaveY = CheckY
+		SaveZ = CheckZ
+	 	SetCheckPosRel(TAILTIP,0,0,0)
+
+		boffx = CheckX - ((CheckX - SaveX) / ShockTime)
+		boffy = CheckY - ((CheckY - SaveY) / ShockTime)
+		boffz = CheckZ - ((CheckZ - SaveZ) / ShockTime)
+
+		SetGlobalParamInt(0,1)
+		//mid colour - white
+		SetGlobalParamFloat(0,0.99)
+		SetGlobalParamFloat(1,0.95)
+		SetGlobalParamFloat(2,0.95)
+		SetGlobalParamFloat(3,0.95)
+	   
+	   	//outer - red
+
+		SetGlobalParamFloat(4,0.1)
+		SetGlobalParamFloat(5,0.9)
+		SetGlobalParamFloat(6,0.0)
+		SetGlobalParamFloat(7,0)
+
+
+		DrawShock(CheckX,CheckY,CheckZ,boffx, boffy,boffz,0.05 * (31 - ShockTime),1.2,10.0 )
+		IF (ShockTime > 1)
+			ShockTime = ShockTime - 1
+		ENDIF
+
+		IF (BeamSemaphore = 2)
+		   	CheckX = SnapDogX
+		   	CheckY = SnapDogY
+		   	CheckZ = SnapDogZ
+		   	SaveX = CheckX
+		   	SaveY = CheckY
+		   	SaveZ = CheckZ
+
+		   	SetCheckPosRel(TAILMID,0,0,0)
+		   	boffx = CheckX - ((CheckX - SaveX) / LShockTime)
+		   	boffy = CheckY - ((CheckY - SaveY) / LShockTime)
+		   	boffz = CheckZ - ((CheckZ - SaveZ) / LShockTime)
+
+			
+
+		   	DrawShock(CheckX,CheckY,CheckZ,boffx, boffy,boffz,0.01 * (31 - LShockTime),1.2,10.0 )
+		   	
+			//set the checkpos for my child ball to use
+			CheckX = boffx
+			CheckY = boffy
+			CheckZ = boffz
+			
+			
+
+			IF ((LShockTime > 1) AND (!DoneBlast))
+		   		LShockTime = LShockTime - 1
+		   	ELSE
+				IF (!DoneBlast)
+					DoneBlast = 1
+				ENDIF
+
+				IF (LShockTime < 30)
+					LShockTime = LShockTime + 2
+				ENDIF
+
+				IF (BlastTime = 30)
+					DoneBlast = 0
+					BeamSemaphore  = 0
+			 	ELSE
+					BlastTime = BlastTime + 1
+				ENDIF
+		   	ENDIF
+		ENDIF
+		ClearGlobalParams()
+
+	ENDIF
+
+	TRIGFIN
+ENDTRIGGER
+
+LOCALINT BlastTime
+LOCALINT DoneBlast
+
+LOCALFLOAT SnapDogX
+LOCALFLOAT SnapDogY
+LOCALFLOAT SnapDogZ
+
+
+//TAIL ATTACK FINAL PHASE
+
+TRIGGER TailSound
+			IF (frame = 10)
+				PLAYSOUND>ZAPB1 7 1.0 0.0 0.0 0.0 0
+				TRIGSTOP
+			ELSE
+
+				IF (frame = 5)
+					PLAYSOUND>ZAPB2 7 1.0 0.0 0.0 0.0 0
+
+				ENDIF
+			
+			IF (frame = 10)
+			PLAYSOUND>ZAPB3 7 1.0 0.0 0.0 0.0 0
+
+			ENDIF
+			TRIGFIN
+			ENDIF
+		
+
+	
+ENDTRIGGER
+
+STATE TailAttack
+
+		//TELL THE SPARKS TO FLARE UP
+		BeamSemaphore = 1
+		ShockTime = 30
+		WHILE (MyAnimFlag & TWEEN)
+			MyFlag = MyFlag
+		ENDWHILE
+
+		TRIGSET>TailSound EVERY 1
+		frame = 0
+		WHILE (MyAnimFlag & RUNNING)
+		   
+		
+			frame = frame + 1
+			IF (frame =	FIREFRAMEOFF)
+				PLAYSOUND>VBOSS_ZAP4 7 1.0 0.0 0.0 0.0 0
+				SnapDogX = DogX
+				SnapDogY = DogY
+				SnapDogZ = DogZ	- 0.5
+				BeamSemaphore = 2
+				SetGlobalParamInt(0,0)
+				CREATE SPAWN_SCORPIONBALL 0, 0,0, 0, 0, 0, TAILTIP
+
+				LShockTime = 30
+				BlastTime  = 0
+			ENDIF
+		ENDWHILE
+
+
+
+	 //	SnapDogX = DogX
+	 //	SnapDogY = DogY
+	 //	SnapDogZ = DogZ	- 0.5
+	 //	BeamSemaphore = 2
+	 //	CREATE SPAWN_SCORPIONBALL 0, 0,0, 0, 0, 0, TAILTIP
+
+	 //	LShockTime = 30
+	 //	BlastTime  = 0
+		WHILE (BeamSemaphore)
+			MyFlag = MyFlag
+		ENDWHILE
+
+		endreached  = 0
+		//RIGHT DISTANCE TO PLAYER
+		SetCheckPosRel(0,50.0,0,0)
+
+		SaveX = DogX - CheckX
+		SaveY = DogY - CheckY
+
+		SaveZ = ((SaveX * SaveX) + (SaveY * SaveY))
+
+		//LEFT DISTANCE TO PLAYER
+		SetCheckPosRel(0,-50.0,0,0)
+
+		SaveX = DogX - CheckX
+		SaveY = DogY - CheckY
+
+		//SEE IF LEFTWAYS IS FURTHER THAN RIGHT WAYS
+		IF (((SaveX * SaveX) + (SaveY * SaveY)) > SaveZ)
+			MODE = LEFT
+		ELSE
+			MODE = RIGHT
+		ENDIF
+
+		//GOT WHICH WAY TO WALK, NOW DO IT
+		STEP = 0
+		//TURN OFF MY LINK
+		LinkComplete = 2
+		STAT>TailWalk
+ENDSTATE
+
+STATE TailWalk
+   spitch = 0.5
+
+	WHILE (!endreached)
+
+
+		GetActivationPos(0)
+		CheckZ = z
+		TowardWay(TWOPI, TWOPI)
+		absspeedx = absspeedy = speedx = speedy = 0
+
+		IF (NearPlayerXY(40.0))
+			//RIGHT DISTANCE TO PLAYER
+			SetCheckPosRel(0,50.0,0,0)
+
+			SaveX = DogX - CheckX
+			SaveY = DogY - CheckY
+
+			SaveZ = ((SaveX * SaveX) + (SaveY * SaveY))
+
+			//LEFT DISTANCE TO PLAYER
+			SetCheckPosRel(0,-50.0,0,0)
+
+			SaveX = DogX - CheckX
+			SaveY = DogY - CheckY
+
+	//SEE IF LEFTWAYS IS FURTHER THAN RIGHT WAYS
+	IF (((SaveX * SaveX) + (SaveY * SaveY)) > SaveZ)
+		MODE = LEFT
+	ELSE
+		MODE = RIGHT
+	ENDIF
+
+
+		ENDIF
+
+		IF (STEP > 10) 
+			endreached = 1
+		ELSE
+			IF (!(MyAnimFlag & RUNNING))
+			   IF (MODE = LEFT)
+			   		MODELANIM>BOSSES\SCORPIONBOSS\SCORPIONBOSS.RDO>StepLeft>0
+					STEP = STEP + 1
+			 		frame = 0
+					MODE =  LEFT
+			 	ELSE
+					MODELANIM>BOSSES\SCORPIONBOSS\SCORPIONBOSS.RDO>StepRight>0
+					frame = 0
+					STEP = STEP + 2
+					MODE = RIGHT
+				ENDIF
+			ENDIF
+
+
+			IF (MODE = RIGHT)
+					tx = AnimMoveOffset(SCORPIONBOSSWALK)
+					MoveX(tx)
+			ELSE
+			//IF (MODE = LEFT)
+					tx = AnimMoveOffset(SCORPIONBOSSWALK)
+					MoveX(-tx)
+			 ENDIF
+
+			IF (!(MyAnimFlag & TWEEN))
+				IF (MyAnimFrame = 18)
+					IF (STOMPY)
+						PLAYSOUND>VLMOVE1 3 1.0 0.0 0.0 0.0 0
+					ELSE
+						PLAYSOUND>VLMOVE2 3 1.0 0.0 0.0 0.0 0
+
+					ENDIF
+					//SetVolume(3,0.5)
+					STOMPY = !STOMPY
+				
+				ENDIF
+				IF (MyAnimFrame = 21)
+					PLAYSOUND>VLSTOMP 4 1.0 0.0 0.0 0.0 0
+				ENDIF
+
+
+			ENDIF
+
+		ENDIF
+	
+	ENDWHILE
+   	MODELANIM>BOSSES\SCORPIONBOSS\SCORPIONBOSS.RDO>TailFire>0
+   spitch = 0
+   //SetPitch(0,0.5)
+   //	StopSound(4,0)
+	
+	STAT>TailAttack
+ENDSTATE
+
+LOCALINT WHITEDONE
+LOCALFLOAT WHITE
+LOCALFLOAT WHITETOGO
+TRIGGER WhiteOut
+
+   	CamLookX = CamLookX + ((x - CamLookX) * 0.05)
+   	CamLookY = CamLookY + ((y - CamLookY) * 0.05)
+
+	IF (!WHITETOGO)
+		WHITE = WHITE + (WHITETOGO - WHITE) * 0.06
+	ELSE
+		WHITE = WHITE + (WHITETOGO - WHITE) * 0.05
+	ENDIF
+
+	SetWhiteOut(WHITE,WHITE,WHITE)
+
+	IF (FABS(WHITETOGO - WHITE) < 0.02)
+		WHITEDONE = 1
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+LOCALFLOAT totHealth
+TRIGGER DrawBar
+	IF (phase = 0)
+		IF (Hard)
+			totHealth = (GetObjectHealth (HEAD) / HPHASE0HEALTH) / 4
+		ELSE
+			totHealth = (GetObjectHealth (HEAD) / PHASE0HEALTH) / 4
+		ENDIF
+   	ELSE
+		IF (phase = 1)
+			IF (Hard)
+				totHealth = (GetObjectHealth (NOSE) / HPHASE1HEALTH) / 4
+			ELSE
+				totHealth = (GetObjectHealth (NOSE) / PHASE1HEALTH) / 4
+			ENDIF
+		ELSE
+			IF (phase = 2)
+				IF (Hard)
+					totHealth = (GetObjectHealth (HEAD) / HPHASE2HEALTH) / 4
+				ELSE
+					totHealth = (GetObjectHealth (HEAD) / PHASE2HEALTH) / 4
+				ENDIF
+			ELSE
+				totHealth = GetObjectHealth (BODY)
+				IF (GetObjectHealth(DAMAGEDHEAD) < totHealth)
+					totHealth = GetObjectHealth(DAMAGEDHEAD)
+				ENDIF
+				IF (Hard)
+					totHealth = (totHealth / HPHASE3HEALTH) / 4
+				ELSE
+					totHealth = (totHealth / PHASE3HEALTH) / 4
+				ENDIF
+
+
+			ENDIF
+		ENDIF
+	 ENDIF
+
+	IF (totHealth < 0)
+		totHealth = 0
+	ENDIF
+	IF (totHealth > 0.25)
+		totHealth = 0.25
+	ENDIF
+
+	totHealth = totHealth + ((3 - phase) * 0.25)
+
+	DrawStratBar (1, totHealth, 0, barAlpha)
+	TRIGFIN
+ENDTRIGGER

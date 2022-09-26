@@ -1,0 +1,14 @@
+STATE Init
+	MyFlag = MyFlag | FRIENDLY
+	OBJECT> Explosions\PolyWaterSplash
+	MODELANIM>EXPLOSIONS\PolyWaterSplash.RDO>Splash>0
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	WHILE (MyAnimFlag & RUNNING)
+		MyFlag = MyFlag
+	ENDWHILE
+	Delete()
+ENDSTATE
+

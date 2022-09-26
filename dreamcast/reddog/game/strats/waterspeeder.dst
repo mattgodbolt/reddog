@@ -1,0 +1,156 @@
+LOCALFLOAT	height
+LOCALFLOAT	SPEED
+LOCALFLOAT	TOPSPEED
+LOCALFLOAT	ACC
+LOCALFLOAT	bandScale
+LOCALINT	FireTime
+LOCALINT	trail1
+LOCALINT	trail2
+LOCALINT	trail3
+LOCALINT	SkidTime
+
+STATE Init
+	MyFlag = MyFlag | STRATCOLL | GRAVITYON | LOWCOLL | ENEMY
+	RegisterCollision()
+	TRIGSET>SpecularMadness EVERY 1
+   	SetFriction(0.0, 0.0, 0.0)
+	InitPath()
+	InitSplineData()
+	health = 30.0
+	WHILE (!PlayerNearActivationXY(0))
+		MyFlag = MyFlag
+	ENDWHILE
+	height = z
+	trail1 = CreateBand (1, 16, 0, 1, 1.0, 1.0, 1.0, 1, 0, 0, 0)
+	trail2 = CreateBand (1, 16, 0, 1, 1.0, 1.0, 1.0, 1, 0, 0, 0)
+	trail3 = CreateBand (1, 16, 0, 1, 0.5, 0.2, 0.1, 0.2, 0, 0, 0)
+	SetBandRotXYZandScaling (trail1, 0.0, 0.0, 0.0, 1.1, 1.1, 1.1)
+	SetBandRotXYZandScaling (trail2, 0.0, 0.0, 0.0, 1.1, 1.1, 1.1)
+	SetBandRotXYZandScaling (trail3, 0.0, 0.2, 0.0, 1.1, 1.1, 0.95)
+	AddBandSegment (trail1, 0, 0, 0, 0.2)
+	AddBandSegment (trail2, 0, 0, 0, 0.2)
+	AddBandSegment (trail3, 0, 0, 0, 0.2)
+	TRIGSET>Trailer EVERY 1
+	TRIGSET>BandTrigger EVERY 2
+	ACC = 0.02
+	SPEED = 0.0
+	TOPSPEED = 1.3
+	SkidTime = 0
+	FireTime = RandRange(0, 50)
+	SetObjectShadowState(1)
+	STAT>Start
+ENDSTATE
+
+LOCALFLOAT SPECAMOUNT
+
+TRIGGER SpecularMadness
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+	IF ((MyFlag & HITSTRAT) AND (CollWithFlag & BULLETTYPE))
+		SPECAMOUNT = 1.0
+	ENDIF
+	IF (SPECAMOUNT > 0)
+  		MyFlag2 = MyFlag2 | SPECULAR
+		SetSpecularColour(0, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		SPECAMOUNT = SPECAMOUNT - 0.1
+	ELSE
+		SPECAMOUNT = 0
+ 		MyFlag2 = MyFlag2 & LNOT(SPECULAR)
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+STATE Start
+	IF (z < height)
+		z = height
+		absspeedz = RandRange(0.1, 0.4)
+	ENDIF
+	IF (SPEED + ACC < TOPSPEED)
+		SPEED = SPEED + ACC
+	ENDIF
+	IF (NearPlayerXY(200.0))
+		FireTime = FireTime + 1
+		IF (FireTime > 30)
+			IF (PlayerState = PS_ONTRAIN)
+				IF (StratInPlayerCone(0, 0.5))
+					CREATE SPAWN_GSPEEDER_MISSILE 0.0, 0.0, 0.0, 0.2, 0, 0, 4
+				ENDIF
+			ELSE
+				CREATE SPAWN_GSPEEDER_MISSILE 0.0, 0.0, 0.0, 0.2, 0, 0, 4
+			ENDIF
+			FireTime = 0
+		ENDIF
+	ENDIF
+	IF (LastWay() || NearActivationXY(1))
+		STAT> Stop
+	ENDIF
+	MoveAlongPathXY(SPEED)
+	FaceAlongDirXY(1)
+ENDSTATE
+
+STATE BandTrigger
+	bandScale = RandRange(1.0, 2.0) * (z - height) * 0.5
+	AddBandSegment (trail1, -4.0, 5.2, 0.0, bandScale)
+	bandScale = RandRange(1.0, 2.0) * (z - height) * 0.5
+	AddBandSegment (trail2, 4.0, 5.2, 0.0, bandScale)
+	AddBandSegment (trail3, 0.0, -5.0, 3.2, 1.0)
+	TRIGFIN
+ENDSTATE
+
+STATE Trailer
+	IF (health <= 0.0)
+		CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+		TRIGSTOP
+		DESTROYME SPAWN_EXPLODINGBITS
+	ELSE
+		bandScale = RandRange(1.0, 2.0) * (z - height) * 0.5
+		RubberBand (trail1, -4.0, 5.2, 0.0, bandScale)
+		bandScale = RandRange(1.0, 2.0) * (z - height) * 0.5
+		RubberBand (trail2, 4.0, 5.2, 0.0, bandScale)
+		RubberBand (trail3, 0.0, -5.0, 3.2, 1.0)
+		TRIGFIN
+	ENDIF
+ENDSTATE
+
+STATE Stop
+	MoveAlongPathXY(SPEED)
+	IF (z < height)
+		z = height 
+	ENDIF
+	IF (SkidTime < 30)
+		RelRotateZ(0.05)
+		SkidTime = SkidTime + 1
+	ENDIF
+	IF (NearPlayerXY(200.0))
+		FireTime = FireTime + 1
+		IF (FireTime > 100)
+			IF (PlayerState = PS_ONTRAIN)
+				IF (StratInPlayerCone(0, 0.5))
+					CREATE SPAWN_GSPEEDER_MISSILE 0.0, 0.0, 0.0, 0.2, 0, 0, 4
+				ENDIF
+			ELSE
+				CREATE SPAWN_GSPEEDER_MISSILE 0.0, 0.0, 0.0, 0.2, 0, 0, 4
+			ENDIF
+			FireTime = 0
+		ENDIF
+	ENDIF
+	IF (SPEED > ACC * 3.0)
+		SPEED = SPEED - (3.0 * ACC)
+	ELSE
+		SPEED = 0.0
+		absspeedz = 0.0
+		MyFlag = MyFlag & LNOT(GRAVITYON)
+		DeleteBand (trail1)
+		DeleteBand (trail2)
+		DeleteBand (trail3)
+	ENDIF
+ENDSTATE
+
+STATE Explode
+	DeleteBand (trail1)
+	DeleteBand (trail2)
+	DeleteBand (trail3)
+//	adrelanin = adrelanin + 0.2
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+	Delete()
+	TRIGSTOP
+ENDSTATE

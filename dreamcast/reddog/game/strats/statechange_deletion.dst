@@ -1,0 +1,45 @@
+//waits for player to get near and then deletes, may be used to trigger deletion events
+//Now with added timer if you want a bit of a delay
+
+PARAMINT timer 0
+PARAMINT ThreeD 0
+
+STATE Init
+	IF (!(MyFlag2 & OWNIPARAMS))
+		timer = 0
+		ThreeD = 0
+	ENDIF
+	IF (PAL)
+		timer = timer / 1.2
+	ENDIF
+	MyFlag = MyFlag & LNOT(ENEMY)
+	LOOP (1)
+		MyFlag = MyFlag
+	ENDLOOP
+	STAT>Start
+ENDSTATE
+
+STATE Start
+
+	WHILE (timer > 0)
+		timer = timer - 1
+	ENDWHILE
+	IF (ThreeD = 1) AND (HasActivation(0))
+		STAT>ThreeDCheck
+	ENDIF
+
+	IF (HasActivation(0))
+		IF (PlayerNearActivationXY(0))
+			Delete()
+		ENDIF
+	ELSE
+		Delete()
+	ENDIF
+ENDSTATE
+
+
+STATE ThreeDCheck
+	IF (PlayerNearActivation(0))
+		Delete()
+	ENDIF
+ENDSTATE

@@ -1,0 +1,15 @@
+// Sets up the sun direction
+// Now keeps updating too in an attempt to fix respawn
+// problems
+
+STATE Init
+	LOOP(2)
+		MyFlag = MyFlag 
+	ENDLOOP
+	IAmTheSun()
+	LOOP(20)
+		MyFlag = MyFlag
+	ENDLOOP
+//	Delete()
+ENDSTATE
+

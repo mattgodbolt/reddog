@@ -1,0 +1,600 @@
+DEFINE NORMAL 0
+DEFINE HIT 1
+DEFINE DIE 2
+DEFINE STOP 3
+DEFINE GUARD 4
+DEFINE CLOAK 8
+DEFINE TARGETTRACKING 32
+
+
+DEFINE GUNARM 5
+DEFINE JETPACK 10
+DEFINE JETPACKLEFT 8
+DEFINE JETPACKRIGHT 9
+
+
+
+DEFINE RUNSPEED 0.08
+
+
+
+DEFINE THRUST 1
+DEFINE HOVER 0
+
+LOCALINT STATUS
+LOCALINT MODE
+LOCALINT BREAK
+
+
+
+STATE Init
+	ang = 0.0
+//  	scalex = 3.0
+//  	scaley = 3.0
+//  	scalez = 3.0 
+	SetFriction(0.2,0.2,0.0)
+	RotationRestriction(1.0, 1.0, 1.0)
+	health = 40.0
+   	MyFlag = MyFlag | STRATCOLL | GRAVITYON | ENEMY | LOWCOLL | HOVERMOVE | FLOORCOLL | TARGETABLE
+	RegisterCollision()
+	AllocStratSoundBlock(2)
+	RegisterDanger(50.0)
+	TRIGSET>SpecularMadness EVERY 1
+	STATUS = NORMAL
+//	MyFlag2 = MyFlag2 | TRANSLUCENT
+  	OBJECT> ENEMIES\JETPACKER
+	SetObjectShadowState(1)
+
+	InitRotInit()
+   	TRIGSET>Hit WHENHIT
+	TRIGSET>Raise EVERY 1
+
+	TRIGSET>Die WHENDEAD
+   	TRIGSET>Thrust EVERY 4
+	TRIGSET>Booster EVERY 1
+	TRIGSET>FireCheck EVERY 1
+	TRIGSET>CollStrat EVERY 1
+
+	height = 0.5
+	velocity = 0
+	lvelocity = 0
+	fvelocity = 0
+
+	BREAK = 0
+	MODE = THRUST
+	FIRING = 0
+	ThrustMode = 0
+	LateralThrustMode = 0
+	ForThrustMode = 0
+	THRUSTVALID = 0
+	FIREVALID = 0
+	BOOSTUP = 0
+	Rise = 0.0
+
+	offsetx  =0
+	offsety = 0
+	offsetz = 0
+ 	STAT>Move
+ENDSTATE
+
+LOCALFLOAT SPECAMOUNT
+
+TRIGGER SpecularMadness
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+	IF ((MyFlag & HITSTRAT) AND (CollWithFlag & BULLETTYPE))
+		SPECAMOUNT = 1.0
+	ENDIF
+	IF (SPECAMOUNT > 0)
+  		MyFlag2 = MyFlag2 | SPECULAR
+		SetSpecularColour(0, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		SPECAMOUNT = SPECAMOUNT - 0.1
+	ELSE
+		SPECAMOUNT = 0
+ 		MyFlag2 = MyFlag2 & LNOT(SPECULAR)
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+LOCALFLOAT LASTX
+LOCALFLOAT LASTY
+LOCALFLOAT LASTZ
+
+STATE CollStrat
+	ValidatePosition(6.0)
+  	AvoidPlayer(6.0)
+	TRIGFIN
+ENDSTATE
+
+
+LOCALINT ThrustMode
+LOCALINT LateralThrustMode
+LOCALINT ForThrustMode
+LOCALINT FIREVALID
+
+LOCALFLOAT Rise
+STATE Raise
+
+	IF (HitWall(0))
+		IF (x < parentx)
+			offsetx = offsetx - 0.1
+		ELSE
+			offsetx = offsetx + 0.1
+		ENDIF
+
+		IF (y < parenty)
+			offsety = offsety - 0.1
+		ELSE
+			offsety = offsety + 0.1
+		ENDIF
+
+		IF (z < parentz)
+			offsetz = offsetz - 0.1
+		ELSE
+			offsetz = offsetz + 0.1
+		ENDIF
+	ENDIF
+
+
+
+
+
+	IF (MyFlag & HITFLOOR)
+		Rise = Rise + 0.5
+
+	ELSE
+		IF (Rise > 0)
+			Rise = Rise - 0.5
+		ENDIF
+	ENDIF
+
+
+	offsetx = offsetx * 0.99
+	offsety = offsety * 0.99
+	offsetz = offsetz * 0.99
+
+	TRIGFIN
+ENDSTATE
+
+LOCALFLOAT offsetx
+LOCALFLOAT offsety
+LOCALFLOAT offsetz
+
+
+
+LOCALFLOAT height
+
+LOCALFLOAT dist
+
+
+
+
+LOCALFLOAT velocity
+LOCALFLOAT lvelocity
+LOCALFLOAT fvelocity
+
+LOCALINT THRUSTVALID
+
+
+LOCALINT BOOSTUP
+
+STATE Hit
+
+		IF (health > 0.0)
+		MyFlag2 = MyFlag2 | STOPPED
+		PauseTriggers(-1,FORGET)
+		
+   
+	 	STATUS = HIT
+		MODELANIM>ENEMIES\JETPACKER.RDO>hit>0
+
+		WHILE  (MyAnimFlag & RUNNING)
+				MyFlag = MyFlag
+		ENDWHILE
+
+		STATUS = NORMAL
+		MyFlag2 = MyFlag2 & LNOT(STOPPED)
+		MODELANIM>ENEMIES\JETPACKER.RDO>hover>REPEAT
+			UnPauseTriggers()
+		ENDIF
+  
+  	TRIGFIN
+
+ENDSTATE
+
+STATE MakeFlat
+	Flatten(15.0)
+	TRIGFIN
+ENDSTATE
+
+LOCALINT ModNu
+
+STATE Die
+		MyFlag2 = MyFlag2 | STOPPED
+		PauseTriggers(-1,FORGET)
+		TRIGSET>MakeFlat EVERY 1
+		STATUS = HIT
+		MyVar = 1.0
+	
+		MODELANIM>ENEMIES\JETPACKER.RDO>Fall>NOTWEEN
+
+			
+		WHILE  (!(MyFlag & HITFLOOR))
+				MyFlag = MyFlag
+		ENDWHILE
+
+		MyFlag = MyFlag & LNOT(GRAVITYON)
+	
+		MODELANIM>ENEMIES\JETPACKER.RDO>Splat>NOTWEEN
+		IF (PlayerState = PS_ONTRAIN)
+	   	 IMMLOOP (16)
+		ModNu = TOINT(MyVar)
+
+	  	CREATE SPAWN_LIMBFIREPARENT 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, ModNu
+		MyVar = MyVar + 1.0
+	   	IMMENDLOOP
+		ENDIF
+
+		WHILE  (MyAnimFlag & RUNNING)
+				MyFlag = MyFlag
+		ENDWHILE
+
+		//STATUS = NORMAL
+		//MODELANIM>ENEMIES\JETPACKER.RDO>TakeOff>0
+
+		//WHILE  (MyAnimFlag & RUNNING)
+		//		MyFlag = MyFlag
+		//ENDWHILE
+	 	DeleteMyParent()
+	   
+		LOOP (20)
+			MyFlag = MyFlag
+		ENDLOOP
+	   
+	   	Delete()
+
+	   //	MyFlag2 = MyFlag2 & LNOT(STOPPED)
+	  //	MODELANIM>ENEMIES\JETPACKER.RDO>hover>REPEAT
+	 //	TRIGKILL>MakeFlat EVERY 1
+	 //	UnPauseTriggers()
+  	 //	health = 40.0
+   //	TRIGSTOP
+
+ENDSTATE
+
+
+LOCALFLOAT Fire
+LOCALINT FIRING
+STATE FireCheck
+ 	IF (FIREVALID)
+ 		Fire = RandRange (0,50)
+		IF (Fire < 25.0)
+	  	FIRING = 1
+	  	MODELANIM>ENEMIES\JETPACKER.RDO>Fire>0
+	   
+	    //WE AWAIT THE TWEEN TO STOP
+		WHILE (MyAnimFlag & TWEEN)
+			MyFlag = MyFlag
+
+		ENDWHILE
+	   
+	   //17 FRAMES IN IS WHERE WE FIRE
+	   	LOOP (17)
+			MyFlag = MyFlag
+		ENDLOOP
+		
+	   	CREATE SPAWN_ENEMYMISSILEFOOTSOLDIER 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, GUNARM
+
+
+		WHILE (MyAnimFlag & RUNNING)
+			MyFlag = MyFlag
+		ENDWHILE
+
+		MODELANIM>ENEMIES\JETPACKER.RDO>hover>REPEAT
+		FIRING = 0
+		ENDIF
+   ENDIF
+
+   TRIGFIN
+
+ENDSTATE
+
+
+STATE Booster
+
+
+
+	IF (((BOOSTUP) OR (BREAK)) AND (FABS(absspeedz < 0.1)))
+
+
+		IF (BREAK)
+			velocity = 0.045
+			BREAK = 0
+	   	ELSE
+			velocity = 0.03
+		ENDIF
+	   	MoveZ(velocity)
+		//SPAWNS JET THRUST AT THE POINT OF THE BACKPACK
+		MyVar = 8.0
+	   //	CREATE SPAWN_JETTHRUST 0.0, -2.0, 0.0, TWOPI/2.0, 0.0, 0.0, JETPACKLEFT
+		CREATE SPAWN_JETTHRUST 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, JETPACK
+		MyVar = 9.0
+	   //	CREATE SPAWN_JETTHRUST 0.0, -2.0, 0.0, TWOPI/2.0, 0.0, 0.0, JETPACKRIGHT
+		CREATE SPAWN_JETTHRUST 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, JETPACK
+	   
+	   //	MyVar = 8.0
+	   //	CREATE SPAWN_JETTHRUST 0.0, -2.0, 0.0, TWOPI/2.0, 0.0, 0.0, JETPACKLEFT
+	   //	MyVar = 9.0
+	   //	CREATE SPAWN_JETTHRUST 0.0, -2.0, 0.0, TWOPI/2.0, 0.0, 0.0, JETPACKRIGHT
+
+
+	ELSE
+		velocity = velocity * 0.75
+	ENDIF
+
+   //	IF ((BOOSTUP) OR (KICK) OR (BREAK))
+
+		//SPAWNS JET THRUST AT THE POINT OF THE BACKPACK
+   //		MyVar = 8.0
+   //		CREATE SPAWN_JETTHRUST 0.0, -2.0, 0.0, TWOPI/2.0, 0.0, 0.0, JETPACKLEFT
+	//	MyVar = 9.0
+	 //  	CREATE SPAWN_JETTHRUST 0.0, -2.0, 0.0, TWOPI/2.0, 0.0, 0.0, JETPACKRIGHT
+
+
+   //	ENDIF
+	TRIGFIN
+ENDSTATE
+
+
+LOCALFLOAT speed
+LOCALFLOAT XDIST
+LOCALFLOAT YDIST
+STATE Thrust
+   	IF (THRUSTVALID)
+
+		
+
+
+
+
+   		IF (!LateralThrustMode)
+   			absspeedx = absspeedx - lvelocity
+		ELSE
+			absspeedx = absspeedx + lvelocity
+	 	ENDIF
+
+
+		IF (!ForThrustMode)
+			absspeedy = absspeedy - fvelocity
+		ELSE
+			absspeedy = absspeedy + fvelocity
+		ENDIF
+
+
+  	ELSE
+	   //	IF (!FIRING)
+   		IF (!LateralThrustMode)
+   		   	absspeedx = absspeedx - lvelocity
+	  			IF (!FIRING)
+			  	MODELANIM>ENEMIES\JETPACKER.RDO>left>0
+				ENDIF
+		   //	MoveX(-lvelocity)
+	   	ELSE
+		   //	MoveX(lvelocity)
+	  			IF (!FIRING)
+			  	MODELANIM>ENEMIES\JETPACKER.RDO>right>0
+				ENDIF
+		   	absspeedx = absspeedx + lvelocity
+	 	ENDIF
+	   //	ENDIF
+
+
+	ENDIF
+
+		IF (lvelocity < RUNSPEED * 1.5)
+			lvelocity = lvelocity + 0.01
+		ENDIF
+
+	 	IF (fvelocity < RUNSPEED * 1.5)
+	  		fvelocity = fvelocity + 0.01
+	 	ENDIF
+
+
+
+	TRIGFIN
+ENDSTATE
+
+DEFINE LEFT	 1
+DEFINE RIGHT 2
+
+
+LOCALINT DIR
+
+STATE Move2
+
+ENDSTATE
+
+
+LOCALFLOAT ang
+
+
+DEFINE HEIGHT 1.5
+DEFINE HALFHEIGHT 2.0
+
+//DEFINE HEIGHT 1.5
+//DEFINE HALFHEIGHT 0.5
+
+
+STATE Move
+
+	offsetx = 0
+	offsety = 0
+	offsetz = 0
+	CheckX = offsetx + parentx 
+	CheckY = offsety + parenty
+	
+	CheckZ = offsetz + parentz + HEIGHT + Rise
+	// + Rise + (HALFHEIGHT * Ssin(ang))
+	
+   	TowardPlayer(0.1,0.1)
+
+
+  	IF ((MODE = THRUST) AND (!NearCheckPosXY(10.0)))
+  	   	DirectionPitch(0.05)
+		DIR = SeeCheckPosLateral((TWOPI / 360.0) * 90.0)
+
+		IF (!FIRING)
+		IF (DIR)
+  			IF (DIR = LEFT)
+	  			MODELANIM>ENEMIES\JETPACKER.RDO>left>0
+
+
+			ELSE
+		  		MODELANIM>ENEMIES\JETPACKER.RDO>right>0
+
+
+		  	ENDIF
+		ELSE
+		 	MODELANIM>ENEMIES\JETPACKER.RDO>thrust>REPEAT
+
+
+	   	ENDIF
+		ENDIF
+
+	ELSE
+		IF ((MODE = HOVER) AND (NearCheckPosXY(25.0)))
+		DIR = SeeCheckPosLateral((TWOPI / 360.0) * 45.0)
+
+		IF (DIR)
+  			IF (DIR = LEFT)
+	  		  //	MODELANIM>ENEMIES\JETPACKER.RDO>left>0
+				MyFlag = MyFlag
+
+			ELSE
+				MyFlag = MyFlag
+
+		  	//	MODELANIM>ENEMIES\JETPACKER.RDO>right>0
+
+
+		  	ENDIF
+		ELSE
+				MyFlag = MyFlag
+
+		  //	MODELANIM>ENEMIES\JETPACKER.RDO>hover>REPEAT
+
+
+	   	ENDIF
+		ELSE
+			IF (MODE = HOVER)
+				MODE = THRUST
+				THRUSTVALID = 1
+				FIREVALID = 0
+			ELSE
+				THRUSTVALID = 0
+			   
+			   //	THRUSTVALID = 1
+			   	FIREVALID = 1
+				MODE = HOVER
+			ENDIF
+		ENDIF
+
+	ENDIF
+	
+	Flatten(10.0)
+
+
+
+		height = RandRange(0.03,0.1) * 0.5 * Ssin(ang)
+
+	 //	height = 0
+
+	 	IF (!LateralThrustMode)
+			IF (x < CheckX)
+				dist =  FABS(x - CheckX)
+				IF (dist > 3.0)
+					LateralThrustMode  = 1
+				   	lvelocity = 0
+				ENDIF
+			ENDIF
+
+
+	  	ELSE
+  			IF (x > CheckX)
+  	   		dist =  FABS(x - CheckX)
+  			IF (dist > 3.0)
+  				LateralThrustMode  = 0
+  			   	lvelocity = 0
+		   	ENDIF
+  		ENDIF
+
+   
+   	ENDIF
+   
+   	IF (!ForThrustMode)
+ 		IF (y < CheckY)
+  			dist =  FABS(y - CheckY)
+  			IF (dist > 3.0)
+  				ForThrustMode  = 1
+  				fvelocity = 0
+  			ENDIF
+  		ENDIF
+	ELSE
+  		IF (y > CheckY)
+  			dist =  FABS(y - CheckY)
+  			IF (dist > 3.0)
+  				ForThrustMode  = 0
+  				fvelocity = 0
+		   	ENDIF
+  		ENDIF
+
+   
+   	ENDIF
+
+
+   	//ENDIF
+
+   	IF (absspeedz < -0.08)
+   	
+	  
+	 // absspeedz = -0.03
+	  //	MoveZ(velocity)
+
+	  	 BREAK = 1
+   	ENDIF
+		
+
+
+	IF (!ThrustMode)
+		IF (z < CheckZ)
+			dist =  FABS(z - CheckZ)
+			IF (dist > (height ))
+				ang = ang + 0.1
+				BOOSTUP = 1
+				ThrustMode  = 1
+	   			PLAYSOUND>JETPACK 0 0.9 0.0 -2.0 0.0 CONTINUOUS
+			ENDIF
+		ENDIF
+	ELSE
+		IF (z > CheckZ)
+			dist =  FABS(z - CheckZ)
+	 
+	 
+	 		IF (dist > (height + 3.0))
+				ang = ang + 0.1
+				BOOSTUP = 0 
+				//CUT THE VELOCITY
+				velocity = 0
+  				ThrustMode  = 0
+				StopSound(0,0.0)
+			ENDIF
+		ENDIF
+
+   
+   	ENDIF
+
+
+
+ENDSTATE
+
+
+
+

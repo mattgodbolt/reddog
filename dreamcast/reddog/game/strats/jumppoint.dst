@@ -1,0 +1,9 @@
+STATE Init 
+  //	MyFlag = MyFlag
+	IAmJumpPoint()
+	STAT> DoNothing
+ENDSTATE
+
+STATE DoNothing
+	Delete()
+ENDSTATE

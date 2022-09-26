@@ -1,0 +1,139 @@
+DEFINE	GenTime			0
+DEFINE	MaxAtAnyTime	1
+DEFINE	Total			2
+DEFINE	Current			3
+DEFINE	Created			4
+DEFINE	Flag			5
+
+PARAMINT WaitAfterSpawn 0
+PARAMINT COLLISIONWITHFLOOR 0
+
+PARAMFLOAT height 3.0
+PARAMFLOAT NearRange 40.0
+
+LOCALINT	tempi
+LOCALINT	tempj
+LOCALINT	tempk
+LOCALINT	templ
+LOCALINT	active
+LOCALINT	time
+LOCALINT	genTime
+LOCALINT	doit
+LOCALFLOAT	tempf
+
+STATE Init
+	MyFlag = MyFlag | ENEMY
+   //	OBJECT> ENEMIES\HOVERBIKE
+
+	doit = 0
+   	IF (!(MyFlag2 & OWNIPARAMS))
+		WaitAfterSpawn = 0
+		COLLISIONWITHFLOOR = 0
+	ENDIF
+
+	IF (!(MyFlag & OWNFPARAMS))
+		height = 3.0
+		NearRange = 40.0
+	ENDIF
+
+   	WHILE (MyParentInvalid())
+   		MyFlag = MyFlag
+   	ENDWHILE
+
+	IF (MyPath)
+		//ensure the own pos is supported
+   		SetGlobalParamInt(0,99)
+		InitPath()
+		ClearGlobalParams()
+	ENDIF
+
+	TRIGSET>Always EVERY 1
+	time = 0
+	genTime = GetParentSem(GenTime)
+   
+	active = 0
+
+
+	STAT>Start
+ENDSTATE
+
+TRIGGER Always
+	IF (!MyParentFlag)
+		Delete()
+ //		TRIGSTOP
+	ELSE
+	TRIGFIN
+	ENDIF
+ENDTRIGGER 
+
+STATE Start
+	IF (GetParentSem(Flag) = 1)
+		STAT>Kill
+	ENDIF
+	WHILE (GetParentSem(Flag) = 2)
+		MyFlag = MyFlag
+	ENDWHILE
+
+	time = time + 1
+
+	IF ((active = 0) AND (time > (genTime * 30)))
+		IF (HasActivation(0))
+			IF (!PlayerNearActivationXY(0))
+				IF (HasActivation(1))
+					IF (!EnemyInActivation(1, 2D))
+						doit = 1
+					ENDIF
+				ELSE
+					doit = 1
+				ENDIF
+			ENDIF
+		ELSE			
+			IF (HasActivation(1))
+				IF (!EnemyInActivation(1, 2D))
+					doit = 1
+				ENDIF
+			ELSE
+				doit = 1
+			ENDIF
+		ENDIF
+	ENDIF
+
+	IF (doit = 1)
+		tempi = GetParentSem(Created)
+		tempj = GetParentSem(Total)
+		tempk = GetParentSem(Current)
+		templ = GetParentSem(MaxAtAnyTime)
+		IF ((tempi < tempj) AND (tempk < templ))
+			IF (RandRange(0.0, 100.0) < 1.0)
+				IF (!(EnemyInActivation(1, 3D)))
+					AddParentSem(Created, 1)
+					AddParentSem(Current, 1)
+					SetGlobalParamFloat(0, 1)
+					SetGlobalParamFloat(1, height)
+					SetGlobalParamFloat(2, NearRange)
+
+					SetGlobalParamInt(0,WaitAfterSpawn)
+					SetGlobalParamInt(1,COLLISIONWITHFLOOR)
+					CREAIND CaveBot x, y, z, 0, 0, 0
+					active = 1
+					ClearGlobalParams()
+				ENDIF
+			ENDIF
+		ENDIF
+		doit = 0
+	ENDIF
+
+	IF (MyParentFlag)
+		IF (MyVar > 0.0)
+			time = 0
+			tempi = TOINT(MyVar)
+			SubParentSem(Current, tempi)
+			active = 0
+			MyVar = 0.0
+		ENDIF
+	ENDIF
+ENDSTATE
+
+STATE Kill
+	Delete()
+ENDSTATE

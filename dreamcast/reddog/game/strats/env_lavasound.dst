@@ -1,0 +1,30 @@
+PARAMINT LavaFall 0
+
+STATE Init
+	AllocStratSoundBlock(1)
+	SetAudibleRange(0, 200, 250)
+	IF (LavaFall)
+		PLAYSOUND>LAVAFALL 0 0.8 0.0 0.0 0.0 CONTINUOUS
+		STAT>Falls
+	ENDIF
+	PLAYSOUND>LAVA 0 0.55 0.0 0.0 0.0 (NOPOSITION | CONTINUOUS)
+//	TRIGSET>ChangeVol EVERY 15
+	STAT>Start
+ENDSTATE
+
+STATE Start
+ENDSTATE
+
+STATE Falls
+  	PointToXY(DogX, DogY, DogZ)
+ENDSTATE
+
+TRIGGER ChangeVol
+  //	x = DogX + RandRange(0.0,1.0) * Ssin(CheckX)
+  //	y = DogY + RandRange(0.0,1.0) * Scos(CheckX)
+  //	z = DogZ
+  //	CheckX = CheckX + RandRange(0,TWOPI)
+  //	CheckX = RandRange(0.5, 0.6)
+  //	SetVolume(0,CheckX)
+	TRIGFIN
+ENDTRIGGER

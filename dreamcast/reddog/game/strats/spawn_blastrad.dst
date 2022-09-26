@@ -1,0 +1,34 @@
+STATE Init
+	MyFlag = MyFlag | NOTEXPLODE | LOWCOLL | STRATCOLL | FRIENDLY
+	RegisterCollision()
+	OBJECT> WEAPON\BLASTRADIUS
+    ANIM> Blastradius>domeexp
+	MyAnimFlag = MyAnimFlag | LOOPANIM
+	damage = 10.0
+    trans = 2.0   
+	scalex = 0.1
+	scaley = 0.1
+	scalez = 0.1
+
+	AllocStratSoundBlock(1)
+	PLAYSOUND>EX_LARGE_BLAST1 0 1.0 0.0 0.0 0.0 0
+
+	STAT>SetPos
+ENDSTATE
+
+STATE SetPos
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+
+	IF (scaley < 2.0)
+		scaley = scaley + 0.05
+		scalex = scalex + 0.05
+		scalez = scalez + 0.05
+	ENDIF
+
+  	IF (trans < 0.0)
+  		trans = 0.0
+		Delete()
+  	ELSE
+		trans = trans - 0.1
+	ENDIF
+ENDSTATE

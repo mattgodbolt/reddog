@@ -1,0 +1,71 @@
+//PAL FRIENDLY
+LOCALINT	time
+LOCALFLOAT	tempf
+LOCALINT ONESEC
+STATE Init
+	MyFlag = MyFlag | ENEMY | STRATCOLL
+	InitHDC()
+	CalculateStratPolyData(1)
+	IF (PAL)
+		ONESEC = 25
+	ELSE
+		ONESEC = 30
+	ENDIF
+
+	AllocStratSoundBlock(1)
+
+	IF (MyParent)
+		STAT>OpenType
+	ELSE
+		STAT>CloseType
+	ENDIF
+ENDSTATE
+
+STATE OpenType
+	WHILE (MyParentInvalid())
+		MyFlag = MyFlag
+	ENDWHILE
+	SetObjectCrntPos(1, 0.0, MODEZ)
+	SetObjectCrntPos(2, 0.0, MODEZ)
+	CalculateStratPolyData(1)
+	WHILE (MyParentFlag)
+		MyFlag = MyFlag
+	ENDWHILE
+	time = 0
+	PLAYSOUND>DOOR_OCT_OPEN 0 1.0 0.0 0.0 0.0 NOPOSITION
+
+	LOOP (ONESEC)
+		tempf = SmoothFromToSum(7.0, time, ONESEC)
+		SetObjectCrntPos(1, tempf, MODEZ)
+		SetObjectCrntPos(2, -tempf, MODEZ)
+		time = time + 1
+		CalculateStratPolyData(1)
+	ENDLOOP
+	WHILE (1)
+		MyFlag = MyFlag
+	ENDWHILE
+ENDSTATE
+
+STATE CloseType
+	WHILE (!PlayerNearActivationXY(0))
+		MyFlag = MyFlag
+	ENDWHILE
+	time = 0
+	PLAYSOUND>DOOR_OCT_OPEN 0 1.0 0.0 0.0 0.0 NOPOSITION
+
+
+	LOOP (ONESEC)
+		tempf = SmoothFromToSum(7.0, time, ONESEC)
+		SetObjectCrntPos(1, 7.0 - tempf, MODEZ)
+		SetObjectCrntPos(2, tempf - 7.0, MODEZ)
+		time = time + 1
+		CalculateStratPolyData(1)
+	ENDLOOP
+	PLAYSOUND>DOOR_OCT_CLUNK 0 1.0 0.0 0.0 0.0 NOPOSITION
+
+	WHILE (1)
+		MyFlag = MyFlag
+	ENDWHILE
+ENDSTATE
+
+

@@ -1,0 +1,122 @@
+//
+// Ice gun anim
+//
+
+LOCALFLOAT	MUSVOL
+LOCALFLOAT	temp
+LOCALFLOAT	frame
+
+LOCALINT SND_VAL1
+LOCALINT SND_VAL2
+LOCALINT SND_VAL3
+LOCALINT SND_VAL4
+LOCALINT SND_VAL5
+LOCALINT SND_VAL6
+
+TRIGGER MUSFADE
+	temp = MUSVOL
+	WHILE (temp > (MUSVOL / 3.0))
+		MusicFade((1.0 - temp))
+		temp = temp * 0.6
+	ENDWHILE
+  	TRIGSTOP
+ENDTRIGGER
+
+STATE Init
+	MUSVOL = sfxGetCDVolume()
+	IF (sfxGetCDVolume() > 0.3)
+		TRIGSET>MUSFADE EVERY 1
+	ENDIF
+ 	
+	//kill all existing sounds
+	StopSound(-1,-1)
+	AllocStratSoundBlock(4)
+
+	STAT>Fire
+ENDSTATE
+
+STATE Fire
+	IF (PAL)
+		SND_VAL1 = 183
+		SND_VAL2 = 249
+		SND_VAL3 = 277
+		SND_VAL4 = 315
+		SND_VAL5 = 354
+		SND_VAL6 = 420 
+	ELSE
+		SND_VAL1 = 220
+		SND_VAL2 = 298
+		SND_VAL3 = 322
+		SND_VAL4 = 378
+		SND_VAL5 = 425
+		SND_VAL6 = 504 
+	ENDIF
+	frame = 0
+
+	while (frame < SND_VAL1)
+		frame = frame + 1
+	endwhile
+	PLAYSOUND>ICEGUNMOVE 0 0.9  0.0 0.0 0.0  CONTINUOUS | NOPOSITION
+	while (frame < SND_VAL2)
+		frame = frame + 1
+	endwhile
+	StopSound(0, 0.0)
+	while (frame < SND_VAL3)
+		frame = frame + 1
+	endwhile
+	PLAYSOUND>ICEGUN2 0 1.0  0.0 0.0 0.0  NOPOSITION
+	while (frame < SND_VAL4)
+		frame = frame + 1
+	endwhile
+	PLAYSOUND>ICEGUN2 0 1.0  0.0 0.0 0.0  NOPOSITION
+	while (frame < SND_VAL5)
+		frame = frame + 1
+	endwhile
+	PLAYSOUND>ICEGUN2 0 1.0  0.0 0.0 0.0  NOPOSITION
+	while (frame < SND_VAL6)
+		frame = frame + 1
+	endwhile
+
+	STAT>Satellite
+ENDSTATE
+
+STATE Satellite
+	IF (PAL)
+		SND_VAL1 = 63 
+		SND_VAL2 = 79 
+		SND_VAL3 = 97 
+		SND_VAL4 = 101
+		SND_VAL5 = 132
+	ELSE
+		SND_VAL1 = 76
+		SND_VAL2 = 95
+		SND_VAL3 = 116
+		SND_VAL4 = 121
+		SND_VAL5 = 158
+	ENDIF
+	frame = 0
+
+	while (frame < SND_VAL1)
+		frame = frame + 1
+	endwhile
+	PLAYSOUND>ICEGUNTRAIL 0 1.0  0.0 0.0 0.0  NOPOSITION
+	while (frame < SND_VAL2)
+		frame = frame + 1
+	endwhile
+	PLAYSOUND>ICEGUNTRAIL 0 1.0  0.0 0.0 0.0  NOPOSITION
+	while (frame < SND_VAL3)
+		frame = frame + 1
+	endwhile
+	PLAYSOUND>ICEGUNTRAIL 0 1.0  0.0 0.0 0.0  NOPOSITION
+	
+	while (frame < SND_VAL5)
+		frame = frame + 1
+	endwhile
+
+	STAT>FINISHED
+ENDSTATE
+
+STATE FINISHED
+	MusicFade((1.0 - MUSVOL))
+  	Delete()
+ENDSTATE

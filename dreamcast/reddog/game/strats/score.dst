@@ -1,0 +1,12 @@
+PARAMINT StartScore 0
+
+STATE Init
+
+	IF (!(MyFlag2 & OWNIPARAMS))
+		StartScore = 0
+	ENDIF
+
+	Score = StartScore 
+	Delete()
+
+ENDSTATE

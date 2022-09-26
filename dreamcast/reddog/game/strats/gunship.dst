@@ -1,0 +1,138 @@
+LOCALFLOAT	temp
+LOCALFLOAT	time
+LOCALFLOAT	speed
+LOCALINT	fireTime
+LOCALINT	normalFireTime
+
+STATE Init 
+	MyFlag = MyFlag | STRATCOLL | ENEMY	 
+	RegisterCollision()
+	RotationRestriction(1.0, 1.0, 1.0)
+	SetFriction(0.05,0.05,0.05)	
+	health = 100.0
+	InitPath()
+	InitSplineData()
+	MyVar = 0.0
+	time = 0.0
+	TRIGSET>Kill WHENDEAD
+	TRIGSET>Always EVERY 1
+	ObjectNotTargetable(3)
+	ObjectNotTargetable(4)
+	ObjectTargetable(1)
+	fireTime = 0
+	speed = 2.0
+	normalFireTime = 0
+	SetObjectShadowState(1)
+	STAT> Surprise
+ENDSTATE
+
+STATE Always
+	normalFireTime = normalFireTime + 1
+	Flatten(1.0)
+	fireTime = fireTime + 1
+	RelTurnTowardPlayerXY(0.05)
+	time = time + 1.0
+	temp = Ssin(time * 0.06)
+	MoveXNoZ(temp * 0.06)
+	RelRotateY(temp * 0.01)
+	temp = Ssin(time * 0.1)
+	MoveZ(temp * 0.02)
+	CheckZ = DogZ + 15
+	TRIGFIN
+ENDSTATE
+
+STATE Surprise
+	MoveAlongPath(speed)
+	IF (LastSplineSection())
+		IF (distToWay() < 30.0)
+			speed = speed - 0.1
+		ENDIF
+		IF (speed < 0.1)
+			speedx = 0
+			speedy = 0
+			speedz = 0
+			Stat> Move
+		ENDIF
+	ENDIF
+ENDSTATE 
+
+STATE Move
+	FindValidCheckPosXY(40.0, 100.0)
+	WHILE (!NearCheckPosXY(2))
+		MoveToward(CheckX, CheckY, CheckZ, 0.05)
+		IF (fireTime > 200)
+			temp = RandRange(0.0, 2.0)
+			IF (temp < 1.0)
+				STAT> MissileAttack
+			ELSE
+				MyVar = 0.0
+				STAT> BeamAttack
+			ENDIF
+		ELSE
+			IF (normalFireTime > 20)
+				normalFireTime = 0
+				CREATE SPAWN_AUTO_ENEMY_SHOT -0.9, 6.9, -0.25, 0, 0, 0, 0
+			ENDIF
+		ENDIF
+	ENDWHILE	
+ENDSTATE
+
+STATE MissileAttack
+
+	ObjectTargetable(3)
+	ObjectTargetable(4)
+
+	LOOP (30)
+		TransObjectRel(3, 0.1, 0.0, 0.0)
+		TransObjectRel(4, -0.1, 0.0, 0.0)
+	ENDLOOP
+
+
+	LOOP(60)
+		fireTime = 0
+	ENDLOOP
+
+	CREATE SPAWN_AUTO_ENEMY_SHOT -3.0, 0.0, 0.0, 0, 0, 0, 0
+	CREATE SPAWN_AUTO_ENEMY_SHOT -3.2, 0.0, 0.0, 0, 0, 0, 0
+	CREATE SPAWN_AUTO_ENEMY_SHOT -3.4, 0.0, 0.0, 0, 0, 0, 0
+	CREATE SPAWN_AUTO_ENEMY_SHOT -3.6, 0.0, 0.0, 0, 0, 0, 0
+
+	CREATE SPAWN_AUTO_ENEMY_SHOT  3.0, 0.0, 0.0, 0, 0, 0, 0
+	CREATE SPAWN_AUTO_ENEMY_SHOT  3.2, 0.0, 0.0, 0, 0, 0, 0
+	CREATE SPAWN_AUTO_ENEMY_SHOT  3.4, 0.0, 0.0, 0, 0, 0, 0
+	CREATE SPAWN_AUTO_ENEMY_SHOT  3.6, 0.0, 0.0, 0, 0, 0, 0
+
+	LOOP(60)
+		fireTime = 0
+	ENDLOOP
+	LOOP (30)
+		TransObjectRel(3, -0.1, 0.0, 0.0)
+		TransObjectRel(4, 0.1, 0.0, 0.0)
+	ENDLOOP
+	ObjectNotTargetable(3)
+	ObjectNotTargetable(4)
+
+	fireTime = 0
+	STAT> Move
+ENDSTATE
+
+STATE BeamAttack
+	IF (!OnlyInsideArea(DogX, DogY))
+		CREATE SPAWN_HELIBEAM 1.0, 6.9, -1.0, 0, 0, 0, 0	
+		LOOP(200)
+			MoveToward(DogX, DogY, CheckZ, 0.05)		
+			fireTime = 0
+		ENDLOOP
+		MyVar = 1.0
+	ENDIF
+	fireTime = 0
+	STAT> Move
+ENDSTATE
+
+STATE Kill
+	MyVar = 0.0
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+//	adrelanin = adrelanin + 0.3
+	Score = Score + 800
+	Delete()
+ENDSTATE

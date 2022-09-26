@@ -1,0 +1,37 @@
+//HEALTH OVERLOADED WITH ANGLE
+
+STATE Init
+	MakeMeTheLast()
+	MyFlag = MyFlag | ENEMY
+	OBJECT> WEAPON\AssaultDroneShot
+	health = 0.0
+	SetFriction(0.0, 0.0, 0.0)
+	TRIGSET>KillOff PARENTDEAD
+
+	//MyVar = -0.5
+	//CREATE SPAWN_EnergyBallTwirl 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0
+	//MyVar = 0.5
+	//CREATE SPAWN_EnergyBallTwirl 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0
+	STAT>Start
+ENDSTATE
+
+STATE Init2
+	Delete()
+ENDSTATE
+
+
+STATE Start
+
+	health = health + 0.02
+	FaceAlongDir()
+	x = parentx
+	y = parenty
+	z = parentz
+	//RelRotateY(health)
+ENDSTATE
+
+STATE KillOff
+	Delete()
+//	TRIGSTOP
+ENDSTATE
+

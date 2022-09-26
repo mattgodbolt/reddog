@@ -1,0 +1,164 @@
+//PAL FRIENDLY
+// Spider room door
+// Closes when player passes through its activation circle
+// Re-opens when its parent dies
+
+LOCALFLOAT openLeft
+LOCALFLOAT openRight
+LOCALFLOAT temp
+LOCALINT parentdead
+LOCALINT alarmTime
+
+//4 SEC ALARM DELAY
+DEFINE NTSC_ALARMDELAY 120
+DEFINE PAL_ALARMDELAY 100
+LOCALINT ALARMDELAY
+
+
+DEFINE OpenAmount 6.1
+
+STATE Init
+
+	IF (PAL)
+		ALARMDELAY = PAL_ALARMDELAY
+	ELSE
+		ALARMDELAY = NTSC_ALARMDELAY
+	ENDIF
+
+
+	// Set up object
+//	OBJECT>Scenery\Doors\ENV_HYDRO_SpiderDoor
+
+	AllocStratSoundBlock(2)
+
+	// Set up collision
+	RegisterCollision()
+	InitHDC()
+	CalculateStratPolyData(1)
+
+	// Flags
+	MyFlag = MyFlag | STRATCOLL | ENEMY
+  	MyFlag2 = MyFlag2 | COLLMOVE
+
+	// Read positions
+	openLeft = GetObjectCrntPos(1,MODEX)
+	openRight = GetObjectCrntPos(2,MODEX)
+
+	// Wait for parent to become created
+	parentdead = 0
+	WHILE (MyParentInvalid())
+		MyFlag = MyFlag
+	ENDWHILE
+
+	// Set up a trigger looking for parent death
+	TRIGSET>ParentCheck EVERY 1
+
+	// Wait for activation
+	WHILE (!PlayerNearActivationXY(0))
+		MyFlag = MyFlag
+	ENDWHILE
+
+	PLAYSOUND>DOOR_BIG_CLOSE 0 1.0 0.0 0.0 0.0 0
+
+	STAT>Close
+ENDSTATE
+
+TRIGGER ParentCheck
+	IF (MyParentFlag = 0)
+		parentdead = 1
+		TRIGSTOP
+	ELSE
+		TRIGFIN
+	ENDIF
+ENDTRIGGER
+
+// Open the doors
+STATE Open
+	temp = GetObjectCrntPos (1, MODEX)
+	IF (PAL)
+		temp = temp + ((openLeft - temp) * 0.03 * 1.2)
+	ELSE
+		temp = temp + ((openLeft - temp) * 0.03)
+ 	ENDIF
+   	SetObjectCrntPos(1, temp, MODEX)
+	temp = GetObjectCrntPos (2, MODEX)
+	IF (PAL)
+		temp = temp + ((openRight - temp) * 0.03 * 1.2)
+	ELSE
+		temp = temp + ((openRight - temp) * 0.03)
+ 	ENDIF
+	//temp = temp + ((openRight - temp) * 0.03)
+	SetObjectCrntPos(2, temp, MODEX)
+	CalculateStratPolyData(1)
+	IF (FABS(openRight - temp) < 0.05)
+		STAT>End
+	ENDIF
+ENDSTATE
+
+
+STATE Closed
+	// Wait for parent to die
+	alarmTime = 0
+	WHILE (!parentdead)
+		MyFlag = MyFlag
+
+		IF (alarmTime < ALARMDELAY)
+			IF (!(alarmTime & 31))
+				PLAYSOUND>BUZZER 1 1.0 0.0 0.0 0.0 NOPOSITION
+			ENDIF
+			
+			alarmTime = alarmTime + 1
+		ENDIF
+	ENDWHILE
+
+	PLAYSOUND>BLAST_DOOR 0 1.0 0 0 0 0
+
+	// Open the doors
+	STAT>Open
+ENDSTATE
+
+// Close the doors
+STATE Close
+	temp = GetObjectCrntPos (1, MODEX)
+
+	IF (PAL)
+		temp = temp + (((openLeft - OpenAmount - 1) - temp) * 0.1 * 1.2)
+	ELSE
+		temp = temp + (((openLeft - OpenAmount - 1) - temp) * 0.1)
+	ENDIF
+	IF (temp < (openLeft - OpenAmount))
+		temp = (openLeft - OpenAmount)
+	ENDIF
+	SetObjectCrntPos(1, temp, MODEX)
+	temp = GetObjectCrntPos (2, MODEX)
+	IF (PAL)
+		temp = temp + (((openRight + OpenAmount + 1) - temp) * 0.1 * 1.2)
+	ELSE
+ 		temp = temp + (((openRight + OpenAmount + 1) - temp) * 0.1)
+	ENDIF
+   	IF (temp > (openRight + OpenAmount))
+		temp = (openRight + OpenAmount)
+	ENDIF
+	SetObjectCrntPos(2, temp, MODEX)
+	CalculateStratPolyData(1)
+	IF (temp = (openRight + OpenAmount))
+		IF (MyVar)
+			STAT>Idle
+		ELSE
+	 		STAT>Closed
+		ENDIF
+	ENDIF
+ENDSTATE
+
+STATE End
+	IF (HasActivation(1))
+		IF (PlayerNearActivationXY(1))
+			MyVar = 1.0
+			STAT>Close
+		ENDIF
+	ENDIF
+ENDSTATE
+
+STATE Idle
+
+ENDSTATE

@@ -1,0 +1,185 @@
+
+
+//TARGET ARROW
+// ACTIVATION POINT TO TURN OFF	ACT 0
+// ACTIVATION POINT TO SLEEP	ACT 1
+//ACTIVATION POINT TO REACTIVATE ACT2
+
+
+DEFINE TRAIL 0
+LOCALINT innerBand
+LOCALINT outerBand
+LOCALINT COUNT
+LOCALINT START
+
+STATE Init 
+  	SetFriction(0.0,0.0,0.0)
+	OBJECT> MISC\DIRECTIONARROW
+   //	MyFlag2 = MyFlag2 |	TRANSLUCENT
+
+	START = MyPathNode	
+	InitPath()
+	InitSplineData()
+  //	TRIGSET>ResetPoint EVERY 15
+	TRIGSET>ResetPoint EVERY 1
+	STAT>Reset
+ENDSTATE
+
+STATE Reset
+	trans = 1.0
+	IF (TRAIL)
+	innerBand = CreateBand (1, 16, 0, 1, 1, 0.0, 0.0, 0.9, 0.0, 0, 0.5)
+	outerBand = CreateBand (1, 16, 0, 1, 1, 0, 0, 0.4, 0, 0, 0)
+	AddBandSegment (innerBand, 0, 0, 0, 0.1)
+	AddBandSegment (outerBand, 0, 0, 0, 0.5)
+	ENDIF
+	TRIGSET>BandTrigger EVERY 1 
+//	TRIGSET>SLEEPCHECK EVERY 1
+	MyFlag = MyFlag & LNOT(NODISP)
+  	COUNT = 0
+	STAT> Patrol
+ENDSTATE
+
+STATE BandTrigger
+	IF (TRAIL)
+	AddBandSegment (innerBand, 0, 0, 0, 0.1)
+	AddBandSegment (outerBand, 0, 0, 0, 0.5)
+	ENDIF
+   	IF (trans > 0.07)
+   //		trans = trans - 0.035
+		trans = trans - 0.035
+   	ELSE
+   		trans = 0.07
+   	ENDIF
+   
+   	TRIGFIN
+ENDSTATE
+
+STATE SLEEPCHECK
+
+	IF (PlayerNearActivationXY(1))
+	   	TRIGKILL>BandTrigger EVERY 1 
+	   	TRIGRESET
+		TRIGSTOP
+	   	MyFlag = MyFlag | NODISP
+		STAT>WaitForReactivate
+	ENDIF
+
+	TRIGFIN
+ENDSTATE
+
+STATE WaitForReactivate
+	IF (PlayerNearActivationXY(2))
+		TRIGRESET
+		TRIGSTOP
+	  	TRIGSET>ResetPoint EVERY 15
+		MyPathNode = START
+		InitPath()
+		InitSplineData()
+		STAT>Reset
+	ENDIF
+	IF (PlayerNearActivationXY(0))
+		TRIGRESET
+		STAT>KillOff
+	ENDIF
+	TRIGFIN
+ENDSTATE
+
+STATE KillOff
+	IF (TRAIL)
+  	DeleteBand (innerBand)
+  	DeleteBand (outerBand)
+	ENDIF
+	Delete()
+ENDSTATE
+
+
+STATE ResetPoint
+
+	IF (PlayerNearActivationXY(1))
+	   	TRIGKILL>BandTrigger EVERY 1 
+	   	TRIGRESET
+		TRIGSTOP
+	   	MyFlag = MyFlag | NODISP
+		STAT>WaitForReactivate
+	ENDIF
+
+
+		IF (LastWay())
+
+		IF (TRAIL)
+		DeleteBand (innerBand)
+		DeleteBand (outerBand)
+		ENDIF
+
+	   	TRIGKILL>BandTrigger EVERY 1 
+		
+		//some reset action
+		KillMyVelocity()
+		UnitiseMatrix()
+		MyPathNode = 0
+		InitPath()
+		InitSplineData()
+  	
+	  	MyFlag = MyFlag | NODISP
+		TRIGRESET
+		TRIGFIN
+		STAT>Reset
+
+		ENDIF
+
+		TRIGFIN
+
+ENDSTATE
+
+
+STATE Patrol
+	IF (LastWay())
+		MyFlag = MyFlag | NODISP
+	ENDIF
+
+
+	IF (HasActivation(0))
+		IF (PlayerNearActivationXY(0))
+			STAT>KillOff
+		ENDIF
+	ENDIF
+
+   	MoveAlongPath(1.0)
+ 	FaceAlongPath(1)
+
+ENDSTATE
+
+
+
+STATE Patrol2
+	IF (HasActivation(0))
+		IF (PlayerNearActivationXY(0))
+			STAT>KillOff
+		ENDIF
+	ENDIF
+
+
+	IF (LastWay())
+		IF (TRAIL)
+		DeleteBand (innerBand)
+		DeleteBand (outerBand)
+		ENDIF
+	   	TRIGKILL>BandTrigger EVERY 1 
+		
+		//some reset action
+		KillMyVelocity()
+		UnitiseMatrix()
+		MyPathNode = 0
+		InitPath()
+		InitSplineData()
+  
+  	 	LOOP (30)
+	 		MyFlag = MyFlag	| NODISP
+	 	ENDLOOP
+	 	MyFlag = MyFlag & LNOT(NODISP)
+		STAT>Reset
+	ENDIF
+   	MoveAlongPath(1.0)
+ 	FaceAlongPath(1)
+ENDSTATE

@@ -1,0 +1,157 @@
+LOCALFLOAT tx
+LOCALFLOAT ty
+LOCALFLOAT tz
+LOCALINT	hitCount
+
+
+STATE Init
+	MyFlag = MyFlag | ENEMY | STRATCOLL
+	
+	OBJECT>MISC\CanyonBoat
+	RegisterCollision()
+	StrtNoFade() 
+	NoCollObject(1)
+	NoCollObject(2)
+	NoCollObject(3)
+	NoCollObject(4)
+	NoCollObject(5)
+	NoCollObject(6)
+	NoCollObject(7)
+	NoCollObject(8)
+	NoCollObject(9)
+	NoCollObject(10)
+	NoCollObject(11)
+	NoCollObject(12)
+	NoCollObject(13)
+	NoCollObject(14)
+	NoCollObject(15)
+	NoCollObject(16)
+	NoCollObject(17)
+	NoCollObject(18)
+	NoCollObject(19)
+	NoCollObject(20)
+	NoCollObject(21)
+	NoCollObject(23)
+	NoCollObject(26)
+	NoCollObject(27)
+	NoCollObject(28)
+	NoCollObject(29)
+	NoCollObject(30)
+	NoCollObject(31)
+	NoCollObject(32)
+	NoCollObject(33)
+	NoCollObject(34)
+	
+	InitHDC()
+	hitCount = 0
+	CalculateStratPolyData(1)
+	HideObject(22)
+	HideObject(24)
+	HideObject(25)
+	HideObject(35)
+	AllocStratSoundBlock(1)
+	SetAudibleRange(0, 100, 500)
+
+	TRIGSET>CheckHealth EVERY 1
+	health = 10000.0
+
+	STAT>Start
+ENDSTATE
+
+TRIGGER SpecularMadness
+
+TRIGGER CheckHealth
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+	IF (ObjectHitStrat(35) OR ObjectHitStrat(22) OR ObjectHitStrat(24) OR ObjectHitStrat(25))
+		ClearObjCollFlag(35, HITSTRAT)
+		ClearObjCollFlag(22, HITSTRAT)
+		ClearObjCollFlag(24, HITSTRAT)
+		ClearObjCollFlag(25, HITSTRAT)
+		
+		LOCALFLOAT SPECAMOUNT
+
+		PLAYSOUND>ENEMY_HIT3 0 1.0 0.0 0.0 0.0 RANDOM
+
+		SPECAMOUNT = 0.3
+		MyFlag2 = MyFlag2 | SPECULAR
+		SetSpecularColour(0, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+
+		hitCount = hitCount + 1
+		IF (hitCount > 20)
+			health = -1.0
+			NoCollObject(35)
+			DeleteMyParent()
+			MyFlag2 = MyFlag2 & LNOT(SPECULAR)
+			TRIGSTOP
+		ELSE
+			health = 10000.0
+			TRIGFIN
+   		ENDIF
+	ELSE
+		IF (SPECAMOUNT > 0)
+  			MyFlag2 = MyFlag2 | SPECULAR
+			SetSpecularColour(0, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+			SPECAMOUNT = SPECAMOUNT - 0.1
+		ELSE
+			SPECAMOUNT = 0
+ 			MyFlag2 = MyFlag2 & LNOT(SPECULAR)
+		ENDIF
+		health = 10000.0
+		TRIGFIN
+	ENDIF
+	
+ENDTRIGGER
+
+DEFINE EXPLOSION_SPREAD 20
+
+STATE Start
+	IF (health < 0.0)
+		Score = Score + 1000
+		MODELANIM>MISC\CanyonBoat.RDO>Explode>0
+		IMMLOOP (10)
+			tx = RandRange(-EXPLOSION_SPREAD, EXPLOSION_SPREAD)
+			ty = RandRange(-EXPLOSION_SPREAD, EXPLOSION_SPREAD)
+			tz = RandRange(-EXPLOSION_SPREAD, EXPLOSION_SPREAD)
+			IF (RandRange(0,10.0) > 8.5)
+				MyVar = 0
+			ELSE
+				MyVar = 0.5
+			ENDIF
+		   
+		   	CREATE SPAWN_BLASTEXP tx, ty, tz, 0, 0, 0, 0
+		IMMENDLOOP
+		LOOP (20)
+			LOOP (2)		
+				MyFlag = MyFlag
+			ENDLOOP
+			tx = RandRange(-EXPLOSION_SPREAD, EXPLOSION_SPREAD)
+			ty = RandRange(-EXPLOSION_SPREAD, EXPLOSION_SPREAD)
+			tz = RandRange(-EXPLOSION_SPREAD, EXPLOSION_SPREAD)
+			IF (RandRange(0,10.0) > 8.5)
+				MyVar = 0
+			ELSE
+				MyVar = 0.5
+			ENDIF
+			CREATE SPAWN_BLASTEXP tx, ty, tz, 0, 0, 0, 0
+		ENDLOOP
+		STAT>Finish
+	ENDIF
+ENDSTATE
+
+STATE Finish
+	WHILE (MyAnimFlag & RUNNING)
+		CalculateStratPolyData(1)
+	ENDWHILE
+	//FreeHDBlock()
+	//OBJECT>MISC\CanyonBoatSink
+	//InitHDC()
+	//MODELANIM>MISC\CanyonBoatSink.RDO>Sink>NOTWEEN
+	//WHILE (MyAnimFlag & RUNNING)
+		//CalculateStratPolyData(1)
+	//ENDWHILE
+	//Delete()
+	STAT>DoneAll
+ENDSTATE
+
+STATE DoneAll
+ENDSTATE

@@ -1,0 +1,62 @@
+LOCALFLOAT	speed
+
+STATE Init
+	MyFlag = MyFlag & LNOT(ENEMY)
+	MyFlag = MyFlag | FRIENDLY
+	InitPath()
+	IF (MyParent)
+		ParentVar = 1
+		WHILE (ParentVar = 1)
+			MyFlag = MyFlag
+		ENDWHILE
+	ENDIF
+	speed = 0.0
+	PlayerState = PS_ONPATH
+	STAT> Start
+ENDSTATE
+
+STATE Start
+	GetPrevWay()
+	PlayerCheckX = CheckX
+	PlayerCheckY = CheckY
+	PlayerCheckZ = CheckZ
+	STAT> FollowPath
+ENDSTATE
+
+STATE FollowPath
+	PlayerTurnTowardPlayerCheckPosXY()
+	PlayerControlPadPress = PADSHOULDERR | PADFORWARD
+	IF (LastWay())
+		speed = PlayerDistPlayerCheckXY() * 0.004
+		IF (speed > 1.0)
+			speed = 1.0
+		ENDIF
+	ELSE
+		speed = 1.0
+	ENDIF
+	PlayerControlPlayerAcc = speed
+	IF (LastWay())
+		IF (PlayerNearPlayerCheckPosXY(0.0))
+			GetActivationPos(1)
+			PlayerCheckX = CheckX
+			PlayerCheckY = CheckY
+			PlayerCheckZ = CheckZ
+			LOOP (15)
+				PlayerControlPlayerAcc = 0.1
+			ENDLOOP
+			STAT> Finish
+		ENDIF
+	ELSE
+		IF (PlayerNearPlayerCheckPosXY(5.0))
+			GetNextWay()
+			PlayerCheckX = CheckX
+			PlayerCheckY = CheckY
+			PlayerCheckZ = CheckZ
+		ENDIF
+	ENDIF
+ENDSTATE
+
+STATE Finish
+	PlayerHeld = 0
+	PlayerState = PS_NORMAL
+ENDSTATE

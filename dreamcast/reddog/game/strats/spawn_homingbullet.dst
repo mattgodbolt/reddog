@@ -1,0 +1,118 @@
+LOCALINT innerBand
+LOCALINT outerBand
+LOCALINT Temp
+LOCALFLOAT length
+
+DEFINE		POWERNESS				3
+DEFINE		EXPLOSIVENESS			4
+DEFINE		INTELLIGENCE			5
+
+TRIGGER CleanUp
+	DeleteBand (innerBand)
+	DeleteBand (outerBand)
+
+ENDTRIGGER
+
+
+STATE Init
+	MakeMeTheLast()
+  	MyFlag = MyFlag | NODISP | DELETECALLBACK | RELVELCALC | FLOORCOLL | STRATCOLL | FRIENDLY | NOTEXPLODE | BULLETTYPE 
+    MyFlag2 = MyFlag2 | BULLET_CF
+	damage = 10.0
+	TRIGSET>CleanUp WHENDELETED
+	TRIGSET>KillOff			WHENHIT
+	TRIGSET>KillOffFloor	ONFLOOR
+   	OBJECT> WEAPON\REDDOGLASER
+	RegisterCollision()
+	SetFriction(0.2,0.2,0.2)
+	TRIGSET>Remove	EVERY 60
+	MoveY(4.0)
+	
+	innerBand = CreateBand (1, 16, 0, 1, 1, 0.5, 0.5, 0.4, 0.5, 0, 0)
+	outerBand = CreateBand (1, 16, 0, 1, 1, 0, 0, 0.4, 0, 0, 0)
+	AddBandSegment (innerBand, 0, 0, 0, 0.1)
+	AddBandSegment (outerBand, 0, 0, 0, 0.5)
+	
+	TRIGSET>BandTrigger EVERY 1 
+
+	// Record those collisions
+	RecordCollision(0)
+	LOOP(2)
+		MyFlag = MyFlag
+	ENDLOOP
+	GetLockOn()
+
+	//PLAY A PICKUP SOUND
+	AllocStratSoundBlock(1)
+	PLAYSOUND>PICKUPB5 0 1.0 0.0 0.0 0.0 RANDOM
+
+	STAT>SetPos
+ENDSTATE 
+
+STATE BandTrigger
+	AddBandSegment (innerBand, 0, 0, 0, 0.1)
+	AddBandSegment (outerBand, 0, 0, 0, 0.5)
+	TRIGFIN
+ENDSTATE
+
+STATE SetPos
+	IF (FollowLockOn())
+		TowardWay(1.65,0.05)
+		PointToTarget()
+	ENDIF
+	MoveY(0.8)
+	IF (UnderWater)
+	//	DeleteBand (innerBand)
+	//	DeleteBand (outerBand)
+		ParentVar = ParentVar - 1
+		Delete()
+	ENDIF
+ENDSTATE
+
+STATE KillOff
+	//DeleteBand (innerBand)
+	//DeleteBand (outerBand)
+	ParentVar = ParentVar - 1
+	Delete()
+ //	TRIGSTOP
+ENDSTATE
+
+
+STATE ResetColl
+	TRIGSET>Remove EVERY 90
+	TRIGSET>KillOff WHENHIT
+	TRIGSTOP
+ENDSTATE
+
+
+STATE KillOffFloor
+	IF (PlayerState = PS_ONTRAIN)
+		CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+	ENDIF
+
+	Temp = RandRange(0, 1.99)
+	IF (!(MyFlag2 & HITHDC))
+		IF (!(PolyType & NODECAL))
+			AddDecal(0, Temp, 0.5, 0.5, 0.3, 0, 0)
+		ENDIF
+	ENDIF
+	//DeleteBand (innerBand)
+	//DeleteBand (outerBand)
+	
+	MoveBackOneFrame()
+	MakeFrags (0.1, 12)
+ 	
+	ParentVar = ParentVar - 1
+	Delete()
+  //	TRIGSTOP
+ENDSTATE
+
+STATE Remove
+	//DeleteBand (innerBand)
+	//DeleteBand (outerBand)
+	ParentVar = ParentVar - 1
+	Delete()
+  //	TRIGSTOP
+ENDSTATE
+
+

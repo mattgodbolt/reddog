@@ -1,0 +1,261 @@
+//	type 1 is normal and type 0 is for the raft or train
+
+PARAMINT	type		0
+DEFINE		SPEED		0.8
+DEFINE		X_FIRE		5.0
+DEFINE		Y_FIRE		3.0
+DEFINE		Z_FIRE		3.0
+DEFINE		MOVE_FACT	3.0
+DEFINE		SHOCK_SIZE	0.8
+DEFINE		SHOCK_WIDTH	3.0
+DEFINE		TWOWAY_MAX_SPEED 1.0
+LOCALFLOAT	tx
+LOCALFLOAT	ty
+LOCALFLOAT	tz
+LOCALFLOAT	time
+LOCALINT	fire
+LOCALINT	pin
+LOCALINT	Lightning
+LOCALFLOAT	fireTime
+LOCALFLOAT	tempf
+LOCALFLOAT	twoWaySpeed
+LOCALFLOAT	twoWayAcc
+
+STATE Init
+	MyFlag = MyFlag | STRATCOLL | ENEMY | TARGETABLE | LOWCOLL
+	
+	OBJECT>ENEMIES\MultiBot
+	RegisterCollision()
+	TRIGSET>SpecularMadness EVERY 1
+	time = 0.0
+	fire = 0
+	health = 200.0
+	pin = 0.0
+	twoWaySpeed = 0
+	twoWayAcc = 0.05
+	fireTime = 0.0
+	TRIGSET>Firing EVERY 1
+	InitPath()
+	InitSplineData()
+	IF (type = 1)
+		STAT>HoverBotTwoWayStart
+	ELSE
+		STAT>HoverBotOneWayStart
+	ENDIF
+ENDSTATE
+
+LOCALFLOAT SPECAMOUNT
+
+TRIGGER SpecularMadness
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+	IF ((MyFlag & HITSTRAT) AND (CollWithFlag & BULLETTYPE))
+		SPECAMOUNT = 1.0
+	ENDIF
+	IF (SPECAMOUNT > 0)
+  		MyFlag2 = MyFlag2 | SPECULAR
+		SetSpecularColour(0, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		SPECAMOUNT = SPECAMOUNT - 0.1
+	ELSE
+		SPECAMOUNT = 0
+ 		MyFlag2 = MyFlag2 & LNOT(SPECULAR)
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+TRIGGER Firing
+	IF (health > 0.0)
+		IF (fire > 0)
+			fireTime = fireTime + 1.0
+			IF (fireTime > 10.0)
+				fire = fire + 1
+				fireTime = 0.0
+			ENDIF
+			
+			
+
+			MyStratToWorld(0.0, Y_FIRE, 0.0)
+			tx = CheckX
+			ty = CheckY
+			tz = CheckZ
+
+			IF (fire < 13)
+				IMMLOOP (fire)
+					tempf = RandRange(0.0, 12.0)
+					pin = TOINT(tempf)
+
+					IF (pin = 0)	
+						MyStratToWorld(-X_FIRE, Y_FIRE, 0.0)
+					ENDIF
+					IF (pin = 1)
+						MyStratToWorld(X_FIRE, Y_FIRE, 0.0)
+					ENDIF
+					IF (pin = 2)
+						MyStratToWorld(0.0, Y_FIRE, Z_FIRE)
+					ENDIF
+					IF (pin = 3)
+						MyStratToWorld(0.0, Y_FIRE, -Z_FIRE)
+					ENDIF
+					IF (pin = 4)
+						MyStratToWorld(-X_FIRE, Y_FIRE, -Z_FIRE)
+					ENDIF
+					IF (pin = 5)
+						MyStratToWorld(-X_FIRE, Y_FIRE, Z_FIRE)
+					ENDIF
+					IF (pin = 6)
+						MyStratToWorld(X_FIRE, Y_FIRE, -Z_FIRE)
+					ENDIF
+					IF (pin = 7)
+						MyStratToWorld(X_FIRE, Y_FIRE, Z_FIRE)
+					ENDIF
+					IF (pin = 8)
+						MyStratToWorld(1.9 * X_FIRE, Y_FIRE, 0.0)
+					ENDIF
+					IF (pin = 9)
+						MyStratToWorld(-1.9 * X_FIRE, Y_FIRE, 0.0)
+					ENDIF
+					IF (pin = 10)
+						MyStratToWorld(0.0, Y_FIRE, 1.6 * Z_FIRE)
+					ENDIF
+					IF (pin = 11)
+						MyStratToWorld(0.0, Y_FIRE, 1.6 * -Z_FIRE)
+					ENDIF
+					IF (pin = 13)
+						MyStratToWorld(0.0, Y_FIRE, 0.0)
+					ENDIF
+					DrawShock(CheckX, CheckY, CheckZ, tx, ty, tz, SHOCK_SIZE, 1.0, 1.0)	
+					tx = CheckX
+					ty = CheckY
+					tz = CheckZ
+				IMMENDLOOP
+			ENDIF
+			
+			IF ((fire = 13) AND (PlayerHealth > 0.0))
+				Lightning = DrawLightning (0, -X_FIRE, Y_FIRE, 0.0, Lightning,0)
+				Lightning = DrawLightning (0, X_FIRE, Y_FIRE, 0.0, Lightning,0)
+				Lightning = DrawLightning (0, 0.0, Y_FIRE, Z_FIRE, Lightning,0)
+				Lightning = DrawLightning (0, 0.0, Y_FIRE, -Z_FIRE, Lightning,0)
+				PlayerHealth = PlayerHealth - 3.0
+			ENDIF
+			
+			IF (fire = 14)
+				fireTime = 0
+				fire = 0
+			ENDIF
+		ENDIF
+	ENDIF
+ENDSTATE
+	
+STATE HoverBotOneWayStart
+	IF (health <= 0.0)
+		STAT>Die
+	ENDIF
+	time = time + 0.1
+	MoveAlongPath(SPEED)
+	x = x + (Ssin(time * 0.6) * MOVE_FACT)
+	y = y + (Ssin(time * 1.2) * MOVE_FACT)
+	z = z + (Ssin(time * 0.8) * MOVE_FACT)
+	PointToXY(DogX, DogY, DogZ)
+	IF (fire = 0)
+		IF (NearPlayerXY(50))
+			IF (RandRange(0.0, 50.0) < 1.0)
+				fire = 1
+			ENDIF
+		ENDIF
+	ENDIF
+ENDSTATE
+
+
+STATE HoverBotTwoWayStart
+	IF (health <= 0.0)
+		STAT>Die
+	ENDIF
+	time = time + 0.1
+	IF (!NearPlayerXY(49))
+		MoveAlongPath(twoWaySpeed)
+		IF (twoWaySpeed < TWOWAY_MAX_SPEED)
+			twoWaySpeed = twoWaySpeed + twoWayAcc
+		ENDIF
+	ELSE
+		IF (NearPlayerXY(40))
+			MoveAlongPath(twoWaySpeed)
+			IF (twoWaySpeed > -TWOWAY_MAX_SPEED)
+				twoWaySpeed = twoWaySpeed - twoWayAcc
+			ENDIF
+		ELSE
+			twoWaySpeed = twoWaySpeed * 0.9
+			MoveAlongPath(twoWaySpeed)
+		ENDIF
+	ENDIF
+
+	x = x + (Ssin(time * 0.6) * MOVE_FACT)
+	y = y + (Ssin(time * 1.2) * MOVE_FACT)
+	z = z + (Ssin(time * 0.8) * MOVE_FACT)
+	PointToXY(DogX, DogY, DogZ)
+	IF (fire = 0)
+		IF (NearPlayerXY(50))
+			IF (RandRange(0.0, 50.0) < 1.0)
+				fire = 1
+			ENDIF
+		ENDIF
+	ENDIF
+ENDSTATE
+
+STATE Die
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+	SetGlobalParamInt(0, 0)
+	SetGlobalParamInt(1, type)
+	CREATE SPAWN_MultiBotChild 0, 0, 0, 0, 0, 0, 0
+	SetGlobalParamInt(0, 1)
+	SetGlobalParamInt(1, type)
+	CREATE SPAWN_MultiBotChild 0, 0, 0, 0, 0, 0, 0
+	SetGlobalParamInt(0, 2)
+	SetGlobalParamInt(1, type)
+	CREATE SPAWN_MultiBotChild 0, 0, 0, 0, 0, 0, 0
+	SetGlobalParamInt(0, 3)
+	SetGlobalParamInt(1, type)
+	CREATE SPAWN_MultiBotChild 0, 0, 0, 0, 0, 0, 0
+	SetGlobalParamInt(0, 0)
+	MyVar = 0.0
+	MyFlag = MyFlag | NODISP
+	MyFlag = MyFlag & LNOT(TARGETABLE | STRATCOLL)
+	IF (type = 1)
+		STAT>TwoWayContinue
+	ELSE
+		STAT>OneWayContinue
+	ENDIF
+ENDSTATE
+
+STATE OneWayContinue
+	MoveAlongPath(SPEED)
+	PointToXY(DogX, DogY, DogZ)
+	IF (MyVar = 4.0)
+		Delete()
+	ENDIF
+ENDSTATE
+
+STATE TwoWayContinue
+	IF (!NearPlayerXY(49))
+		MoveAlongPath(twoWaySpeed)
+		IF (twoWaySpeed < TWOWAY_MAX_SPEED)
+			twoWaySpeed = twoWaySpeed + twoWayAcc
+		ENDIF
+	ELSE
+		IF (NearPlayerXY(40))
+			MoveAlongPath(twoWaySpeed)
+			IF (twoWaySpeed > -TWOWAY_MAX_SPEED)
+				twoWaySpeed = twoWaySpeed - twoWayAcc
+			ENDIF
+		ELSE
+			twoWaySpeed = twoWaySpeed * 0.9
+			MoveAlongPath(twoWaySpeed)
+		ENDIF
+	ENDIF
+	time = time + 0.1
+	x = x + (Ssin(time * 0.6) * MOVE_FACT)
+	y = y + (Ssin(time * 1.2) * MOVE_FACT)
+	z = z + (Ssin(time * 0.8) * MOVE_FACT)
+	PointToXY(DogX, DogY, DogZ)
+	IF (MyVar = 4.0)
+		Delete()
+	ENDIF
+ENDSTATE

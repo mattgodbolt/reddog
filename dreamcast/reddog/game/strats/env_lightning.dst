@@ -1,0 +1,36 @@
+// Lightning strat - when alive causes random lightning effects
+//ONLY USED IN CITY AT MO. SO GLOBALVAR2 BEING USED AS A SEMAPHORE, DURING SCREEN FADES
+//TO SAY, STRIKE/NO STRIKE
+LOCALINT		Strike
+
+STATE Init
+   	SetEnvironmentParms(5,100.0,-1, -1,0,0,0)
+	BossDarkness(0.85)
+	Strike = 0
+	TRIGSET>LightningProc EVERY 1
+	TRIGSET>LightningProc WHENPAUSED
+	STAT>Wait
+ENDSTATE
+
+STATE Wait
+	IF (RandRange(0,1000.0) > 930.0)
+		STAT>Strike
+	ENDIF
+ENDSTATE
+
+STATE Strike
+	IF (GlobalVar2 != 99.0)
+	ProcessLightning(LIGHTNINGINIT)
+	ENDIF
+	Strike = 1
+	WHILE (Strike = 1)
+		MyFlag = MyFlag
+	ENDWHILE
+	STAT>Wait
+ENDSTATE
+
+STATE LightningProc
+	IF (ProcessLightning(LIGHTNINGUPDATE))
+		Strike = 0
+	ENDIF
+ENDSTATE

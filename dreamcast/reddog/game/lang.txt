@@ -1,0 +1,2149 @@
+# ###############################################################
+#                        English section                       ##
+# ###############################################################
+
+[ENGLISH]
+
+EMPTY_PROFILE			<EMPTY>
+CHEATSON_PROF			(~!~Cheats On~x~)
+[FRENCH]
+CHEATSON_PROF			(~!~Codes, activés~x~)
+[GERMAN]
+CHEATSON_PROF			(~!~Bei Cheats~x~)
+[SPANISH]
+CHEATSON_PROF			(~!~Trucos activados~x~)
+
+[ENGLISH]
+# ###############################################################
+# * Notes to Sega:
+#                                
+#   The format of this file is such that the left-hand word
+#   does *not* get translated - it is a 'tag' used internally in
+#   the game.  After the tag there are tab characters, and then
+#   the translation text, which must be on the same line - don't
+#   press RETURN until all of the text for that tag has been
+#   entered.
+# *
+#   Comments are introduced by the '#' character as the first
+#   character on a line, followed by at least one space, then
+#   the rest of the line is ignored.  Comments *do not* need
+#   translation.
+# *
+#   Throughout this file, if more than one translation needs
+#   to be used at once in the game, or if a user-supplied
+#   parameter, such as a profile name, needs to be inserted,
+#   some special combinations of characters are used.
+#   All these special characters begin with a percent sign.
+#   Most of the tags using this system should be commented so
+#   you know which text is going where.  For example:
+#   TIME				Time: %d:%02d
+#   will come out in the game as something like 'Time: 1:30'
+# *
+#   Text colour changes within a translation are handled with
+#   some other magic characters, all starting and ending with 
+#   a tilde character (~) - for example:
+#   MP_DM_PLURAL			~cff0000~%d~x~ kills required to win
+#   Will come out as something like '5 kills required to win'
+#   except that the '5' will be in bright red
+# *
+#   Anything inside square brackets ([, ]) is a language change
+#   statement - just ignore it if I've inadvertantly left any
+#   in.  
+# *
+#   Hope this helps
+# *
+# ###############################################################
+
+# Miscealleneous stuff
+LOADING					Loading...
+NONE					None
+GO						GO!!!
+VMUEXPLAIN1				A:Choose letter  X:delete
+VMUEXPLAIN2				START finishes
+LOADWHICHPROF			Load which profile?
+OWWHICHPROF				Overwrite which profile?
+# Overwrite a slot named '%s'
+OWWHICHSLOT				Overwrite '%s'?
+OW_YES					Yes - overwrite
+OW_NO					No - don't overwrite
+TYPEONMAP				on
+PASS					Pass
+GAMEOVER				Game Over
+
+# Statistics
+OVERALL					Overall
+PLAYED					Played
+WON						Won
+# abbreviated 'statistics' - keep as short as possible:
+STATS					stats
+
+# Configure pad
+CHARGE					Charge
+PICKUPFIRE				Pickup fire
+FIRE					Fire
+SHIELD					Shield
+
+# Move screen
+ADJSCREENEXPLAIN		D-Pad: move screen, A/X/B button exits, Y sets to default
+
+# Multiplayer
+STARTTOJOIN				Press START to join
+INSERTPADPLAY			Insert pad to play
+
+HITSTART				Press START button
+MPHITSTART				Press any button
+DEMOHITSTART			DEMO MODE - Press START button
+PRESSABX				Press A/B/X to continue
+YES						Yes
+NO						No
+ON						On
+OFF						Off
+PAUSEDBY				Paused by
+PAUSEMODE				Pause Mode
+CTRLMESG				The controller has been removed or a VM is being recognised on port
+USCTRLMESG				The controller has been removed or a VMU is being recognised on port
+CTRLMESGMULTIPLE		The controller has been removed or a VM is being recognised on the following ports:
+USCTRLMESGMULTIPLE		The controller has been removed or a VMU is being recognised on the following ports:
+CANTSTARTONTHATPAD		Only the primary controller can start the game
+# The %s in the next line comes out as 'A2' or 'B3' etc
+VMUMESG					A VM needed by the game has been removed from port %s.  The game will pause until it has been replaced.
+USVMUMESG				A VMU needed by the game has been removed from port %s.  The game will pause until it has been replaced.
+VMUMESGMULTIPLE			Some VMs needed by the game have been removed.  The game will pause until they have been replaced.  The following VMs are needed:
+USVMUMESGMULTIPLE		Some VMUs needed by the game have been removed.  The game will pause until they have been replaced.  The following VMUs are needed:
+AYSRESTART				Are you sure you want to restart?
+AYSRESTART_YES			Yes - restart level
+AYSRESTART_NO			No - return to pause menu
+AYSEXIT					Are you sure you want to exit?
+AYSEXIT_YES				Yes - exit level
+
+# ########################
+# Multiplayer briefings: #
+# ########################
+
+# The %d in the next set of text is either the fraglimit, or timelimit
+# Deathmatch
+MP_DM_PLURAL			~cff0000~%d~x~ kills required to win
+MP_DM_SINGLE			~cff0000~%d~x~ kill required to win
+# Knockout
+MP_KO_PLURAL			Last player standing wins.  Each player has ~cff0000~%d~x~ lives
+MP_KO_SINGLE			Last player standing wins.  Each player has ~cff0000~%d~x~ life
+# Bomb tag
+MP_BT_PLURAL			Last player standing wins.  The bomb will detonate every ~cff0000~%d:%02d~x~
+MP_BT_SINGLE			Last player standing wins.  The bomb will detonate every ~cff0000~%d:%02d~x~
+# Suicide bomb tag
+MP_SB_PLURAL			Last player standing wins.  All bombs will detonate after ~cff0000~%d:%02d~x~
+MP_SB_SINGLE			Last player standing wins.  All bombs will detonate after ~cff0000~%d:%02d~x~
+# Stealth assassin
+MP_SA_PLURAL			~cff0000~%d~x~ kills as the Stealth Assassin required to win
+MP_SA_SINGLE			~cff0000~%d~x~ kill as the Stealth Assassin required to win
+# Flag runner
+MP_FR_PLURAL			Hold on to the flag for ~cff0000~%d:%02d~x~ to win
+MP_FR_SINGLE			Hold on to the flag for ~cff0000~%d:%02d~x~ to win
+# King of the Hill
+MP_KH_PLURAL			Stay King of the Hill for ~cff0000~%d:%02d~x~ to win
+MP_KH_SINGLE			Stay King of the Hill for ~cff0000~%d:%02d~x~ to win
+# And now all again for teams!  Hooray!
+MPT_DM_PLURAL			~cff0000~%d~x~ kills per team required to win
+MPT_DM_SINGLE			~cff0000~%d~x~ kill per team required to win
+MPT_KO_PLURAL			Last team standing wins.  Each player has ~cff0000~%d~x~ lives
+MPT_KO_SINGLE			Last team standing wins.  Each player has ~cff0000~%d~x~ life
+MPT_BT_PLURAL			Last team standing wins.  The bomb will detonate every ~cff0000~%d:%02d~x~
+MPT_BT_SINGLE			Last team standing wins.  The bomb will detonate every ~cff0000~%d:%02d~x~
+MPT_SB_PLURAL			Last team standing wins.  All bombs will detonate after ~cff0000~%d:%02d~x~
+MPT_SB_SINGLE			Last team standing wins.  All bombs will detonate after ~cff0000~%d:%02d~x~
+MPT_SA_PLURAL			~cff0000~%d~x~ kills as the Stealth Assassin required to win
+MPT_SA_SINGLE			~cff0000~%d~x~ kill as the Stealth Assassin required to win
+MPT_FR_PLURAL			Hold on to the flag for ~cff0000~%d:%02d~x~ to win
+MPT_FR_SINGLE			Hold on to the flag for ~cff0000~%d:%02d~x~ to win
+MPT_KH_PLURAL			Stay King of the Hill for ~cff0000~%d:%02d~x~ to win
+MPT_KH_SINGLE			Stay King of the Hill for ~cff0000~%d:%02d~x~ to win
+
+# Red and blue, complete with colour change to make the text either red or blue
+RED						~cff0000~Red~x~
+BLUE					~c0000ff~Blue~x~
+ISASSASSIN				is an ~cff0000~ASSASSIN!~x~
+# %s is name of team
+SOMEONESTEAM			%s's team
+# %d is round number
+ROUNDN					Round %d
+TEAM					Team
+WINNER					Winner
+SECOND					Second
+THIRD					Third
+FOURTH					Fourth
+# %s is either red or blue
+TEAMWIN					Winner: %s Team
+# %s is name of player who won
+SINGLEWIN				Winner: %s
+ITSADRAW				It's a Draw!
+# %s is name of overall winner in tournament
+TOURNOVERALLWINNER		Overall Winner: %s
+# %d is number of games, %s is 's' if more than one - THIS MAY NOT WORK FOR ALL LANGUAGES!  Let me know
+RESULTAFTERNGAME		Results after %d game
+RESULTAFTERNGAMES		Results after %d games
+
+# MP Results:
+NAME					Name
+TOTAL					Total
+DPADNEXTPAGE			D-Pad: next page
+TOURNCONTINUE			START: Continue to rankings
+TOURNBACK				START: Back to setup
+TOURNDRAW				START: Replay last game
+TOURNMID				START: Next Game
+YREPLAY					Y: Replay level
+ASTARTBACKSETUP			A/START: Back to setup
+
+# Completion
+MISNOTCOMPL				Mission has yet to be completed
+MISCOMPLETE				Mission Complete
+MISFAILED				Mission Failed
+
+# #########
+#  Menus ##
+# #########
+
+
+# First Menu
+NEWGAME					New Game
+LOADGAME				Load Game
+MULTIPLAYER				Multiplayer
+TVOPTIONS				TV Options
+
+# TV Options menu
+FXVOLUME				FX volume
+MUSICVOLUME				Music volume
+SOUNDTYPE				Sound type
+MONO					Monaural
+STEREO					Stereo
+ADJUSTSCREEN			Adjust screen
+SWITCH50				50Hz/60Hz switch
+VIBRATION				Vibration
+
+# Adjust screen madness
+ADJEXPLAIN				D-Pad: Move Screen, A/X/B button exits
+
+# 50/60 switch messages
+TEST60					Test 60Hz compatibility
+# %d is either 50 or 60
+RUN60					Run at %dHz
+EXPLAINPRE				The next screen will change to 60Hz PAL and display a test card for 10 seeconds, or until you press A/B/X.  If the picture appears correctly, in colour, the your TV supports 60Hz PAL.
+# %d here is a countdown
+EXPLAINDURING			60Hz PAL mode...%d
+EXPLAINPOST				If the previous screen appeared correctly and in full colour, it is safe to select 60Hz PAL from the menu.
+# %d is either 50 or 60
+CURRENTLYRUN			Currently running at %dHz
+
+# VMU messages
+WHICHVMU				Create on which VM?
+USWHICHVMU				Create on which VMU?
+ENTERNAME				Enter profile name:
+# %s is profile name
+WHOSEPROFILE			%s's profile
+SCANNING				Scanning for pads and VMs
+USSCANNING				Scanning for pads and VMUs
+TOURNSELECT				Select Tournament save VM
+USTOURNSELECT			Select Tournament save VMU
+ENTTOURNNAME			Enter Tournament Name
+EMPTY_SLOT				<Empty Slot>
+OW_TOURNAMENT			Select tournament to overwrite
+OW_TOURN				Overwrite this tournament?
+OW_TOURN_YES			Yes, overwrite tournament
+OW_TOURN_NO				No, don't overwrite
+SELVMU					Select VM
+USSELVMU				Select VMU
+# Main menu
+SELMISSION				Select Mission
+SELHARD					Select Hard Mission
+CHALMISSION				Challenge Mission
+VIEWTECH				View RD Technology
+BONUSFEATURES			Bonus Features
+CTRLCONFIG				Controller Config
+EXIT					Exit
+# %d is the number of blocks needed (currently 8)
+VMUWARNING				~cff0000~WARNING!~x~  A VM with at least %d blocks of space is required.  If you continue, your progress will not be saved.
+USVMUWARNING		   	~cff0000~WARNING!~x~  A VMU with at least %d blocks of space is required.  If you continue, your progress will not be saved.
+VMUCONTINUE				A/START: Continue  B/X: Cancel
+PLAYER					Player
+VMUSAVEFAIL				~cff0000~WARNING!~x~ Last save operation failed - check VM!
+USVMUSAVEFAIL		   	~cff0000~WARNING!~x~ Last save operation failed - check VMU!
+VMUACCESS				Saving, do not turn power off
+# %d is the number of blocks needed (currently 8)
+NOTENOUGHROOM			There is not enough free space on your VM to create a Red Dog save.  You need at least %d free blocks on your VM.
+USNOTENOUGHROOM			There is not enough free space on your VMU to create a Red Dog save.  You need at least %d free blocks on your VMU.
+
+
+# Multiplayer text
+JUSTPLAY				Just Play
+SELPROF					Select profile
+CREATEPROF				Create profile
+SKIRMISH				Skirmish
+TEAM					Team
+TOURNAMENT				Tournament
+PLAYEROPTS				Player options
+PLAYERSTATS				Player statistics
+RESELECTPLAYERS			Reselect players
+EXITMP					Exit multiplayer
+STARTGAME				Start game
+GAMETYPE				Game type
+CHOOSEMAP				Choose map
+WEPPS					Weapons...
+TEAMFIRE				Team fire
+STARTTOURN				Start tournament
+TTYPE					Tourn type
+TEDIT					Tourn edit
+GAMENUMBER				Game Number
+SAVETOURN				Save Tourn
+GAME1					Game 1
+GAME2					Game 2
+GAME3					Game 3
+GAME4					Game 4
+GAME5					Game 5
+GAME6					Game 6
+TEAMGAME				Team game
+FRAGLIMIT				Fraglimit
+MPLIVES					Lives
+BTIME					Bomb time
+KTIME					King time
+FTIME					Flag time
+NOPARMS					<no parms>
+WAITINGPLAYERS			Waiting for other players...
+KILL					kill
+KILLS					kills
+LIVES					lives
+LIFE					life
+# Abbreviated times - single minute
+MINSECS					%d min %2d secs
+# Abbreviated times - more than one minute
+MINSSECS				%d mins %2d secs
+# Just seconds
+SECS					%2d seconds
+
+# End mission text
+EM_PASS					Pass!
+EM_FAIL					Fail!
+EM_RECORD				Record!
+EM_LIVES				Lives
+EM_BOSS					Boss
+EM_TIME					Time
+EM_SCORE				Score
+EM_TOTAL				Total
+EM_RATING				Rating
+EM_NA					N/A
+
+# Options
+CONTROLS				Controls
+FLIPYAXIS				Flip Y axis
+TANKCOLOUR				Tank colour
+HANDICAP				Handicap
+ALWAYSBOOST				AlwaysBoost
+READY					Ready
+
+# Configuration
+# %d is which configuration number
+CONFIGN					< Configuration %d >
+SELTANKCOLOUR			Select Tank Colour
+
+# Cheats
+CONGRATS				Congratulations!
+YOUVEUNLOCKED			You have unlocked the following:
+TRIPPYTRAILS			Trippy Trails
+PERMBOOST				Permanent Boost
+PERMSHIELD				Permanent Shield
+BOT1					Assistance Bot 1
+BOT2					Assistance Bot 2
+INFWEAPCHARGE			Unlimited Weapon Charge
+INVULN					Invulnerability
+INITDRONE				Initial drone
+CHAL60					Double-speed Challenge 1
+CHEATSON				Cheats On: Records will not be kept
+
+# Getting the upgrade text
+GOT_TRIPPYTRAILS		Cheat: Trippy Trails
+GOT_PERMBOOST			Cheat: Permanent Boost
+GOT_PERMSHIELD			Cheat: Permanent Shield
+GOT_BOT1				Cheat: Assistance Bot
+GOT_BOT2				Cheat: Assistance Bot
+GOT_INFWEAPCHARGE		Cheat: Unlimited Weapon Charge
+GOT_INVULN				Cheat: Invulnerability
+GOT_ARMOUR1				Red Dog Armour Upgrade
+GOT_ARMOUR2				Red Dog Armour Upgrade
+GOT_WEAPON1				Red Dog Weapon Upgrade
+GOT_WEAPON2				Red Dog Weapon Upgrade
+GOT_WEAPON3				Red Dog Weapon Upgrade 
+GOT_MISSILE				Red Dog Missile Upgrade
+GOT_SHIELD				Red Dog Shield Upgrade
+GOT_KOTH				MP Mode: King Of The Hill
+GOT_HARD				Hard Difficulty Mode Activated
+GOT_SHELL				Cheat: Infinite Shell Pod
+GOT_ELECTRO				Cheat: Infinite Electro Pod
+GOT_HOMING				Cheat: Infinite Homing Pod
+GOT_LOCKON				Cheat: Infinite Missile Pod
+GOT_SWARM				Cheat: Infinite Swarm Pod
+GOT_ULTRA				Cheat: Infinite Ultra Laser Pod
+GOT_VULCAN				Cheat: Infinite Vulcan Pod
+GOT_MP1					MP Map: Black Ice
+GOT_MP2					MP Map: Ganymede
+GOT_MP3					MP Map: Acid Jump
+GOT_MP4					MP Map: Medieval Mayhem
+GOT_MP5					MP Map: Industrial Zone
+GOT_MP6					MP Map: V.R.B.F
+GOT_MP7					MP Map: Drive or Die EXPERT
+GOT_60HZRACE			Cheat: Double-speed Challenge 1
+GOT_CHAL1				Challenge Mode Activated
+GOT_CHAL2				Challenge: Shooting Range
+GOT_CHAL3				Challenge: Survival!
+GOT_CHAL4				Challenge: Search and Collect
+GOT_CHAL5				Challenge: Footsoldier Rampage
+GOT_CHAL6				Challenge: Advanced Manoeuvring
+GOT_CHAL7				Challenge: Heavy Duty Rampage
+
+# Pause menu
+RETGAME					Return to game
+RESTARTLEV				Restart level
+EXITLEV					Exit level
+
+# Gun bits and pieces
+GUN						Cannon
+MISSILE					Missile
+ARMOUR					Armour
+SHIELD					Shield
+GUN_1					Bekk Nuclear Sideband laser
+GUN_1_INFO				Dual Pipeline laser conduits create a powerful weapon that can be powered up to produce an awesome spread of fire
+GUN_2					Chida Weapons Plasma 103
+GUN_2_INFO				This updated Alpha Version of the military favourite provides a great balance of weapon power and fire rate
+GUN_3					Tovski X2TD Chain Cannon
+GUN_3_INFO				Utilises Shiko's Corp's revolutionary particle accelerator for unrivalled weapon speed
+GUN_4					Hensoi Prototype Ion Discharge
+GUN_4_INFO				Hansoi's unique phase shifting technology allows these powerful ion bolts to damage and then pass through enemy targets
+MISSILE_1				SMM:418 Heat-seeking missile
+MISSILE_1_INFO			This military standard heat-seeking missile is effective against all enemy targets
+MISSILE_2				SMM:600 Radar-guided missile
+MISSILE_2_INFO			The radar-guided update from Weapons Division has an explosive shell that's 50% more effective that its predecessor
+ARMOUR_1				Ingle Titanium X220 Armour
+ARMOUR_1_INFO			Complete titanium armour solution 
+ARMOUR_2				Ingle Plasteel-Titanium Alloy 
+ARMOUR_2_INFO			Plasteel-Titanium alloy provides Red Dog with 20% more defensive power than the standard Titanium armour
+ARMOUR_3				Ingle Stable Plasteel Armour
+ARMOUR_3_INFO			Pure Plasteel armour provides Red Dog with 40% more defensive power than the standard Titanium armour
+SHIELD_1				Nanoki Dual Matrix Shield
+SHIELD_1_INFO			Nanoki's Dual Matrix Shield not only provides cover for Red Dog from enemy fire, but also reflects weapon fire back at the enemy
+SHIELD_2				Nanoki Quad Matrix Shield
+SHIELD_2_INFO			The Quad Matrix shield retains the effectiveness of the Dual Shield but has a longer active time before it needs to recharge
+
+# The Missions:
+
+# General text
+LOCATION				LOCATION:
+TIME					TIME:
+OBJECTIVE				OBJECTIVE:
+BRIEFING				BRIEFING:
+
+# Volcano
+VOL_LOCATION			VOLCANIC ISLAND OUTPOST
+VOL_TIME				13:51 hours
+VOL_OBJECTIVE			SEARCH AND DESTROY GENERATOR
+VOL_BRIEFING			The Haak forces are in the early stages of setting up a base on this volcanic isle. Our intelligence operatives tell us that the Haak mobile generator unit, which provides all power to the base, has just been installed deep in the volcano core and it will not be long after this before the base becomes fully operational. If we let this happen it will strike a serious strategic blow against the allied forces. Your mission is to get to this mobile generator unit and destroy it.
+
+# Canyon
+CAN_LOCATION			GRAND CANYON DOCKS ZONE
+CAN_TIME			11:35 hours
+CAN_OBJECTIVE			CHEMICAL WEAPONS DROID ESCORT
+CAN_BRIEFING			This remote trading post was the first to fall to the Haak, now we want it back.  An explosive device containing a chemical poison has been constructed at our military post close to the trade village.  We want you to escort the payload to the alien hive at the far end of the docks.  The droid hull is fragile so don't let anything come between the tanker and its destination.
+CAN_SCRIPT1				You'd better get out of there Commander, the droid is now activated and about to blow.  Get back outside for pick-up from the blast zone.
+CAN_SCRIPT2				INCOMING !!!  Haak battleship closing in fast from behind!!!
+
+# Ice
+ICE_LOCATION			ARCTIC RESEARCH CENTRE
+ICE_TIME			08:20 hours
+ICE_OBJECTIVE			ELIMINATE CRUISE LASER THREAT
+ICE_BRIEFING			We had been working with the Haak on an offensive laser at our Arctic Research Centre. The "Cruise Laser" has unsurpassed range and devastating destructive power.  However, all human members of the research team have been expelled from the centre and the Haak have realigned the Cruise Laser Battery and are now targeting three of our strategic sites. Get in there Commander and destroy each of the Cruise Lasers before the Haak decide to activate them, wiping out thousands.
+
+# Hydro
+HYD_LOCATION			UNDERGROUND HYDRO GENERATOR
+HYD_TIME			20:08 hours
+HYD_OBJECTIVE			SEARCH AND DESTROY PROTOTYPE SUBMARINE
+HYD_BRIEFING			The Haak have underestimated the power of our water-based forces and we have scored significant victories in this area in the past few weeks. All this could change however if we do not act quickly. Our intelligence operatives tell us that the Haak have taken control of a underground dam complex and are draining massive amounts of power to charge up some kind of prototype amphibious super weapon. We have found an emergency overflow entrance to the dam. Your mission is to infiltrate this underground base and destroy this super weapon before it becomes operational.
+
+# City
+CIT_LOCATION			RED DOG RESEARCH CITY
+CIT_TIME			05:08 hours
+CIT_OBJECTIVE			DESTROY FORCES ATTACKING CENTRAL RESEARCH CENTRE
+CIT_BRIEFING			The Haak forces have launched a full scale offensive on our largest weapons research facility. Fortunately most of the population were able to evacuate before the attack arrived. However a select few stayed behind to collate their findings before they were lost forever - now its time to get them out. Your mission is to get to the main research building housing the remaining scientists and destroy the surrounding Haak units so the scientists can escape.
+
+CIT_LOCATION2			RED DOG RESEARCH CITY
+CIT_TIME2			05:11 hours
+CIT_OBJECTIVE2			ESCORT SCIENTISTS TO SAFE ZONE
+CIT_BRIEFING2			Escort the armoured vehicle to a safe bunker along the path lined by the green flares. Destroy any alien resistance that gets in your way.
+
+CIT_LOCATION3			RED DOG RESEARCH CITY
+CIT_TIME3			05:15 hours
+CIT_OBJECTIVE3			PROTECT BUNKER UNTIL DROPSHIP ARRIVES
+CIT_BRIEFING3			The dropship will be with you in approximately two minutes. You must protect the bunker at all costs until the dropship arrives. The Haak know the significance of our scientists and have mobilised a number of heavy duty units to destroy the bunker. These units are highly armoured and almost invulnerable to your weapon fire. They have only one weak spot: a small area on the rear of the vehicle which, if hit, will cause a chain reaction destroying the whole unit.
+
+# Alien
+ALI_LOCATION			THE HAAK MOTHERSHIP
+ALI_TIME				01:00 hours
+ALI_OBJECTIVE			DESTROY THE CENTRAL GENERATOR CORE
+ALI_BRIEFING			Weakened by the significant victories we have had on Earth, the Haak are regrouping on their mothership for one final push. However, our victories have been at a heavy cost to the Red Dog forces. If they attack en masse now we would not stand a chance. Therefore we must take the fight to them. We're gonna throw everything we've got at them to cause a diversion that will hopefully allow us to drop you off on the outside of the mothership. From there you must proceed to the central reactor core and blow the place from the inside. This is Earth's last chance. Good luck.
+
+# Chal1
+CHAL1_LOCATION			RED DOG TRAINING FACILITY
+CHAL1_TIME			10:00 hours
+CHAL1_OBJECTIVE			VEHICLE MANOEUVRING
+CHAL1_BRIEFING			Get to the end of the course in less than 1 minute 40 seconds. This Challenge will end if the timer reaches zero or if Red Dog is destroyed 3 times. Hints: Be careful of hazardous liquids and pay attention to signs.
+
+# Chal2
+CHAL2_LOCATION			RED DOG TRAINING FACILITY
+CHAL2_TIME			13:00 hours
+CHAL2_OBJECTIVE			SHOOTING RANGE
+CHAL2_BRIEFING			Use Red Dog's main weapon cannon to destroy all 80 targets within 2 minutes 30 seconds. To help you Red Dog will start with a full weapon charge. This Challenge will end if the timer reaches zero. Hints: 'Breathe out and squeeze'
+
+# Chal3
+CHAL3_LOCATION			RED DOG TRAINING FACILITY
+CHAL3_TIME			16:00 hours
+CHAL3_OBJECTIVE			SURVIVAL!
+CHAL3_BRIEFING			For this challenge Red Dog's weapons will be deactivated. You must use Red Dog's defensive capabilities to survive 2 minutes of enemy attacks. Hints: Red Dog can reflect enemy fire, use this to your advantage. Good Luck, you're going to need it!
+
+# Chal4
+CHAL4_LOCATION			RED DOG TRAINING FACILITY
+CHAL4_TIME			11:00 hours
+CHAL4_OBJECTIVE			SEARCH AND COLLECT
+CHAL4_BRIEFING			Use the Locator Arrow to find the 22 Time Pickups. Each Time Pickup collected gives Red Dog added time to find the next Time Pickup. This Challenge will end if the timer reaches zero. Hints: Don't waste time!
+
+# Chal5
+CHAL5_LOCATION			RED DOG TRAINING FACILITY
+CHAL5_TIME			12:00 hours
+CHAL5_OBJECTIVE			FOOTSOLDIER RAMPAGE
+CHAL5_BRIEFING			Use Red Dog's offensive capabilities to destroy 150 footsoldiers within 3 minutes. This challenge will end if Red Dog is destroyed. Hints: Use 'Hit and Run' techniques to kill enemies.
+
+# Chal6
+CHAL6_LOCATION			RED DOG TRAINING FACILITY
+CHAL6_TIME			15:00 hours
+CHAL6_OBJECTIVE			ADVANCED VEHICLE MANOEUVRING
+CHAL6_BRIEFING			Get to the end of this course in less than 3 minutes. This challenge will end if the timer reaches zero or if Red Dog is destroyed 3 times. Hints: Line up your jumps carefully and be very cautious on the pipes.
+
+# Chal7
+CHAL7_LOCATION			RED DOG TRAINING FACILITY
+CHAL7_TIME			14:00 hours
+CHAL7_OBJECTIVE			HEAVY DUTY RAMPAGE
+CHAL7_BRIEFING			Use Red Dogs offensive capabilities to destroy 30 enemies within 2 minutes. The enemies will be both stronger and smarter this time. Hints: Red Dog will start with full weapon charge - use it wisely. 
+
+# Front end mission names
+MISSION1_NAME			VOLCANIC ISLAND OUTPOST
+MISSION1_DESC			Search and Destroy Generator
+MISSION2_NAME			ARCTIC RESEARCH CENTRE
+MISSION2_DESC			Eliminate Cruise Laser Threat
+MISSION3_NAME			GRAND CANYON DOCKS ZONE
+MISSION3_DESC			Chemical Weapons Droid Escort
+MISSION4_NAME			UNDERGROUND HYDRO GENERATOR
+MISSION4_DESC			Search and Destroy Prototype Submarine
+MISSION5_NAME			RED DOG RESEARCH CITY
+MISSION5_DESC			Rescue the Remaining Scientists
+MISSION6_NAME			THE HAAK MOTHERSHIP
+MISSION6_DESC			Destroy the Central Generator Core
+
+# And now the challenge levels
+MISSION7_NAME			VEHICLE MANOEUVRING
+MISSION7_DESC			Get through the course in under 1 minute 40 seconds
+MISSION7_DESC2			BONUS CHALLENGE: Now beat the course in under 1 minute 10!!
+MISSION7_LIMIT			70
+MISSION8_NAME			SHOOTING RANGE
+MISSION8_DESC			Take out 80 targets in under 2 minutes 30 seconds
+MISSION8_DESC2			BONUS CHALLENGE: Take out 80 targets in under 2 minutes 15 seconds!!
+MISSION8_LIMIT			135
+MISSION9_NAME			SURVIVAL!
+MISSION9_DESC			Stay alive for 2 minutes
+MISSION9_DESC2			BONUS CHALLENGE: Now survive without getting hit!!
+MISSION9_LIMIT			100
+MISSION10_NAME			SEARCH AND COLLECT
+MISSION10_DESC			Find the 22 time pickups scattered around the landscape
+MISSION10_DESC2			BONUS CHALLENGE: Collect the 22 pickups with 20 seconds remaining!!
+MISSION10_LIMIT			140
+MISSION11_NAME			FOOTSOLDIER RAMPAGE
+MISSION11_DESC			Kill 150 onrushing footsoldiers in under 3 minutes
+MISSION11_DESC2			BONUS CHALLENGE: Now kill 150 footsoldiers in under 2 minutes 40!!
+MISSION11_LIMIT			160
+MISSION12_NAME			ADVANCED VEHICLE MANOEUVRING
+MISSION12_DESC			Get through the course in under 3 minutes
+MISSION12_DESC2			BONUS CHALLENGE: Now beat the course in under 2 minutes 40!!
+MISSION12_LIMIT			160
+MISSION13_NAME			HEAVY DUTY RAMPAGE
+MISSION13_DESC			Destroy 30 heavy duty enemies in under 2 minutes
+MISSION13_DESC2			BONUS CHALLENGE: Destroy 30 enemies in under 1 minute 30 seconds!!
+MISSION13_LIMIT			90
+MISSION_DONE			Challenge completed
+
+# Recently translated
+CLASH					Colour in use
+REINSERTCANTSTART		Please ensure all controllers are plugged in - cannot start game.
+YAXIS					Y axis
+FLIPPED					Flipped
+NOTFLIPPED				Not flipped
+
+
+# ###############################################################
+#                         French section                       ##
+# ###############################################################
+[FRENCH]
+
+# Miscealleneous stuff
+LOADING					Chargement...
+NONE					Aucun
+GO						ALLEZ-Y !!!
+VMUEXPLAIN1				A:Choisir lettre  X:supprimer
+VMUEXPLAIN2				START pour finir
+LOADWHICHPROF				Charger quel profil ?
+OWWHICHPROF				Écraser quel profil ?
+# Écraser l'emplacement : '%s'
+OWWHICHSLOT				Écraser '%s'?
+OW_YES					Oui - écraser
+OW_NO					Non - Ne pas écraser
+TYPEONMAP				Oui
+PASS					Réussite
+GAMEOVER				Fin du jeu
+
+# Statistics
+OVERALL					Total
+PLAYED					Jeux
+WON						Victoires
+# abbreviated 'statistics' - keep as short as possible:
+STATS					stats
+
+# Configure pad
+CHARGE			 		Recharger
+PICKUPFIRE				Utiliser l'objet bonus
+FIRE					Feu
+SHIELD					Protection
+
+# Move screen
+ADJSCREENEXPLAIN			Croix multi-directionnelle: faire défiler l'écran, Boutons A/X/B : quitter. Y : défaut
+
+# Multiplayer
+STARTTOJOIN				Appuyer sur START pour participer
+INSERTPADPLAY				Insérer la manette pour jouer
+
+
+HITSTART				Appuyez sur START
+MPHITSTART				Appuyez sur un bouton
+DEMOHITSTART				MODE DÉMO- Appuyez sur START
+PRESSABX				Appuyez sur A/B/X pour continuer
+YES						Oui
+NO						Non
+ON						Oui
+OFF						Non
+PAUSEDBY				En pause:
+PAUSEMODE				Mode pause
+CTRLMESG				On a débranché une manette, ou la console lit une carte mémoire au port
+CTRLMESGMULTIPLE		On a débranché une manette, ou la console lit une carte mémoire dans les ports suivants:
+CANTSTARTONTHATPAD		Seulement la manette principale peut commencer un jeu
+# The %s in the next line comes out as 'A2' or 'B3' etc
+VMUMESG					On a retiré un VM du port %s. Le jeu sera en pause jusqu'à ce qu'on l'a remis.
+VMUMESGMULTIPLE			On a retiré certains VMs essentiels.  Le jeu sera en pause jusqu'à ce qu'on les a remis.  Il faut les VMs:
+AYSRESTART				Êtes-vous sûr de vouloir recommencer ?
+AYSRESTART_YES			Oui - recommencer le niveau
+AYSRESTART_NO			Non - retour au menu pause
+AYSEXIT					Êtes-vous sûr de vouloir quitter ?
+AYSEXIT_YES				Oui - quitter le niveau
+
+# ########################
+# Multiplayer briefings: #
+# ########################
+
+# The %d in the next set of text is either the fraglimit, or timelimit
+# Deathmatch
+MP_DM_PLURAL			~cff0000~%d~x~ Mises à mort pour gagner
+MP_DM_SINGLE			~cff0000~%d~x~ Mise à mort pour gagner
+# Knockout
+MP_KO_PLURAL			Le dernier vivant gagnera. Chaque joueur a ~cff0000~%d~x~ vies
+MP_KO_SINGLE			Le dernier vivant gagnera. Chaque joueur a ~cff0000~%d~x~ vie
+# Bomb tag
+MP_BT_PLURAL			Le dernier vivant gagnera.  La bombe sera détonée toutes les ~cff0000~%d:%02d~x~
+MP_BT_SINGLE			Le dernier vivant gagnera.  La bombe sera détonée toute les ~cff0000~%d:%02d~x~
+# Suicide bomb tag
+MP_SB_PLURAL			Le dernier vivant gagnera.  Les bombes seront détonées après ~cff0000~%d:%02d~x~
+MP_SB_SINGLE			Le dernier vivant gagnera.  Les bombes seront détonées après ~cff0000~%d:%02d~x~
+# Stealth assassin
+MP_SA_PLURAL			~cff0000~%d~x~ mises à mort en tant que 'Stealth Assassin' pour la victoire
+MP_SA_SINGLE			~cff0000~%d~x~ mise à mort en tant que 'Stealth Assassin' pour la victoire
+# Flag runner
+MP_FR_PLURAL			Gardez le drapeau pendant ~cff0000~%d:%02d~x~ pour gagner
+MP_FR_SINGLE			Gardez le drapeau pendant ~cff0000~%d:%02d~x~ pour gagner
+# King of the Hill
+MP_KH_PLURAL			Restez 'King of the Hill' pendant ~cff0000~%d:%02d~x~ pour gagner
+MP_KH_SINGLE			Restez 'King of the Hill' pendant ~cff0000~%d:%02d~x~ pour gagner
+# And now all again for teams!  Hooray!
+MPT_DM_PLURAL			~cff0000~%d~x~ mises à mort par équipe pour gagner
+MPT_DM_SINGLE			~cff0000~%d~x~ mise à mort par équipe pour gagner
+MPT_KO_PLURAL			La dernière équipe gagnera. Chaque joueur a ~cff0000~%d~x~ vies
+MPT_KO_SINGLE			La dernière équipe gagnera.  Chaque joueur a ~cff0000~%d~x~ vie
+MPT_BT_PLURAL			La dernière équipe gagnera.  La bombe sera détonée toutes les ~cff0000~%d:%02d~x~
+MPT_BT_SINGLE			La dernière équipe gagnera.  La bombe sera détonée toutes les ~cff0000~%d:%02d~x~
+MPT_SB_PLURAL			La dernière équipe gagnera.  Les bombes seront détonées après ~cff0000~%d:%02d~x~
+MPT_SB_SINGLE			La dernière équipe gagnera.  Les bombes seront détonées après ~cff0000~%d:%02d~x~
+MPT_SA_PLURAL			~cff0000~%d~x~ mises à mort en tant que 'Stealth Assassin' pour la victoire 
+MPT_SA_SINGLE			~cff0000~%d~x~ mise à mort en tant que 'Stealth Assassin' pour la victoire 
+MPT_FR_PLURAL			Gardez le drapeau pendant ~cff0000~%d:%02d~x~ pour gagner
+MPT_FR_SINGLE			Gardez le drapeau pendant ~cff0000~%d:%02d~x~ pour gagner
+MPT_KH_PLURAL			Restez 'King of the Hill' pendant ~cff0000~%d:%02d~x~ pour gagner
+MPT_KH_SINGLE			Restez 'King of the Hill' pendant ~cff0000~%d:%02d~x~ pour gagner
+
+# Red and blue, complete with colour change to make the text either red or blue
+RED						~cff0000~Rouge~x~
+BLUE					~c0000ff~Bleue~x~
+ISASSASSIN				est un ~cff0000~ASSASSIN!~x~
+# %s is name of team
+SOMEONESTEAM			équipe de %s
+# %d is round number
+ROUNDN					Round %d
+TEAM					Équipe
+WINNER					Gagnant
+SECOND					Deuxième
+THIRD					Troisième
+FOURTH					Quatrième
+# %s is either red or blue
+TEAMWIN					Gagnant: Équipe %s
+# %s is name of player who won
+SINGLEWIN				Gagnant: %s
+ITSADRAW				Égalité !
+# %s is name of overall winner in tournament
+TOURNOVERALLWINNER		Le gagnant est: %s
+# %d is number of games, %s is 's' if more than one - THIS MAY NOT WORK FOR ALL LANGUAGES!  Let me know
+RESULTAFTERNGAME		Résultats après %d jeu
+RESULTAFTERNGAMES		Résultats après %d jeuex
+
+# MP Results:
+NAME					Nom
+TOTAL					Total
+DPADNEXTPAGE			Croix multi-directionnelle: page suivante
+TOURNCONTINUE			START: Continuer vers le classement
+TOURNBACK				START: Retour aux options
+TOURNDRAW				START: Rejouer le dernier match
+TOURNMID				START: Match suivant
+YREPLAY					Y: Rejouer le niveau
+ASTARTBACKSETUP			A/START: Retour aux options
+
+# Completion
+MISNOTCOMPL				Mission n'est pas terminée
+MISCOMPLETE				Mission terminée
+MISFAILED				Échec de mission
+
+# #########
+#  Menus ##
+# #########
+
+
+# First Menu
+NEWGAME					Nouveau jeu
+LOADGAME				Charger le jeu
+MULTIPLAYER				Multijoueurs
+TVOPTIONS				Options télé
+
+# TV Options menu
+FXVOLUME				Volume des effets sonores
+MUSICVOLUME				Volume de la musique
+SOUNDTYPE				Type du son
+MONO					Mono
+STEREO					Stéréo
+ADJUSTSCREEN			Régler l'écran
+SWITCH50				Passer entre 50Hz/60Hz
+VIBRATION				Vibration
+
+# Adjust screen madness
+ADJEXPLAIN				D-Pad: Déplacer l'écran, Boutons A/X/B: quitter
+
+# 50/60 switch messages
+TEST60					Tester le mode 60Hz
+# %d is either 50 or 60
+RUN60					Mode %dHz
+EXPLAINPRE				Vous verrez l'écran en mode 60Hz PAL pendant 10 secondes, ou jusqu'à ce que vous appuyez sur A/B/X. Si l'image est en couleur, votre télévision soutient 60Hz PAL.
+# %d here is a countdown
+EXPLAINDURING			Mode: 60Hz PAL...%d
+EXPLAINPOST				Si vous avez pu voir le dernier écran en couleur, vous pouvez sélectionner 60Hz PAL sur le menu.
+# %d is either 50 or 60
+CURRENTLYRUN			Mode courant: %dHz
+
+# VMU messages
+WHICHVMU				Créer sur quel VM ?
+ENTERNAME				Entrer le nom du profil:
+# %s is profile name
+WHOSEPROFILE			Profil de %s
+SCANNING				Recherche les manettes et les VMs
+TOURNSELECT				Sélectionner le VM pour le tournoi
+ENTTOURNNAME			Entrer le nom du tournoi
+EMPTY_SLOT				<Emplacement libre>
+OW_TOURNAMENT			Sélectionner le tournoi à écraser
+OW_TOURN				Écraser ce tournoi ?
+OW_TOURN_YES			Oui, écraser le tournoi
+OW_TOURN_NO				Non, ne pas l'écraser
+SELVMU					Sélectionner le VM
+# Main menu
+SELMISSION				Sélectionner une mission
+SELHARD					Sélectionner la mission difficile
+CHALMISSION				Challenge Mission
+VIEWTECH				Voir la technologie 'RD'
+BONUSFEATURES			Bonus
+CTRLCONFIG				Configurer la manette
+EXIT					Quitter
+# %d is the number of blocks needed (currently 8)
+VMUWARNING				~cff0000~ATTENTION !~x~  Il vous faut un VM avec %d blocs libres. Vous pouvez continuer sans sauvegarder.
+VMUCONTINUE				A/START: Continuer  B/X: Annuler
+PLAYER					Joueur
+VMUSAVEFAIL				~cff0000~ATTENTION !~x~ Échec de la dernière sauvegarde - vérifiez le VM !
+VMUACCESS				Sauvegarde... n'éteignez pas la console.
+# %d is the number of blocks needed (currently 8)
+NOTENOUGHROOM			Espace insuffisante sur le VM pour sauvegarder Red Dog. Il vous faut au moins %d blocs libres sur le VM.
+
+# Multiplayer text
+JUSTPLAY				Jouer
+SELPROF					Sélectionner le profil
+CREATEPROF				Créer un profil
+SKIRMISH				Échauffourée
+TEAM					Équipe
+TOURNAMENT				Tournoi
+PLAYEROPTS				Options: joueur
+PLAYERSTATS				Statistiques: joueurs
+RESELECTPLAYERS				Choisir les joueurs de nouveau
+EXITMP					Quitter le mode multijouers
+STARTGAME				Commencer le jeu
+GAMETYPE				Type de jeu
+CHOOSEMAP				Choisir la carte
+WEPPS					Armes...
+TEAMFIRE				Dégâts équipe
+STARTTOURN				Commencer le tournoi
+TTYPE					Type de tournoi
+TEDIT					Éditer le tournoi
+GAMENUMBER				Numéro du jeu
+SAVETOURN				Sauvegarder
+GAME1					Jeu 1
+GAME2					Jeu 2
+GAME3					Jeu 3
+GAME4					Jeu 4
+GAME5					Jeu 5
+GAME6					Jeu 6
+TEAMGAME				Jeu: équipe
+FRAGLIMIT				Mises à morts
+MPLIVES					Vies
+BTIME					Temps: Bombe
+KTIME					Temps: Roi
+FTIME					Temps: Drapeau
+NOPARMS					<aléatoire>
+WAITINGPLAYERS				En attente de joueurs...
+KILL					mise à mort
+KILLS					mises à mort
+LIVES					vies
+LIFE					vie
+# Abbreviated times - single minute
+MINSECS					%d min %2d secs
+# Abbreviated times - more than one minute
+MINSSECS				%d mins %2d secs
+# Just seconds
+SECS					%2d secondes
+
+# End mission text
+EM_PASS					Réussite !
+EM_FAIL					Échec !
+EM_RECORD				Record !
+EM_LIVES				Vies
+EM_BOSS					Boss
+EM_TIME					Temps
+EM_SCORE				Score
+EM_TOTAL				Total
+EM_RATING				Classement
+EM_NA					N/A
+
+# Options
+CONTROLS				Touches
+FLIPYAXIS				Retourner l'axe Y
+TANKCOLOUR				Couleur du char
+HANDICAP				Handicap
+ALWAYSBOOST				Toujours turbo
+READY					Prêt
+
+# Configuration
+# %d is which configuration number
+CONFIGN					< Configuration %d >
+SELTANKCOLOUR				Choisir la couleur du char
+
+# Cheats
+CONGRATS				Félicitations!
+YOUVEUNLOCKED				Vous avez accès à:
+TRIPPYTRAILS				Traînées
+PERMBOOST				Turbo permanent
+PERMSHIELD				Protection permanente
+BOT1					Assistant: Robot 1
+BOT2					Assistant: Robot 2
+INFWEAPCHARGE				Recharges infinies
+INVULN					Invulnérabilité
+INITDRONE				Arme initiale
+CHAL60					Défi: Double vitesse 1
+CHEATSON				Codes, activés: Ne gardera pas les records
+
+# Getting the upgrade text
+GOT_TRIPPYTRAILS			Code: Traînées
+GOT_PERMBOOST				Code: Turbo permanent
+GOT_PERMSHIELD				Code: Protection permanent
+GOT_BOT1				Code: Robot assistant
+GOT_BOT2				Code: Robot assistant
+GOT_INFWEAPCHARGE			Code: Recharge infinie
+GOT_INVULN				Code: Invulnérabilité 
+GOT_ARMOUR1				Red Dog: améliorer le blindage
+GOT_ARMOUR2				Red Dog: améliorer le blindgage
+GOT_WEAPON1				Red Dog: améliorer les armes
+GOT_WEAPON2				Red Dog: améliorer les armes
+GOT_WEAPON3				Red Dog: améliorer les armes 
+GOT_MISSILE				Red Dog: améliorer les missiles
+GOT_SHIELD				Red Dog: améliorer la protection
+GOT_KOTH				Mode MP: mode 'King Of The Hill'
+GOT_HARD				Mode 'difficile': activé
+GOT_SHELL				Code: Arme Infinie: Obus
+GOT_ELECTRO				Code: Arme Infinie: Electro
+GOT_HOMING				Code: Arme Infinie: Auto guidée
+GOT_LOCKON				Code: Arme Infinie: Missile
+GOT_SWARM				Code: Arme Infinie: Essaim
+GOT_ULTRA				Code: Arme Infinie: Ultra Laser
+GOT_VULCAN				Code: Arme Infinie: Vulcan
+GOT_MP1					Carte MJ: Verglas
+GOT_MP2					Carte MJ: Ganymede
+GOT_MP3					Carte MJ: Rampes
+GOT_MP4					Carte MJ: Grabuge médiéval
+GOT_MP5					Carte MJ: Zone Industrielle
+GOT_MP6					Carte MJ: V.R.B.F
+GOT_MP7					Carte MJ: Conduite mortelle EXPERT
+GOT_60HZRACE				Cheat: Défi Double vitesse 1
+GOT_CHAL1				Mode entraînement activé
+GOT_CHAL2				Entraînement: Stand de tir
+OT_CHAL3				Entraînement: Survie !
+GOT_CHAL4				Entraînement: Trouver et Ramasser
+GOT_CHAL5				Entraînement: Folie-fantassin
+GOT_CHAL6				Entraînement: Conduite avancée
+GOT_CHAL7				Entraînement: Saccage
+
+# Pause menu
+RETGAME					Retour au jeu
+RESTARTLEV				Recommencer le niveau
+EXITLEV					Quitter le niveau
+
+# The Missions:
+
+# General text
+LOCATION				LIEU:
+TIME					HEURE:
+OBJECTIVE				OBJECTIF:
+BRIEFING				INSTRUCTIONS:
+
+# Volcano
+VOL_LOCATION			KRAKATAU, DETROIT DE SUNDA
+VOL_TIME				13:51
+VOL_OBJECTIVE			Trouver et détruire le générateur
+VOL_BRIEFING			L'armée Haak commence à construire une base sur cette île volcanique. Nos agents secrets nous informent qu'ils viennent d'installer un générateur mobile qui fournit toute l'électricité pour la base. Il se trouve au cœur du volcan, et dans très peu de temps la base sera pleinement opérationnelle. Si cette base fonctionnait à plein, ce serait un coup terrible pour les armées alliées. Votre mission est de trouver ce générateur mobile et de le détruire.
+
+# Canyon
+CAN_LOCATION			Village de commerce du Grand Canyon
+CAN_TIME			11:35
+CAN_OBJECTIVE			Escorter le camion-citerne droïde
+CAN_BRIEFING			Ce centre commercial isolé était le premier à tomber sous la domination Haak : nous voulons le récupérer. Notre base militaire de la région a fabriqué un engin explosif contenant un poison chimique. Vous devez escorter la charge explosive jusqu'à la base Haak à l'autre bout des docks. La coque du droïde est assez fragile alors protégez bien le camion-citerne jusqu'à sa destination.
+CAN_SCRIPT1				Sortez de là Commandant ! Le droïde est activé et il est sur le point d'exploser. Sortez de là pour qu'on puisse vous récupérer.
+CAN_SCRIPT2				ATTENTION !!! Un vaisseau de combat Haak arrive derrière nous, et à toute vitesse !
+
+# Ice
+ICE_LOCATION			L'Antarctique
+ICE_TIME			08:20
+ICE_OBJECTIVE			Éliminer la menace du laser de croisière
+ICE_BRIEFING			Nous avons travaillé avec les Haak sur un laser à notre Centre de Recherche de l'Antarctique. Ce 'laser de croisière' a une portée supérieure aux autres armes ainsi qu'une puissance de feu dévastatrice. Les membres humains de l'équipe de recherches ont été expulsés par les Haak, et ils ont redirigé le laser de croisière sur trois de nos grandes villes.  Commandant, il faut détruire chacun de ces trois lasers avant que les Haak ne s'en servent. Ce serait la mort pour des milliers de personnes.
+
+# Hydro
+HYD_LOCATION			LA GÉNÉRATRICE  HYDROÉLÉCTRIQUE SOUTERRAINE
+HYD_TIME			20:08
+HYD_OBJECTIVE			Trouver le prototype  du sous-marin pour le détruire
+HYD_BRIEFING			L'armée Haak a sous-estimé la puissance de notre marine et nous avons pris le dessus sur l'ennemi dans cette région depuis quelques semaines. Tout pourrait changer si nous n'agissons pas immédiatement. Nos espions nous disent que l'armée Haak a pris le contrôle d'un barrage sous-terrain. Ils ont utilisé une énorme quantité d'électricité pour recharger une sorte de super-arme amphibie.  Nous avons trouvé un déversoir d'urgence pour le barrage. Votre mission est de vous infiltrer dans cette base sous-terraine et de détruire ce barrage avant que cette super-arme ne soit opérationnelle.
+
+# City
+CIT_LOCATION			CITÉ DE RECHERCHES RED DOG
+CIT_TIME			05:08
+CIT_OBJECTIVE			Détruire les soldats Haak pour protéger la base de recherche
+CIT_BRIEFING			L'armée Haak a lancé une attaque de grande envergure contre notre plus grande base de recherche militaire. Heureusement la plupart des habitants a pu être évacuée avant le début de l'attaque. Par contre, un petit groupe est resté pour terminer leurs recherches avant que tout soit détruit. A présent il faut les sortir de là.  Votre mission est d'atteindre le laboratoire principal où se trouvent les scientifiques. Détruisez les unités Haak autour, pour sauver les scientifiques.
+
+CIT_LOCATION2			CITÉ DE RECHERCHES RED DOG
+CIT_TIME2			05:11
+CIT_OBJECTIVE2			ESCORTER LES SCIENTIFIQUES AU BUNKER
+CIT_BRIEFING2			Escorter le véhicule blindé à l'abri en suivant les fusées éclairantes vertes. Il faudra éliminer les extra-terrestres qui vous barrent la route.
+
+CIT_LOCATION3			CITÉ DE RECHERCHES RED DOG
+CIT_TIME3			05:15
+CIT_OBJECTIVE3			PROTÉGER LE BUNKER JUSQU'À L'ARRIVÉE DU TRANSPORTEUR
+CIT_BRIEFING3			Le transporteur arrivera dans à peu près deux minutes. Il faut protéger le bunker à tout prix en attendant l'arrivée du transporteur. Les Ha'ak se rendent compte de l'importance de nos scientifiques, et ils ont mobilisé plusieurs unités pour essayer de détruire ce bunker. Le blindage qui protège ces unités est presque impénétrable, et vos armes n'auront presque pas d'effet. Il faut cibler le seul petit point faible qui se trouve à l'arrière du véhicule... si vous le touchez, la réaction en chaîne produite, détruira l'unité.
+
+# Alien
+ALI_LOCATION			LE RAVITAILLEUR HAAK, EN ORBITE AUTOUR DE LA TERRE
+ALI_TIME				01:00
+ALI_OBJECTIVE			Détruire le réacteur central
+ALI_BRIEFING			L'armée Haak, affaiblie par les batailles importantes que nous avons gagnées sur Terre, se regroupe sur le ravitailleur pour une dernière poussée. Malheureusement nos victoires ont coûté cher à l'armée Red Dog. S'ils attaquaient en masse tout de suite, nous n'aurons aucune chance. Pour cette raison, il est essentiel de les surprendre avant qu'ils nous attaquent... Nous les attaquerons avec tout ce qu'on a, pour créer une diversion qui en principe nous permettra de vous larguer sur l'extérieur du ravitailleur. De là vous devez trouver le réacteur central et tout faire sauter.  C'est la dernière chance pour la Terre. Bonne chance.
+
+# Chal1
+CHAL1_LOCATION			CENTRE D'ENTRAÎNEMENT RED DOG
+CHAL1_TIME			10:00 
+CHAL1_OBJECTIVE			CONDUITE DES VÉHICULES
+CHAL1_BRIEFING			Arrivez à la fin du circuit en moins de 1 minute 40 secondes. Si le minuteur atteint zéro ou si on détruit Red Dog trois fois, il faudra recommencer. Conseils: Attention aux agents chimiques et suivez les panneaux.
+
+# Chal2
+CHAL2_LOCATION			CENTRE D'ENTRAÎNEMENT RED DOG
+CHAL2_TIME			13:00
+CHAL2_OBJECTIVE			STAND DE TIR
+CHAL2_BRIEFING			En vous servant du canon principal de Red Dog, détruisez toutes les 80 cibles en moins de 2 minutes 30 secondes. Pour vous aider, au début, l'arme de Red Dog sera à sa capacité maximum. L'entraînement se termine si  le minuteur atteint zéro. Conseil: Doucement !
+
+# Chal3
+CHAL3_LOCATION			CENTRE D'ENTRAÎNEMENT RED DOG
+CHAL3_TIME			16:00 
+CHAL3_OBJECTIVE			SURVIE!
+CHAL3_BRIEFING			Les armes de Red Dog seront désactivées pendant cette exercice. Il faut vous servir des systèmes de défense de Red Dog pour survivre aux attaques des ennemis pendant 2 minutes. Conseils: Red Dog peut 'refléter' le feu de l'ennemi, et il faut vous servir de cette technique. Bonne chance, vous en aurez besoin!
+
+# Chal4
+CHAL4_LOCATION			CENTRE D'ENTRAÎNEMENT RED DOG
+CHAL4_TIME			11:00
+CHAL4_OBJECTIVE			TROUVER ET RAMASSER
+CHAL4_BRIEFING			Suivez la flèche pour trouver les 22 bonus temps. Chaque bonus temps vous donne du temps supplémentaire pour trouver le prochain bonus. L'entraînement se termine si  le minuteur atteint zéro. Conseil: Ne perdez pas votre temps!
+
+# Chal5
+CHAL5_LOCATION			CENTRE D'ENTRAÎNEMENT RED DOG
+CHAL5_TIME			12:00
+CHAL5_OBJECTIVE			FOLIE - FANTASSIN
+CHAL5_BRIEFING			Servez-vous des armes de Red Dog pour abattre 150 fantassins en moins de 3 minutes. Cette mission se termine si Red Dog est détruit. Conseil: la technique 'tirer et courir' est efficace pour tuer les ennemis.
+
+# Chal6
+CHAL6_LOCATION			CENTRE D'ENTRAÎNEMENT RED DOG
+CHAL6_TIME			15:00 
+CHAL6_OBJECTIVE			CONDUITE AVANCÉE
+CHAL6_BRIEFING			Arrivez à la fin du circuit en moins de 3 minutes. Si le minuteur atteint zéro ou si on détruit Red Dog trois fois, il faudra recommencer. Conseil: Mettez-vous en ligne directe avant de faire un saut, et attention sur les tuyaux.
+
+# Chal7
+CHAL7_LOCATION			CENTRE D'ENTRAÎNEMENT RED DOG
+CHAL7_TIME			14:00
+CHAL7_OBJECTIVE			SACCAGE
+CHAL7_BRIEFING			Servez-vous des armes de Red Dog pour abattre 30 ennemis en moins de 2 minutes. Les ennemis seront plus forts et plus intelligents que la dernière fois. Conseil: l'arme de Red Dog sera à sa capacité maximum au début -  alors, utilisez-la prudemment. 
+
+# Front end mission names
+MISSION1_NAME			ÎLE VOLCANIQUE
+MISSION1_DESC			Trouver et détruire le générateur
+MISSION2_NAME			CENTRE DE RECHERCHES DES RÉGIONS ARCTIQUES
+MISSION2_DESC			Éliminer la Menace du Laser de Croisière
+MISSION3_NAME			LES DOCKS DU CANYON
+MISSION3_DESC			Escorter le camion-citerne droïde
+MISSION4_NAME			GÉNÉRATEUR HYDRO-ÉLECTRIQUE SOUTERRAIN
+MISSION4_DESC			Trouver le prototype  du sous-marin pour le détruire
+MISSION5_NAME			CITÉ DE RECHERCHES RED DOG
+MISSION5_DESC			Sauver les derniers scientifiques
+MISSION6_NAME			LE RAVITAILLEUR HAAK
+MISSION6_DESC			Détruire le réacteur central   
+
+# And now the challenge levels
+MISSION7_NAME			CONDUITE DES VÉHICULES
+MISSION7_DESC			Arrivez à la fin du circuit en moins de 100 secondes.
+MISSION7_DESC2			NIVEAU BONUS: Faites la même chose en moins de 70 secondes!!
+MISSION7_LIMIT			70
+MISSION8_NAME			STAND DE TIR
+MISSION8_DESC			Visez 80 cibles en moins de 2 minutes 30 secondes.
+MISSION8_DESC2			NIVEAU BONUS: Visez 80 cibles en moins de 2 minutes 15 secondes!!
+MISSION8_LIMIT			135
+MISSION9_NAME			SURVIE!
+MISSION9_DESC			Restez en vie pendant 2 minutes
+MISSION9_DESC2			NIVEAU BONUS: Restez en vie sans être touché!!
+MISSION9_LIMIT			100
+MISSION10_NAME			TROUVER ET RAMASSER
+MISSION10_DESC			Trouvez les 22 bonus temps, qui se trouvent tout autour.
+MISSION10_DESC2			NIVEAU BONUS: Ramassez les 22 bonus temps avant que le minuteur atteint 20 secondes!!
+MISSION10_LIMIT			140
+MISSION11_NAME			FOLIE - FANTASSIN
+MISSION11_DESC			Abattez 150 fantassins en moins de 3 minutes.
+MISSION11_DESC2			NIVEAU BONUS: Abattez 15O fantassins en moins de 2 minutes 40!!
+MISSION11_LIMIT			160
+MISSION12_NAME			CONDUITE AVANCÉE
+MISSION12_DESC			Arrivez à la fin du circuit en moins de 3 minutes.
+MISSION12_DESC2			NIVEAU BONUS: Essayez de le faire en moins de 2 minutes 40!!
+MISSION12_LIMIT			160
+MISSION13_NAME			SACCAGE
+MISSION13_DESC			Abattez 30 ennemis puissants en moins de 2 minutes.
+MISSION13_DESC2			NIVEAU BONUS: Abattez 30 ennemis en moins de 1 minute 30!!
+MISSION13_LIMIT			90
+MISSION_DONE			Terminé.
+
+
+# Gun bits and pieces
+GUN						Canon
+MISSILE					Missile
+ARMOUR					Blindage
+SHIELD					Protection
+GUN_1					Laser: Bekk Sideband nucléaire
+GUN_1_INFO				Ce laser se vante de deux conduits-tuyaux. On peut le charger pour produire un effet dévastateur.
+GUN_2					Plasma: 'Chida Weapons 103'
+GUN_2_INFO				Cette mise à jour de la version Alpha de ce favori des militaires est puissant mais se recharge très vite.
+GUN_3					'Tovski X2TD Chain Cannon'
+GUN_3_INFO				Cette arme est la plus rapide grâce à l'accélérateur de particules du Shiko Corp.
+GUN_4					Prototype du 'Hensoi Ion Discharge'
+GUN_4_INFO				Grâce aux progrès en technologie de Hansoi, ces carreaux d'ions transpercent les cibles ennemies.
+MISSILE_1				Missile thermoguidé: SMM:418
+MISSILE_1_INFO			Ce missile thermoguidé, utilisé par l'armée est efficace peu importe la cible.
+MISSILE_2				Missile guidé par radar: SMM:600
+MISSILE_2_INFO			Cette version récente de ce missile fourni par 'Weapons Division' a une coque explosive améliorée.
+ARMOUR_1				Blindage: 'Ingle Titanium X220'
+ARMOUR_1_INFO			Blindage en titane  très efficace. 
+ARMOUR_2				Alliage: 'Ingle Plasteel-Titanium' 
+ARMOUR_2_INFO			L'alliage 'plastacier-titane' offre une protection supérieure (+20%) au blindage en titane.
+ARMOUR_3				Blindage: 'Ingle Stable Plasteel'
+ARMOUR_3_INFO			Ce blindage en 'plastacier' offre une protection supérieure (+40%) au blindage en titane.
+SHIELD_1				Protection: 'Nanoki Dual Matrix'
+SHIELD_1_INFO			La protection Dual Matrix de Nanoki est non seulement efficace, mais elle peut aussi 'refléter' le feu de l'ennemi.
+SHIELD_2				Protection: 'Nanoki Quad Matrix'
+SHIELD_2_INFO			La protection Quad Matrix est aussi efficace que la 'Dual', mais dure plus longtemps sans qu'on ait besoin de la recharger.
+
+# Recently translated
+CLASH					Couleur utilisée
+REINSERTCANTSTART		Vérifiez que toutes les manettes sont bien branchées - impossible de lancer le jeu.
+
+YAXIS					Axe Y 
+FLIPPED					Avec rotation
+NOTFLIPPED				Sans rotation
+
+
+
+# ###############################################################
+#                         German section                       ##
+# ###############################################################
+[GERMAN]
+# Miscealleneous stuff
+LOADING					Ladevorgang...
+NONE					Keine
+GO						LOS!!!
+VMUEXPLAIN1				A:Buchstabenwahl  X:Löschen
+VMUEXPLAIN2				START bricht ab
+LOADWHICHPROF				Welches Profil laden?
+OWWHICHPROF				Welches Profil überschreiben?
+# Overwrite a slot named '%s'
+OWWHICHSLOT				'%s' überschreiben?
+OW_YES					Ja - überschreiben
+OW_NO					Nein - nicht überschreiben
+TYPEONMAP				an
+PASS					Erfolg
+GAMEOVER				Spiel vorbei
+
+# Statistics
+OVERALL					Generell
+PLAYED					Gespielt
+WON						Gewonnen
+# abbreviated 'statistics' - keep as short as possible:
+STATS					Statistik
+
+# Configure pad
+CHARGE					Ladung
+PICKUPFIRE				Objekt feuern
+FIRE					Feuer
+SHIELD					Abwehr
+
+# Move screen
+ADJSCREENEXPLAIN			R-Kreuz: auf/ab/l/r, A/X/B-Tasten: Exit, Y: zurück
+
+# Multiplayer
+STARTTOJOIN				START: Beginnen
+INSERTPADPLAY				Controller z. Spiel einstecken
+
+
+HITSTART				START-Taste drücken
+MPHITSTART				Irgendeine Taste drücken
+DEMOHITSTART				DEMO - START-Taste drücken
+PRESSABX				A/B/X-Taste: Fortfahren
+YES						Ja
+NO						Nein
+ON						An
+OFF						Aus
+PAUSEDBY				Pause:
+PAUSEMODE				Pause
+CTRLMESG				Der Controller wurde entfernt, oder es wird eine Speicherkarte anerkannt;
+CTRLMESGMULTIPLE		Der Controller wurde entfernt, oder eine Speicherkarte wird in folgenden Anschlüssen anerkannt:
+CANTSTARTONTHATPAD		Spiel kann nur mit Hauptcontroller gestartet werden. 
+
+# The %s in the next line comes out as 'A2' or 'B3' etc
+VMUMESG					Ein notwendiges VM wurde vom Anschluss %s entfernt.
+VMUMESGMULTIPLE			Einige notwendige VMs wurden entfernt.  Das Spiel wird bis zum Wiedereinstecken unterbrochen.  Folgende VMs sind notwendig:
+AYSRESTART				Wollen Sie neu beginnen?
+AYSRESTART_YES			Ja - Level neu beginnen
+AYSRESTART_NO			Nein - Zurück zum Pausen-Menü
+AYSEXIT					Wollen Sie Exit wählen?
+AYSEXIT_YES				Ja - Level Exit 
+
+# ########################
+# Multiplayer briefings: #
+# ########################
+
+# The %d in the next set of text is either the fraglimit, or timelimit
+# Deathmatch
+MP_DM_PLURAL			~cff0000~%d~x~ Kills zum Sieg nötig
+MP_DM_SINGLE			~cff0000~%d~x~ Kill zum sieg nötig
+# Knockout
+MP_KO_PLURAL			Überlebender Spieler gewinnt.  Alle Spieler haben ~cff0000~%d~x~ Leben
+MP_KO_SINGLE			Überlebender Spieler gewinnt.  Alle Spieler haben ~cff0000~%d~x~ Leben
+# Bomb tag
+MP_BT_PLURAL			Überlebender Spieler gewinnt.  Die Bombe explodiert alle ~cff0000~%d:%02d~x~
+MP_BT_SINGLE			Überlebender Spieler gewinnt.  Die Bombe explodiert alle ~cff0000~%d:%02d~x~
+# Suicide bomb tag
+MP_SB_PLURAL			Überlebender Spieler gewinnt.  Alle Bomben explodieren nach ~cff0000~%d:%02d~x~
+MP_SB_SINGLE			Überlebender Spieler gewinnt.  Alle Bomben explodieren nach ~cff0000~%d:%02d~x~
+# Stealth assassin
+MP_SA_PLURAL			~cff0000~%d~x~ Kills als Stealth Assassin zum Sieg notwendig
+MP_SA_SINGLE			~cff0000~%d~x~ Kill als Stealth Assassin zum Sieg notwendig
+# Flag runner
+MP_FR_PLURAL			Zum Sieg die Fahne ~cff0000~%d:%02d~x~ halten
+MP_FR_SINGLE			Zum Sieg die Fahne ~cff0000~%d:%02d~x~ halten
+# King of the Hill
+MP_KH_PLURAL			Zum Sieg ~cff0000~%d:%02d~x~ King of the Hill bleiben
+MP_KH_SINGLE			Zum Sieg ~cff0000~%d:%02d~x~ King of the Hill bleiben
+# And now all again for teams!  Hooray!
+MPT_DM_PLURAL			~cff0000~%d~x~ Kills pro Team zum Sieg nötig
+MPT_DM_SINGLE			~cff0000~%d~x~ Kill pro Team zum Sieg nötig
+MPT_KO_PLURAL			Letztes überlebende Team gewinnt.  Jeder Spieler hat ~cff0000~%d~x~ Leben
+MPT_KO_SINGLE			Letztes überlebende Team gewinnt.  Jeder Spieler hat ~cff0000~%d~x~ Leben
+MPT_BT_PLURAL			Letztes überlebende Team gewinnt.  Die Bombe explodiert alle ~cff0000~%d:%02d~x~
+MPT_BT_SINGLE			Letztes überlebende Team gewinnt.  Die Bombe explodiert alle ~cff0000~%d:%02d~x~
+MPT_SB_PLURAL			Letztes überlebende Team gewinnt.  Alle Bomben explodieren nach ~cff0000~%d:%02d~x~
+MPT_SB_SINGLE			Letztes überlebende Team gewinnt.  Alle Bomben explodieren nach ~cff0000~%d:%02d~x~
+MPT_SA_PLURAL			~cff0000~%d~x~ Kills als Stealth Assassin zum Sieg notwendig
+MPT_SA_SINGLE			~cff0000~%d~x~ Kill als Stealth Assassin zum Sieg notwendig
+MPT_FR_PLURAL			Zum Sieg ~cff0000~%d:%02d~x~ die Fahne halten
+MPT_FR_SINGLE			Zum Sieg ~cff0000~%d:%02d~x~ die Fahne halten
+MPT_KH_PLURAL			Zum Sieg ~cff0000~%d:%02d~x~ King of the Hill bleiben
+MPT_KH_SINGLE			Zum Sieg ~cff0000~%d:%02d~x~ King of the Hill bleiben
+
+# Red and blue, complete with colour change to make the text either red or blue
+RED						~cff0000~Rot~x~
+BLUE					~c0000ff~Blau~x~
+ISASSASSIN				ist ein ~cff0000~ASSASSIN!~x~
+# %s is name of team
+SOMEONESTEAM			%ss Team
+# %d is round number
+ROUNDN					Runde %d
+TEAM					Team
+WINNER					Sieger
+SECOND					Zweite/r
+THIRD					Dritte/r
+FOURTH					Vierte/r
+# %s is either red or blue
+TEAMWIN					Sieger: %s Team
+# %s is name of player who won
+SINGLEWIN				Sieger: %s
+ITSADRAW				Unentschieden!
+# %s is name of overall winner in tournament
+TOURNOVERALLWINNER		Sieger: %s
+# %d is number of games, %s is 's' if more than one - THIS MAY NOT WORK FOR ALL LANGUAGES!  Let me know
+RESULTAFTERNGAME		Ergebnis nach %d Spiel
+RESULTAFTERNGAMES		Ergebnis nach %d Spielen
+
+# MP Results:
+NAME					Name
+TOTAL					Gesamt
+DPADNEXTPAGE			R-Kreuz: Nächste Seite
+TOURNCONTINUE			START: Zu den Rängen
+TOURNBACK				START: Zurück zur Aufstellung
+TOURNDRAW				START: Replay des letzten Spiels
+TOURNMID				START: Nächstes Spiel
+YREPLAY					Y: Level-Replay
+ASTARTBACKSETUP			A/START: Zurück zur Aufstellung
+
+# Completion
+MISNOTCOMPL				Mission noch nicht abgeschlossen 
+MISCOMPLETE				Mission abgeschlossen
+MISFAILED				Mission versagt
+
+# #########
+#  Menus ##
+# #########
+
+
+# First Menu
+NEWGAME					Neues Spiel
+LOADGAME				Spiel laden
+MULTIPLAYER				Multi-Spieler
+TVOPTIONS				TV-Optionen
+
+# TV Options menu
+FXVOLUME				Geräuscheffekte
+MUSICVOLUME				Musiklautstärke
+SOUNDTYPE				Tontyp
+MONO					Mono
+STEREO					Stereo
+ADJUSTSCREEN			Bildschirmeinstellung
+SWITCH50				50Hz/60Hz Einstellung
+VIBRATION				Vibration
+
+# Adjust screen madness
+ADJEXPLAIN				R-Kreuz: auf/ab/l/r, A/X/B-Taste: Exit
+
+# 50/60 switch messages
+TEST60					60Hz Kompatibilität testen
+# %d is either 50 or 60
+RUN60					Läuft auf %dHz 
+EXPLAINPRE				Das nächste Bild wird 10 Sekunden lang eine 60 Hz PAL Testkarte zeigen. Es kann mit A/B/X unterbrochen werden. Wenn Sie das Bild ohne Probleme in Farbe sehen können, dann ist Ihr TV mit 60 Hz PAL kompatibel.   
+# %d here is a countdown
+EXPLAINDURING			60Hz PAL Modus...%d
+EXPLAINPOST				Falls sie das vorherige Bild korrekt und in voller Farbe erkennen konnten, können Sie unbesorgt 60Hz PAL im Menü wählen.
+# %d is either 50 or 60
+CURRENTLYRUN			Läuft momentan auf %dHz
+
+# VMU messages
+WHICHVMU				Mit welchem VM?
+ENTERNAME				Profil-Namen eintragen:
+# %s is profile name
+WHOSEPROFILE			%ss Profil
+SCANNING				Sucht nach Controllern und VMs
+TOURNSELECT				Turnierwahl VM speichern
+ENTTOURNNAME			Turnierbezeichnung eintragen
+EMPTY_SLOT				<Leerer Slot>
+OW_TOURNAMENT			Turnier zum überschreiben wählen
+OW_TOURN				Dieses Tunier überschreiben?
+OW_TOURN_YES			Ja, Turnier überschreiben
+OW_TOURN_NO				Nein, nicht überschreiben
+SELVMU					VM wählen
+# Main menu
+SELMISSION				Mission wählen
+SELHARD					Hard Mission wählen
+CHALMISSION				Challenge Mission
+VIEWTECH				RD-Technologie sichten
+BONUSFEATURES			Bonus Features
+CTRLCONFIG				Controller Konfig.
+EXIT					Exit
+# %d is the number of blocks needed (currently 8)
+VMUWARNING				~cff0000~WARNUNG!~x~  Es ist ein VM mit mindestens %d Blöcken Speicherraum nötigt.  Beim Fortfahren kann keine weitere Speicherung erfolgen.
+VMUCONTINUE				A/START: Fortfahren  B/X: Löschen
+PLAYER					Spieler
+VMUSAVEFAIL				~cff0000~WARNUNG!~x~ Letzte Speicherung erfolglos - VM überprüfen!
+VMUACCESS				Speicherung - Strom nicht abschalten
+# %d is the number of blocks needed (currently 8)
+NOTENOUGHROOM			Im VM ist ungenügend Raum zur Red Dog-Speicherung vorhanden. Es werden mindestens %d freie Blöcke benötigt.
+
+# Multiplayer text
+JUSTPLAY				Spiel!
+SELPROF					Profilwahl
+CREATEPROF				Profil kreieren
+SKIRMISH				Gefecht
+TEAM					Team
+TOURNAMENT				Turnier
+PLAYEROPTS				Spieleroptionen
+PLAYERSTATS				Spielerstatistiken
+RESELECTPLAYERS				Spieler erneut wählen
+EXITMP					Multi-Spieler Exit
+STARTGAME				Spiel beginnen
+GAMETYPE				Spieltyp
+CHOOSEMAP				Karte wählen
+WEPPS					Waffen...
+TEAMFIRE				Teamschaden
+STARTTOURN				Turnier beginnen
+TTYPE					Turn.typ
+TEDIT					Turn. ändern
+GAMENUMBER				Spielnummer
+SAVETOURN				Turn. speichern
+GAME1					Spiel 1
+GAME2					Spiel 2
+GAME3					Spiel 3
+GAME4					Spiel 4
+GAME5					Spiel 5
+GAME6					Spiel 6
+TEAMGAME				Teamspiel
+FRAGLIMIT				Notw.Kills
+MPLIVES					Leben
+BTIME					Bomben-Zeit
+KTIME					King-Zeit
+FTIME					Fahnen-Zeit
+NOPARMS					<Zufall>
+WAITINGPLAYERS				Wartet auf Spieler...
+KILL					Kill
+KILLS					Kills
+LIVES					Leben
+LIFE					Leben
+# Abbreviated times - single minute
+MINSECS					%d Min %2d Sek
+# Abbreviated times - more than one minute
+MINSSECS				%d Min %2d Sek
+# Just seconds
+SECS					%2d Sekunden
+
+# End mission text
+EM_PASS					O.k.!
+EM_FAIL					Versagt!
+EM_RECORD				Rekord!
+EM_LIVES				Leben
+EM_BOSS					Boss
+EM_TIME					Zeit
+EM_SCORE				Punkte
+EM_TOTAL				Gesamt
+EM_RATING				Rang
+EM_NA					N/Z
+
+# Options
+CONTROLS				Kontrollen
+FLIPYAXIS				Y-Achse umlegen
+TANKCOLOUR				Panzerfarbe
+HANDICAP				Vorteil
+ALWAYSBOOST				DauerBoost
+READY					Fertig
+
+# Configuration
+# %d is which configuration number
+CONFIGN					< Konfiguration %d >
+SELTANKCOLOUR				Panzerfarbenwahl
+
+# Cheats
+CONGRATS				Herzlichen Glückwunsch!
+YOUVEUNLOCKED				Ab jetzt gibt es:
+TRIPPYTRAILS				Trippy Trails
+PERMBOOST				Ständiger Boost
+PERMSHIELD				Ständige Abwehr
+BOT1					Hilfsroboter 1
+BOT2					Hilfsroboter 2
+INFWEAPCHARGE				Endlos geladene Waffen
+INVULN					Unverletzlichkeit
+INITDRONE				Initialwaffe
+CHAL60					Karacho-Challenge 1
+CHEATSON				Bei Cheats: Rekorde werden nicht gespeichert
+
+# Getting the upgrade text
+GOT_TRIPPYTRAILS			Cheat: Trippy Trails
+GOT_PERMBOOST				Cheat: Ständiger Boost
+GOT_PERMSHIELD				Cheat: Ständige Abwehr
+GOT_BOT1				Cheat: Hilfsroboter
+GOT_BOT2				Cheat: Hilfsroboter
+GOT_INFWEAPCHARGE			Cheat: Endlos geladene Waffen
+GOT_INVULN				Cheat: Unverletzlichkeit
+GOT_ARMOUR1				Red Dog-Rüstungsaufwertung
+GOT_ARMOUR2				Red Dog-Rüstungsaufwertung
+GOT_WEAPON1				Red Dog-Rüstungsaufwertung
+GOT_WEAPON2				Red Dog-Waffenaufwertung
+GOT_WEAPON3				Red Dog-Waffenaufwertung 
+GOT_MISSILE				Red Dog-Missileaufwertung
+GOT_SHIELD				Red Dog-Abwehraufwertung
+GOT_KOTH				MS Modus: King Of The Hill
+GOT_HARD				Schwierigkeitsmodus aktiviert
+GOT_SHELL				Cheat: Unendliche Shell-Waffe
+GOT_ELECTRO				Cheat: Unendliche Electro-Waffe
+GOT_HOMING				Cheat: Unendliche Homing-Waffe
+GOT_LOCKON				Cheat: Unendliche Missile-Waffe
+GOT_SWARM				Cheat: Unendliche Swarm-Waffe
+GOT_ULTRA				Cheat: Unendliche Ultra Laser-Waffe
+GOT_VULCAN				Cheat: Unendliche Vulcan-Waffe
+GOT_MP1					MS Karte: Glatteis
+GOT_MP2					MS Karte: Ganymede
+GOT_MP3					MS Karte: Rampensprung
+GOT_MP4					MS Karte: Mittelalterchaos
+GOT_MP5					MS Karte: Industriezone
+GOT_MP6					MS Karte: V.R.B.F
+GOT_MP7					MS Karte: Fahr oder Stirb EXPERTE
+GOT_60HZRACE				Cheat: Karacho-Challenge 1
+GOT_CHAL1				Challenge Modus aktiviert
+GOT_CHAL2				Challenge: Schiess-Stand
+GOT_CHAL3				Challenge: Überleben!
+GOT_CHAL4				Challenge: Suchen und Sammeln
+GOT_CHAL5				Challenge: Infanteristentrubel
+GOT_CHAL6				Challenge: Fortgeschrittenes Fahrzeugmanöver
+GOT_CHAL7				Challenge: Schwerangriff
+
+# Pause menu
+RETGAME					Zurück zum Spiel
+RESTARTLEV				Level neu beginnen
+EXITLEV					Level Exit
+
+# General text
+LOCATION				STANDORT:
+TIME					ZEIT:
+OBJECTIVE				ZIEL:
+BRIEFING				EINSATZBESPRECHUNG:
+
+# Volcano
+VOL_LOCATION			KRAKATAU, SUNDA-MEERENGE
+VOL_TIME				13:51 Uhr
+VOL_OBJECTIVE			GENERATOR AUSFINDIG MACHEN UND ZERSTÖREN
+VOL_BRIEFING			Die Truppen der Haak beginnen damit, einen Stützpunkt auf dieser vulkanischen Insel zu errichten. Durch unseren Geheimdienst haben wir die Information erhalten, dass der mobile Generator, der den Stützpunkt mit Strom versorgt, in den Tiefen des Vulkans installiert wurde: Bald kann der Stützpunkt in Betrieb genommen werden. Wenn wir zulassen, dass diese Basis voll einsatzfähig wird, werden die Haak ihre Gelegenheit zu einem vernichtenden strategischen Vorstoß auf die alliierten Streitkräfte haben. Ihre Aufgabe ist es, zu dem mobilen Generator zu gelangen und ihn zu zerstören.
+
+# Canyon
+CAN_LOCATION			GRAND CANYON-HANDELSAUßENPOSTEN
+CAN_TIME			11:35 Uhr
+CAN_OBJECTIVE			ESKORTE FÜR DROID MIT CHEMISCHEN WAFFEN
+CAN_BRIEFING			Wir müssen diesen abgelegenen Umschlagplatz, der den Haak als erster in die Hände fiel, wieder zurückerobern. In der Nähe des Handelsortes hat unser Militär einen Sprengkörper mit chemischen Giften errichtet. Sie müssen diese Ladung bis ans Ende der Docks zur Alien-Zentrale bringen. Die Hülle des Transporters ist leicht zerstörbar; sorgen Sie also dafür, dass nichts zwischen den Tanker und das Ziel kommt.
+CAN_SCRIPT1				Machen Sie sich aus dem Staub, Kommandant. Der Droid ist aktiviert und wird gleich explodieren. Gehen Sie zurück nach draußen, Sie werden dann aus dem Explosionsbereich abgeholt.
+CAN_SCRIPT2				ACHTUNG !!! Haak-Kriegsschiff nähert sich uns rasch von hinten!!
+
+# Ice
+ICE_LOCATION			ANTARKTIS
+ICE_TIME			08:20 Uhr
+ICE_OBJECTIVE			BEDROHUNG DURCH 'CRUISE LASER' ABWEHREN
+ICE_BRIEFING			Im antarktischen Forschungszentrum haben wir in Zusammenarbeit mit den Haak einen Angriffslaser entwickelt. Dieser 'Cruise Laser' hat eine unübertroffene Reichweite und vernichtende Zerstörungskraft. Alle menschlichen Mitglieder des Forschungsteams wurden jedoch aus dem Forschungszentrum verbannt, und die Haak richten den 'Cruise Laser' jetzt auf drei unserer strategischen Orte.  Sie müssen dort rein und alle 'Cruise Laser' zerstören, ehe die Haak sich entschließen, sie zu aktivieren, und Tausende ums Leben kommen.
+
+# Hydro
+HYD_LOCATION			UNTERIRDISCHER DAMM
+HYD_TIME			20:08 Uhr
+HYD_OBJECTIVE			U-BOOTPROTOTYP SUCHEN UND ZERSTÖREN
+HYD_BRIEFING			Die Haak haben die Macht unserer Seestreitkräfte schwer unterschätzt, und in den letzten Wochen konnten wir beachtliche Vorstöße auf diesem Gebiet verzeichnen. Aber um diesen Vorteil auszubauen, müssen wir rasch handeln. Unser Geheimdienst informiert uns, dass die Haak einen unterirdischen Dammkomplex übernommen haben. Mit diesem gewinnen sie große Mengen an Energie, um den Prototyp einer amphibischen Superwaffe aufzuladen.  Wir haben ein als Zugang fungierendes Notabflussrohr entdeckt, durch das Sie den Damm erreichen können. Sie haben die Aufgabe, diese unterirdische Basis zu infiltrieren und den Damm zu zerstören, bevor die Superwaffe funktionsbereit wird.
+
+# City
+CIT_LOCATION			DIE RED DOG-FORSCHUNGSANSTALT
+CIT_TIME			05:08 Uhr
+CIT_OBJECTIVE			ZERSTÖRUNG DER ANGREIFENDEN HAAK-TRUPPEN
+CIT_BRIEFING			Die Truppen der Haak haben eine großangelegte Offensive auf unser wichtigstes Waffenforschungszentrum gestartet. Glücklicherweise konnte der größte Teil der Belegschaft rechtzeitig vor dem Angriff evakuiert werden. Einige blieben jedoch zurück, um die Forschungsergebnisse vor der totalen Vernichtung zu bewahren. Diese Personen müssen jetzt geborgen werden.  Damit sich die verbliebenen Wissenschaftler in Sicherheit bringen können, müssen Sie zu dem zentralen Forschungsgebäude vorstoßen, und die Haak-Einheiten zerstören.
+
+CIT_LOCATION2			DIE RED DOG-FORSCHUNGSANSTALT
+CIT_TIME2			05:11 Uhr
+CIT_OBJECTIVE2			WISSENSCHAFTLER ZU SICHERER ZONE ZU GELEITEN
+CIT_BRIEFING2			Den Panzerwagen entlang eines Pfades, der mit grünen Leuchtfeuern gekennzeichnet ist, zu dem sicheren Bunker geleiten. Unterwegs jeden feindlichen Widerstand aus dem Weg räumen.
+
+CIT_LOCATION3			DIE RED DOG-FORSCHUNGSANSTALT
+CIT_TIME3			05:15 Uhr
+CIT_OBJECTIVE3			BUNKER BIS ZUR ANKUNFT VON TRANSPORT-KAPSEL SCHÜTZEN
+CIT_BRIEFING3			Die Transportkapsel wird in vermutlich zwei Minuten eintreffen. Sie müssen den Bunker um jeden Preis verteidigen, bis die Transportkapsel eintrifft. Die Ha'ak wissen um die Bedeutung unserer Wissenschaftler und haben eine Reihe von Spezialeinheiten mobilisiert, um den Bunker zu zerstören. Diese Einheiten verfügen über schwere Panzerfahrzeuge und sind gegenüber unseren Schusswaffen fast immun. Sie haben nur eine Schwachstelle: ein kleiner Bereich am Hinterteil des Fahrzeugs, der, falls getroffen, eine Kettenreaktion auslöst, die die gesamte Einheit vernichtet.
+
+# Alien
+ALI_LOCATION			HAAK-MUTTERSCHIFF, IN DER ERDUMLAUFBAHN
+ALI_TIME				01:00 Uhr
+ALI_OBJECTIVE			KERN DES ZENTRALGENERATORS ZERSTÖREN
+ALI_BRIEFING			Nachdem wir die Macht der Haak auf der Erde durch unsere Erfolge beträchtlich geschwächt haben, versammeln sie sich auf ihrem Mutterschiff, um einen letzten Angriff vorzubereiten. Leider wurden unsere Streitkräfte bei den erfolgreichen Einsätzen schwer dezimiert und würden im Falle eines Massenangriffs keine Aussicht auf Erfolg haben. Wir müssen ihnen daher zuvorkommen ... Zur Ablenkung werden wir sie mit allen verfügbaren Mitteln angreifen. Diese Gelegenheit werden wir dazu nutzen, Sie auf außerhalb des Mutterschiffs abzusetzen. Von dort aus müssen Sie zum Kern des Hauptreaktors, um ihn in die Luft zu jagen.  Dies ist unsere letzte Chance. Viel Glück.
+
+# Chal1
+CHAL1_LOCATION			RED DOG - TRAININGSLAGER
+CHAL1_TIME			10:00 Uhr
+CHAL1_OBJECTIVE			FAHRZEUGMANÖVER
+CHAL1_BRIEFING			Erledigen Sie die Strecke innerhalb 1 Minute und 40 Sekunden. Wenn die Uhr abgelaufen ist, oder Red Dog dreimal zerstört wurde, dann ist der Test vorbei. Tipp: Lassen Sie bei gefährlichen Flüssigkeiten Vorsicht walten, und achten Sie auf Hinweisschilder.
+
+# Chal2
+CHAL2_LOCATION			RED DOG - TRAININGSLAGER
+CHAL2_TIME			13:00 Uhr
+CHAL2_OBJECTIVE			SCHIESS-STAND
+CHAL2_BRIEFING			Setzen Sie Red Dogs Hauptschussanlage ein, um alle 80 Ziele innerhalb 2 Minuten und 30 sekunden zu treffen. Es steht Ihnen Red Dogs volle Munition zur Vergügung. Der Test ist vorbei, sobald die Uhr abgelaufen ist. Tipp: 'Einatmen und drücken'
+
+# Chal3
+CHAL3_LOCATION			RED DOG - TRAININGSLAGER 
+CHAL3_TIME			16:00 Uhr
+CHAL3_OBJECTIVE			ÜBERLEBEN!
+CHAL3_BRIEFING			Auf dieser Route sind Red Dogs Waffen deaktiviert. Es muss daher jegliches Abwehrgeschick eingesetzt werden, um gegnerischen Angriffen 2 Minuten lang Stand zu halten. Tipp: Ziehen Sie daraus Nutzen, dass Red Dog feindliches Feuer reflektieren kann.  Viel Glück, denn Sie werden es brauchen!
+
+# Chal4
+CHAL4_LOCATION			RED DOG - TRAININGSLAGER
+CHAL4_TIME			11:00 Uhr
+CHAL4_OBJECTIVE			SUCHEN UND SAMMELN
+CHAL4_BRIEFING			Benutzen Sie den Suchzeiger, um die 22 Zeitchips zu finden. Jeder Zeitchip gibt Red Dog mehr Zeit, den nächsten Chip zu finden. Wenn die Uhr abgelaufen ist, ist der Test vorbei. Tipp: Verschwenden Sie keine Sekunde! 
+
+# Chal5
+CHAL5_LOCATION			RED DOG - TRAININGSLAGER
+CHAL5_TIME			12:00 Uhr
+CHAL5_OBJECTIVE			INFANTERISTENTRUBEL
+CHAL5_BRIEFING			Setzen Sie Red Dogs Angriffsfähigkeiten ein, um 150 Infanteristen innerhalb 3 Minuten zu beseitigen. Wenn Red Dog zerstört wird, ist der Test vorbei. Tipp: Setzen Sie 'Hit and Run'-Techniken ein.
+
+# Chal6
+CHAL6_LOCATION			RED DOG - TRAININGSLAGER
+CHAL6_TIME			15:00 Uhr
+CHAL6_OBJECTIVE			FORTGESCHRITTENES FAHRZEUGMANÖVER
+CHAL6_BRIEFING			Das Ziel dieser Strecke muss innerhalb von 3 Minuten erreicht werden. Wenn die Uhr abgelaufen ist, oder Red Dog dreimal zerstört wurde, dann ist der Test vorbei. Tipp: Bereiten Sie Ihre Sprünge mit Bedacht vor und geben Sie auf den Rohren acht.
+
+# Chal7
+CHAL7_LOCATION			RED DOG - TRAININGSLAGER 
+CHAL7_TIME			14:00 Uhr
+CHAL7_OBJECTIVE			SCHWERANGRIFF
+CHAL7_BRIEFING			Hier muss sich Red Dogs Angriffsfertigkeit innerhalb 2 Minuten um 30 Gegner kümmern. Diesmal sind die Gegner intelligenter und stärker. Tipp: Red Dog steht volle Munition zur Verfügung - setzen Sie sie mit Bedacht ein. 
+
+# Front end mission names
+MISSION1_NAME			VULKANINSEL-AUßENPOSTEN
+MISSION1_DESC			Generator ausfindig machen und zerstören 
+MISSION2_NAME			ARKTISCHES FORSCHUNGSZENTRUM
+MISSION2_DESC			Bedrohung durch 'Cruise Laser' abwehren
+MISSION3_NAME			GRAND CANYON
+MISSION3_DESC			Eskorte für Droid mit chemischen Waffen
+MISSION4_NAME			UNTERIRDISCHER HYDROGENERATOR
+MISSION4_DESC			U-Bootprototyp suchen und zerstören
+MISSION5_NAME			RED DOG FORSCHUNGSANSTALT
+MISSION5_DESC			Rettung der restlichen Wissenschaftler
+MISSION6_NAME			DAS HAAK MUTTERSCHIFF
+MISSION6_DESC			Kern des Hauptgenerators zerstören
+
+# And now the challenge levels
+MISSION7_NAME			FAHRZEUGMANÖVER
+MISSION7_DESC			Schaffen Sie die Strecke innerhalb 1Min. und 40 Sek.
+MISSION7_DESC2			BONUSRUNDE: Versuchen Sie es jetzt in weniger als 1 Minute, 10 Sekunden!!
+MISSION7_LIMIT			70
+MISSION8_NAME			SCHIESS-STAND
+MISSION8_DESC			Treffen Sie 80 Ziele innerhalb 2 Minuten, 30 Sekunden.
+MISSION8_DESC2			BONUSRUNDE: Treffen Sie 80 Ziele in weniger als 2 Minuten, 15 Sekunden!!
+MISSION8_LIMIT			135
+MISSION9_NAME			ÜBERLEBEN!
+MISSION9_DESC			Bleiben Sie 2 Minuten lang am Leben.
+MISSION9_DESC2			BONUSRUNDE: Jetzt sollten Sie ohne getroffen zu werden am Leben bleiben!!
+MISSION9_LIMIT			100
+MISSION10_NAME			SUCHEN UND SAMMELN
+MISSION10_DESC			Finden Sie die in der Gegend verstreuten 22 Zeitchips.
+MISSION10_DESC2			BONUSRUNDE: Sammeln Sie die 22 Zeitchips, ohne die letzten 20 Sekunden zu verbrauchen!!
+MISSION10_LIMIT			140
+MISSION11_NAME			INFANTERISTENTRUBEL
+MISSION11_DESC			Bringen Sie 150 rasende Soldaten innerhalb 3 Min. um.
+MISSION11_DESC2			BONUSRUNDE: Versuchen Sie jetzt, 150 Soldaten innerhalb 2 Minuten, 40 Sekunden umzulegen!!
+MISSION11_LIMIT			160
+MISSION12_NAME			FORTGESCHRITTENES FAHRZEUGMANÖVER
+MISSION12_DESC			Schließen Sie die Runde in weniger als 3 Minuten ab.
+MISSION12_DESC2			BONUSRUNDE: Versuchen Sie es jetzt in weniger als 2 Minuten, 40 Sekunden!!
+MISSION12_LIMIT			160
+MISSION13_NAME			SCHWERANGRIFF
+MISSION13_DESC			Zerstören Sie 30 harte Gegner innerhalb 2 Minuten
+MISSION13_DESC2			BONUSRUNDE: Zerstören Sie 30 Gegner in weniger als 1 Minute, 30 Sekunden!!
+MISSION13_LIMIT			90
+MISSION_DONE			Mission erfüllt
+
+
+# Gun bits and pieces
+GUN						Kanone
+MISSILE					Missile
+ARMOUR					Rüstung
+SHIELD					Schild
+GUN_1					Nuklearer Bekk 'Sideband'-Laser
+GUN_1_INFO				Doppelte Röhrenlaserleitung - eine kraftvolle Waffe, die voll geladen eine starke Feuerung abgibt.
+GUN_2					Chida Waffen Plasma 103
+GUN_2_INFO				Diese verbesserte Alphaversion des militärischen Favoriten bietet ausgeglichene Schusskraft und -rate.
+GUN_3					Tovski X2TD Kettenkanone
+GUN_3_INFO				Der Einsatz des revolutionären Partikelbeschleunigers des Shiko Corps garantiert unvergleichliche Schussgeschwindigkeit
+GUN_4					Hensoi Ionen-Entladungsprototyp
+GUN_4_INFO				Hansois einzigartige Technologie erlaubt es diesen mächtigen Ionen-Bolzen, gegnerische Ziele zu beschädigen und zu durchbrechen
+MISSILE_1				SMM:418 Hitzesensitive Raketen
+MISSILE_1_INFO			Diese standardmilitärische, hitzesensitive Waffe kann gegen alle gegnerischen Ziele effektiv eingesetzt werden
+MISSILE_2				SMM:600 Radargeleitete Rakete
+MISSILE_2_INFO			Diese verbesserte, radargeleitete Waffe hat einen 50% effektiveren Explosionskörper als ihr Vorgänger
+ARMOUR_1				Ingle-Titaniumpanzerung X220
+ARMOUR_1_INFO			Totale Titaniumpanzerungslösung 
+ARMOUR_2				Ingle Plasteel-Titaniumlegierung 
+ARMOUR_2_INFO			Plasteel-Titaniumlegierung bietet Red Dog 20% mehr Abwehrkräfte als normale Titaniumpanzerung
+ARMOUR_3				Stabile Ingle-Plasteelpanzerung
+ARMOUR_3_INFO			Reine Plasteelrüstung bietet Red Dog 40% mehr Abwehrkräfte als normale Titaniumpanzerung
+SHIELD_1				Nanoki Doppelmatrixschild
+SHIELD_1_INFO			Nanokis Doppelmatrixschild schützt Red Dog nicht nur vor gegnerischem Feuer, sondern reflektiert gefeuerte Waffen zurück zum Gegner
+SHIELD_2				Nanoki Vierfaches Matrixschild
+SHIELD_2_INFO			Das Vierfache Matrixschild bietet die gleiche Effektivität wie das Doppelschild, bleibt aber länger ohne erneutes Aufladen aktiv.
+
+# Recently translated
+CLASH					Farbe schon vergeben
+REINSERTCANTSTART		Prüfen Sie, ob alle Controller eingesteckt sind - Spiel nicht startbereit.
+
+YAXIS					Y Achse
+FLIPPED					Gedreht
+NOTFLIPPED				Nicht gedreht
+
+
+# ###############################################################
+#                        Spanish section                       ##
+# ###############################################################
+[SPANISH]
+
+# Miscealleneous stuff
+LOADING				Cargando...
+NONE					Ninguno
+GO					¡¡Adelante!!
+VMUEXPLAIN1				A: Elegir Letra  X:Borrar
+VMUEXPLAIN2				START terminar
+LOADWHICHPROF			¿Qué perfil quieres cargar?
+OWWHICHPROF				¿Reemplazar el perfil?
+# Overwrite a slot named '%s'
+OWWHICHSLOT				¿Reemplazar '%s'?
+OW_YES				Sí - Reemplazar 
+OW_NO					No - Cancelar
+TYPEONMAP				Activado
+PASS					Completado
+GAMEOVER				Juego Finalizado
+
+# Statistics
+OVERALL				Total
+PLAYED				Jugados
+WON					Victorias
+# abbreviated 'statistics' - keep as short as possible:
+STATS					Estdtcas
+
+# Configure pad
+CHARGE				Recargar
+PICKUPFIRE				Usar objeto
+FIRE					Fuego
+SHIELD				Escudo
+
+# Move screen
+ADJSCREENEXPLAIN			Botón D: mover pantalla, A/X/B salir, Y configuración por defecto
+
+# Multiplayer
+STARTTOJOIN				Pulsa START para unirte
+INSERTPADPLAY			Conecta un mando para jugar
+
+
+HITSTART				Pulsa el botón START
+MPHITSTART				Pulsa un botón
+DEMOHITSTART			DEMOSTRACIÓN - Pulsa el botón START
+PRESSABX				pulsa A/B/X para continuar
+YES					Sí
+NO					No
+ON					Activado
+OFF					Desactivado
+PAUSEDBY				Pausado por
+PAUSEMODE				Pausa 
+CTRLMESG				El controlador ha sido desconectado o se ha reconocido una unidad VM en el puerto
+CTRLMESGMULTIPLE		El controlador ha sido desconectado o se ha reconocido una unidad VM en los puertos:
+CANTSTARTONTHATPAD		Sólo el mando principal puede comenzar el juego.
+# The %s in the next line comes out as 'A2' or 'B3' etc
+VMUMESG					La unidad VM utilizada ha sido desconectada del puerto %s.  El juego se reanudará cuando vuelva a ser conectada.
+VMUMESGMULTIPLE			Algunas de la unidades VM utilizadas han sido desconectadas.  El juego se reanudará cuando vuelva a ser conectada. Se necesitan las siguientes unidades:
+AYSRESTART				¿Estás seguro de que quieres comenzar de nuevo? AYSRESTART_YES			Sí - Comenzar el  nivel de nuevo.
+AYSRESTART_NO			No - Volver al menú de pausa.
+AYSEXIT				¿Estás seguro de que quieres salir?
+AYSEXIT_YES				Sí - Salir
+
+# ########################
+# Multiplayer briefings: #
+# ########################
+
+# The %d in the next set of text is either the fraglimit, or timelimit
+# Deathmatch
+MP_DM_PLURAL			~cff0000~%d~x~ muertos para ganar
+MP_DM_SINGLE			~cff0000~%d~x~ muerto para ganar
+# Knockout
+MP_KO_PLURAL			El último jugador con vida gana. Cada jugador tiene ~cff0000~%d~x~ vidas.
+MP_KO_SINGLE			El último jugador con vida gana.  Cada jugador tiene ~cff0000~%d~x~ vidas
+# Bomb tag
+MP_BT_PLURAL			El último jugador con vida gana.  La bomba explotará cada ~cff0000~%d:%02d~x~
+MP_BT_SINGLE			El último jugador con vida gana.  La bomba explotará cada ~cff0000~%d:%02d~x~
+# Suicide bomb tag
+MP_SB_PLURAL			El último jugador con vida gana.  Todas las bombas explotarían después de ~cff0000~%d:%02d~x~
+MP_SB_SINGLE			El último jugador con vida gana.  Todas las bombas explotarían después de ~cff0000~%d:%02d~x~
+# Stealth assassin
+MP_SA_PLURAL			Necesitas ~cff0000~%d~x~ muertos siendo el asesino invisible para ganar.
+MP_SA_SINGLE			Necesitas ~cff0000~%d~x~ muertos siendo el asesino invisible para ganar.
+# Flag runner
+MP_FR_PLURAL			Conserva la bandera durante ~cff0000~%d:%02d~x~ para ganar
+MP_FR_SINGLE			Conserva la bandera durante ~cff0000~%d:%02d~x~ para ganar
+# King of the Hill
+MP_KH_PLURAL			Sé el rey de la colina ~cff0000~%d:%02d~x~ para ganar.
+MP_KH_SINGLE			Sé el rey de la colina ~cff0000~%d:%02d~x~ para ganar.
+# And now all again for teams!  Hooray!
+MPT_DM_PLURAL			Necesitas ~cff0000~%d~x~ muertos por equipo para ganar.
+MPT_DM_SINGLE			Necesitas ~cff0000~%d~x~ muertos por equipo para ganar.
+MPT_KO_PLURAL			El último equipo con vida gana.  Cada jugador tiene ~cff0000~%d~x~ lives
+MPT_KO_SINGLE			El último equipo con vida gana.  Cada jugador tiene ~cff0000~%d~x~ life
+MPT_BT_PLURAL			El último equipo con vida gana.  La bomba explotará cada ~cff0000~%d:%02d~x~
+MPT_BT_SINGLE			El último equipo con vida gana.  La bomba explotará cada ~cff0000~%d:%02d~x~
+MPT_SB_PLURAL			El último equipo con vida gana.  Todas las bombas explotarían después de ~cff0000~%d:%02d~x~
+
+MPT_SB_SINGLE			El último equipo con vida gana.  Todas las bombas explotarían después de ~cff0000~%d:%02d~x~
+
+MPT_SA_PLURAL			Necesitas ~cff0000~%d~x~ muertos siendo el asesino invisible para ganar.
+MPT_SA_SINGLE			Necesitas ~cff0000~%d~x~ muerto siendo el asesino invisible para ganar.
+MPT_FR_PLURAL			Conserva la bandera durante ~cff0000~%d:%02d~x~ para ganar.
+MPT_FR_SINGLE			Conserva la bandera durante ~cff0000~%d:%02d~x~ para ganar.
+MPT_KH_PLURAL			Sé el rey de la colina ~cff0000~%d:%02d~x~ para ganar.
+MPT_KH_SINGLE			Sé el rey de la colina ~cff0000~%d:%02d~x~ para ganar.
+
+# Red and blue, complete with colour change to make the text either red or blue
+RED					~cff0000~Rojo~x~
+BLUE					~c0000ff~Azul~x~
+ISASSASSIN				¡Es un ~cff0000~ASESINO!~x~
+# %s is name of team
+SOMEONESTEAM			Equipo %s
+# %d is round number
+ROUNDN				Ronda %d
+TEAM					Equipo
+WINNER				Vencedor
+SECOND				Segundo
+THIRD					Tercero
+FOURTH				Cuarto
+# %s is either red or blue
+TEAMWIN				Ganador: Equipo %s
+# %s is name of player who won
+SINGLEWIN				Ganador: %s
+ITSADRAW				¡Empate!
+# %s is name of overall winner in tournament
+TOURNOVERALLWINNER		Vencedor: %s
+# %d is number of games, %s is 's' if more than one - THIS MAY NOT WORK FOR ALL LANGUAGES!  Let me know
+RESULTAFTERNGAME		Resultados después de %d juego
+RESULTAFTERNGAMES		Resultados después de %d juegos
+
+# MP Results:
+NAME					Nombre
+TOTAL					Total
+DPADNEXTPAGE			Botón - D: Siguiente página
+TOURNCONTINUE			START: Seguir con Clasificaciones
+TOURNBACK				START: Volver a configuración
+TOURNDRAW				START: Repetir el último juego.
+TOURNMID				START: Siguiente juego
+YREPLAY				Y: Repetir el nivel
+ASTARTBACKSETUP			A/START: Volver a configuración
+
+# Completion
+MISNOTCOMPL				Aún tienes que terminar la misión
+MISCOMPLETE				Misión Completada
+MISFAILED				Misión Fracasada
+
+# #########
+#  Menus ##
+# #########
+
+
+# First Menu
+NEWGAME				Un Nuevo Juego
+LOADGAME				Cargar Juego
+MULTIPLAYER				Varios Jugadores
+TVOPTIONS				Opciones de TV
+
+# TV Options menu
+FXVOLUME				Volumen Efectos de Sonido
+MUSICVOLUME				Volumen de la Música
+SOUNDTYPE				Tipo de sonido
+MONO					Mono
+STEREO				Estéreo
+ADJUSTSCREEN			Ajustar pantalla
+SWITCH50				Cambiar 50Hz/60Hz
+VIBRATION				Vibración
+
+# Adjust screen madness
+ADJEXPLAIN				Botón- D: Mover pantalla, A/X/B Salir
+
+# 50/60 switch messages
+TEST60				Prueba de compatibilidad con 60Hz
+# %d is either 50 or 60
+RUN60					Utilizar %dHz
+EXPLAINPRE				La siguiente pantalla mostrará en 60Hz PAL una imagen durante 10 segundos, o hasta que pulses A/B/X. Si la imagen aparece correctamente en color, tu televisor es compatible con 60Hz. 
+# %d here is a countdown
+EXPLAINDURING			Modo 60Hz PAL...%d
+EXPLAINPOST				Si la pantalla anterior se mostró correctamente a todo color, puedes elegir 60Hz PAL en el menú. 
+# %d is either 50 or 60
+CURRENTLYRUN			Configuración actual %dHz
+
+# VMU messages
+WHICHVMU				¿Qué unidad VM quieres usar?
+ENTERNAME				Introduce el nombre:
+# %s is profile name
+WHOSEPROFILE			Perfil de %s 
+SCANNING				Buscando unidades VM
+TOURNSELECT				Selecciona torneo en VM
+ENTTOURNNAME			Introduce el nombre del torneo
+EMPTY_SLOT				<Vacío>
+OW_TOURNAMENT			Selecciona el torneo a reemplazar
+OW_TOURN				¿Reemplazar este torneo?
+OW_TOURN_YES			Sí, reemplazar
+OW_TOURN_NO				No, cancelar
+SELVMU				Selecciona VM
+# Main menu
+SELMISSION				Seleccionar Misión
+SELHARD				Seleccionar Misión Difícil
+CHALMISSION				Misión Reto
+VIEWTECH				Ver Tecnología RD
+BONUSyFEATURES			Modalidades adicionales
+CTRLCONFIG				Conf. Mando
+EXIT					Salir
+# %d is the number of blocks needed (currently 8)
+VMUWARNING				~cff0000~WARNING!~x~  Necesitas una unidad VM con al menos %d bloques de memoria libres. Si continúas, no podrás guardar el juego. VMUCONTINUE				A/START: Continuar B/X: Cancelar
+PLAYER				Jugador
+VMUSAVEFAIL				~cff0000~¡Precaución!~x~ No se ha podido guardar anteriormente - ¡Comprueba el VM!
+VMUACCESS				Cargando, No apagues la consola
+# %d is the number of blocks needed (currently 8)
+NOTENOUGHROOM			No hay suficientes bloques de memoria libres en la unidad VM para guarda Red Dog. Necesitas un mínimo de %d bloques de memoria libres en el VM.
+
+# Multiplayer text
+JUSTPLAY				Jugar
+SELPROF				Seleccionar perfil
+CREATEPROF				Crear perfil
+SKIRMISH				Batalla
+TEAM					Equipo
+TOURNAMENT				Torneo
+PLAYEROPTS				Opciones del Jugador
+PLAYERSTATS				Estadísticas del Jugador
+RESELECTPLAYERS			Volver a seleccionar jugadores
+EXITMP				Salir Varios Jugadores
+STARTGAME				Comenzar el Juego
+GAMETYPE				Modalidad de Juego
+CHOOSEMAP				Elegir mapa
+WEPPS					Armas...
+TEAMFIRE				Dañar a tu equipo
+STARTTOURN				Comenzar el torneo
+TTYPE					Tipo de torneo
+TEDIT					Editar torneo
+GAMENUMBER				Número de juego
+SAVETOURN				Guardar torneo
+GAME1					Juego 1
+GAME2					Juego 2
+GAME3					Juego 3
+GAME4					Juego 4
+GAME5					Juego 5
+GAME6					Juego 6
+TEAMGAME				Juego por equipos
+FRAGLIMIT				Número de Muertes
+MPLIVES				Vidas
+BTIME					Bomba tiempo
+KTIME					Rey tiempo
+FTIME					Bandera tiempo
+NOPARMS				<Aleatorio>
+WAITINGPLAYERS			Esperando por otros jugadores...
+KILL					Muerte
+KILLS					Muertes
+LIVES					Vivas
+LIFE					Vida
+# Abbreviated times - single minute
+MINSECS					%d min %2d segs
+# Abbreviated times - more than one minute
+MINSSECS				%d mintos %2d segs
+# Just seconds
+SECS					%2d segundos
+
+# End mission text
+EM_PASS				¡Conseguido!
+EM_FAIL				¡Fracasado!
+EM_RECORD				¡Récord!
+EM_LIVES				Vidas
+EM_BOSS				Jefe
+EM_TIME				Tiempo
+EM_SCORE				Puntuación
+EM_TOTAL				Total
+EM_RATING				Clasificación
+EM_NA					N/A
+
+# Options
+CONTROLS				Controles
+FLIPYAXIS				Rota el eje Y
+TANKCOLOUR				Color del tanque
+HANDICAP				Hándicap
+ALWAYSBOOST				Siempre Turbo
+READY					Preparado
+
+# Configuration
+# %d is which configuration number
+CONFIGN				< Configuración %d >
+SELTANKCOLOUR			Selecciona el color del tanque
+
+# Cheats
+CONGRATS				¡Felicidades!
+YOUVEUNLOCKED			Has activado lo siguiente:
+TRIPPYTRAILS			Estela
+PERMBOOST				Turbo Permanente
+PERMSHIELD				Protección Permanente
+BOT1					Robot asistente 1
+BOT2					Robot asistente 2
+INFWEAPCHARGE			Armas ilimitadas
+INVULN				Inmortalidad
+INITDRONE				Arma inicial
+CHAL60				Reto 1 a doble velocidad
+CHEATSON				Trucos activados: Los récords no serán guardados.
+
+# Getting the upgrade text
+GOT_TRIPPYTRAILS			Truco: Estela
+GOT_PERMBOOST			Truco: Turbo Permanente 
+GOT_PERMSHIELD			Truco: Protección Permanente 
+GOT_BOT1				Truco: Robot aliado 
+GOT_BOT2				Truco: Robot aliado 
+GOT_INFWEAPCHARGE			Truco: Armas ilimitadas 
+GOT_INVULN				Truco: Inmortalidad 
+GOT_ARMOUR1				Red Dog Mejora del blindaje
+GOT_ARMOUR2				Red Dog Mejora del blindaje 
+GOT_WEAPON1				Red Dog Mejora del armamento
+GOT_WEAPON2				Red Dog Mejora del armamento 
+GOT_WEAPON3				Red Dog Mejora del armamento 
+GOT_MISSILE				Red Dog Mejora del armamento 
+GOT_SHIELD				Red Dog Mejora del armamento 
+GOT_KOTH				Modo VJ: Rey de la colina activado
+GOT_HARD				Modo Máxima dificultad activado
+GOT_SHELL				Truco: Escudo infinito 
+GOT_ELECTRO				Truco: Electro infinito 
+GOT_HOMING				Truco: Teledirigido infinito
+GOT_LOCKON				Truco: Misiles infinitos
+GOT_SWARM				Truco: Enjambre Infinite 
+GOT_ULTRA				Truco: Láser Ultra infinito 
+GOT_VULCAN				Truco: Volcán infinito 
+GOT_MP1				VJ mapa: Hielo Negro
+GOT_MP2				VJ mapa: Ganímedes
+GOT_MP3				VJ mapa: Salto Ácido
+GOT_MP4				VJ mapa: Caos Medieval
+GOT_MP5				VJ mapa: Zona Industrial
+GOT_MP6				VJ mapa: V.R.B.F
+GOT_MP7				VJ mapa: Conduce o muere EXPERTO
+GOT_60HZRACE			Truco: Reto 1 a doble velocidad 1
+GOT_CHAL1				Modalidad de Reto activada
+GOT_CHAL2				Reto: Campo de tiro
+GOT_CHAL3				Reto: ¡Sobrevive!
+GOT_CHAL4				Reto: Encontrar y recoger
+GOT_CHAL5				Reto: La rebelión de la infantería 
+GOT_CHAL6				Reto: Manejo del vehículo avanzado
+GOT_CHAL7				Reto: Destrucción total
+
+# Pause menu
+RETGAME				Volver al juego
+RESTARTLEV				Reiniciar el nivel
+EXITLEV				Salir del nivel
+
+# General text
+LOCATION				LOCALIZACIÓN:
+TIME					HORA:
+OBJECTIVE				OBJETIVO:
+BRIEFING				ÓRDENES:
+
+# Volcano
+VOL_LOCATION			KRAKATAU, SUNDA STRAIT
+VOL_TIME				13.51
+VOL_OBJECTIVE			ENCONTRAR Y DESTRUIR EL GENERADOR
+VOL_BRIEFING			El ejército Haak está construyendo una base en una isla volcánica. Nuestro servicio de inteligencia nos ha comunicado que el generador portátil Haak, que suministra la energía a la base, se encuentra situado en el corazón del volcán, y no falta mucho tiempo para que la base esté en pleno funcionamiento. Si lo permitimos, conseguirán dominar un importante punto estratégico con el subsecuente daño a las fuerzas aliadas. Tu misión es llegar hasta el generador y destruirlo.
+
+# Canyon
+CAN_LOCATION			Gran Cañón
+CAN_TIME			11.35
+CAN_OBJECTIVE			Escoltar el Vehículo de Transporte
+CAN_BRIEFING			Este remoto enclave comercial fue el primero en caer en manos del ejército Haak. Ya ha llegado la hora de recuperarlo. Hemos colocado un artefacto explosivo en un enclave militar cercano. Necesitamos que protejas el cargamento de la comunidad de extraterrestres hasta llegar al otro extremo del puerto. El vehículo de transporte es muy frágil, así que no permitas que nada se interponga en su camino.
+CAN_SCRIPT1				Comandante, será mejor que salgas de ahí. El explosivo ha sido activado y está a punto de estallar. Vuelve hacia atrás para que podamos recogerte.
+CAN_SCRIPT2				¡¡CUIDADO!! ¡¡Una nave de guerra te va pisando los talones!!
+
+# Ice
+ICE_LOCATION			La Región Antártica
+ICE_TIME			08.20
+ICE_OBJECTIVE			Eliminar la Amenaza del Láser Teledirigido 
+ICE_BRIEFING			En nuestro centro de investigación de la Antártica hemos desarrollado un láser de ataque junto con el ejército Haak. El Láser Teledirigido tiene un alcance y un poder de destrucción jamás vistos. Sin embargo, todos los humanos del grupo de científicos han sido expulsados del centro y los Haak están apuntando con el láser tres de nuestras ciudades principales.  Comandante, diríjase allí y destruya cada uno de los láseres teledirigidos antes de que los Haak decidan utilizarlos y aniquilen a millares de personas.
+
+# Hydro
+HYD_LOCATION			GENERADOR HIDROELÉCTRICO SUBTERRÁNEO
+HYD_TIME			20.08
+HYD_OBJECTIVE			INFILTRARSE Y DESTRUIR EL SUBMARINO EXPERIMENTAL
+HYD_BRIEFING			Haak ha subestimado el poder de nuestra armada, que ha conseguido importantes victorias durante las últimas semanas. Todo esto puede cambiar si no actuamos con rapidez. Nuestro servicio de inteligencia nos ha informado de que las fuerzas Haak han tomado el mando de una presa subterránea y están extrayendo enormes cantidades de energía para recargar un prototipo de arma anfibia.  Hemos encontrado una entrada de emergencia a la presa. Tu misión es infiltrarte en esta base subterránea y destruir la presa antes de que pongan en funcionamiento la nueva arma.
+
+# City
+CIT_LOCATION			CENTRO DE INVESTIGACIÓN RED DOG
+CIT_TIME			05.08
+CIT_OBJECTIVE			DESTRUIR LAS FUERZAS HAAK
+CIT_BRIEFING			Las fuerzas de Haak han lanzado una ofensiva a gran escala contra nuestro centro principal de investigación militar. Por suerte, la mayoría de la población ha sido evacuada antes del ataque. Sin embargo, un grupo escogido de científicos se ha quedado atrás para recopilar los resultados de las investigaciones antes de se pierdan para siempre. Ha llegado la hora de rescatarlos.  Tu misión es llegar hasta el centro de investigación donde se encuentran los científicos y destruir la fuerzas Haak de la inmediaciones, para que puedan escapar los científicos.
+
+CIT_LOCATION2			CENTRO DE INVESTIGACIÓN RED DOG
+CIT_TIME2			05.11
+CIT_OBJECTIVE2			PROTEGE A LOS CIENTÍFICOS HASTA LA ZONA DE SEGURIDAD
+CIT_BRIEFING2			Protege el vehículo blindado hasta el bunker, siguiendo las bengalas verdes. Destruye todas las fuerzas alienígenas que se interpongan en tu camino.
+
+CIT_LOCATION3			CENTRO DE INVESTIGACIÓN RED DOG
+CIT_TIME3			05.15
+CIT_OBJECTIVE3			PROTEGE EL BUNKER HASTA QUE LLEGUE LA UNIDAD DE TRANSPORTE
+CIT_BRIEFING3			La unidad de transporte aéreo llegará en aproximadamente dos minutos. Tienes que proteger el bunker a toda costa hasta que llegue. Las fuerzas Ha'ak saben lo importante que son esos científicos para nosotros, y han movilizado un gran número de vehículos de combate para acabar con ellos. Esos vehículos están fuertemente blindados y son prácticamente invulnerables. Sólo tienen un punto débil, una zona pequeña en la parte de atrás del vehículo. Si la alcanzas, se producirá una reacción en cadena que destruirá el vehículo.
+
+# Alien
+ALI_LOCATION			NAVE NODRIZA HAAK, ORBITANDO ALREDEDOR DE LA TIERRA
+ALI_TIME				01.00
+ALI_OBJECTIVE			DESTRUIR EL GENERADOR DE ENERGÍA
+ALI_BRIEFING			Debilitado por nuestras continuas victorias en la Tierra, el ejército Haak se está reagrupando en su nave nodriza para preparar una ofensiva final. Por desgracia, nuestros operativos Red Dog han sufrido graves pérdidas durante la lucha. Si nos atacan en masa, no podremos detenerles. Por eso, debemos ser nosotros los primeros en atacar.  Vamos a hacer todo lo que podamos para distraer al enemigo y dejarte en la superficie de la nave nodriza. Desde ahí, tienes que llegar al reactor central y destruir la nave desde dentro.  Ésta es la última esperanza del planeta Tierra. Buena suerte.
+
+# Chal1
+CHAL1_LOCATION			CENTRO DE ENTRENAMIENTO RED DOG
+CHAL1_TIME				10:00 Horas
+CHAL1_OBJECTIVE			MANEJO DEL VEHÍCULO
+CHAL1_BRIEFING			Completa el circuito en menos de 1 minuto 40 segundos. La prueba terminará si el reloj llega a cero, o si el Red Dog es destruído 3 veces. Consejos: ten cuidado con los líquidos esparcidos por el suelo, y pon atención a las señales.
+
+# Chal2
+CHAL2_LOCATION			CENTRO DE ENTRENAMIENTO RED DOG
+CHAL2_TIME				13:00 Horas
+CHAL2_OBJECTIVE			CAMPO DE TIRO
+CHAL2_BRIEFING			Utiliza el cañón principal del Red Dog para destruir los 80 objetivos en 2 minutos 30 segundos. Para que sea más fácil, tu Red Dog empezará con las armas totalmente recargadas. La prueba terminará cuando el reloj llegue a cero. Consejos:' respira hondo, apunta, y dispara' 
+
+# Chal3
+CHAL3_LOCATION			CENTRO DE ENTRENAMIENTO RED DOG
+CHAL3_TIME				16:00 Horas
+CHAL3_OBJECTIVE			¡SOBREVIVE!
+CHAL3_BRIEFING			En esta prueba las armas del Red Dog serán desactivadas. Tendrás que usar las capacidades defensivas del Red Dog para sobrevivir 2 minutos a los ataques enemigos. Consejos: el Red Dog puede enviar el fuego de vuelta al enemigo, aprovéchalo. Buena suerte, ¡la vas a necesitar! 
+
+# Chal4
+CHAL4_LOCATION			CENTRO DE ENTRENAMIENTO RED DOG
+CHAL4_TIME				11:00 Horas
+CHAL4_OBJECTIVE			ENCONTRAR Y RECOGER
+CHAL4_BRIEFING			Utiliza la flecha localizadora para encontrar 22 bonificaciones de tiempo. Cada vez que recojas uno, se añadirá tiempo al reloj para que encuentres el siguiente. La prueba terminará cuando el reloj llegue a cero. Consejos: ¡no pierdas el tiempo!
+
+# Chal5
+CHAL5_LOCATION			CENTRO DE ENTRENAMIENTO RED DOG
+CHAL5_TIME				12:00 Horas
+CHAL5_OBJECTIVE			LA REBELIÓN DE LA INFANTERÍA 
+CHAL5_BRIEFING			Utiliza las capacidades ofensivas del Red Dog para destruir los 150 soldados de infantería en menos de 3 minutos. La prueba terminará si el Red Dog es destruido. Consejos: Para destruir los enemigos, utiliza la técnica de "golea y corre".
+
+# Chal6
+CHAL6_LOCATION			CENTRO DE ENTRENAMIENTO RED DOG
+CHAL6_TIME				15:00 Horas
+CHAL6_OBJECTIVE			MANEJO AVANZADO DEL VEHÍCULO
+CHAL6_BRIEFING			Completa el circuito en menos de 3 minutos. La prueba terminará si el reloj llega a cero, o si el Red Dog es destruido 3 veces. Consejo: concéntrate en los saltos, y ten mucho cuidado con las tuberías.
+
+# Chal7
+CHAL7_LOCATION			CENTRO DE ENTRENAMIENTO RED DOG
+CHAL7_TIME				14:00 Horas
+CHAL7_OBJECTIVE			DESTRUCCIÓN TOTAL
+CHAL7_BRIEFING			Utiliza las capacidades ofensivas del Red Dog para destruir 30 enemigos en 2 minutos. En esta ocasión, los enemigos son más fuertes y más inteligentes. Consejos: Las armas del Red Dog al principio están totalmente recargadas, utilízalas con sabiduría.
+
+# Front end mission names
+MISSION1_NAME			BASE EN LA ISLA VOLCÁNICA
+MISSION1_DESC			Encuentra y destruye el generador
+MISSION2_NAME			CENTRO DE INVESTIGACIÓN ÁRTICO
+MISSION2_DESC			Acaba con la amenaza del Láser
+MISSION3_NAME			ZONA PORTUARIA DEL GRAN CAÑÓN
+MISSION3_DESC			Escolta el transporte de armar químicas
+MISSION4_NAME			GENERADOR HIDRÁULICO SUBTERRÁNEO 
+MISSION4_DESC			Busca y destruye el prototipo de submarino 
+MISSION5_NAME			CENTRO DE INVESTIGACIÓN RED DOG
+MISSION5_DESC			Rescata a los científicos
+MISSION6_NAME			MADRE NODRIZA HAAK
+MISSION6_DESC			Destruye el Generador
+# And now the challenge levels
+MISSION7_NAME			MANEJO DEL VEHÍCULO
+MISSION7_DESC			Termina el circuito en menos de 1m 40 s
+MISSION7_DESC2			NUEVO DESAFÍO: ¡Ahora complétalo en menos de 1 m 10 s!
+MISSION7_LIMIT			70
+MISSION8_NAME			CAMPO DE TIRO
+MISSION8_DESC			Destruye los objetivos en menos de 2 m 30 s.
+MISSION8_DESC2			NUEVO DESAFÍO: ¡Destruye los objetivos en menos de 2 m 15 s.
+MISSION8_LIMIT			135
+MISSION9_NAME			¡SOBREVIVE!
+MISSION9_DESC			Sobrevive: Mantente con vida durante 2 minutos
+MISSION9_DESC2			NUEVO DESAFÍO: ¡Ahora sobrevive sin ser alcanzado!
+MISSION9_LIMIT			100
+MISSION10_NAME			ENCONTRAR Y RECOGER
+MISSION10_DESC			Encuentra las 22 bonificaciones de tiempo. 
+MISSION10_DESC2			NUEVO DESAFÍO: ¡Encuentra las 22 bonificaciones de tiempo quedándote 20 segundos!
+MISSION10_LIMIT			140
+MISSION11_NAME			LA REBELIÓN DE LA INFANTERÍA
+MISSION11_DESC			Destruye los 150 soldados de infantería en menos de 3 minutos
+MISSION11_DESC2			NUEVO DESAFÍO: ¡Ahora destrúyelos en menos de 2 m 40 s !
+MISSION11_LIMIT			160
+MISSION12_NAME			MANEJO AVANZADO DEL VEHÍCULO
+MISSION12_DESC			Completa el circuito en menos de 3 minutos
+MISSION12_DESC2			NUEVO DESAFÍO: Completa el circuito en menos de 2 m 40 s!
+MISSION12_LIMIT			160
+MISSION13_NAME			DESTRUCCIÓN TOTAL
+MISSION13_DESC			Destruye los 30 enemigos en 2 minutos 30 segundos
+MISSION13_DESC2			NUEVO DESAFÍO: ¡Destruye los 30 enemigos en 1 m 30 s!
+MISSION13_LIMIT			90
+MISSION_DONE			Reto Completado
+
+
+# Gun bits and pieces
+GUN						Cañón
+MISSILE					Misil
+ARMOUR					Blindaje
+SHIELD					Escudo
+GUN_1					Bekk Láser Nuclear
+GUN_1_INFO				Dos semiconductores paralelos que pueden ser recargados para conseguir un poderoso ataque.
+GUN_2					Armamento Chida  Plasma 103
+GUN_2_INFO				Versión Alpha, que mejora uno de los armamentos preferidos del ejército. Tiene un buen equilibrio entre poder de destrucción y velocidad de disparo. GUN_3					Cañón Tovski X2TD Chain
+GUN_3_INFO				Utiliza el revolucionario acelerador de partículas creado por Shiko Corp, que consigue una velocidad de disparo sin rival.
+GUN_4					Cañón Iónico Hensoi
+GUN_4_INFO				La tecnología punta de Hansoi permite lanzar descargas iónicas que dañan y atraviesan los tanques enemigos.
+MISSILE_1				SMM:418 Misiles guiados por calor.
+MISSILE_1_INFO			Estos misiles encuentran sus objetivos siguiendo el calor que emiten. Efectivo contra todo tipo de enemigos.
+MISSILE_2				SMM:600 Misiles guiados por radar
+MISSILE_2_INFO			Esta versión ha sido mejorada por la División de Armas, consiguiendo misiles un 50% más efectivos que sus predecesores.
+ARMOUR_1				Armadura Titanium X220
+ARMOUR_1_INFO			Armadura de titanio. 
+ARMOUR_2				Plasteel-Aleación de Titanio 
+ARMOUR_2_INFO			Plasteel- Aleación de Titanio consigue una protección un 20% más efectiva que la armadura normal de titaneo.
+ARMOUR_3				Armadura Stable Plasteel
+ARMOUR_3_INFO			Esta armadura de Plasteel puro consigue una protección un 20% más efectiva que la armadura normal de titanio.
+SHIELD_1				Escudo Nanoki Matrix Dual
+SHIELD_1_INFO			El escudo Nanoki Matrix Dual, no sólo consigue protejer el vehículo, sino que también envía el fuego de vuelta al enemigo.
+SHIELD_2				Escudo Nanoki Quad Matrix
+SHIELD_2_INFO			El escudo Quad Matrix es igual de efectivo que el escudo Dual, pero dura más tiempo. 
+
+# Recently translated
+CLASH					Se está utilizando ese color
+REINSERTCANTSTART		Comprueba que todos los mandos están conectados - no se ha podido comenzar el juego.
+
+YAXIS					Eje Y 
+FLIPPED					Girado
+NOTFLIPPED				Sin girar
+
+
+[END]
+

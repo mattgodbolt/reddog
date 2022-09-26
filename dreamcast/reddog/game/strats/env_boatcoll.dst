@@ -1,0 +1,32 @@
+// ENV_BoatColl
+// Collisionable if player is on a boat,
+// If it has an activation trigger, only collisionable after triggered
+// Must be given a model
+
+STATE Init
+	// Wait for player being on boat
+	WHILE (!PlayerOnBoat)
+		MyFlag = MyFlag
+	ENDWHILE
+
+	// Wait for activation if necessary
+	IF (HasActivation(0))
+		WHILE (!PlayerNearActivation(0))
+			MyFlag = MyFlag
+		ENDWHILE
+	ENDIF
+
+	STAT>BeCollisionable
+ENDSTATE
+
+STATE BeCollisionable
+	MyFlag = MyFlag | STRATCOLL | ENEMY
+	RegisterCollision()
+  	MyFlag2 = MyFlag2 | COLLMOVE
+	InitHDC()
+	CalculateStratPolyData(1)
+	// Loop forever
+	WHILE (1)
+		MyFlag = MyFlag
+	ENDWHILE
+ENDSTATE

@@ -1,0 +1,280 @@
+; SModel.src
+; ScapeModel rendering routines
+				.CPU			SH4
+				.OUTPUT			DBG=DWARF
+				.SECTION		SMODEL, CODE, ALIGN=4
+				.IMPORT			_kmStartVertexStrip
+				.IMPORT			_kmSetVertex
+
+; Draw an unlit ScapeModel
+; Prototype: void asm_rDrawScapeModel (ScapeModel *model, Material *matList)
+; Where model points to the model to draw, and matList is the material list to draw it with
+				.EXPORT			_asm_rDrawScapeModel
+_asm_rDrawScapeModel:
+				; R4 -> model
+				; R5 -> material list
+
+				; Preserve FR12-FR15 so we can blat over them
+				FMOV.S	FR12, @-R15
+				FMOV.S	FR13, @-R15
+				FMOV.S	FR14, @-R15
+				FMOV.S	FR15, @-R15
+
+				; Preserve PR
+				STS.L	PR, @-R15
+
+				; Preserve R8 and R9
+				MOV.L	R8, @-R15
+				MOV.L	R9, @-R15
+			
+				; Firstly load in the perspectivization matrix
+				MOV.L	#a_mPersp, R0
+				MOV.L	@R0, R0
+
+				FSCHG							; prepare to read DWords
+
+				FMOV.D	@R0+, XD0				; pull in the matrix using doublewords
+				FMOV.D	@R0+, XD2
+				FMOV.D	@R0+, XD4
+				FMOV.D	@R0+, XD6
+				FMOV.D	@R0+, XD8
+				FMOV.D	@R0+, XD10
+				MOV.L	#a_mCurMatrix, R1		; get r1 ready to pull in the other matrix
+				FMOV.D	@R0+, XD12
+				MOV.L	@R1, R1					; continue getting r1 ready
+				FMOV.D	@R0+, XD14
+
+				; Load in the first part of the current matrix
+				FMOV.D	@R1+, DR0
+				FMOV.D	@R1+, DR2
+				; Multiply it with the matrix
+				FTRV	XMTRX, FV0
+
+				; Start getting the next part of the matrix ready while the FTRV completes
+				FMOV.D	@R1+, DR4
+				FMOV.D	@R1+, DR6
+				; Multiply it
+				FTRV	XMTRX, FV4
+
+				; The third part
+				FMOV.D	@R1+, DR8
+				FMOV.D	@R1+, DR10
+				; Multiply it
+				FTRV	XMTRX, FV8
+
+				; The final part
+				FMOV.D	@R1+, DR12
+				FMOV.D	@R1+, DR14
+				FTRV	XMTRX, FV12
+
+				; Now the shadow bank has mPersp, and the foreground bank is modelToScreen
+				; So swap banks to get modelToScreen in the shadow bank
+				FRCHG
+
+				; Get ready for the outer loop
+				; R6 -> model->strip
+				MOV.L	@(7*4,R4), R6				; get model->strip
+outerLoop:
+				; see how many vertices there are in this strip
+				MOV		@R6, R0					; r0 = number of remaining vertices
+				CMP/EQ	#0, R0					; any at all?
+				BT		finished
+
+				; Material preparation goes here...XXX r5 gets corrupted l8r on
+
+				; R7 = STRIP
+				MOV.L	#a_STRIP, R7
+				MOV.L	@R7, R7					; get STRIP into R7
+
+				ADD		#32, R6					; move past the header to get to the first strip
+
+				; This routine spends most of its time in this part of the routine
+				MOV.L	#scrnSize, R3
+				FMOV.D	@R3+, DR6				; FR6 = 320.f, FR7 = 240.f
+				MOV.L	#H'e0000000, R3			; get KM_VERTEXPARAM_NORMAL into R3
+
+				; see if we can do two Point3s at once - we know R0 != 0
+				CMP/EQ	#1, R0					; is r0 == 1 (we can't do two then)
+				BT		doLastOddPoint3			; cope with odd end Point3
+
+innerLoop:
+
+				; get the first Point3
+				FMOV.D	@R6+, DR0				; get x and y
+				FMOV.D	@R6+, DR2				; get z, and UV (ignored ATM)
+				FLDI1	FR3						; FV0 = { x1, y1, z1, 1.0 }
+
+				; get the address of the next Point3 [in latency time pre FTRV]
+				MOV		R6, R1
+				ADD		#16, R1					; r1 -> next Point3
+
+				FTRV	XMTRX, FV0				; perspectivize the first point
+				MOV.L	@R6+, R2				; r2 = first colour (and prefetches next line)
+				ADD		#3*4, R6				; skip past unused stuff XXX
+
+				FLDI1	FR4						; get 1.f into FR4
+				FDIV	FR3, FR4				; FR4 = 1.f / w1
+
+				; Read out the next point during FDIV latency
+				FMOV.D	@R1+, DR8				; get x and y
+				FMOV.D	@R1+, DR10				; get z, and UV (ignored ATM)
+				FLDI1	FR11					; FV8 = { x2, y2, z2, 1.0 }
+
+				FTRV	XMTRX, FV8				; perspectivize the second point
+				MOV.L	@R1+, R8				; r8 = second colour (and prefetches next line)
+				ADD		#3*4, R1				; skip past unused stuff XXX
+
+				PREF	@R1						; prefetch next line while we FTRV
+				FSCHG							; flip to small reads while we FTRV...
+
+				FLDI1	FR12					; get 1.f into FR12
+				FDIV	FR11, FR12				; FR12 = 1.f / w2
+
+				MOV		R1, R6					; update r6 ready for the next vertex
+
+				; store in the VERTEXPARAM_NORMAL part of the two vertices
+				MOV.L	R3, @R7
+				MOV.L	R3, @(32, R7)
+
+				; calculate x and y
+				FMUL	FR4, FR0				; x1 = x1 * 1/w1
+				ADD		#20, R7					; put the vertex pointer past 'colour' [p]
+				FMUL	FR4, FR1				; y1 = y1 * 1/w1
+				MOV.L	R2, @-R7				; store in the colour [p]
+				FMUL	FR6, FR0				; x1 = (x1 * 1/w1) * 320
+				FMOV.S	FR4, @-R7				; store in 1/w1
+				FMUL	FR7, FR1				; y1 = (y1 * 1/w1) * 240
+				FADD	FR6, FR0				; x1 = (x1 * 1/w1) * 320 + 320
+				FADD	FR7, FR1				; y1 = (y1 * 1/w1) * 240 + 240
+				FMOV.S	FR1, @-R7				; store in y1
+				FMOV.S	FR0, @-R7				; store in x1
+
+				; R7 now points at x1 in the 'x' in the first KMVERTEX0
+
+				FMUL	FR12, FR8				; x2 = x2 * 1/w2
+				ADD		#20+7*4, R7				; put the vertex pointer past 'colour' [p]
+				FMUL	FR12, FR9				; y2 = y2 * 1/w2
+				MOV.L	R8, @-R7				; store in the colour [p]
+				FMUL	FR6, FR8				; x2 = (x2 * 1/w2) * 320
+				FMOV.S	FR4, @-R7				; store in 1/w2
+				FMUL	FR7, FR9				; y2 = (y2 * 1/w2) * 240
+				FADD	FR6, FR8				; x2 = (x2 * 1/w2) * 320 + 320
+				FADD	FR7, FR9				; y2 = (y2 * 1/w2) * 240 + 240
+				FMOV.S	FR9, @-R7				; store in y2
+				FMOV.S	FR8, @-R7				; store in x2
+
+				ADD		#-2, R0					; we've done two vertices
+				; At this point R0 can be one of three things
+				; 0 = we've finished
+				; 1 = we have an odd on
+				; 2+ keep looping
+				CMP/EQ	#0, R0
+				FSCHG							; change size [p]
+
+				BT/S	finishedStrip			; we've finished
+				ADD		#7*4, R7				; skip the reserved bytes [slot]
+
+				CMP/EQ	#1, R0					; have we got one left?
+				BF		innerLoop				; branch back if not [p]
+
+doLastOddPoint3:
+				; get the Point3
+				FMOV.D	@R6+, DR0				; get x and y
+				FMOV.D	@R6+, DR2				; get z, and UV (ignored ATM)
+				FLDI1	FR3						; FV0 = { x, y, z, 1.0 }
+
+				FTRV	XMTRX, FV0				; perspectivize the point
+				MOV.L	@R6+, R2				; r2 = colour (and prefetches next line)
+				ADD		#3*4, R6				; skip past unused stuff XXX
+
+				FLDI1	FR4						; get 1.f into FR4
+				FDIV	FR3, FR4				; FR4 = 1.f / w
+
+				PREF	@R6						; prefetch next line while we divide
+				FSCHG							; flip to small reads while we divide...
+
+				; store in the VERTEXPARAM_NORMAL part of the vertex
+				MOV.L	R3, @R7
+				; calculate x and y
+				FMUL	FR4, FR0				; x = x * 1/w
+				ADD		#20, R7					; put the vertex pointer past 'colour' [p]
+				FMUL	FR4, FR1				; y = y * 1/w
+				MOV.L	R2, @-R7				; store in the colour [p]
+				FMUL	FR6, FR0				; x = (x * 1/w) * 320
+				FMOV.S	FR4, @-R7				; store in 1/w
+				FMUL	FR7, FR1				; y = (y * 1/w) * 240
+				FADD	FR6, FR0				; x = (x * 1/w) * 320 + 320
+				FADD	FR7, FR1				; y = (y * 1/w) * 240 + 240
+				FMOV.S	FR1, @-R7				; store in y
+				DT		R0						; decrement and test R0 [p]
+				FMOV.S	FR0, @-R7				; store in x
+
+				FSCHG							; change size
+				ADD		#7*4, R7				; skip the reserved bytes [p]
+
+finishedStrip:
+				; Mark the last vertex as the end
+				MOV.L	#H'f0000000, R0
+				MOV		R7, R1
+				ADD		#-32, R1				; r1->last vertex
+				MOV		R0, @R1					; put 0xf0000000 in vertex type
+
+				; Stash away where we are in the strip
+				MOV		R6, R8					; r8 is strip
+				; Keep hold of the endpoint in the vertex array
+				MOV		R7, R9					; r9 ->strip array
+
+				; Now to register the vertices using kmStartVertexStrip et al
+				MOV.L	#a_vertBuf, R4
+				MOV.L	#_kmStartVertexStrip, R2
+				JSR		@R2						; kmStartVertexStrip (vertBuf)
+				MOV.L	@R4, R4					; r4->&vertBuf [slot]
+
+				MOV.L	#a_vertBuf, R4
+				MOV.L	@R4, R4					; r4->vertbuf
+				MOV.L	#a_STRIP, R5
+				MOV		@R5, R5					; r5->strip buffer 
+				MOV		#0, R6					; r6 = KM_VERTEXTYPE_00
+				MOV		R9, R7					; get r7 back from cold storage
+				MOV.L	#_kmSetVertex, R2
+				JSR		@R2						; kmSetVertex (&vertBuf, strip, 0, size)
+				SUB		R5, R7					; r7 = r7 - r5 (ie size of array) [slot]
+
+				BRA		outerLoop				; and loop back
+				MOV		R8, R6					; get strip back [slot]
+
+finished:		; We've all finished
+				FSCHG							; flip back to singlewords
+				FRCHG							; flip back to the foreground bank
+
+				; Retrieve R8 and R9
+				MOV.L	@R15+, R9
+				MOV.L	@R15+, R8
+
+				; Retrieve PR
+				LDS.L	@R15+, PR
+
+				; Retrieve FR12-FR15 
+				FMOV.S	@R15+, FR15
+				FMOV.S	@R15+, FR14
+				FMOV.S	@R15+, FR13
+				FMOV.S	@R15+, FR12
+				RTS
+				NOP
+
+				.SECTION		DATA
+				; import the external variables
+				.IMPORT			_mPersp
+				.IMPORT			_mCurMatrix
+				.IMPORT			_STRIP
+				.IMPORT			_vertBuf
+
+a_mPersp:		.DATA.L			_mPersp
+a_mCurMatrix:	.DATA.L			_mCurMatrix
+a_STRIP:		.DATA.L			_STRIP
+a_vertBuf:		.DATA.L			_vertBuf
+
+				.SECTION		Matrices, DATA, ALIGN=8
+scrnSize:		.FDATA			F'320
+				.FDATA			F'240
+				.END

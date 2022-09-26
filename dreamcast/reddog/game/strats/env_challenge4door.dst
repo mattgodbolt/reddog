@@ -1,0 +1,84 @@
+PARAMINT delay 0
+PARAMINT n_frames 90
+PARAMINT open_on 1
+PARAMINT close_on 2
+PARAMINT type	0
+PARAMFLOAT dist 10.0
+
+LOCALINT i
+LOCALFLOAT f
+LOCALFLOAT tempf
+
+STATE Init
+	MyFlag = MyFlag | STRATCOLL | ENEMY
+
+	InitHDC()
+	CalculateStratPolyData(1)
+
+	IF (!(MyFlag & OWNFPARAMS))
+		dist = 10.0
+	ENDIF
+
+	IF (!(MyFlag2 & OWNIPARAMS))
+		delay = 0
+		n_frames = 90
+		open_on = 1
+		close_on = 2
+		type = 0
+	ENDIF
+
+	WHILE (delay > 0)
+		delay = delay - 1
+	ENDWHILE
+
+	WHILE (GetParentSem(0) != open_on)
+		MyFlag = MyFlag
+	ENDWHILE
+
+	AllocStratSoundBlock(1)
+	 PLAYSOUND>ICE_DOOR_GRATING_OPEN 0 1.0 0.0 0.0 0.0 0
+
+	i = 0
+	WHILE (i < n_frames)
+		i = i + 1
+		f = SmoothFromTo(dist, i, n_frames)
+		IF (type = 0)
+			z = z + f
+		ENDIF
+		IF (type = 1)
+			tempf = GetObjectCrntPos(1, MODEX)
+			SetObjectCrntPos(1, tempf - f, MODEX)
+			tempf = GetObjectCrntPos(2, MODEX)
+			SetObjectCrntPos(2, tempf + f, MODEX)
+		ENDIF
+
+		CalculateStratPolyData(1)
+	ENDWHILE
+   PLAYSOUND>DOOR_OCT_CLUNK 0 1.0 0.0 0.0 0.0 NOPOSITION
+
+	WHILE (GetParentSem(0) != close_on)
+		MyFlag = MyFlag
+	ENDWHILE
+	 PLAYSOUND>ICE_DOOR_GRATING_CLOSE 0 1.0 0.0 0.0 0.0 0
+
+
+	i = 0
+	WHILE (i < n_frames)
+		i = i + 1
+		f = SmoothFromTo(dist, i, n_frames)
+		IF (type = 0)
+			z = z - f
+		ENDIF
+		IF (type = 1)
+			tempf = GetObjectCrntPos(1, MODEX)
+			SetObjectCrntPos(1, tempf + f, MODEX)
+			tempf = GetObjectCrntPos(2, MODEX)
+			SetObjectCrntPos(2, tempf - f, MODEX)
+		ENDIF
+		CalculateStratPolyData(1)
+	ENDWHILE
+   PLAYSOUND>DOOR_OCT_CLUNK 0 1.0 0.0 0.0 0.0 NOPOSITION
+	WHILE (1)
+		MyFlag = MyFlag
+	ENDWHILE
+ENDSTATE

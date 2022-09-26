@@ -1,0 +1,50 @@
+PARAMINT delay 0
+
+//PAL FRIENDLY
+STATE Init
+	MyFlag = MyFlag | SPRITE | NOTEXPLODE | FRIENDLY
+	IF (MyParent)
+		WHILE (MyParentInvalid())
+			MyFlag = MyFlag
+		ENDWHILE
+		WHILE (!ParentVar)
+			MyFlag = MyFlag
+		ENDWHILE
+	ENDIF
+
+	WHILE (delay > 0)
+		delay = delay - 1
+	ENDWHILE
+	
+	AllocStratSoundBlock(1)
+ 
+	scalex = 13.0
+
+	PLAYSOUND>EX_TNT_EXPLOSION 0 1.0 0.0 0.0 0.0 0
+
+	scalez = RandRange(0, TWOPI)
+	RelRotateZ(scalez)
+
+	scaley = scalex
+	scalez = scalex
+   
+ 	OBJECT> EXPLOSIONS\EXPLOSION01
+	ANIM> EXPLOSION01>Explosion
+
+	TRIGSET>KillOff WHENANIMOVER
+	STAT>SetPos
+ENDSTATE
+
+STATE SetPos
+	RelRotateY(-PI/22.0)
+ENDSTATE
+
+STATE KillOff
+	IF (MyParent)
+		WHILE (ParentVar)
+			MyFlag = MyFlag
+		ENDWHILE
+		STAT>Init
+	ENDIF
+	Delete()
+ENDSTATE

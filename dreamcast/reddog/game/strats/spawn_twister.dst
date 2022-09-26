@@ -1,0 +1,50 @@
+
+STATE Init
+	MakeMeTheLast()
+  	MyFlag = MyFlag | ENEMY | NOTEXPLODE | HOVERMOVE  
+	OBJECT> WEAPON\REDDOGLASER
+	MyFlag = MyFlag | NODISP
+	STAT>Main
+ENDSTATE
+
+LOCALFLOAT ang
+LOCALFLOAT hang
+LOCALFLOAT height
+LOCALFLOAT hoff
+
+STATE Kill
+  //	z = DogZ
+  //	x = parentx
+  //	y = parenty
+
+  // 	SparkSuck(0,SPARKWHIRL) 
+  	Delete()
+
+
+ENDSTATE
+
+
+
+STATE Main
+	
+	hang = hang + TWOPI/45.0
+	IF (hang > TWOPI)
+	 	hang = 0
+		IF (hoff < 20.0)
+
+			hoff = hoff + 5.0
+		ELSE
+			ParentSemaphore = 100.0
+		   	STAT>Kill
+		ENDIF
+	ENDIF
+	z = DogZ + hoff/8.0
+	x = parentx
+	y = parenty
+	CamLookX = x
+	CamLookY = y
+
+
+   	SparkSuck(0,SPARKWHIRL, 10, 0, 0) 
+   
+ENDSTATE

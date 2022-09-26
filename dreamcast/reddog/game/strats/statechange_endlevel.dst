@@ -1,0 +1,13 @@
+
+STATE Init 
+	IF !(HasActivation(0))
+		GameOver()
+		Delete()
+	ELSE
+		IF (PlayerNearActivationXY(0))
+			GameOver()
+			Delete()
+		ENDIF
+	ENDIF
+ENDSTATE  
+ 

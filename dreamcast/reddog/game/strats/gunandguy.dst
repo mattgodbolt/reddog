@@ -1,0 +1,122 @@
+//PAL FRIENDLY
+LOCALINT readyToFire
+
+//DELAY TIME = 1 THIRD OF A SEC
+DEFINE NTSC_DELAYTIME 10
+DEFINE PAL_DELAYTIME 8
+
+LOCALINT DELAYTIME
+
+STATE Init
+	IF (PAL)
+		DELAYTIME = PAL_DELAYTIME
+	ELSE
+		DELAYTIME = NTSC_DELAYTIME
+	ENDIF
+
+
+	MyFlag = MyFlag | ENEMY | STRATCOLL | LOWCOLL | TARGETABLE
+	health = 100.0
+	RegisterCollision()
+	AllocStratSoundBlock(3)
+	RegisterDanger(100.0)
+	SetAudibleRange(0, 50, 300)
+	SetAudibleRange(1, 50, 300)
+	SetAudibleRange(2, 50, 300)
+	readyToFire = 1
+	TRIGSET>SpecularMadness EVERY 1
+	IF (HasActivation(0))
+		WHILE ((health = 100.0) AND (!PlayerNearActivationXY(0)))
+			MyFlag = MyFlag
+		ENDWHILE
+	ELSE
+		WHILE ((health = 100.0) AND (!NearPlayerXY(50.0)))
+			MyFlag = MyFlag
+		ENDWHILE
+	ENDIF
+	STAT>Start
+ENDSTATE
+
+LOCALFLOAT SPECAMOUNT
+
+TRIGGER SpecularMadness
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+	IF (MyFlag & HITSTRAT)
+		SPECAMOUNT = 1.0
+		PLAYSOUND>ENEMY_HIT 2 1.0 0.0 0.0 0.0 RANDOM
+	ENDIF
+	IF (SPECAMOUNT > 0)
+  		MyFlag2 = MyFlag2 | SPECULAR
+		SetSpecularColour(0, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		IF (PAL)
+			SPECAMOUNT = SPECAMOUNT - 0.12
+		ELSE
+			SPECAMOUNT = SPECAMOUNT - 0.1
+		ENDIF
+   	ELSE
+		SPECAMOUNT = 0
+ 		MyFlag2 = MyFlag2 & LNOT(SPECULAR)
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+TRIGGER Fire
+	readyToFire = 0
+	PLAYSOUND>LASER_GUN 0 1.0 0.0 0.0 0.0 0
+	CREATE SPAWN_ENEMYMISSILE -0.5, 2.0, 0.1, 0, 0, 0, 2
+	CREATE SPAWN_ENEMYMISSILE  0.5, 2.0, 0.1, 0, 0, 0, 2
+	LOOP (DELAYTIME)
+		MyFlag = MyFlag
+	ENDLOOP
+	PLAYSOUND>LASER_GUN 0 1.0 0.0 0.0 0.0 0
+	CREATE SPAWN_ENEMYMISSILE -0.5, 2.0, 0.1, 0, 0, 0, 2
+	CREATE SPAWN_ENEMYMISSILE  0.5, 2.0, 0.1, 0, 0, 0, 2
+	LOOP (DELAYTIME)
+		MyFlag = MyFlag
+	ENDLOOP
+	PLAYSOUND>LASER_GUN 0 1.0 0.0 0.0 0.0 0
+	CREATE SPAWN_ENEMYMISSILE -0.5, 2.0, 0.1, 0, 0, 0, 2
+	CREATE SPAWN_ENEMYMISSILE  0.5, 2.0, 0.1, 0, 0, 0, 2
+	//NOW WAIT 4 SECONDS REALTIME
+	LOOP (DELAYTIME * 12)
+		MyFlag = MyFlag
+	ENDLOOP
+	readyToFire = 1
+	TRIGSTOP
+ENDTRIGGER
+
+STATE Start
+	IF (health > 0.0)
+		ObjectTowardPlayerXZ(1, 0.0, 0.025, TWOPI, TWOPI)
+		ObjectTowardPlayerXZ(2, 0.05, 0.0, 0.0, (TWOPI/360.0) * 30.0)
+		CrntRotToIdleRotZ(1, 0.025)
+		CrntRotToIdleRotX(2, 0.05)
+	ELSE
+		StopSound(1,0)
+		STAT>Die
+	ENDIF
+	
+	IF (ObjectSeePlayerZ(TWOPI/32.0, 2, 0.0, 0.0, 0.0))
+		IF (readyToFire)
+			TRIGSET>Fire EVERY 1
+		ENDIF
+		IF (IsPlaying(1))
+			StopSound(1,0)
+		ENDIF
+	ELSE
+		IF (!IsPlaying(1))
+			PLAYSOUND>GUN_TURN 1 0.6 0.0 0.0 0.0 CONTINUOUS
+		ENDIF
+	ENDIF
+ENDSTATE
+
+
+STATE Die
+ 	CREATE SPAWN_ExplosionShardGround 0, 0, 2, 0, 0, 0, 0
+ 	IMMLOOP (10) 
+ 		CREATE SPAWN_EnemyDebris 0, 0, 2, 0, 0, 0, 0
+ 	IMMENDLOOP
+ 	CREATE SPAWN_ExplosionBall 0, 0, 2, 0, 0, 0, 0
+	Score = Score + 1000
+ 	DESTROYME SPAWN_EXPLODINGBITS
+ENDSTATE

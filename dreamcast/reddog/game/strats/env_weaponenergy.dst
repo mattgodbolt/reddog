@@ -1,0 +1,12 @@
+PARAMFLOAT	amount 2.0
+
+STATE Init
+	IF (!(MyFlag & OWNFPARAMS))
+		amount = 2.0
+	ENDIF
+	WHILE (PlayerWeaponEnergy < amount)
+		PlayerWeaponEnergy = PlayerWeaponEnergy + 0.05
+	ENDWHILE
+	PlayerWeaponEnergy = amount
+	Delete()
+ENDSTATE

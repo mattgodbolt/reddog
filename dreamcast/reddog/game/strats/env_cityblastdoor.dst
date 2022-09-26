@@ -1,0 +1,42 @@
+PARAMINT	DelayFor 0
+
+LOCALINT	i
+LOCALFLOAT	tempf 
+
+
+STATE Init
+	MyFlag = MyFlag | ENEMY | STRATCOLL
+	AllocStratSoundBlock(1)
+
+	IF (!(MyFlag2 & OWNIPARAMS))
+		DelayFor = 0
+	ENDIF
+
+	IF (PAL)
+		DelayFor = DelayFor / 1.2
+	ENDIF
+	InitHDC()
+	CalculateStratPolyData(0)
+	i = 0
+	WHILE (DelayFor > 0)
+		DelayFor = DelayFor - 1
+	ENDWHILE
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	// The close door sound:
+	PLAYSOUND>hangaropen3 0 1 0.0 0.0 0.0 0
+
+	WHILE (i < 60)
+		tempf = SmoothFromTo(2.356, i, 60)
+		RelRotateX(-tempf)
+		CalculateStratPolyData(0)
+		i = i + 1
+	ENDWHILE
+	CalculateStratPolyData(1)
+	STAT>DoNothing
+ENDSTATE
+
+STATE DoNothing
+ENDSTATE

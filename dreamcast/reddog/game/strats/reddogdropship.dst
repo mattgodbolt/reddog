@@ -1,0 +1,601 @@
+// REDDOG drop ship
+// param type : 0 - default drop in ship, no activation dynamics required, just place in map
+// param type : 1 - pick up type 
+//					when player drives over creation point, holds the player
+//					until landed at act point 0
+//					then sets player state to PS_READYTOENTER
+//					..AND WAITS UNTIL THE PLAYER STATE IS CHANGED TO PS_INDROPSHIP
+
+
+// Activated by: Proximity trigger
+// Then, travel along a spline to a deploy trigger, LAND and open door
+// Activate REDDOG entrance
+// After REDDOG has appeared, follow exit waypoint spline
+
+PARAMINT PICKUPSHIP	0
+
+//COUNTER (FRAMES) BEFORE CAMERA IS RESET
+
+
+
+PARAMINT CamCounter 0
+PARAMINT DoNotEndLevel 0
+
+
+						 						 
+// Local float - velocity we're travelling along the spline
+LOCALFLOAT	velocity
+LOCALFLOAT	rotAmt
+LOCALFLOAT	velDamp
+LOCALFLOAT	rot
+LOCALFLOAT	rotVel
+LOCALFLOAT	xAng
+LOCALFLOAT	yAng
+LOCALFLOAT	zAng
+LOCALFLOAT	speed
+
+// Definitions
+DEFINE	TOPSPEED 2.4
+
+
+// Initialise the strat
+STATE Init
+
+	DONEROT = 0
+
+	MakeMeTheLast()
+   	OBJECT> REDDOG\REDDOGDROPSHIP
+
+	IF (!(MyFlag2 &	OWNIPARAMS))
+		PICKUPSHIP = 0
+		CamCounter = 0
+   	ENDIF
+	RotationRestriction(1.0, 1.0, 1.0)
+
+
+	PlayerFlag2 = PlayerFlag2 | NODAMAGE
+
+	MyVar = 2
+	IMMLOOP 4
+		CREATE SPAWN_RedDogDropship_Jet 0,0,0, 0,0,0, MyVar
+		MyVar = MyVar + 1
+	IMMENDLOOP
+	MyVar = 1
+
+	// Set up path info
+	InitPath()
+	InitSplineData()
+	IF (!PICKUPSHIP)
+		PlayerHeld = 1
+	ENDIF
+	PlayerState = PS_INDROPSHIP
+   
+//   	IAmHoldPlayer()
+   	// Set up the speed, armour and the rotational damping
+	velocity = TOPSPEED
+	rot = 0
+	rotVel = 0
+	invalid = 0
+
+	// Start up the sound
+	AllocStratSoundBlock(3)
+	SetPitch(0, -0.4)
+	PLAYSOUND>DROPSHIP 0 0.9 0.0 0.0 0.0 CONTINUOUS
+	PLAYSOUND>HIGHWHINE 1 0.7 0.0 0.0 0.0 CONTINUOUS
+
+	IF ((MyParent))
+
+		//change the camera to our parent
+		
+		WHILE ((!Camera))
+			MyFlag = MyFlag
+		ENDWHILE
+
+		WHILE (MyParentInvalid())
+			MyParent = MyParent
+		ENDWHILE
+		MyTarget = MyParent
+		IF (MyParentParent)
+			MyParent = MyParentParent
+			WHILE (MyParentInvalid())
+			   	MyParent = MyTargetParent
+			ENDWHILE
+			MyParent = MyTarget
+
+		ENDIF
+		
+		
+	 	ChangeCamStrat()
+	ENDIF
+
+	RegisterCollision()
+
+
+	SetObjectShadowState(1)
+
+	IF (PICKUPSHIP)
+		PlayerState = PS_READYTOENTER
+		LOOP (3)
+			MyFlag = MyFlag
+		ENDLOOP
+	   
+	   	//AWAIT THE SEMAPHORE BACK FROM STATECHANGE_DROPSHIPPICKUP
+		WHILE (PlayerState != PS_INDROPSHIP)
+			KillMyVelocity()
+	  		MyFlag = MyFlag	| NODISP
+		ENDWHILE
+		MyFlag = MyFlag & LNOT(NODISP)
+
+	ELSE
+		//ENSURE THE PLAYER IS NOT DRAWN
+		PlayerFlag = PlayerFlag | NODISP
+	ENDIF
+	// Set a trigger to check the activation point
+  	TRIGSET>CheckActivation EVERY 1
+
+	// Set a trigger to keep us moving
+   	TRIGSET>KeepOnRunning EVERY 1
+
+	STAT>FlyInOrOut
+ENDSTATE
+
+// Keep the thing moving along
+STATE KeepOnRunning
+	IF (!LastWay())
+		MoveAlongPath(velocity)
+		FaceAlongPath(2)
+		TiltAlongPath(0.5)
+		SplineRelFlatten(0.5)
+		rotVel = (rotVel + (((velocity * (TWOPI / 64.0)) - rot) * 0.02)) * 0.94
+		rot = rot + rotVel
+		x = x + (Ssin (xAng)) * (((TOPSPEED/2) - velocity) / TOPSPEED)
+		y = y + (Ssin (yAng)) * (((TOPSPEED/2) - velocity) / TOPSPEED)
+		z = z + (Ssin (zAng)) * (((TOPSPEED/2) - velocity) / TOPSPEED)
+		xAng = xAng + 0.07
+		yAng = yAng - 0.03
+		zAng = zAng + 0.02
+		RelRotateX (-rot)
+		IF ((PlayerState = PS_INDROPSHIP) && (!PICKUPSHIP) && (!invalid))
+			HoldPlayerPos(0, 0.0, -3.0, 0.0 )
+		ENDIF		   
+		speed = StratSpeed()
+		SetPitch(1, speed)
+		IF (speed > 0.4)
+			speed = 0.4
+		ENDIF
+		SetPitch(0, speed)
+	ELSE		   
+
+		//ENSURE THE PLAYER IS DAMAGEABLE
+		PlayerFlag2 = PlayerFlag2 & LNOT(NODAMAGE)
+		PlayerFlag = PlayerFlag & LNOT(NODISP)
+		//ANY CAMERAS STILL LEFT TO DELETE, THEN DO IT
+		IF (MyParent)
+			DeleteMyParent()
+			IF ((PICKUPSHIP) OR (PlayerState = PS_NORMAL))
+				ChangeCam(0,1)
+			ENDIF
+		ENDIF
+	 	IF (PICKUPSHIP)
+			PlayerFlag = PlayerFlag | STRATCOLL
+			PlayerState = PS_NORMAL
+			PlayerHeld = 0
+
+	 	ENDIF
+		
+	   
+	   	Delete()
+		
+	   
+	   	ENDIF
+  
+  	TRIGFIN
+ENDSTATE
+
+// Fly in along a spline path until we get to the end
+LOCALFLOAT wAmt
+STATE FlyInOrOut
+	wAmt = 1
+	WHILE (wAmt > 0.01)
+		wAmt = wAmt * 0.93
+		SetWhiteOut (wAmt, wAmt, wAmt)
+	ENDWHILE
+
+	SetWhiteOut (0,0,0)
+	WHILE (1)
+		MyFlag = MyFlag
+	ENDWHILE
+ENDSTATE
+
+// Check the activation points
+STATE CheckActivation
+	IF (NearActivationXY(0))
+	 
+		TRIGRESET
+   
+   		TRIGSTOP
+		STAT>StartDropping
+	ELSE
+	  	IF (!PICKUPSHIP)				 	   		 
+	  		PlayerFlag = PlayerFlag | NODISP     
+   	  	ENDIF							    
+	 	PlayerState = PS_INDROPSHIP			 
+	ENDIF
+
+	TRIGFIN
+ENDSTATE							   
+
+
+
+
+TRIGGER SwitchCam
+   	IF ((MyParent))
+	   	SetCheckPosRel(0, 0.0, -30.0, 0.0)
+   		parentx = CheckX
+   		parenty = CheckY
+   		parentz = CheckZ
+   	ENDIF
+
+
+	TRIGFIN
+ENDTRIGGER
+
+
+LOCALINT DONEROT
+
+TRIGGER OpenDoor
+	DONEROT = 0
+
+	PLAYSOUND>DOOR_OPEN1 2 1.0 0.0 0.0 0.0 0
+
+   	WHILE (GetObjectCrntRot(1,MODEX) < (TWOPI/4.0 + TWOPI/8.0))
+   //	WHILE (GetObjectCrntRot(1,MODEX) < (TWOPI/3.0 + TWOPI/4.0))
+	 	RotateObjectXYZ(1,TWOPI/360.0,0,0)
+	ENDWHILE
+
+	DONEROT = 1
+
+	TRIGSTOP
+ENDTRIGGER
+
+//LOCALINT MISSIONTEXT
+//LOCALFLOAT oAmt
+//LOCALFLOAT oTar
+
+
+//TRIGGER MissionTextPrint
+//	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+//	oAmt = oAmt + ((oTar - oAmt) * 0.025)
+//	DisplayBriefing (0, oAmt, 1)
+
+//	TRIGFIN
+//ENDTRIGGER
+
+
+LOCALINT invalid
+LOCALINT time
+LOCALFLOAT BOOST
+LOCALFLOAT speed
+LOCALFLOAT height
+
+
+LOCALFLOAT OLDCHECKX
+LOCALFLOAT OLDCHECKY
+LOCALFLOAT OLDCHECKZ
+
+// DROP THE PLAYER OUT THE BACK
+STATE StartDropping
+
+	//INACTIVATE THE COLLISION ON JETS
+	InActivateObjectCollision(2)
+	InActivateObjectCollision(3)
+	InActivateObjectCollision(4)
+	InActivateObjectCollision(5)
+
+	
+
+	rotAmt = 0.0
+	velDamp = 1.0
+	WHILE (rotAmt < (TWOPI/3))
+		IF (!PICKUPSHIP)
+	   	   	HoldPlayerPos(0, 0.0, -3.0, 0.0 )
+		ENDIF
+	   
+	   	velocity = velocity * velDamp   
+		IF velDamp > 0.85
+			velDamp = velDamp - 0.025
+		ENDIF
+		IF (velocity < (TOPSPEED / 2))
+			rotAmt = rotAmt + 0.1
+		ENDIF
+	ENDWHILE
+
+	height = z
+
+	IF (!PICKUPSHIP)
+		invalid = 1
+	
+		//DO THE LANDING
+		PauseTriggers(-1,REMEMBER)
+
+	  	MyFlag = MyFlag | (GRAVITYON + FLOORCOLL)
+	  
+		BOOST = 0
+
+	  	TRIGSET>OpenDoor EVERY 1
+
+
+	 	WHILE ((!(MyFlag & HITFLOOR)) OR (!DONEROT) )
+			IF (MyFlag & HITFLOOR)
+				KillMyVelocity()
+		   		MyFlag = MyFlag & LNOT(GRAVITYON + FLOORCOLL)
+		   	ENDIF
+
+
+			IF (absspeedz < -0.3)
+	  			BOOST = BOOST + 0.1
+	  		ENDIF
+
+	  		BOOST = BOOST * 0.5
+	  		MoveZ(BOOST) 
+			//BIG TIME FLATTEN WAREZ	    
+			Flatten(50.0)
+   		   	HoldPlayerPos(0, 0.0, -3.0, 0.0 )
+	  	ENDWHILE
+
+		//INACTIVATE THE COLLISION ON BODY PARTS
+		InActivateObjectCollision(6)
+	   
+	   	MyFlag = MyFlag & LNOT(GRAVITYON + FLOORCOLL)
+		KillMyVelocity()
+							   
+	   	HoldPlayerPos(0, 0.0, -3.0, 0.0 )
+
+
+		//LANDED SO SET UP A CHECKPOINT FOR THE PLAYER AND START A TRIGGER TO ROLL BACK
+  	  
+		InitHDC()
+	  	CalculateStratPolyData(0)
+		MyFlag = MyFlag | STRATCOLL | ENEMY
+
+		OLDCHECKX = CheckX
+		OLDCHECKY = CheckY
+		OLDCHECKZ = CheckZ
+
+
+		SetCheckPosRel(0,0,-30.0,0)
+
+	   	PlayerCheckX = CheckX
+	   	PlayerCheckY = CheckY
+	   	PlayerCheckZ = CheckZ
+
+		CheckX = OLDCHECKX
+		CheckY = OLDCHECKY
+		CheckZ = OLDCHECKZ
+
+
+		PlayerState = PS_ONPATH
+
+	  	PlayerHeld = 0
+	  	PlayerFlag = PlayerFlag | GRAVITYON | FLOORCOLL
+
+   
+	   	WHILE (!PlayerSeePlayerCheckPosXY(TWOPI/128.0))
+	  		PlayerTurnTowardPlayerCheckPosXY()
+	  	ENDWHILE
+
+		PlayerFlag = PlayerFlag & LNOT(NODISP)
+
+
+   	   	WHILE (!PlayerNearPlayerCheckPosXY(0.0))
+	   		PlayerTurnTowardPlayerCheckPosXY()
+	   		PlayerControlPadPress = PADSHOULDERR | PADFORWARD
+	   		speed = PlayerDistPlayerCheckXY() * 0.004
+	   		IF (speed > 1.0)
+	   			speed = 1.0
+	   		ENDIF
+	   		speed = 1.0
+	   		PlayerControlPlayerAcc = speed
+	   	ENDWHILE
+
+		//GET RID OF THE EXTERNAL CAMERA IF NEEDED
+  	  	//IF (MyParent)
+		//	DeleteMyParent()
+		//	ChangeCam(0,1)
+		//	MyParent = 0
+		//ENDIF
+
+		MyFlag = MyFlag & LNOT(STRATCOLL + FLOORCOLL + GRAVITYON + ENEMY)
+	   
+		PlayerFlag2 = PlayerFlag2 & LNOT(NODAMAGE)
+	   	PlayerState = PS_NORMAL
+  		UnPauseTriggers()
+
+		// And start the game timer
+		TimeFunction (0)
+		 
+	ELSE
+
+		//SET THE DEBRIEF TO START UP
+		IF (!DoNotEndLevel)
+			SetGlobalParamInt(0,99)
+			CREATE MISSIONBRIEFING 0,0,0,0,0,0,0
+			ClearGlobalParams()
+		ENDIF
+
+		PauseTriggers(-1,REMEMBER)
+	
+		//AWAIT THE SEMAPHORE BACK FROM STATECHANGE_DROPSHIPPICKUP
+		WHILE (PlayerState != PS_INDROPSHIP)
+			KillMyVelocity()
+		ENDWHILE
+
+	  	KillMyVelocity()
+	  	MyFlag = MyFlag | (GRAVITYON + FLOORCOLL)
+		SetFriction(1.0,1.0,0.0)
+		time = 0
+	  
+		BOOST = 0
+	  
+	  	TRIGSET>OpenDoor EVERY 1
+
+
+		//do at least 35 frames of third person dropship landing action 
+	  	WHILE ((!(MyFlag & HITFLOOR)) AND (time <35))
+	  
+			IF (!(MyFlag & HITFLOOR))
+	  			time = time + 1
+	 			IF (absspeedz < -0.3)
+					BOOST = BOOST + 0.1
+				ENDIF
+  																		  
+				BOOST = BOOST * 0.5	 
+				MoveZ(BOOST)
+			ELSE
+				KillMyVelocity()
+				MyFlag = MyFlag & LNOT(GRAVITYON + FLOORCOLL)
+			ENDIF
+			Flatten(50.0)
+		ENDWHILE
+
+		//now switch to in-dropship camera
+
+		TRIGSET>SwitchCam EVERY 1
+		WHILE ((!(MyFlag & HITFLOOR)) OR (!DONEROT) )
+			IF (!(MyFlag & HITFLOOR))
+
+	 		IF (absspeedz < -0.3)
+				BOOST = BOOST + 0.1
+			ENDIF
+
+			BOOST = BOOST * 0.5
+			MoveZ(BOOST)
+			ELSE
+				KillMyVelocity()
+				MyFlag = MyFlag & LNOT(GRAVITYON + FLOORCOLL)
+			ENDIF
+			Flatten(50.0)
+	 
+		ENDWHILE
+
+		//INACTIVATE THE COLLISION ON BODY PARTS
+		InActivateObjectCollision(6)
+	   
+		InitHDC()	
+		CalculateStratPolyData(0)
+
+
+		TRIGKILL>SwitchCam EVERY 1
+
+		KillMyVelocity()
+
+		MyFlag = MyFlag & LNOT(GRAVITYON + FLOORCOLL)
+
+		
+		//NOW CREATE A CHECKPOS ON OUR BACK RAMP
+		//SEMAPHORE STATECHANGE_DROPSHIPPICKUP TO GO AGAIN
+	    //AND MAKE REDDOG DRIVE INTO SHIP
+
+
+
+		MyFlag = MyFlag | STRATCOLL | ENEMY
+
+		//SET THE PLAYER WAYPOINT TO BE TOP OF THE RAMP + A BIT
+		SetCheckPosRel(1,0,0,0.0)
+
+  	   	PlayerCheckX = CheckX
+	   	PlayerCheckY = CheckY
+	   	PlayerCheckZ = CheckZ
+	   
+	   //SET THE CAMERA BEHIND THE SHIP
+	   	IF ((MyParent))
+		  	SetCheckPosRel(0, 0.0, -15.0, 0.0)
+	 		parentx = CheckX
+	 		parenty = CheckY
+	 		parentz = CheckZ
+	 	ENDIF
+
+	   
+	   
+	   
+	   	PlayerState = PS_ONPATH
+
+		//AWAIT THE SEMAPHORE BACK FROM STATECHANGE_DROPSHIPPICKUP
+		WHILE (PlayerState != PS_INDROPSHIP)
+			KillMyVelocity()
+			MyFlag = MyFlag
+		ENDWHILE
+		
+	   	PlayerHeld = 1
+
+
+	   	MyFlag = MyFlag & LNOT(STRATCOLL)
+	   	PlayerFlag = PlayerFlag | NODISP  
+	
+		//wait for the door to close
+		WHILE (GetObjectCrntRot(1,MODEX) > (0.0))
+		 	RotateObjectXYZ(1,-TWOPI/360.0,0,0)
+   			HoldPlayerPos(1, 0.0, 3.0, 0.0 )
+		ENDWHILE
+	  
+	   	UnPauseTriggers()
+
+	  
+	ENDIF
+
+
+	//IF DROPPING, IN DELETE OUR EXTERNAL CAMERA
+   	IF ((MyParent) AND (!PICKUPSHIP))
+		TRIGSET>ChangeMyCam EVERY 1
+	ENDIF
+
+	//LOOP TO ALLOW TRIGGER TO RUN ONCE
+	LOOP (1)
+		MyVar = MyVar - 1.0
+	ENDLOOP
+
+	//RAISE UP
+	PauseTriggers(-1,REMEMBER)
+
+	MyFlag = MyFlag | GRAVITYON
+	WHILE (z < height)
+ 		IF (absspeedz < 0.3)
+			BOOST = BOOST + 0.1
+		ENDIF
+
+		BOOST = BOOST * 0.5
+		MoveZ(BOOST)
+
+	ENDWHILE
+	MyFlag = MyFlag & LNOT(GRAVITYON)
+	KillMyVelocity()
+	UnPauseTriggers()
+
+	WHILE (velocity < TOPSPEED)
+		velocity = velocity + (TOPSPEED - velocity) * 0.01
+	ENDWHILE
+
+
+	STAT>FlyInOrOut
+
+ENDSTATE
+
+
+TRIGGER ChangeMyCam
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+
+	WHILE (CamCounter > 0)
+		CamCounter = CamCounter - 1
+	ENDWHILE
+   	CamX = parentx
+   	CamZ = parentz
+   	CamY = parenty
+//	PlayerHeld = 0
+   	ChangeCam(0,1)
+   	DeleteMyParent()
+
+
+	TRIGSTOP
+ENDTRIGGER
+
+

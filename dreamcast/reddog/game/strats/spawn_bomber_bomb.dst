@@ -1,0 +1,23 @@
+STATE Init
+	MyFlag = ENEMY | STRATCOLL | GRAVITYON | FLOORCOLL | LOWCOLL
+	RegisterCollision()
+	damage = 10.0
+	SetFriction(0.0, 0.0, 0.0)
+	MoveY(1.5)
+	OBJECT> WEAPON\BOMB
+	TRIGSET>Explode WHENHIT 
+	TRIGSET>Explode	ONFLOOR
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	absspeedx = absspeedx * 0.99
+	absspeedy = absspeedy * 0.99
+	MyFlag = MyFlag
+ENDSTATE
+
+STATE Explode
+	CREATE SPAWN_PolyExplosion 0, 0, 0, 0, 0, 0, 0
+	Delete()
+  //	TRIGSTOP
+ENDSTATE 

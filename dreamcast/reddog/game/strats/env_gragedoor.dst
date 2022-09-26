@@ -1,0 +1,64 @@
+STATE Init
+	MyFlag = MyFlag | ENEMY | STRATCOLL
+	RegisterCollision()
+	InitHDC()
+	CalculateStratPolyData(1)
+	AllocStratSoundBlock(1)
+	WHILE (!EscortTanker)
+		MyFlag = MyFlag
+	ENDWHILE
+	Stat>Start
+ENDSTATE
+
+LOCALFLOAT	ang
+
+STATE Start
+	ang = 0.0
+
+	
+
+	WHILE (!PlayerNearActivationXY(0))
+		MyFlag = MyFlag
+	ENDWHILE
+
+	PLAYSOUND>DOOR_TANKER_OPEN 0 1.0 0.0 0.0 0.0 0
+
+	IF (PAL)
+		LOOP (25)
+			RelRotateX(PI / 60.0)
+			CalculateStratPolyData(1)
+		ENDLOOP
+	ELSE
+		LOOP (30)
+			RelRotateX(PI / 60.0)
+			CalculateStratPolyData(1)
+		ENDLOOP
+	ENDIF
+
+	IF (EscortTanker)
+		WHILE ((EscortTankerY < y + 35) OR (DogY < y + 35))
+			MyFlag = MyFlag
+		ENDWHILE
+	ENDIF
+
+	PLAYSOUND>DOOR1_OPEN 0 1.0 0.0 0.0 0.0 0
+
+	IF (PAL)
+		LOOP (25)
+			RelRotateX(-PI / 60.0)
+			CalculateStratPolyData(1)
+		ENDLOOP
+	ELSE
+		LOOP (30)
+			RelRotateX(-PI / 60.0)
+			CalculateStratPolyData(1)
+		ENDLOOP
+	ENDIF
+
+	STAT>DoNothing
+ENDSTATE
+
+STATE DoNothing
+ENDSTATE
+		
+		

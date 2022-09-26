@@ -1,0 +1,100 @@
+//parent semaphore 1 then alive
+//parent semaphore 0 then kill
+
+
+DEFINE SHIELDARM	2
+
+
+LOCALINT Lightning
+LOCALINT Lightning2
+LOCALINT Lightning3
+LOCALINT Lightning4
+LOCALFLOAT VOLUME
+
+STATE Init 
+
+	AllocStratSoundBlock(1)
+	
+   	MakeMeTheLast()
+	MyFlag = MyFlag | ENEMY | STRATCOLL	
+	//| COLLMOVE
+  //	MyFlag2 = MyFlag2 | SHIELDTYPE
+	OBJECT> ENEMIES\SOLDIERSHIELD
+	InitHDC()
+   	RegisterCollision()
+	UpdateObjectCollFlag(1,NOPLAYERCOLLIDE)
+	TRIGSET>Sound WHENHIT
+//	TRIGSET>Remove WHENPARENTDEAD
+	STAT> Stick  
+ENDSTATE
+
+STATE Stick
+
+	IF ((MyParentFlag) AND (ParentFrame != 99.0))
+		IF ((ParentSemaphore <= 0.1) || (ParentFrame))
+		  //	MyFlag = MyFlag & LNOT(STRATCOLL + COLLMOVE)
+			MyFlag = MyFlag & LNOT(STRATCOLL)
+			IF (!ParentFrame)
+				MyFlag = MyFlag | NODISP
+			ENDIF
+	   	ELSE
+			CalculateStratPolyData(1)
+			MyFlag = MyFlag | STRATCOLL
+			//	| COLLMOVE
+			MyFlag = MyFlag & LNOT(NODISP)
+		ENDIF
+		LinkToParentObject(SHIELDARM,0,0.0,0,0,0,0)
+   		IF ((ParentFrame != 66.0) AND (ParentSemaphore))
+			scalex = scaley = scalez = ParentSemaphore
+		ENDIF
+		//SEMAPHORE BACK TO PARENT IF HIT BY BIG DAMAGE
+		IF (MyFlag2 & BIGDAMAGE)
+			MyParentFlag2 = MyParentFlag2 | BIGDAMAGE
+			MyParentFlag = MyParentFlag & LNOT(STRATCOLL)
+		ENDIF
+	 //	IF (MyFlag2 & PLAYERHIT)
+	 //		MyParentFlag2 = MyParentFlag2 | PLAYERHIT
+	 //		MyParentFlag = MyParentFlag & LNOT(STRATCOLL + FLOORCOLL + GRAVITYON) 
+	 //	ENDIF
+
+
+ 	ELSE
+	   //	TRIGKILL>Spark WHENHIT
+		MyFlag2 = MyFlag2 | TRANSLUCENT
+		trans = 1.0
+		WHILE (trans > 0.2)
+			IF (MyParentFlag)
+				LinkToParentObject(SHIELDARM,0,0.0,0,0,0,0)
+
+			ENDIF
+
+			trans = trans - 0.05
+		ENDWHILE
+
+		Delete()
+	ENDIF
+ENDSTATE
+
+
+
+
+TRIGGER Sound
+	VOLUME = RandRange(0.9, 1.0)
+	PLAYSOUND>SOLDIER_SHIELD_HIT1 0 VOLUME  0.0 0.0 0.0  RANDOM
+	LOOP (2)
+		MyFlag = MyFlag
+	ENDLOOP
+//	   		Lightning = DrawLightning (1, 0, 0, 0, Lightning,2)
+//	   		Lightning2 = DrawLightning (0, 0, 0, 0, Lightning2,1)
+//	   		Lightning3 = DrawLightning (0, 0, 0, 0, Lightning3,2)
+//			IF (MyFlag2 & PLAYERHIT)
+//	   			Lightning4 = DrawLightning (0, 0, 0, 0, Lightning4,0)
+//			ENDIF
+
+//	ENDLOOP
+
+TRIGFIN
+ENDTRIGGER
+
+
+ 

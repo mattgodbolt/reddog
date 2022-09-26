@@ -1,0 +1,55 @@
+//
+// ENV_Darken.dst
+// Darkens the strats when the player is within an activation zone
+//
+
+// Do we affect all strats, or just Red Dog
+PARAMINT		AffectAllStrats		0
+// How much to darken by
+PARAMFLOAT		Amount				1.0
+
+STATE Die
+	Delete()
+ENDSTATE
+
+STATE Init
+	// Check we have an activation
+	IF (!HasActivation(0))
+		STAT>Die
+	ELSE
+
+	// Set up defaults
+	IF (!(MyFlag & OWNFPARAMS)) 
+		Amount = 1.0
+	ENDIF
+	IF (!(MyFlag2 & OWNIPARAMS))
+		AffectAllStrats = 0
+	ENDIF
+	// Go into sleep mode
+	STAT>WaitForActivation
+	ENDIF
+ENDSTATE
+
+// Wait for the player to enter the activation zone
+STATE WaitForActivation
+	IF (PlayerNearActivationXY(0))
+		IF (AffectAllStrats)
+			AdjustAmbient (-Amount)
+		ELSE
+			AdjustRedDogAmbient (-Amount)
+		ENDIF
+		STAT>WaitForLeaveActivation
+	ENDIF
+ENDSTATE
+
+// Wait for the player to leave the activation zone
+STATE WaitForLeaveActivation
+	IF (!PlayerNearActivationXY(0))
+		IF (AffectAllStrats)
+			AdjustAmbient (Amount)
+		ELSE
+			AdjustRedDogAmbient (Amount)
+		ENDIF
+		STAT>WaitForActivation
+	ENDIF
+ENDSTATE

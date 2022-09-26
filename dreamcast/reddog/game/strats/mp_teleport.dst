@@ -1,0 +1,6 @@
+STATE Init
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	

@@ -1,0 +1,30 @@
+// Smoke puff
+PARAMINT LowWait 60
+PARAMINT HiWait 240
+
+LOCALINT wait
+
+STATE Init
+	OBJECT>SCENERY\VOLCANO\SMOKEPUFF
+	IF (!(MyFlag & OWNFPARAMS))
+		LowWait = 60
+		HiWait = 240
+	ENDIF
+	MyFlag = MyFlag | NODISP
+	TRIGSET>ReHide WHENANIMOVER
+	STAT>Wait
+ENDSTATE
+
+STATE Wait
+	wait = RandRange(LowWait, HiWait)
+	LOOP wait
+		MyFlag = MyFlag
+	ENDLOOP
+	MyFlag = MyFlag & LNOT(NODISP)
+	ANIM> smokepuff>smokepuff
+ENDSTATE
+
+STATE ReHide
+	MyFlag = MyFlag | NODISP
+	TRIGFIN
+ENDSTATE

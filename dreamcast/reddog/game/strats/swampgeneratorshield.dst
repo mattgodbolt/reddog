@@ -1,0 +1,41 @@
+PARAMINT StratsAllowed 3
+PARAMINT Time
+LOCALINT WaitTime
+LOCALINT Trans
+
+
+STATE Init
+
+	MyFlag = MyFlag | STRATCOLL | ENEMY
+	InitHDC()
+	Time = 0
+	STAT>Wait
+	
+ENDSTATE
+
+STATE Wait
+
+	WHILE (GetParentSem (0) < 9)
+		MyFlag = MyFlag
+		CalculateStratPolyData(1)
+	ENDWHILE
+
+	WHILE (Time < WaitTime)
+		Time = Time + 1
+	ENDWHILE
+
+	STAT>Del
+
+ENDSTATE
+
+
+STATE Del
+
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+	WHILE (trans > 0.02)
+		trans = trans - 0.02
+	ENDWHILE
+	Delete()
+
+ENDSTATE
+

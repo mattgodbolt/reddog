@@ -1,0 +1,32 @@
+LOCALFLOAT	time
+
+STATE Init
+	MyFlag = MyFlag | ENEMY
+	OBJECT>BOSSES\CANYONBOSS\CanyonBossCylinder
+	TRIGSET>Die EVERY 410
+	SetGlobalParamInt(0, 0)
+	CREATE SPAWN_CanyonBossEnergyBall 0, 0, 0, 0, 0, 0, 0
+	SetGlobalParamInt(0, 1)
+	CREATE SPAWN_CanyonBossEnergyBall 0, 0, 0, 0, 0, 0, 0
+	SetGlobalParamInt(0, 2)
+	CREATE SPAWN_CanyonBossEnergyBall 0, 0, 0, 0, 0, 0, 0
+	SetGlobalParamInt(0, 3)
+	CREATE SPAWN_CanyonBossEnergyBall 0, 0, 0, 0, 0, 0, 0
+	SetGlobalParamInt(0, 0)
+	time = 0.0
+	AllocStratSoundBlock(1)
+	PLAYSOUND>PLASMATRAIL2 0 1.0 0.0 0.0 0.0 (RANDOM + CONTINUOUS)
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	time = time + 0.4
+	y = y + 4.0
+	FaceAlongDir()
+	RelRotateY(time)
+ENDSTATE
+	
+TRIGGER Die
+	Delete()
+  //	TRIGSTOP
+ENDTRIGGER

@@ -1,0 +1,109 @@
+LOCALINT oldServoRunning
+LOCALINT servoRunning
+
+LOCALFLOAT	cx
+LOCALFLOAT	cz
+LOCALFLOAT	vx
+LOCALFLOAT	vz
+LOCALFLOAT	ax
+LOCALFLOAT	az
+LOCALFLOAT	px
+LOCALFLOAT	pz
+LOCALFLOAT	ox
+LOCALFLOAT	oz
+LOCALFLOAT	time
+
+STATE Init
+	MyFlag = MyFlag | FRIENDLY | RELVELCALC 
+	IF (PlayerHeld = 1)
+		Delete()
+	ELSE
+		SetFriction(0.1, 0.1, 0.1)
+		PlayerHeld = 1
+  		IAmHoldPlayerMain()
+	  //	PlayerOnHoldPlayer = Me
+		cx = x
+		cz = z
+		ox = 0
+		oz = 0
+		ax = 0 
+		az = 0
+		vx = 0.0  
+		vz = 0.0
+		px = 0
+		pz = 0
+		time = 0.0
+		AllocStratSoundBlock(2)
+		PLAYSOUND>DROPSHIP 0 0.45 0.0 0.0 0.0 CONTINUOUS
+		oldServoRunning = 0
+		servoRunning = 0
+		STAT> Test
+	ENDIF
+ENDSTATE
+
+STATE Test
+	time = time + 0.1
+	y = y + 2.0
+
+	
+	servoRunning = 0 
+	IF (JoyX > 0.0)
+		servoRunning = 1
+		IF (ox < 7.0)
+			ox = ox + JoyX
+		ENDIF
+	ELSE
+		IF (JoyX < 0.0)
+			servoRunning = 1
+			IF (ox > -7.0)
+				ox = ox + JoyX
+			ENDIF
+		ENDIF
+	ENDIF
+
+	IF (JoyY > 0.0)
+		servoRunning = 1
+		IF (oz < 15.0)
+			oz = oz + JoyY
+		ENDIF
+	ELSE
+		IF (JoyY < 0.0)
+			servoRunning = 1
+			IF (oz > -3.0) 
+				oz = oz + JoyY
+			ENDIF
+		ENDIF
+	ENDIF
+
+	IF ((oldServoRunning) AND (!servoRunning))
+		StopSound(1, 0.0)
+		PLAYSOUND>BOLT3 1 1.0 0.0 0.0 0.0 0
+		oldServoRunning = servoRunning
+	ELSE
+		IF ((!oldServoRunning) AND (servoRunning))
+			StopSound(1, 0.0)
+			PLAYSOUND>SMALLSTART 1 1.0 0.0 0.0 0.0 0
+			oldServoRunning = servoRunning
+		ELSE
+			IF ((oldServoRunning) AND (servoRunning))
+				IF (!IsPlaying(1))
+					PLAYSOUND>SMALLSERV2 1 0.2 0.0 0.0 0.0 0
+					oldServoRunning = servoRunning
+				ENDIF
+			ELSE
+				oldServoRunning = servoRunning
+			ENDIF
+		ENDIF
+	ENDIF
+
+	ax = ((ox - px) * 0.1)
+	az = ((oz - pz) * 0.1)
+	vx = (vx + ax) * 0.8
+	vz = (vz + az) * 0.8
+	px = px + vx
+	pz = pz + vz
+	x = cx - px + Ssin(time * 0.3)
+	z = cz + pz + Ssin(time * 0.2)
+	HoldPlayerPos(0, 0.0, 3.2, 0.8)
+	HoldPlayerRot(0, 0.0, 0.0, 0.0)
+ENDSTATE

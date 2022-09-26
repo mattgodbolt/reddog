@@ -1,0 +1,179 @@
+; MGMemcpy.src
+; Assembly maths routines
+
+				.CPU			SH4
+				.OUTPUT			DBG=DWARF
+;				.SECTION		$G0, DATA
+				.SECTION		MEMCPY, CODE, ALIGN=16
+				.INCLUDE		"RedDog.pre"
+
+				; Initialise the global base register
+;				.EXPORT _InitGBR
+;_InitGBR:
+;				MOV.L	#STARTOF $G0, R0
+;				RTS
+;				LDC		R0, GBR
+
+; MoveStack (r4 = (long *) NewStackLocation);
+				.EXPORT _MoveStack
+_MoveStack:
+				mov.l   r5, @-r15           ; save work registers on stack
+				mov.l   r6, @-r15
+				mov.l   r7, @-r15
+
+				mov.l   r15, r5             ; r5 = Shinobi stack pointer (source)
+				mov.l   #H'8c00f400, r6     ; r6 = Shinobi stack base
+				sub     r5, r6              ; r6 -= r5, r6 = current stack size
+				sub     r6, r4              ; r4 -= r6, r4 = new stack location - stack size (destination)
+				mov     r4, r7              ; record working stack location
+				shlr2   r6                  ; r6 >>= 2, r6 = stack size / 4 for longword copy (length)
+
+?Loop
+				mov.l   @r5+,r0             ; longword memcpy (destination, source, length)
+				dt      r6
+				mov.l	r0,@r4
+				bf/s    ?Loop
+				add     #4,r4
+
+				mov     r7, r15             ; set stack = new working stack location
+
+				mov.l   @r15+, r7           ; restore work registers
+				mov.l   @r15+, r6
+				rts
+				mov.l   @r15+, r5
+
+
+				; Replacement madness for kmiMemCopy8
+				; r4 = dest (aligned)
+				; r5 = source (aligned)
+				; r6 = multple of 32
+				.EXPORT _AlignedCopy8
+				.ALIGN 16
+_AlignedCopy8:	PREF		@R5			; Because I want to
+				FSCHG
+
+?Loop			FMOV.D		@R5+, DR0	; read 8 bytes
+				ADD			#-32, R6
+
+				FMOV.D		@R5+, DR2	; read another 8 bytes
+				
+				FMOV.D		@R5+, DR4	; read another 8 bytes
+				CMPZ		R6
+
+				FMOV.D		@R5+, DR6	; read another 8 bytes
+
+				PREF		@R5			; pre-read the next lot
+
+				FMOV.D		DR0, @R4
+				ADD			#8, R4		; store
+
+				FMOV.D		DR2, @R4
+				ADD			#8, R4		; store
+
+				FMOV.D		DR4, @R4
+				ADD			#8, R4		; store
+
+				FMOV.D		DR6, @R4
+	
+				BF/S		?Loop
+				ADD			#8, R4		; store
+				
+				RTS
+				FSCHG
+
+				; SQ already set up, dest is in SQ space
+				.EXPORT _AlignedCopy8SQWithPref
+				.ALIGN 16
+_AlignedCopy8SQWithPref:
+				MOV			R5, R7		; take a copy of R5 for prefetching
+				FSCHG
+
+				ADD			#32, R7		; move R7 on a bit
+
+?Loop			PREF		@R7			; pre-read the next lot
+		
+				FMOV.D		@R5+, DR0	; read 8 bytes
+				ADD			#-32, R6
+
+				FMOV.D		@R5+, DR2	; read another 8 bytes
+				ADD			#32, R7		; move on the prefetch area 
+				
+				FMOV.D		@R5+, DR4	; read another 8 bytes
+				CMPZ		R6
+
+				FMOV.D		@R5+, DR6	; read another 8 bytes
+
+				FMOV.D		DR0, @R4
+				ADD			#8, R4		; store
+
+				FMOV.D		DR2, @R4
+				ADD			#8, R4		; store
+
+				FMOV.D		DR4, @R4
+				ADD			#8, R4		; store
+
+				FMOV.D		DR6, @R4
+				PREF		@R4			; sq blast
+	
+				BF/S		?Loop
+				ADD			#8, R4		; store
+
+				FSCHG				
+				RTS
+				MOV			R4, R0		; return value
+
+				.EXPORT _AlignedCopy8SQ
+				.ALIGN 16
+_AlignedCopy8SQ:
+				FSCHG
+
+?Loop			
+				FMOV.D		@R5+, DR0	; read 8 bytes
+				ADD			#-32, R6
+
+				FMOV.D		@R5+, DR2	; read another 8 bytes
+				
+				FMOV.D		@R5+, DR4	; read another 8 bytes
+				CMPZ		R6
+
+				FMOV.D		@R5+, DR6	; read another 8 bytes
+
+				FMOV.D		DR0, @R4
+				ADD			#8, R4		; store
+
+				FMOV.D		DR2, @R4
+				ADD			#8, R4		; store
+
+				FMOV.D		DR4, @R4
+				ADD			#8, R4		; store
+
+				FMOV.D		DR6, @R4
+
+				PREF		@R4			; sq blast
+				BF/S		?Loop
+				ADD			#8, R4		; store
+
+				FSCHG				
+				RTS
+				MOV			R4, R0		; return value
+
+				.EXPORT	_getSP
+_getSP:			RTS
+				MOV		R15, R0		
+
+				.EXPORT _usrPurgeMemory
+				; Replacement for kmiPurgeMemory as it's shite
+				; prototype void kmiPurgeMemory (void *addr, int len)
+_usrPurgeMemory:
+				OCBWB		@R4
+				ADD			#-32, R5
+
+				CMPZ		R5
+
+				BF/S		_usrPurgeMemory
+				ADD			#32, R4
+
+				RTS
+				NOP
+
+				.END

@@ -1,0 +1,223 @@
+
+//the beam laser of the scorpion boss
+//EITHER AN ATTACK NASTY LINKED TO THE HEAD
+//OR THE FOCAL BEAM FIRED AT THE CEILING
+
+//MAIN BEAM SPAWNS A JAM XTREME BEAM
+//FOLLOWED BY TRACER BEAMS EVERY X FRAMES
+
+//THE PARENT BOSS SETS THE MAIN BEAM VAR TO 99.0 WHEN IT IS TIME
+//TO DIE, THIS IN TURN WILL SET IT'S CHILD XTREME BEAM'S VAR TO 99.0
+//THEREBY KILLING THAT OFF
+//CHILD TRACERS DIE AFTER X FRAMES
+
+//GLOBALVAR USED TO SEMAPHORE THE FACT THAT THE BEAM HAS GONE, BACK TO THE PARENT
+
+
+
+
+DEFINE HEAD 29
+DEFINE BEAMLASER 1
+DEFINE MAIN	1
+
+LOCALINT TYPE
+
+  
+STATE Init
+	MakeMeTheLast()
+	MyFlag = MyFlag | ENEMY	| STRATCOLL
+  //	IF (GetGlobalParamInt(0) = 1)
+  //		STAT>FocalBeamType
+  //	ENDIF
+
+	IF (GetGlobalParamInt(0) = 2)
+		//JAMXTREME TYPE SPAWNED FROM MAIN BEAM
+		MyVar = 2
+		//MY PARENT = MAIN BEAM
+		MyParentTarget = Me
+		OBJECT> BOSSES\SCORPIONWEAPONS\SCORPIONBEAMX
+		MODELANIM>BOSSES\SCORPIONWEAPONS\SCORPIONBEAMX.RDO>Beam>REPEAT
+	ELSE
+		IF (!GetGlobalParamInt(0))
+			TYPE = MAIN
+			GlobalVar = 0
+			//THIS IS THE MAIN BEAM
+			//MY PARENT = SCORPION
+			MyParentTarget = Me
+			//CREATE XTREME BEAM
+			SetGlobalParamInt(0,2)
+			CREATE SPAWN_SCORPIONBOSSBEAM 0, 0, 0, 0, 0, 0, 0
+
+			AllocStratSoundBlock(1)
+			PLAYSOUND>BEAMGUN 0 1.0 0.0 0.0 0.0 CONTINUOUS
+
+			ClearGlobalParams()
+				
+			TRIGSET>Tracer EVERY 3
+		ENDIF
+		OBJECT> BOSSES\SCORPIONWEAPONS\SCORPIONBEAM
+		MODELANIM>BOSSES\SCORPIONWEAPONS\SCORPIONBEAM.RDO>Beam>REPEAT
+	ENDIF
+	
+	IF (GetGlobalParamInt(0) = 3)
+		//THIS IS THE TRACER TYPE
+
+		scalex = scalez = scaley = 0.3
+		//SPAWN TRACER
+		//MY PARENT = MAIN BEAM
+		MyParent = MyParentTarget
+
+		MyVar = 3
+		MyFlag2 = MyFlag2 | TRANSLUCENT
+		trans = 0.65
+	   //	TRIGSET>TraceUpdate EVERY 1
+		STAT>TraceMain
+	ENDIF
+
+	
+	TRIGSET>Update EVERY 1
+	IF (GetGlobalParamInt(0) = 2)
+
+		//JAM EXTREME
+		//Make my parent the boss itself
+		MyParent = MyParentsParent
+	 	MyVar = 2.0
+		scalex = scalez = scaley = 0.1
+	ELSE
+		//NORMAL
+		scalex = scalez = 0.1
+		MyVar = 0
+		scaley = 1.0
+	ENDIF
+  	STAT>Link
+ENDSTATE
+
+//NASTY CODE
+
+TRIGGER Tracer
+	IF (!(MyFlag & NODISP))
+		SetGlobalParamInt(0,3)
+		CREATE SPAWN_SCORPIONBOSSBEAM 0, 0, 0, 0, 0, 0, 0
+		ClearGlobalParams()
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+
+STATE TraceMain
+
+	WHILE (trans > 0.1)
+		trans = trans - 0.1
+	ENDWHILE     
+	Delete()
+
+ENDSTATE
+
+TRIGGER TraceUpdate
+	IF (MyParentFlag)
+		LinkToParentObject(HEAD, (TWOPI/360.0) * 5.0, 0, 0, 0, SNOUTLENGTH, SNOUTHEIGHT + 3.0)
+		TRIGSTOP
+	ELSE
+		Delete()
+	ENDIF
+ENDTRIGGER
+
+
+TRIGGER Update
+	IF ((GlobalVar > 99.0) OR (!MyParentFlag))
+	// OR (ParentSemaphore = 99.0))
+		TRIGRESET
+		TRIGSTOP
+		STAT>Die
+	ELSE
+			LinkToParentObject(HEAD, (TWOPI/360.0) * 5.0, 0, 0, 0, SNOUTLENGTH, SNOUTHEIGHT + 3.0)
+	   	TRIGFIN
+	ENDIF
+ENDTRIGGER
+
+STATE Die
+	WHILE (scalex > 0.1)
+		scalex = scalex - 0.1
+		scalez = scalex
+	ENDWHILE
+
+	//paranoia signal for all beams to stop
+   	IF (TYPE = MAIN)
+   	 	GlobalVar = 100.0
+   	ENDIF
+	Delete()
+
+ENDSTATE
+
+
+DEFINE SNOUTLENGTH 27.0
+DEFINE SNOUTHEIGHT -1.0
+
+LOCALINT Lightning
+
+TRIGGER Spark
+	LOOP (15)
+		Lightning = DrawLightning (0, 0, 0, 0, Lightning,2)
+	ENDLOOP
+	TRIGFIN
+ENDTRIGGER
+
+DEFINE BEAMRAD 10.0
+DEFINE BEAMLENGTH 389.0
+STATE Link
+	WHILE (GlobalVar < 100.0)
+   //	WHILE ((ParentSemaphore))
+	//AND (MyVar != 99.0))
+		MyFlag = MyFlag & LNOT(NODISP)
+
+		IF (MyVar = 2.0)
+		  	IF (scaley < 2.0)
+				scaley = scaley + 0.2
+			ENDIF
+		ENDIF
+
+		IF (MyVar = 0.0)
+		  	IF (scaley < 1.0)
+				scaley = scaley + 0.1
+			ENDIF
+			//COLLISION WITH REDDOG
+			//IF HE'S STILL ALIVE
+			IF (Player)
+			   	IF (BeamHit(BEAMLENGTH,BEAMRAD,DogX, DogY, DogZ))
+					//HURT REDDOG
+					PlayerHealth = PlayerHealth - 1.0
+			   	ENDIF
+			ENDIF
+		
+
+		ENDIF
+
+
+
+	ENDWHILE
+
+	IF (MyVar != 99.0)
+
+
+		WHILE (scalex > 0.1)
+			IF (scaley > 0.1)
+				scaley = scaley - 0.2
+			ELSE
+				scaley = 0.1
+			ENDIF
+		  	scalez = scalez - 0.1
+		  	scalex = scalez
+
+		ENDWHILE
+		MyFlag = MyFlag | NODISP
+		scalex = scalez = scaley  = 0.1
+	ELSE
+	  	IF (TYPE = MAIN)
+	  		GlobalVar = 100.0
+   	  //		MyTargetVar = 99.0
+	  	ENDIF
+		STAT>Die
+	ENDIF
+
+ENDSTATE
+

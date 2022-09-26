@@ -1,0 +1,70 @@
+LOCALFLOAT	scale
+LOCALFLOAT	time
+LOCALINT	lifetime
+LOCALINT	tempi
+
+STATE Init 
+	trans = 0.99
+  	SetFriction(0.0,0.0,0.0)
+	MyFlag = REALGRAVITYON | EXPLODEPIECE 
+	TRIGSET>Rotate EVERY 1 
+	lifetime = RandRange(4,25)
+	OBJECT>SFX\Shrapnel
+	HideObject(1)
+	HideObject(2)
+	HideObject(3)
+	HideObject(4)
+	HideObject(5)
+	HideObject(6)
+	HideObject(7)
+	HideObject(8)
+	HideObject(9)
+	time = RandRange(0.0, 9.9)
+	tempi = TOINT(time)
+	UnhideObject(tempi)
+	SetObjectShadowState(1)
+	RandomPointTo()
+	scale = 1.0
+	IF (GetGlobalParamFloat(0) != 0.0)
+		scale = scale * GetGlobalParamFloat(0)
+	ENDIF
+   	MoveY(scale) 
+	time = 0.0
+	ClearRotFlag()
+	STAT> START
+ENDSTATE
+
+STATE START
+	WHILE lifetime > 0
+		time = time + 0.016667
+		IF (time > 0.06)
+			time = time - 0.06
+			SetGlobalParamFloat(0, scale)
+			CREATE SPAWN_TRAILER 0.0, 0.0, 0.0, 0, 0, 0, 0
+			SetGlobalParamFloat(0, 0.0)
+		ENDIF
+		lifetime = lifetime - 1
+	ENDWHILE
+	STAT>Kill
+ENDSTATE
+
+STATE Kill
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+	WHILE (trans > 0.0)
+		trans = trans - 0.1
+	ENDWHILE
+
+	trans = 0.0
+
+	//IF (RandRange(0,4) > 2)
+	//	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+	//ENDIF
+	//ClearObj()
+	Delete()
+//	TRIGSTOP
+ENDSTATE
+
+STATE Rotate
+	RotateStratObjectXYZ(0.1, 0.0, 0.2)
+	TRIGFIN
+ENDSTATE

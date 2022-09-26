@@ -1,0 +1,64 @@
+LOCALINT	time
+LOCALFLOAT	xrot
+LOCALFLOAT	yrot
+LOCALFLOAT	zrot
+LOCALFLOAT	speedMul
+
+STATE Init
+	MyFlag = MyFlag | FRIENDLY | REALGRAVITYON
+	MyVar = RandRange(0.0, 3.0)
+	speedMul = 1.0
+//	AllocStratSoundBlock(1)
+//	PLAYSOUND>DEBRIS 0 1.0 0.0 0.0 0.0 0
+	SetFriction(0,0,0)
+	OBJECT> SCENERY\ROCKS\Rock6
+	RandomPointTo()
+	IF (GetGlobalParamInt(0) = 1)
+		speedMul = 0.4
+	ENDIF
+	IF (MyVar > 1.0)
+		IF (MyVar > 2.0)
+			MoveY(1.0 * speedMul) 
+			scalex = 3.0
+			scaley = 3.0
+			scalez = 3.0
+			xrot = RandRange(-0.16, 0.16)
+			yrot = RandRange(-0.3, 0.3)
+			zrot = RandRange(-0.4, 0.4)
+		ELSE
+			MoveY(1.5 * speedMul) 
+			scalex = 2.0
+			scaley = 2.0
+			scalez = 2.0
+			xrot = RandRange(-0.3, 0.3)
+			yrot = RandRange(-0.6, 0.6)
+			zrot = RandRange(-0.8, 0.8)
+		ENDIF
+	ELSE
+		MoveY(2.0 * speedMul) 
+		xrot = RandRange(-0.6, 0.6)
+		yrot = RandRange(-1.0, 1.0)
+		zrot = RandRange(-1.6, 1.6)
+	ENDIF
+   	
+	trans = 1.0
+	time = 0
+	ClearRotFlag()
+	STAT>Start
+ENDSTATE 
+
+STATE Start
+	LOOP (74)
+		time = time + 1
+		RotateStratObjectXYZ(xrot, yrot, zrot)
+		IF (time > 70)
+			MyFlag2 = MyFlag2 | TRANSLUCENT
+			IF (trans > 0.2)
+				trans = trans - 0.2
+			ELSE
+				trans = 0.0	
+			ENDIF
+		ENDIF
+	ENDLOOP
+	Delete()
+ENDSTATE

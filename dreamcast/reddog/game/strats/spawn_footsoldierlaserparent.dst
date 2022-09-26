@@ -1,0 +1,64 @@
+// Parent of the footsoldier to control weapon firing
+STATE Init
+	scalex = 0.1
+	scaley = 0.1
+	scalez = 0.1
+	MakeMeTheLast()
+	MyTarget = MyParentTarget
+  	OBJECT> WEAPON\FootSoldierLaserParent
+	SetObjectShadowState(0)
+	AllocStratSoundBlock(1)
+	TRIGSET>SetToParent EVERY 1
+	MyVar = GetGlobalParamFloat(0)
+	frame = GetGlobalParamFloat(1)
+	//SEE WHAT OBJECT TO LINK TO
+	IF (!MyVar)
+		MyVar = 5.0
+		frame =0.8
+	ENDIF
+	PLAYSOUND>SOLDIER_GUN 0 1.0  0.0 0.0 0.0  0
+	STAT>Run
+ENDSTATE
+
+
+STATE SetToParent
+	//WHILE PARENT IS STILL ALIVE, KEEP ME ALIVE
+	IF (MyParentFlag)
+		// 5 is the arm of the footsoldier
+		LinkToParentObject (MyVar, 0,0,0, 0,frame,0)
+		TRIGFIN
+	ELSE
+		Delete()
+	ENDIF
+
+ENDSTATE
+
+STATE Run
+
+
+	CREATE SPAWN_FootSoldierLaserChild 0,0,0, 0,0,0, 0
+	LOOP 2
+		scalex = scalex + 0.1
+		scaley = scalex
+		scalez = scalex
+	ENDLOOP
+
+	LOOP 2
+		MyFlag = MyFlag
+	ENDLOOP
+
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+	trans = 1
+	WHILE (scalex > 0.1)
+		scalex = scalex * 0.9
+		scaley = scalex
+		scalez = scalex
+		trans = trans * 0.9
+	ENDWHILE
+
+	WHILE (trans > 0.1)
+		trans = trans * 0.85
+	ENDWHILE
+	Delete()
+ENDSTATE
+

@@ -1,0 +1,95 @@
+	"SEGA EUROPE",
+
+	"Director of",
+	"Product Development",
+	"Naohiko Hoshino",
+
+	"Producer",
+	"Matt O\'Driscoll",
+
+	"Senior Test Manager",
+	"Jason Cumberbatch",
+
+	"Senior Lead Tester",
+	"Darren Lloyd",
+
+	"Lead Tester",
+	"Daniel Slater",
+
+	"Testers",
+	"Nick Bennett",
+	"Peter O'Brien",
+	"Chris Geiles",
+	"Justyn McLean",
+
+	"Localisation",
+	"Co-ordinator",
+	"Roberto Párraga-Sánchez",
+
+	"Localisation Team",
+	"Angelika Michitsch",
+	"Dave Thompson",
+
+	"Senior Design",
+	"Paul Jerem",
+
+	"Manual Localisation",
+	"Co-ordinator",
+	"Sarah Ward",
+
+	"Marketing Director",
+	"Giles Thomas",
+
+	"Product Marketing",
+	"Manager",
+	"Jim Pride",
+
+	"Specail Thanks:",
+	"Kazutoshi Miyake",
+	"Jean-Francois Cecillon",
+
+	"ARGONAUT SOFTWARE",
+
+	"Art Team", 
+	"David Hego",
+	"Dave Lowry",
+	"David Taylor",
+	"Jeff Vanelle",
+	"Juan Garcia",
+	"Leon Brazil",
+	"Melanie Amadi",
+	"Suzanne Cole",
+
+	"Animation",
+	"Dave Lowry",
+
+	"Programming Team",
+	"Matt Godbolt",
+	"Matt Porter",
+	"Saviz Izadpanah",
+
+	"Audio Manager",
+	"Justin Scharvona",
+
+	"Audio Engineers",
+	"Adam Fothergill",
+	"Karin Griffin",
+
+	"Testing Lead",
+	"Jake Fearnside",
+
+	"Additional Test",
+	"Carl Ross",
+
+	"Designer",
+	"Mark Stephenson",
+
+	"Lead Designer",
+	"Sefton Hill",
+
+	"Producer",
+	"Nick Clarke",
+
+	"Executive Producer",
+	"Jez San",
+	"Keith Robinson"

@@ -1,0 +1,21 @@
+
+
+STATE Init
+	MyFlag = MyFlag | ENEMY
+	OBJECT>SCENERY\Lava\LavaSpray
+	scalex = RandRange(0.5, 1.0)
+	scaley = scalex
+	scalez = scalex
+
+	ANIM> LavaSpray>Play
+	TRIGSET>KillOff WHENANIMOVER
+	STAT>Start
+ENDSTATE
+
+TRIGGER KillOff
+	Delete()
+ENDTRIGGER 
+
+STATE Start
+	
+ENDSTATE

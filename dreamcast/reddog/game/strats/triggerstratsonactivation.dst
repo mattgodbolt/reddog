@@ -1,0 +1,15 @@
+STATE Init
+
+	STAT>Del
+	
+ENDSTATE
+
+STATE Del
+
+	WHILE (GetSem(0) = 0)
+		MyFlag = MyFlag
+	ENDWHILE
+
+	Delete ()
+
+ENDSTATE

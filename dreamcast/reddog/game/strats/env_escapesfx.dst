@@ -1,0 +1,22 @@
+
+STATE Init
+
+   IF (MyParent)
+		WHILE (MyParentInvalid())
+			MyFlag = MyFlag
+		ENDWHILE
+  	ENDIF
+
+
+	AllocStratSoundBlock(2)
+	PLAYSOUND>RD_AFTERBURNER_LP 0 0.8 0.0 0.0 0.0 NOPOSITION | CONTINUOUS
+   	SetAudibleRange(1,300,500)
+	PLAYSOUND>ESCAPESHIP 1 1.0 0.0 0.0 0.0 CONTINUOUS | NODOPPLER
+
+	WHILE (MyParentFlag)
+		LinkToParentObject(5,0,0,0,0,0,0)
+	ENDWHILE
+
+	Delete()
+
+ENDSTATE

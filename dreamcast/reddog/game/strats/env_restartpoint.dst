@@ -1,0 +1,35 @@
+PARAMINT RestartNum 0
+//SETS THE RESTART POINTS
+//optional activation point 0, to define where the player is looking
+STATE Init
+	IF (!(MyFlag2 & OWNIPARAMS))
+		RestartNum = 0
+	ENDIF
+
+	IF ((!RestartNum) OR (RestartNum > RestartSet))
+
+	 	RestartX = x
+		RestartY = y
+		RestartZ = z
+		IF (HasActivation(0))
+			GetActivationPos(0)
+		ENDIF
+		RestartLookX = CheckX
+		RestartLookY = CheckY
+		RestartLookZ = CheckZ
+
+		RestartEnvParams(0)
+		// Store times
+		TimeFunction (-3)
+
+		IF (!RestartNum)
+			RestartSet = 1
+		ELSE
+			RestartSet = RestartNum
+		ENDIF
+
+	ENDIF
+	Delete()
+ENDSTATE
+   
+

@@ -1,0 +1,40 @@
+LOCALINT band
+
+TRIGGER CleanUp
+	DeleteBand (band)
+ENDTRIGGER
+
+STATE Init
+	MakeMeTheLast()
+	MyFlag = MyFlag | DELETECALLBACK
+	band = CreateBand (1, 32, 0, 1, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0)
+	AddBandSegment (band, 0, 0, 0, 0.5)
+	TRIGSET>Trailer EVERY 1
+	TRIGSET>BandTrigger EVERY 1
+	TRIGSET>CleanUp WHENDELETED
+	AddBandSegment (band, 0, 0, 0, 0.5)
+	TRIGSET>Kill PARENTDEAD
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	x = parentx
+	y = parenty
+	z = parentz
+ENDSTATE
+
+STATE Trailer
+	RubberBand (band, 0, 0, 0, 0.5)
+	TRIGFIN
+ENDSTATE
+
+STATE BandTrigger
+	AddBandSegment (band, 0, 0, 0, 0.5)
+	TRIGFIN
+ENDSTATE
+
+STATE Kill
+//	DeleteBand (band)
+	Delete()
+//	TRIGSTOP
+ENDSTATE

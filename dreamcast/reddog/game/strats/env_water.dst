@@ -1,0 +1,43 @@
+//PAL FRIENDLY
+PARAMINT NoFade 0
+PARAMINT GreenLava 0
+PARAMINT FastDie 0
+
+
+STATE Init
+	IF (!(MyFlag2 & OWNIPARAMS))
+		NoFade = 0 
+		GreenLava = 0
+		FastDie = 0
+	ENDIF
+	
+	AddWaterStrat()
+	IF (NoFade = 1)
+		StrtNoFade()
+	ENDIF
+	
+	AllocStratSoundBlock(1)
+	//PLAYSOUND>ICE_RIVER 0 0.0  0.0 0.0 0.0  CONTINUOUS
+
+	STAT>Start
+ENDSTATE
+
+STATE Start
+ENDSTATE
+
+STATE Start2
+	//IF (!IsPlaying(0))
+   //		 IF (RandRange(0,5.0) > 2.5)
+	//		PLAYSOUND>WATER3 0 1.0  0.0 0.0 0.0  0
+	//	 ENDIF
+		   //	IF (RandRange(0,5.0) > 2.5)
+		   //		PLAYSOUND>WATER2 0 1.0  0.0 0.0 0.0  0
+		   //	ELSE
+		   //		PLAYSOUND>WATERFALL2 0 1.0  0.0 0.0 0.0  0
+		   //	ENDIF
+		//ENDIF
+	 //  	MyVar = RandRange(0.6,1.0)
+	 //  	SetVolume(0,MyVar)
+	//ENDIF
+
+ENDSTATE

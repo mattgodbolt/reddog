@@ -1,0 +1,189 @@
+//PAL FRIENDLY
+// Hydro Boss Missile A
+// Flies upwards under the influence of gravity
+// Blows up after a few frames, which is nice
+// Leaves some nasty Missile B boys to come hassle the player
+
+LOCALINT frames
+LOCALINT innerBand
+LOCALINT outerBand
+DEFINE MISSILETIP 1
+
+TRIGGER TrailGen
+	MyVar = 1.5
+	SetGlobalParamInt(0,99)
+	CREATE SPAWN_BLASTEXP 0, -10.0, 0,0,0,0,0
+	ClearGlobalParams()
+
+
+
+	TRIGFIN
+ENDTRIGGER
+
+
+
+LOCALFLOAT temp1
+LOCALFLOAT temp2
+LOCALFLOAT temp3
+LOCALFLOAT temp4
+LOCALFLOAT temp5
+LOCALFLOAT temp6
+LOCALFLOAT temp7
+LOCALFLOAT temp8
+LOCALFLOAT temp9
+
+
+
+
+
+
+
+LOCALFLOAT onedeg
+LOCALFLOAT ang
+
+STATE Init
+
+	//SEE IF WE ARE LEFT OR RIGHT TYPE
+	IF (GetGlobalParamInt(0))
+		frame = 1.0
+	ELSE
+		frame = 0
+	ENDIF
+
+   
+	//CREATE EXPLOSION AT THE POINT OF EMISSION
+	MyVar = 4.5
+	CREATE SPAWN_BLASTEXP 0,0,0,0,0,0,0
+
+   	scalex = scaley = scalez = 2.2
+	onedeg = (TWOPI/360.0) * 10.0
+
+
+	// Firstly set up the object used
+	OBJECT>BOSSES\HYDROBOSS\HYDROMISSILEA
+
+	// The boss's parent is our target; the boss is our parent
+	MyTarget = MyParentParent
+
+	// Set up collision
+//	RegisterCollision()
+//	InitHDC()
+
+
+
+//	CalculateStratPolyData(0)
+	MyFlag = MyFlag | RELVELCALC | REALGRAVITYON | ENEMY | TARGETABLE
+
+
+	// Set up our health amount
+//	health = 150
+//	TRIGSET>BlowUp WHENDEAD
+	
+	// Set up a trigger to deal with collision
+	TRIGSET>ProcessCollision EVERY 1
+
+	MyVar = RandRange(1.0,1.2)
+	MyVar = RandRange(0.7,0.9)
+	MoveY(MyVar)
+
+	frames = RandRange(28,37)
+	frames = RandRange(2,6)
+	
+
+
+
+	TRIGSET>TrailGen EVERY 4
+
+	WHILE (frames)
+		frames = frames - 1
+	 //	IF (frames > 10)
+	 //		MODELANIM>BOSSES\HYDROBOSS\HYDROMISSILEA.RDO>WingOpen>0
+	 //	ENDIF
+
+	ENDWHILE
+
+			MODELANIM>BOSSES\HYDROBOSS\HYDROMISSILEA.RDO>WingOpen>0
+   //	TRIGKILL>TrailGen EVERY 4
+
+	MyFlag = MyFlag and LNOT(STRATCOLL)
+
+	temp1 = StrM00
+	temp2 = StrM01
+	temp3 = StrM02
+	temp4 = StrM10
+	temp5 = StrM11
+	temp6 = StrM12
+	temp7 = StrM20
+	temp8 = StrM21
+	temp9 = StrM22
+	PointToXY(DogX,DogY,DogZ)
+
+	ang = (TWOPI/8.0) + RandRange(0,onedeg)
+	
+	AllocStratSoundBlock(1)
+
+	PLAYSOUND>SPLIT2 0 1.0 0.0 0.0 0.0 0
+
+  	IF (frame)
+  		CREATE SPAWN_HydroBoss_MissileB 0,0, 0, 0,0, ang, 0
+   	ELSE
+  		CREATE SPAWN_HydroBoss_MissileB 0,0, 0, 0, 0, -ang, 0
+  	ENDIF
+
+
+
+	StrM00 = temp1
+	StrM01 = temp2
+	StrM02 = temp3
+
+	StrM10 = temp4
+
+	StrM11 = temp5
+
+	StrM12  = temp6
+
+	StrM20 = temp7
+
+	StrM21 = temp8
+
+	StrM22  = temp9
+
+ 	HideObject(MISSILETIP)
+
+	MyVar = 2.0
+	CREATE SPAWN_ENEMYDEBRIS 0,0,0,0,0,0, MISSILETIP
+	SetGlobalParamInt(0,99)
+	CREATE SPAWN_BLASTEXP 0,0,0,0,0,0, MISSILETIP
+	ClearGlobalParams()
+   
+   	// Fall to the ground
+	SetFriction (0,0,0)
+	MyFlag = MyFlag | FLOORCOLL | STRATCOLL
+	RegisterCollision()
+
+	WHILE ((!(IAmOnFloor)) AND (z > DogZ))
+		MyFlag = MyFlag
+	ENDWHILE
+  
+   //	LOOP (5)
+   //		MyFlag = MyFlag
+   //	ENDLOOP
+
+	CREATE SPAWN_BlastExp 0,0,0, 0,0,0, 0
+  //	Delete()
+   	DESTROYME SPAWN_EXPLODINGBITS
+ENDSTATE
+
+LOCALINT DONE
+
+TRIGGER ProcessCollision
+//	CalculateStratPolyData(0)
+	IF ((absspeedz < 0) AND (!DONE))
+		DONE = 1
+		TRIGKILL>TrailGen EVERY 4
+	ENDIF
+
+	FaceAlongDir()
+	TRIGFIN
+ENDTRIGGER
+

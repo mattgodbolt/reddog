@@ -1,0 +1,277 @@
+LOCALFLOAT	time
+LOCALFLOAT	px
+LOCALFLOAT	py
+LOCALFLOAT	pz
+LOCALFLOAT	ax
+LOCALFLOAT	ay
+LOCALFLOAT	az
+LOCALFLOAT	tempf
+LOCALINT	padPush
+LOCALINT	padPress
+LOCALINT	ft
+LOCALINT	fired
+LOCALINT	firedTime
+LOCALINT	pos
+LOCALINT	tempi 
+LOCALINT	currZoomLevel 
+LOCALINT	zoomLevel 
+LOCALINT	zoomTime
+LOCALINT	zoomStarted
+
+DEFINE		LASER					10
+
+STATE Init
+  	MyFlag = MyFlag | FRIENDLY | BULLETTYPE | FLOORCOLL
+	MyFlag2 = MyFlag2 | PLAYER_CF
+	OBJECT>REDDOG\WLASER DOCKLANDS
+	SetObjectShadowState(1)
+	SetFriction(0.5, 0.5, 0.5)
+	time = 0.0
+	x = DogX
+	y = DogY
+	z = DogZ + 0.5
+	ft = 0
+	zoomTime = 0
+	zoomLevel = 0
+	currZoomLevel = 0
+	IF (LeftGunPickUp = 1)
+		IF (RightGunPickUp = 1)
+			pos = 3
+		ELSE
+			pos = 2
+		ENDIF
+	ELSE
+		pos = 1
+	ENDIF
+	AllocStratSoundBlock(2)
+	TRIGSET>Always EVERY 1
+	fired = 0
+	firedTime = 31
+	STAT>Start
+ENDSTATE
+
+TRIGGER Always
+
+	FacePlayerAim(ParentPlayerNumber)
+	time = time + 1.0
+	tempf = time * 0.05
+	IF (pos = 1)
+		px = parentLeftGunX + Ssin(tempf * 2.0) * 0.2
+		py = parentLeftGunY + Scos(tempf) * 0.2
+		pz = parentLeftGunZ + 1.5 + Ssin(tempf * 2.3) * 0.1
+	ENDIF
+	IF (pos = 2)
+		px = parentRightGunX + Ssin(tempf * 2.0) * 0.2
+		py = parentRightGunY + Scos(tempf) * 0.2
+		pz = parentRightGunZ + 1.5 + Ssin(tempf * 2.3) * 0.1
+	ENDIF
+	IF (pos = 3)
+		px = parentTopGunX + Ssin(tempf * 2.0) * 0.2
+		py = parentTopGunY + Scos(tempf) * 0.2
+		pz = parentTopGunZ + 1.5 + Ssin(tempf * 2.3) * 0.1
+	ENDIF
+	ax = (px - x) * 15.0 
+	ay = (py - y) * 15.0
+	az = (pz - z) * 15.0
+	x = x + HoldPlayerVX * 0.5
+	y = y + HoldPlayerVY * 0.5
+	z = z + HoldPlayerVZ * 0.5
+	IF (ScoobyDoo)
+		HoldPlayerVY = 4.0
+	ENDIF
+	ApplyAbsForce(ax, ay, az, 0, 0, 0, 1.0)
+	tempf = GetObjectCrntRot(1,MODEY)
+	SetObjectCrntRot(1, tempf + 0.05 + (0.01 * ft),MODEY)
+	
+	IF (MyParentFlag & NODISP)
+		MyFlag = MyFlag | NODISP
+	ELSE
+		MyFlag = MyFlag & LNOT(NODISP)
+	ENDIF
+
+	
+	tempf = GetPlayerZoom(0)
+	IF (zoomLevel = 0)
+		tempf = tempf + ((0.0 - tempf) * 0.1)
+	ENDIF
+	IF (zoomLevel = 1)
+		tempf = tempf + ((-0.3 - tempf) * 0.1)
+	ENDIF
+	IF (zoomLevel = 2)
+		tempf = tempf + ((-0.5 - tempf) * 0.1)
+	ENDIF
+	IF (zoomLevel = 3)
+		tempf = tempf + ((-0.6 - tempf) * 0.1)
+	ENDIF
+	IF ((tempf > -0.01) AND (tempf < 0.01))
+		SetPlayerZoom(0, 0.0)
+	ELSE
+		SetPlayerZoom(0, tempf)
+	ENDIF
+	
+	TRIGFIN
+ENDTRIGGER
+
+LOCALINT VALID
+
+
+STATE Start
+	
+	IF (MyParentHealth <= 0.0)
+		SetSecondaryWeaponType(0, 0)
+		STAT>Die
+	ENDIF 
+	
+	VALID = !((PlayerState & PS_SCRIPTHELD) | (PlayerState & PS_INDROPSHIP))
+	IF (VALID)
+		padPush = GetPadPush(0)
+	ELSE
+		padPush = 0
+	ENDIF
+
+  	padPush = 	GetPadPush(0)
+	padPress = 	GetPadPress(0)
+	
+	firedTime = firedTime + 1
+		 
+	IF ((padPress & PADB) AND (firedTime > 30))
+		IF (GetSecondaryWeaponAmount(0) > 0.0)
+			ft = ft + 1	
+		ENDIF
+		
+		fired = 0
+		IF (ft > 30.0)
+
+			SetPlayerAcc(0, 0.0)
+			SetPlayerBoostButtonCount(0, 0)
+			
+			ft = 30
+			ax = RandRange(-0.5, 0.5) + x
+			ay = RandRange(-0.5, 0.5) + y
+			az = RandRange(-0.5, 0.5) + z
+			px = RandRange(-0.5, 0.5) + x
+			py = RandRange(-0.5, 0.5) + y
+			pz = RandRange(-0.5, 0.5) + z
+			DrawShock(px, py, pz, ax, ay, az, 0.1, 1.0, 1.0)
+			ax = RandRange(-0.5, 0.5) + x
+			ay = RandRange(-0.5, 0.5) + y
+			az = RandRange(-0.5, 0.5) + z
+			px = RandRange(-0.5, 0.5) + x
+			py = RandRange(-0.5, 0.5) + y
+			pz = RandRange(-0.5, 0.5) + z
+			DrawShock(px, py, pz, ax, ay, az, 0.1, 1.0, 1.0)
+			ax = RandRange(-0.5, 0.5) + x
+			ay = RandRange(-0.5, 0.5) + y
+			az = RandRange(-0.5, 0.5) + z
+			px = RandRange(-0.5, 0.5) + x
+			py = RandRange(-0.5, 0.5) + y
+			pz = RandRange(-0.5, 0.5) + z
+			DrawShock(px, py, pz, ax, ay, az, 0.1, 1.0, 1.0)
+			IF (PlayerSpeed(0) < 0.1)
+				IF (padPush & PADFORWARD)
+					IF (zoomLevel < 3)
+						zoomLevel = zoomLevel + 1
+						zoomTime = 0
+					ENDIF
+				ENDIF
+				IF (padPush & PADBACKWARD)
+					IF (zoomLevel > 0)
+						zoomLevel = zoomLevel - 1
+						zoomTime = 0
+					ENDIF
+				ENDIF
+			ENDIF
+			IF ((zoomLevel = 0) AND (zoomStarted = 0))
+				zoomLevel = 1
+				zoomStarted = 1
+			ENDIF
+		ELSE
+			tempf = GetSecondaryWeaponAmount(0)
+			IF (tempf > 0.0)
+				tempf = tempf - 1
+				SetSecondaryWeaponAmount(0, tempf)
+			ENDIF
+		ENDIF
+
+		IF (!IsPlaying(1))
+			PLAYSOUND>SNIPEWINDUP2 0 0.9 0.0 0.0 0.0 0
+			PLAYSOUND>SNIPEROT2 1 0.9 0.0 0.0 0.0 CONTINUOUS
+		ELSE
+			SetPitch(1, ft/30.0)
+		ENDIF
+	ELSE
+		IF (fired)
+			IF (firedTime > 30)
+				zoomLevel = 0
+			ENDIF
+		ENDIF
+		zoomStarted = 0
+		IF (ft > 3)
+			IF (fired = 0)
+				SetGlobalParamInt(0, ft)
+				SetGlobalParamInt(1, 0)
+				CREATE SPAWN_REDDOG_BEAM 0, 0, 0, 0, 0, 0, 0
+				SetGlobalParamInt(0, 0)
+				firedTime = 0
+				fired = 1
+			ENDIF
+			ft = ft - 3
+			SetPitch(1, ft/30.0)
+		ELSE
+			ft = 0
+			StopSound(1,0)
+		ENDIF
+
+		IF (!(padPress & PADB))
+			tempi = GetSecondaryWeaponAmount(0)
+
+			IF (tempi <= 0)
+				MyFlag2 = MyFlag2 | TRANSLUCENT
+				trans = 1.0
+				LOOP (30)
+					trans = trans - 0.03333
+				ENDLOOP
+				SetSecondaryWeaponType(0, 0)
+				STAT>Die
+			ENDIF
+		ENDIF
+	ENDIF
+	
+	
+
+	tempi = GetSecondaryWeaponType(0)
+
+	IF (tempi != LASER)
+		MyFlag2 = MyFlag2 | TRANSLUCENT
+		trans = 1.0 
+		LOOP (30)
+			trans = trans - 0.03333
+		ENDLOOP
+		STAT>Die
+	ENDIF
+	
+	IF (PlayerDistXY() > 20.0)
+		StopSound(1,0)
+		STAT>Restart
+	ENDIF 
+ENDSTATE
+
+STATE Die
+	Delete()
+
+ENDSTATE
+
+STATE Restart
+	MyFlag = MyFlag & LNOT(FLOORCOLL)
+	LOOP (30)
+		MyFlag = MyFlag
+	ENDLOOP
+	x = DogX
+	y = DogY
+	z = DogZ + 0.5
+	LOOP(2)
+		MyFlag = MyFlag
+	ENDLOOP
+	MyFlag = MyFlag | FLOORCOLL
+	STAT>Start
+ENDSTATE

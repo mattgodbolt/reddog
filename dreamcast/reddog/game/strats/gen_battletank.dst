@@ -1,0 +1,114 @@
+DEFINE	GenTime			0
+DEFINE	MaxAtAnyTime	1
+DEFINE	Total			2
+DEFINE	Current			3
+DEFINE	Created			4
+DEFINE	Flag			5
+
+LOCALINT	tempi
+LOCALINT	tempj
+LOCALINT	tempk
+LOCALINT	templ
+LOCALINT	active
+LOCALINT	time
+LOCALINT	genTime
+LOCALINT	doit
+LOCALFLOAT	tempf
+
+STATE Init
+	MyFlag = MyFlag | ENEMY
+	doit = 0
+   	WHILE (MyParentInvalid())
+   		MyFlag = MyFlag
+   	ENDWHILE
+
+	IF (MyPath)
+		//ensure the own pos is supported
+   		SetGlobalParamInt(0,99)
+		InitPath()
+		ClearGlobalParams()
+	ENDIF
+
+	TRIGSET>Always EVERY 1
+	time = 0
+	genTime = GetParentSem(GenTime)
+   
+	active = 0
+	STAT>Start
+ENDSTATE
+
+TRIGGER Always
+	IF (!MyParentFlag)
+		Delete()
+	  //	TRIGSTOP
+	ELSE
+		TRIGFIN
+	ENDIF
+ENDTRIGGER 
+
+STATE Start
+	IF (GetParentSem(Flag) = 1)
+		STAT>Kill
+	ENDIF
+	WHILE (GetParentSem(Flag) = 2)
+		MyFlag = MyFlag
+	ENDWHILE
+
+	time = time + 1
+
+	IF ((active = 0) AND (time > (genTime * 30)))
+		IF (HasActivation(0))
+			IF (!PlayerNearActivationXY(0))
+				IF (HasActivation(1))
+					IF (!EnemyInActivation(1, 2D))
+						doit = 1
+					ENDIF
+				ELSE
+					doit = 1
+				ENDIF
+			ENDIF
+		ELSE			
+			IF (HasActivation(1))
+				IF (!EnemyInActivation(1, 2D))
+					doit = 1
+				ENDIF
+			ELSE
+				doit = 1
+			ENDIF
+		ENDIF
+	ENDIF
+
+	IF (doit)
+		tempi = GetParentSem(Created)
+		tempj = GetParentSem(Total)
+		tempk = GetParentSem(Current)
+		templ = GetParentSem(MaxAtAnyTime)
+		IF ((tempi < tempj) AND (tempk < templ))
+			IF (RandRange(0.0, 100.0) < 100.0)
+				IF (!(EnemyInActivation(1, 2D)))
+					AddParentSem(Created, 1)
+					AddParentSem(Current, 1)
+					SetGlobalParamFloat(0, 1)
+					CREATE BattleTank 0, 0, 0, 0, 0, 0, 0
+					active = 1
+					SetGlobalParamFloat(0, 0)
+				ENDIF
+			ENDIF
+		ENDIF
+		doit = 0
+	ENDIF
+
+	IF (MyParentFlag)
+		IF (MyVar > 0.0)
+			time = 0
+			tempi = TOINT(MyVar)
+			SubParentSem(Current, tempi)
+			active = 0
+			MyVar = 0.0
+		ENDIF
+	ENDIF
+ENDSTATE
+
+STATE Kill
+	Delete()
+ENDSTATE

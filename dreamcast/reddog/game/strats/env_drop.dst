@@ -1,0 +1,20 @@
+LOCALINT	time
+
+STATE Init
+	MyFlag = MyFlag | REALGRAVITYON | SPRITE
+
+	OBJECT>SCENERY\OTHER\ENV_DROP
+	//UnitiseMatrix()
+	time = 90
+	scalex = 0.1
+	scaley = 0.1
+	scalez = 0.1
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	time = time - 1
+	IF (time  <= 0)
+		Delete()
+	ENDIF
+ENDSTATE

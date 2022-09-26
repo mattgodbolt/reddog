@@ -1,0 +1,1655 @@
+
+//BOSS VAR USED AS HIT SEMAPHORE BETWEEN CRYSTAL AND BOSS
+DEFINE NEARDIST 45.0
+
+DEFINE WALKMODE 0 
+DEFINE DEFENCEMODE 1 
+
+LOCALINT MODE
+
+LOCALFLOAT startx
+LOCALFLOAT starty
+
+LOCALFLOAT shealth
+LOCALFLOAT sframe
+LOCALFLOAT sdamage
+LOCALFLOAT MOD
+
+STATE CaveLinker
+	MakeMeTheLast()
+   	OBJECT> BOSSES\CAVEBOSS\SINGLECRYSTAL
+	DontFogMeOut()
+	MyFlag2 = MyFlag2 | SPECULAR
+	scalex = scaley = scalez = 3.0
+
+	shealth = RandRange(0.3,0.5)
+	sframe = RandRange(0.3,0.5)
+	sdamage = RandRange(0.3,0.5)
+	SetSpecularColour(0,health,frame,damage)
+	CheckX = 0
+	MOD = 0.5
+	TRIGSET>DecMod EVERY 2
+   	STAT>LinkerMain
+ENDSTATE
+
+LOCALINT Lightning
+
+TRIGGER DecMod
+	IF (scalex > 1.0)
+		scalex = scalex - 0.05
+		scalez = scaley = scalex
+
+	ELSE
+		GlobalVar = 1.0
+		trans = 1.0
+		MyFlag2 = MyFlag2 | TRANSLUCENT
+   		TRIGSET>Fadeout EVERY 10
+	 	TRIGSTOP
+
+	ENDIF
+
+
+	TRIGFIN
+
+ENDTRIGGER
+
+TRIGGER Fadeout
+	IF (trans > 0.1)
+		trans = trans - 0.1
+	ELSE
+		Delete()
+	ENDIF
+
+
+	TRIGFIN
+
+ENDTRIGGER
+
+								  
+
+STATE LinkerMain
+	CheckX = CheckX + TWOPI/360.0
+	CheckY = Ssin(CheckX * 0.25)
+//	CheckZ = MOD * RandRange(1.0,3.0)
+	CheckZ = 0.05
+
+
+	health = shealth + (CheckZ * CheckY)
+	frame = sframe + (CheckZ * CheckY)
+	damage = sdamage + (CheckZ * CheckY)
+
+	
+	SetSpecularColour(0,health,frame,damage)
+	Lightning = DrawLightning (MyVar, 0, 1.4, -0.25, Lightning,2)
+	LinkToParentObject(MyVar,0,0,0,0,0,0)
+	RelRotateZ(CheckX)
+ENDSTATE
+
+
+LOCALINT ID
+LOCALINT temp
+
+LOCALFLOAT OLDGENHEALTH
+LOCALFLOAT SPECAMOUNT
+LOCALFLOAT CoreHit
+
+TRIGGER DamageCore
+	SPECAMOUNT = 1.0 / 10
+	LOOP (10)
+		SetSpecularColour(CENTRECORE, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		SetSpecularColour(CurrentTopBit, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		SetSpecularColour(CurrentRingTop, SPECAMOUNT / 2.0,SPECAMOUNT / 2.0,SPECAMOUNT /2.0)
+		SPECAMOUNT = SPECAMOUNT + 1.0 / 10.0
+		ObjectSpecularFlash(CENTRECORE,1)
+		ObjectSpecularFlash(CurrentTopBit,1)
+		ObjectSpecularFlash(CurrentRingTop,1)
+	ENDLOOP
+	ObjectSpecularFlash(CENTRECORE,0)
+	ObjectSpecularFlash(CurrentRingTop,0)
+	ObjectSpecularFlash(CurrentTopBit,0)
+	CoreHit = 0
+	TRIGSTOP
+ENDTRIGGER
+
+
+DEFINE CENTRECORE 1
+DEFINE INNERCORE 2
+DEFINE TOPRING 3
+DEFINE TOPRING2 5
+DEFINE TOPRING3 7
+DEFINE TOPRING4 9
+
+
+
+
+DEFINE LOWRING 4
+DEFINE LOWRING2 6
+DEFINE LOWRING3 8
+DEFINE LOWRING4 10
+
+
+DEFINE TOPBIT	11
+DEFINE TOPBIT2	12
+DEFINE TOPBIT3	13
+DEFINE TOPBIT4	14
+
+
+LOCALFLOAT GENhealth
+
+
+DEFINE GENERATORHEALTH 300.0
+
+STATE Init 
+
+	
+	IF (GetGlobalParamInt(0) = 1)
+		STAT>SpawnChild
+	ENDIF
+
+	IF (GetGlobalParamInt(0) = 3)
+		STAT>BossRocket
+	ENDIF
+
+	IF (GetGlobalParamInt(0) = 2)
+		MyVar = GetGlobalParamInt(1)
+		STAT>CaveLinker
+	ENDIF
+
+	IF (MyPath)
+		SetGlobalParamInt(0,99)
+		InitPath()
+		ClearGlobalParams()
+	   //	InitPath()
+	ENDIF
+
+	IF (!PNode)
+		OBJECT> BOSSES\CAVEBOSS\CAVEBOSSGENERATOR
+	ENDIF
+	DontFogMeOut()
+	OLDGENHEALTH = GENERATORHEALTH
+	GENhealth = GENERATORHEALTH
+	SetObjectHealth(CENTRECORE,GENERATORHEALTH)
+   	InitHDC()
+	GlobalVar2 = 0
+
+	RegisterCollision()
+  	HideObject(TOPBIT2)
+  	HideObject(TOPBIT3)
+  	HideObject(TOPBIT4)
+  	HideObject(TOPRING2)
+  	HideObject(TOPRING3)
+  	HideObject(TOPRING4)
+  	HideObject(LOWRING2)
+  	HideObject(LOWRING3)
+  	HideObject(LOWRING4)
+
+
+
+	InActivateObjectCollision(INNERCORE)
+	InActivateObjectCollision(TOPBIT2)
+	InActivateObjectCollision(TOPBIT3)
+	InActivateObjectCollision(TOPBIT4)
+	InActivateObjectCollision(TOPRING2)
+	InActivateObjectCollision(TOPRING3)
+	InActivateObjectCollision(TOPRING4)
+	InActivateObjectCollision(LOWRING2)
+	InActivateObjectCollision(LOWRING3)
+	InActivateObjectCollision(LOWRING4)
+
+	CurrentTopBit = TOPBIT
+   	CurrentRingTop = TOPRING
+	CurrentRingLow = LOWRING
+
+
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+	MyVar = 1.0   
+	STAT>Wait
+
+ENDSTATE
+
+
+LOCALINT CurrentTopBit
+LOCALINT CurrentRingTop
+LOCALINT CurrentRingLow
+
+
+TRIGGER FlashInner
+	damage = 0.5 + 0.5 * Ssin(MOD)
+	CheckX = Ssin(MOD)
+	MOD = MOD + TWOPI/45.0
+	SetSpecularColour(INNERCORE, damage,0,damage)
+	ObjectSpecularFlash(INNERCORE,1)
+	SetEnvironmentParms(5.0,200.0,-1,0,0,0.5 + CheckX,0.5 + CheckX)
+
+	TRIGFIN
+ENDTRIGGER
+
+
+
+LOCALFLOAT delta
+
+STATE Wait
+	IF (MyVar)
+		GlobalVar2 = 1
+		MyFlag = MyFlag & LNOT(NODISP)
+	  
+	  	WHILE (trans < 1.0)
+			trans = trans + 0.1
+		ENDWHILE
+
+	 	MOD = 0
+	 	TRIGSET>FlashInner EVERY 1
+
+	 
+		//SMALL DELAY
+
+		frame = 0
+
+		WHILE (frame < 150)
+			frame = frame + 1
+		ENDWHILE
+	 
+	 
+	 
+	   //OPEN UP
+   		frame = 0
+   		delta = 0
+   		LOOP (40)
+	  		delta = delta + frame
+   			TransObjectRel(CurrentRingTop, 0, 0, frame)
+		 //	TransObjectRel(CurrentRingLow, 0, 0, -frame)
+			TransObjectRel(CurrentRingLow, 0, 0, frame)
+		   
+	 	   	IF (frame < 1.0)
+	 			frame = frame + 0.02
+	 		ENDIF
+
+	  	ENDLOOP
+
+
+	   	SetGlobalParamInt(0,1)
+		//IF (HasActivation(0))
+		//	GetActivationPos(0)
+	   //	ENDIF
+
+
+	   //	startx = CheckX	 - x
+	   //	starty = CheckY - y
+
+		startx = 0
+		starty = 0
+		CREATE CAVEBOSS  startx, starty, 0, 0, 0, 0, 0
+		ClearGlobalParams()
+
+		//WE ARE NOW IN A STAGE WHERE DAMAGE CAN BE DONE
+	  	MyFlag = MyFlag | STRATCOLL | ENEMY
+
+	 	TRIGSET>DamageCheck EVERY 1
+
+		//AWAIT THE SPAWNED BOSS TO SAY I'M HERE
+
+
+		WHILE (MyVar)
+			MyFlag = MyFlag
+		ENDWHILE
+
+
+
+		//NOW DISAPPEAR
+
+		WHILE (trans > 0.1)
+			trans = trans - 0.1
+		ENDWHILE
+
+
+	   	MyFlag = MyFlag & LNOT(STRATCOLL)
+
+		MyFlag = MyFlag | NODISP
+
+		InActivateObjectCollision(CurrentTopBit)
+		InActivateObjectCollision(CurrentRingTop)
+		InActivateObjectCollision(CurrentRingLow)
+
+
+		TRIGKILL>DamageCheck EVERY 1
+	   	TRIGKILL>FlashInner EVERY 1
+		//ENSURE THE DOME IS ON	and fog is reset
+		SetEnvironmentParms(-1,-1,-1, -2,-1,-1,-1)
+	    //TURN DOME OFF
+	   	SetEnvironmentParms(-1,-1,-1, 0,-1,-1,-1)
+
+
+		
+	 	TransObjectRel(CurrentRingTop, 0, 0, -delta)
+ 		TransObjectRel(CurrentRingLow, 0, 0, -delta)
+		GlobalVar2 = 0
+		MyVar = 0
+	ENDIF
+ENDSTATE
+
+
+
+LOCALFLOAT BOSSSTAGE
+
+STATE SpawnChild
+	BOSSSTAGE = 1.0
+	GlobalVar = 0
+	//RECORD THE STARTING POSITION
+	startx = x
+	starty = y
+   	OBJECT> BOSSES\CAVEBOSS\CAVEBOSS
+   	MODELANIM>BOSSES\CAVEBOSS\CAVEBOSS.RDO>DefenceStand>REPEAT
+	DontFogMeOut()
+	MyFlag = MyFlag | NODISP | STRATCOLL | HOVERMOVE | RELVELCALC | FLOORCOLL | GRAVITYON | TARGETABLE
+   	RegisterCollision()
+	InitHDC()
+
+	PointToXY(DogX,DogY,0)
+	IAmDaBoss
+	
+
+	TRIGSET>Calculate EVERY 1
+
+	MyFlag2 = MyFlag2 | NOHDC
+
+  	WHILE (!(IAmOnFloor))
+  		MyFlag = MyFlag
+  	ENDWHILE
+
+   	MyFlag = MyFlag & LNOT(NODISP)
+
+	ID = MyPNODEIDS + 1
+
+   	SetGlobalParamInt(0,2)
+   	temp = 0
+	IMMLOOP (ID)
+		IF (temp)
+			SetGlobalParamInt(1,temp)
+			CREATE CAVEBOSS  0, 0, 0, 0, 0, 0, temp
+			HideObject(temp)
+		ENDIF
+		temp = temp + 1
+	IMMENDLOOP
+	ClearGlobalParams()
+
+	//scalex = scaley = scalez = 0.1
+
+
+	WHILE (!GlobalVar)
+		//IF (scalex != 1.0)
+		//	scalex = scalex + 0.1
+		//ELSE
+		//	scalex = 1.0
+		//ENDIF
+		//scaley = scalez = scalex
+
+		MyFlag = MyFlag
+	ENDWHILE
+
+	//scalex = scaley = scalez = 1.0
+
+
+   	MODELANIM>BOSSES\CAVEBOSS\CAVEBOSS.RDO>Stand>REPEAT
+
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+	trans = 0
+   
+	temp = 0
+   	IMMLOOP (ID)
+		IF (temp)
+			UnhideObject(temp)
+		ENDIF
+		temp = temp + 1
+	IMMENDLOOP
+
+	WHILE (trans < 1.0)
+		trans = trans + 0.01
+	ENDWHILE
+
+
+
+	
+
+	MyFlag2 = MyFlag2 & LNOT(TRANSLUCENT)
+
+	//TELL THE GENERATOR, WE'RE HERE
+	ParentSemaphore = 0
+
+	MyVar = 0
+
+
+	MyFlag2 = MyFlag2 & LNOT(NOHDC)
+  	TRIGSET>HitCheck EVERY 1
+
+	IAmDaBoss
+	
+	IF (MyParent)
+		InheritMyParent()
+	ENDIF
+
+	IF (MyPath)
+		SetGlobalParamInt(0,99)
+		InitPath()
+		ClearGlobalParams()
+	ENDIF
+
+	//ENSURE WE ARE NOW ENEMY TYPE
+	MyFlag = MyFlag | ENEMY
+	InsideCheck = 1
+
+	MODE = WALKMODE
+	SetObjectHealth(BODY,BODYHEALTH)
+
+	STAT>Walk
+
+
+ENDSTATE
+
+STATE Walk2
+ENDSTATE
+
+
+LOCALINT aframe
+
+//THE FRAME IN WHICH TO LAUNCH THE ROCKET, SHOULD BE MODIFIED ACCORDINGLY FOR THE PAL
+//VERSION
+DEFINE FIREFRAME 22
+
+STATE Fire
+
+
+	IF ((FIRE) OR RandRange(0,100.0) < 60.0)
+		//IF FIRE HAS NOT ALREADY BEEN SET UP, THEN RANDOMLY PICK A MODE
+		//AFTER ENSURING OUR ANIM IS IN STANDING
+	   	IF (!FIRE)
+
+			MODELANIM>BOSSES\CAVEBOSS\CAVEBOSS.RDO>Stand>REPEAT
+			WHILE (MyAnimFlag & RUNNING)
+				MyFlag = MyFlag
+			ENDWHILE
+
+		 	OSX = RandRange(0,100.0)
+
+	   
+		 	//START THE FIRE
+			IF (OSX < 25.0)
+				FIRE = LEFT
+			ELSE
+				IF (OSX > 75.0)
+					FIRE = DUAL
+			  	ELSE
+					FIRE = RIGHT
+				ENDIF
+			ENDIF
+		ENDIF
+
+		IF (FIRE = LEFT)
+			MODELANIM>BOSSES\CAVEBOSS\CAVEBOSS.RDO>LeftFire>0
+	   	ELSE
+			IF (FIRE = RIGHT)
+				MODELANIM>BOSSES\CAVEBOSS\CAVEBOSS.RDO>RightFire>0
+			ELSE
+				//DUAL
+				MODELANIM>BOSSES\CAVEBOSS\CAVEBOSS.RDO>DoubleFire>0
+		    ENDIF		
+		
+		ENDIF
+
+		aframe = 0
+	   	WHILE (MyAnimFlag & RUNNING)
+			IF (FIRE = DUAL)
+
+	  			Lightning = DrawLightning (LEFTGUNTIP, 0, 0, 0, Lightning,3)
+	  			Lightning = DrawLightning (RIGHTGUNTIP, 0, 0, 0, Lightning,3)
+
+			ELSE
+		   
+			  	IF (FIRE = LEFT)
+	  				Lightning = DrawLightning (LEFTGUNTIP, 0, 0, 0, Lightning,3)
+				ELSE
+	  				Lightning = DrawLightning (RIGHTGUNTIP, 0, 0, 0, Lightning,3)
+				ENDIF
+			ENDIF
+			
+			aframe = aframe + 1
+			IF (aframe = FIREFRAME)
+				SetGlobalParamInt(0,3)
+				IF (FIRE = DUAL)
+					CREATE CAVEBOSS 0,0,0,0,0,0, LEFTGUNTIP
+					CREATE CAVEBOSS 0,0,0,0,0,0, RIGHTGUNTIP
+				ELSE
+
+			 	IF (FIRE = LEFT)
+					CREATE CAVEBOSS 0,0,0,0,0,0, LEFTGUNTIP
+				ELSE
+					CREATE CAVEBOSS 0,0,0,0,0,0, RIGHTGUNTIP
+				ENDIF
+				ENDIF
+				ClearGlobalParams()
+			ENDIF
+
+		ENDWHILE
+
+		//ENSURE WE FLAG THE FIRE MODE AS BEING OFF
+		FIRE = 0
+		MODELANIM>BOSSES\CAVEBOSS\CAVEBOSS.RDO>Stand>REPEAT
+
+
+	ENDIF
+
+	//NODDY CODE COS WE AINT GOT WHILE within WHILE'S
+	IF (RandRange(0,10.0) < 7.0)
+		FIREAGAIN = 1
+	ELSE
+		FIREAGAIN = 0
+	ENDIF
+
+	endreached = FIREAGAIN and (!NearPlayerXY(NEARDIST / 2.0))
+ 
+ 	IF (endreached AND (!(IAmAimStrat())))
+		LOOP (2)
+			MyFlag = MyFlag
+		ENDLOOP
+		IF (!SeePlayerZ(TWOPI/64.0))
+			CheckX = DogX
+			CheckY = DogY
+			CheckZ = DogZ
+			SetCheckPosMyRotate(0)
+
+	    
+			IF (CheckX  > 0)
+			 	MODELANIM>BOSSES\CAVEBOSS\CAVEBOSS.RDO>TurnRight>REPEAT
+				ang = - TWOPI / 4.0
+				//PAL NTSC CHECK NEEDED HERE
+				ang = ang / 30.0
+			ELSE
+			   	MODELANIM>BOSSES\CAVEBOSS\CAVEBOSS.RDO>TurnLeft>REPEAT
+				ang =  TWOPI / 4.0 
+				//PAL NTSC CHECK NEEDED HERE
+				ang = ang / 30.0
+			ENDIF
+
+			WHILE (MyAnimFlag & TWEEN)
+				MyFlag = MyFlag
+			ENDWHILE
+
+			LOOP (5)
+				MyFlag = MyFlag
+			ENDLOOP
+		
+			WHILE (!SeePlayerZ(TWOPI/64.0))
+			   	RelRotateZ(ang)
+			ENDWHILE
+		ENDIF
+
+	ELSE
+		InsideCheck = 1
+		STAT>Walk
+	ENDIF
+
+
+ENDSTATE
+
+//BOSS ROCKET STRAT
+
+
+STATE BossRocket
+
+  	MyFlag = MyFlag | BULLETTYPE | FLOORCOLL | STRATCOLL | ENEMY | DIRECTMOVE 
+    
+    MyFlag2 = MyFlag2 | BULLET_CF | NOHDC | SPECULAR
+ 
+ 
+	OBJECT> BOSSES\CAVEBOSS\CaveBossBall
+  	RegisterCollision()
+   	SetFriction(0.1,0.1,0.1)
+
+	TRIGSET>KillOff	WHENHIT
+   	TRIGSET>KillOffFloor	ONFLOOR
+   	TRIGSET>KillOffFloor	EVERY 240
+	shealth = RandRange(0.3,0.5)
+	sframe = RandRange(0.3,0.5)
+	sdamage = RandRange(0.3,0.5)
+   //	ObjectSpecularFlash(1,1)
+   //	ObjectSpecularFlash(2,1)
+   //	ObjectSpecularFlash(3,1)
+   //	ObjectSpecularFlash(4,1)
+   
+  //	MyFlag2 = MyFlag2 | SPECULAR
+   	frame = 0.1
+   	damage = 15.0
+	InitHDC()
+	LOOP (3)
+		MoveY(0.2)
+	ENDLOOP
+	SaveX = DogX
+	SaveY = DogY
+	SaveZ = DogZ
+		PointTo(SaveX, SaveY, SaveZ)
+
+	STAT>Start
+ENDSTATE
+
+
+LOCALFLOAT SaveX
+LOCALFLOAT SaveY
+LOCALFLOAT SaveZ
+LOCALFLOAT OSX
+LOCALFLOAT OSY
+LOCALFLOAT OSZ
+
+
+
+STATE Start
+   
+   
+   
+  // 		SetCheckPosRel(0,0, -10, 0)
+
+//	 	DrawShock(x,y,z,CheckX,CheckY,CheckZ,0.05 * (31 - frame),1.2,10.0 )
+  	
+  //		SetCheckPosRel(0,-10, -10, 0)
+
+  //	  	DrawShock(x,y,z,CheckX,CheckY,CheckZ,0.05 * (31 - frame),1.2,10.0 )
+  	
+   //		SetCheckPosRel(0,10, -10, 0)
+	
+	// 	DrawShock(x,y,z,CheckX,CheckY,CheckZ,0.05 * (31 - frame),1.2,10.0 )
+
+   //		SetCheckPosRel(0,0, -0.5, 0)
+
+   //		DrawShock(x,y,z,CheckX,CheckY,CheckZ,0.07 * (31 - frame),1.2,10.0 )
+ 
+	Lightning = DrawLightning (1, 0, 1.4, -0.25, Lightning,2)
+	Lightning = DrawLightning (2, 0, 1.4, -0.25, Lightning,2)
+	Lightning = DrawLightning (3, 0, 1.4, -0.25, Lightning,2)
+	Lightning = DrawLightning (4, 0, 1.4, -0.25, Lightning,2)
+  
+  	CheckX = CheckX + TWOPI/180.0
+	CheckY = Ssin(CheckX) 
+	CheckZ = 0.15
+
+
+
+	SetSpecularColour(0,shealth + (CheckZ * CheckY),sframe + (CheckZ * CheckY),sdamage + (CheckZ * CheckY))
+   //	SetSpecularColour(2,shealth + (CheckZ * CheckY),sframe + (CheckZ * CheckY),sdamage + (CheckZ * CheckY))
+   //	SetSpecularColour(3,shealth + (CheckZ * CheckY),sframe + (CheckZ * CheckY),sdamage + (CheckZ * CheckY))
+   //	SetSpecularColour(4,shealth + (CheckZ * CheckY),sframe + (CheckZ * CheckY),sdamage + (CheckZ * CheckY))
+ 	
+	SetObjectScale(1,frame,frame,frame)
+	SetObjectScale(2,frame,frame,frame)
+	SetObjectScale(3,frame,frame,frame)
+	SetObjectScale(4,frame,frame,frame)
+	
+	IF (frame < 1.0)
+		frame = frame + 0.1
+	ENDIF
+  
+  	
+	
+
+	   	IF (scalex < 1.2)
+	   		scalex = scalex + 0.2
+	   	ENDIF
+
+	   	scaley = scalez = scalex
+	 //	IF (COMMIT)
+	 //	MoveY(0.7)
+
+	 //   ELSE
+		MoveY(0.5)
+	  //	ENDIF
+		CalculateStratPolyData(1)
+
+	OSX = CheckX
+	OSY = CheckY
+	OSZ = CheckZ
+	CheckX = SaveX
+	CheckY = SaveY
+	CheckZ = SaveZ
+
+	//see if point is still in front
+	SetCheckPosMyRotate(0)
+
+	IF (CheckY > 0)
+
+		PointTo(SaveX, SaveY, SaveZ)
+	ENDIF
+
+	CheckX = OSX
+	CheckY = OSY
+	CheckZ = OSZ
+
+
+	health = health + 0.02
+	RelRotateY(health)
+ENDSTATE
+
+STATE KillOff
+	//ENSURE WE ONLY HIT PLAYER
+	IF (MyFlag2 & PLAYERHIT)
+		MyVar = 2.0
+		CREATE SPAWN_BLASTEXP 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0
+
+		Delete()
+
+		TRIGSTOP
+	ELSE
+		TRIGFIN
+	ENDIF
+ENDSTATE
+
+STATE KillOffFloor
+
+	IF (!MyVar)
+		MyVar = 2.0
+	ELSE
+		MyVar = 3.0
+	ENDIF
+	CREATE SPAWN_BLASTEXP 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0
+
+	Delete()
+	TRIGSTOP
+ENDSTATE
+//****** END OF BOSS ROCKET
+
+
+
+LOCALFLOAT TOTALHEALTH
+LOCALINT LEFTDEAD
+LOCALINT RIGHTDEAD
+
+//SHIELD DEFINES
+DEFINE RIGHTARM 14
+DEFINE LEFTARM 20
+DEFINE RIGHTGUNBASE 12
+DEFINE LEFTGUNBASE 18
+DEFINE RIGHTGUN 11
+DEFINE LEFTGUN 17
+DEFINE RIGHTGUNTIP 10
+DEFINE LEFTGUNTIP 16
+
+
+DEFINE RIGHTSHIELD 13
+DEFINE LEFTSHIELD 19
+DEFINE WAITCOUNT 175
+
+
+LOCALINT RIGHTARMWaitFrame
+LOCALINT RIGHTARMFireState
+LOCALINT LEFTARMWaitFrame
+LOCALINT LEFTARMFireState
+
+
+TRIGGER ExplodeRightArm
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+	MyVar = 2.0
+  //	HideObject(RIGHTARM)
+  //	ObjectNotTargetable(RIGHTARM)
+  //	InActivateObjectCollision(RIGHTARM)
+	HideObject(RIGHTSHIELD)
+	ObjectNotTargetable(RIGHTSHIELD)
+	InActivateObjectCollision(RIGHTSHIELD)
+   //	HideObject(RIGHTGUNBASE)
+   //	ObjectNotTargetable(RIGHTGUNBASE)
+   //	InActivateObjectCollision(RIGHTGUNBASE)
+   //	HideObject(RIGHTGUNTIP)
+   //	ObjectNotTargetable(RIGHTGUNTIP)
+   //	InActivateObjectCollision(RIGHTGUNTIP)
+   //	HideObject(RIGHTGUN)
+   //	ObjectNotTargetable(RIGHTGUN)
+   //	InActivateObjectCollision(RIGHTGUN)
+
+
+
+
+
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, RIGHTSHIELD
+	RIGHTARMFireState = 2
+  	RIGHTARMWaitFrame = WAITCOUNT
+  	WHILE ((RIGHTARMWaitFrame) AND (RIGHTARMFireState))
+		IF (RIGHTARMFireState = 2)
+			MyVar = 2.0
+		ELSE
+			MyVar = 0.0
+		ENDIF
+	    SetGlobalParamInt(0,RIGHTSHIELD)
+		SetGlobalParamFloat(0,0)
+		SetGlobalParamFloat(1,0)
+		//SET THE SCALE
+		SetGlobalParamFloat(2,5.0)
+
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, RIGHTSHIELD
+	  	IF (RIGHTARMFireState = 2)
+	  		MyVar = 3.0
+	  	ELSE
+	  		MyVar = 1.0
+	  	ENDIF
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, RIGHTSHIELD
+		ClearGlobalParams()
+	  	RIGHTARMWaitFrame = RIGHTARMWaitFrame - 1 
+	  	IF ((!(RIGHTARMWaitFrame)) AND (RIGHTARMFireState))
+			RIGHTARMWaitFrame = WAITCOUNT
+			RIGHTARMFireState = RIGHTARMFireState - 1
+		ENDIF
+				   
+		//temp = 0
+		//IMMLOOP (ID)
+		//	IF (temp)
+		//		Lightning = DrawLightning (temp, 0, 0, 0, Lightning,3)
+		//	ENDIF
+		//	temp = temp + 1
+	   //	IMMENDLOOP
+
+  	ENDWHILE
+
+	TRIGSTOP
+ENDTRIGGER
+
+TRIGGER ExplodeLeftArm
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+	MyVar = 2.0
+	//HideObject(LEFTARM)
+	//ObjectNotTargetable(LEFTARM)
+	//InActivateObjectCollision(LEFTARM)
+	HideObject(LEFTSHIELD)
+	ObjectNotTargetable(LEFTSHIELD)
+	InActivateObjectCollision(LEFTSHIELD)
+	//HideObject(LEFTGUNBASE)
+	//ObjectNotTargetable(LEFTGUNBASE)
+	//InActivateObjectCollision(LEFTGUNBASE)
+	//HideObject(LEFTGUNTIP)
+	//ObjectNotTargetable(LEFTGUNTIP)
+	//InActivateObjectCollision(LEFTGUNTIP)
+	//HideObject(LEFTGUN)
+	//ObjectNotTargetable(LEFTGUN)
+	//InActivateObjectCollision(LEFTGUN)
+
+
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, LEFTSHIELD
+	LEFTARMFireState = 2
+  	LEFTARMWaitFrame = WAITCOUNT
+  	WHILE ((LEFTARMWaitFrame) AND (LEFTARMFireState))
+		IF (LEFTARMFireState = 2)
+			MyVar = 2.0
+		ELSE
+			MyVar = 0.0
+		ENDIF
+	    SetGlobalParamInt(0,LEFTSHIELD)
+		SetGlobalParamFloat(0,0)
+		SetGlobalParamFloat(1,0)
+		//SET THE SCALE
+		SetGlobalParamFloat(2,5.0)
+
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, LEFTSHIELD
+	  	IF (LEFTARMFireState = 2)
+	  		MyVar = 3.0
+	  	ELSE
+	  		MyVar = 1.0
+	  	ENDIF
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, LEFTSHIELD
+		ClearGlobalParams()
+	  	LEFTARMWaitFrame = LEFTARMWaitFrame - 1 
+	  	IF ((!(LEFTARMWaitFrame)) AND (LEFTARMFireState))
+			LEFTARMWaitFrame = WAITCOUNT
+			LEFTARMFireState = LEFTARMFireState - 1
+		ENDIF
+				   
+		//temp = 0
+		//IMMLOOP (ID)
+		//	IF (temp)
+		//		Lightning = DrawLightning (temp, 0, 0, 0, Lightning,3)
+		//	ENDIF
+	   //		temp = temp + 1
+	   //	IMMENDLOOP
+
+  	ENDWHILE
+
+	TRIGSTOP
+ENDTRIGGER
+
+
+TRIGGER DamageBody
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+	SPECAMOUNT = 1.0 / 30
+	LOOP (30)
+		SetSpecularColour(BODY, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		SPECAMOUNT = SPECAMOUNT + 1.0 / 30.0
+		ObjectSpecularFlash(BODY,1)
+	ENDLOOP
+	ObjectSpecularFlash(BODY,0)
+	CoreHit = 0
+	TRIGSTOP
+ENDTRIGGER
+
+
+
+
+DEFINE BODY	30
+DEFINE CAVEBOSSHEALTH 120.0
+DEFINE BODYHEALTH 100.0
+
+LOCALINT LEFTBLOW
+LOCALINT RIGHTBLOW
+LOCALINT BLASTSTATE
+
+TRIGGER HitCheck
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+//	HideObject(BODY)
+	IF ((frame = 100.0)  OR (ObjectHitStrat(BODY)))
+
+		IF ((frame != 100.0) AND (ObjectHitStrat(BODY)))
+			IF (!CoreHit)
+				CoreHit = 1
+	   			TRIGSET>DamageBody EVERY 1
+		   		//LOOP TO ALLOW TRIGGER TO RUN ONCE BEFORE WE PAUSE ALL TRIGGERS
+				LOOP (1)
+					MyFlag = MyFlag
+				ENDLOOP
+			
+				TOTALHEALTH = TOTALHEALTH + BODYHEALTH - GetObjectHealth(BODY)
+			ENDIF
+
+		ELSE
+			TOTALHEALTH = TOTALHEALTH + 40.0
+		ENDIF
+
+		//ONLY ANIM IF BIG BLAST, OR LIMB BLAST
+		IF ((frame = 100.0) OR (TOTALHEALTH >= CAVEBOSSHEALTH))
+			PauseTriggers(-1,FORGET)
+			MyFlag2 = MyFlag2 | STOPPED
+
+			IF (MODE = DEFENCEMODE)
+				MODELANIM>BOSSES\CAVEBOSS\CAVEBOSS.RDO>StandingHit>NOTWEEN
+		 	ELSE
+				MODELANIM>BOSSES\CAVEBOSS\CAVEBOSS.RDO>DefenceHit>NOTWEEN
+			ENDIF
+		ENDIF
+
+		//CHECK THE DAMAGE
+		
+		IF (TOTALHEALTH >= CAVEBOSSHEALTH)
+			BOSSSTAGE = BOSSSTAGE + 1.0
+			BLASTSTATE = 1
+			IF (LEFTDEAD AND RIGHTDEAD)
+				TRIGRESET
+				TRIGSTOP
+				MyFlag2 = MyFlag2 & LNOT(STOPPED)
+				STAT>Die
+
+			ELSE
+
+				IF (!LEFTBLOW)
+					IF ((!RIGHTBLOW) AND RandRange(0,50.0) < 25.0)
+						RIGHTBLOW = 1
+					ELSE
+						LEFTBLOW = 1
+					ENDIF
+				ELSE
+					//LEFT WAS DEAD, SO BLOW RIGHT
+					RIGHTBLOW = 1
+				ENDIF
+			ENDIF
+
+		  	TOTALHEALTH  = 0
+
+
+
+		ENDIF
+
+
+		IF ((BLASTSTATE) OR (frame = 100.0))
+		
+		 	WHILE (MyAnimFlag & RUNNING)
+				 	temp = 0
+				  	IMMLOOP (ID)
+	  					IF ((temp) AND (BLASTSTATE) AND (RandRange(0,10.0) > 7.5))
+	  						Lightning = DrawLightning (temp, 0, 0, 0, Lightning,3)
+	  					ENDIF
+	  				temp = temp + 1
+					IMMENDLOOP
+
+			ENDWHILE
+		ENDIF
+
+
+					BLASTSTATE = 0
+
+
+		UnPauseTriggers()
+
+		MyFlag2 = MyFlag2 & LNOT(STOPPED)
+
+		//ENSURE DAMAGE IS RESET
+	   	SetObjectHealth(BODY,BODYHEALTH)
+	   	ClearObjCollFlag(BODY,HITSTRAT)
+	 	frame = 0
+		InsideCheck  = 1
+	  
+  	   //	STAT>Walk
+
+	ENDIF
+
+	IF ((InsideCheck))
+      	IF (AvoidSurround(FORCE_POS_AWAY))
+		  MyFlag = MyFlag
+		  //	TRIGRESET
+   		  //	TRIGFIN
+		  //	STAT>Outside
+	 	ENDIF
+	ENDIF
+
+	TRIGFIN
+ENDTRIGGER
+
+
+LOCALINT InsideCheck
+LOCALINT Near
+
+STATE Outside
+	InsideCheck = 0
+
+	//TRAVERSE THE SPLINE THAT YOU HIT
+	//TRIGGERS WILL BE KEPT ON
+
+	LOOP (3)
+		MyFlag = MyFlag
+	ENDLOOP
+ 
+ 
+ 	Mdist = PlayerDistXY()
+	IF (Mdist > 10.0)
+		Mdist = 10.0
+	ENDIF
+
+	WHILE (MyAnimFlag & RUNNING)
+		MyFlag = MyFlag
+	ENDWHILE
+
+
+	//ENSURE WE ARE BACK INSIDE THE MAP
+	AvoidSurround(FORCE_POS_AWAY)
+
+
+
+
+   	//Mdist = PlayerDistXY()
+   	STAT>StandGroundInit
+   
+   //IF (NearPlayerXY(80.0))
+  // 	Mdist = PlayerDistXY()
+  // 	STAT>StandGroundInit
+  // ELSE
+  // 	InsideCheck = 1
+  //	STAT>Walk
+  // ENDIF
+ENDSTATE
+
+
+STATE Outside3
+	InsideCheck = 0
+
+	//TRAVERSE THE SPLINE THAT YOU HIT
+	//TRIGGERS WILL BE KEPT ON
+
+	Mdist = PlayerDistXY()
+	IF (Mdist > 10.0)
+		Mdist = 10.0
+	ENDIF
+	endreached = GetNearestCollideWay(0.0)
+
+	IF (!endreached)
+		scalex = 1.3
+		Near = NearCheckPosXY(0.0)
+		scalex = 1.0
+
+		WHILE (!Near)
+
+			scalex = 1.3
+			Near = NearCheckPosXY(0.0)
+			scalex = 1.0
+		  	AvoidSurround(FORCE_AWAY_FROM_LAST_COLLIDED)
+							  		   
+			HitWall(UPDATE)
+
+			scalex = 1.3
+			IF (NearCheckPosXY(0.0))
+				endreached = GetNearestCollideWayFound(0.0)
+			ENDIF
+			scalex = 1.0
+	
+			IF (IAmAimStrat())
+				MODELANIM>BOSSES\CAVEBOSS\CAVEBOSS.RDO>DefenceWalk>REPEAT
+		 	ELSE
+				MODELANIM>BOSSES\CAVEBOSS\CAVEBOSS.RDO>Walk>REPEAT
+			ENDIF
+
+			movement = AnimMoveOffset(CAVEBOSSWALK)
+			MoveY(movement)
+			RelTurnTowardCheckPosXY(0.05)
+
+		ENDWHILE
+		scalex = 1.0
+	ENDIF
+
+	WHILE (MyAnimFlag & RUNNING)
+		MyFlag = MyFlag
+	ENDWHILE
+
+
+	//ENSURE WE ARE BACK INSIDE THE MAP
+	AvoidSurround(FORCE_POS_AWAY)
+
+   	//Mdist = PlayerDistXY()
+   	STAT>StandGroundInit
+   
+   //IF (NearPlayerXY(80.0))
+  // 	Mdist = PlayerDistXY()
+  // 	STAT>StandGroundInit
+  // ELSE
+  // 	InsideCheck = 1
+  //	STAT>Walk
+  // ENDIF
+ENDSTATE
+
+STATE Outside2
+	InsideCheck = 0
+
+	//TRAVERSE THE SPLINE THAT YOU HIT
+	//TRIGGERS WILL BE KEPT ON
+
+	endreached = GetNearestCollideWay(0.0)
+
+	IF (endreached)
+		scalex = 1.3
+		Near = NearCheckPosXY(0.0)
+		scalex = 1.0
+
+		WHILE (!Near)
+
+			scalex = 1.3
+			Near = NearCheckPosXY(0.0)
+			scalex = 1.0
+		  	AvoidSurround(FORCE_AWAY_FROM_LAST_COLLIDED)
+							  		   
+			HitWall(UPDATE)
+
+			scalex = 1.3
+			IF (NearCheckPosXY(0.0))
+				endreached = GetNearestCollideWayFound(0.0)
+			ENDIF
+			scalex = 1.0
+	
+			IF (IAmAimStrat())
+				MODELANIM>BOSSES\CAVEBOSS\CAVEBOSS.RDO>DefenceWalk>REPEAT
+		 	ELSE
+				MODELANIM>BOSSES\CAVEBOSS\CAVEBOSS.RDO>Walk>REPEAT
+			ENDIF
+
+			movement = AnimMoveOffset(CAVEBOSSWALK)
+			MoveY(movement)
+			RelTurnTowardCheckPosXY(0.05)
+
+		ENDWHILE
+		scalex = 1.0
+	ELSE
+		WHILE ((!endreached)  AND (!LineSightPlayer()))
+		  	AvoidSurround(FORCE_AWAY_FROM_LAST_COLLIDED)
+			scalex = 1.3
+			IF (NearCheckPosXY(0.0))
+				endreached = GetNearestCollideWayFound(0.0)
+			ENDIF
+			scalex = 1.0
+			HitWall(UPDATE)
+		
+			movement = AnimMoveOffset(CAVEBOSSWALK)
+			MoveY(movement)
+			RelTurnTowardCheckPosXY(0.05)
+
+		ENDWHILE
+	ENDIF
+
+	//ENSURE WE ARE BACK INSIDE THE MAP
+	AvoidSurround(FORCE_POS_AWAY)
+
+   	Mdist = PlayerDistXY()
+	IF (Mdist > 10.0)
+		Mdist = 10.0
+	ENDIF
+
+   	STAT>StandGroundInit
+
+  
+ENDSTATE
+
+
+
+
+DEFINE BACKPIVOT 22
+
+TRIGGER Calculate
+
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+
+	SetGlobalParamInt(0,1)
+	KillMyVelocity()
+	ClearGlobalParams()
+
+	IF (GlobalVar = 99.0)
+		STAT>Die
+	ENDIF
+
+
+   	CalculateStratPolyData(1)
+
+  	DogZ = DogZ + 1.0
+	ObjectTowardPlayerXZ(BACKPIVOT, 0.05, 0.05, (TWOPI/360.0) * 15.0, (TWOPI/360.0) * 15.0)
+   	CrntRotToIdleRotX(BACKPIVOT, 0.05)
+   	DogZ = DogZ - 1.0
+
+ 
+	//CONTROL CODE FOR HANDLING ARM DESTRUCTION
+ 	IF ((RIGHTBLOW) AND (!RIGHTDEAD))
+		TRIGSET>ExplodeRightArm EVERY 1
+		RIGHTDEAD = 1
+	ENDIF
+ 
+ 	IF ((LEFTBLOW) AND (!LEFTDEAD))
+		TRIGSET>ExplodeLeftArm EVERY 1
+		LEFTDEAD = 1
+	ENDIF
+
+
+	TRIGFIN
+ENDTRIGGER
+
+LOCALFLOAT ang
+
+STATE Walk
+  
+	IF (!SeePlayerZ(TWOPI/32.0))
+		InsideCheck = 0
+		CheckX = DogX
+		CheckY = DogY
+		CheckZ = DogZ
+		SetCheckPosMyRotate(0)
+
+		IF (CheckX  > 0)
+		 	MODELANIM>BOSSES\CAVEBOSS\CAVEBOSS.RDO>TurnRight>REPEAT
+			ang = - TWOPI / 4.0
+			//PAL NTSC CHECK NEEDED HERE
+			ang = ang / 30.0
+		ELSE
+		   	MODELANIM>BOSSES\CAVEBOSS\CAVEBOSS.RDO>TurnLeft>REPEAT
+			ang =  TWOPI / 4.0 
+			//PAL NTSC CHECK NEEDED HERE
+			ang = ang / 30.0
+		ENDIF
+ 
+
+		WHILE (MyAnimFlag & TWEEN)
+			MyFlag = MyFlag
+		ENDWHILE
+
+		LOOP (5)
+			MyFlag = MyFlag
+		ENDLOOP
+		
+		WHILE (!SeePlayerZ(TWOPI/64.0))
+		   	RelRotateZ(ang)
+		ENDWHILE
+	ENDIF
+
+	InsideCheck  = 1
+
+
+	IF (NearPlayerXY(NEARDIST))
+		Mdist = PlayerDistXY()
+		IF (Mdist > 10.0)
+			Mdist = 10.0
+		ENDIF
+		STAT>StandGroundInit
+	ENDIF
+
+	IF (IAmAimStrat())
+		MODELANIM>BOSSES\CAVEBOSS\CAVEBOSS.RDO>DefenceWalk>REPEAT
+   	ELSE
+		MODELANIM>BOSSES\CAVEBOSS\CAVEBOSS.RDO>Walk>REPEAT
+	ENDIF
+
+//	RelTurnTowardPlayerXY(TWOPI/180.0)
+
+	//see where we are walking from
+	SetCheckPosRel(0,0,0.26,0)
+
+	XDIFF = CheckX - startx
+	YDIFF = CheckY - starty
+
+	dist = FSQRT((XDIFF * XDIFF) + (YDIFF * YDIFF))
+
+   //	IF (dist < AREARAD)
+
+		movement = AnimMoveOffset(CAVEBOSSWALK)
+		MoveY(movement)
+	//ELSE
+	//	Mdist = PlayerDistXY()
+	//	STAT>StandGroundInit
+
+	//ENDIF
+
+
+ENDSTATE
+
+LOCALINT endreached
+
+LOCALFLOAT Mdist
+
+LOCALFLOAT movement
+
+LOCALFLOAT YDIFF
+LOCALFLOAT XDIFF
+LOCALFLOAT dist
+
+
+DEFINE AREARAD 36.0
+
+
+LOCALINT AIMEDAT
+LOCALINT CANSEEPLAYER
+
+LOCALINT NEAR
+TRIGGER ChasePlayerCheck
+
+	//ONLY CHECK IF WE'RE NOT IN THE MIDDLE OF FIRING
+	IF (!FIRE)
+
+	//ARE WE STILL NEAR THE PLAYER ?
+	//NEAR = NearPlayerXY(NEARDIST + 5.0)
+	//IF ((!NEAR) OR (!NearPlayerXY(Mdist + 5.0)))
+	//NEAR = PlayerDistXY()
+	IF (NEAR > 15.0)
+		NEAR = 15.0
+	ENDIF
+ 
+	IF (NEAR > Mdist)
+ 
+ 		TRIGRESET
+		TRIGSTOP
+		InsideCheck = 1
+
+		STAT>Walk
+	ENDIF
+
+	AIMEDAT = IAmAimStrat()
+	CANSEEPLAYER = SeePlayerZ(TWOPI/5.0)
+
+	//CAN WE SEE THE PLAYER ?
+	IF (CANSEEPLAYER)
+		//IS PLAYER TARGETTING ME ?
+		IF (AIMEDAT)
+			//STAND OFF SO DEFEND MODE
+			TRIGRESET
+			TRIGSTOP
+			STAT>Defend
+   		ELSE
+			//FIRE MODE
+	 		TRIGRESET
+	   		TRIGSTOP
+			STAT>Fire
+	   	ENDIF
+	ENDIF
+	ENDIF
+	TRIGFIN
+
+ENDTRIGGER
+
+
+DEFINE LEFT 0 
+DEFINE RIGHT 1
+DEFINE DUAL 2
+
+
+LOCALINT FIRE
+LOCALINT FIREAGAIN
+
+LOCALINT defendtime
+LOCALINT DefendBreak
+
+//2 SECS IN DEFENCE MODE BEFORE RANDOM CHANCE OF FIRE
+// THIS NEEDS TO BE MODIFIED FOR PAL
+DEFINE BREAKOUTTIME 60 
+
+
+STATE Defend
+
+	//WAIT TILL END OF CURRENT ANIM
+	//WHILE (MyAnimFlag & RUNNING)
+	//	MyFlag = MyFlag
+	//ENDWHILE
+	MODE = DEFENCEMODE
+
+
+	//RUN STAND TO DEFEND
+	MODELANIM>BOSSES\CAVEBOSS\CAVEBOSS.RDO>StandToDefence>0
+
+	//WAIT TILL END OF CURRENT ANIM
+	WHILE (MyAnimFlag & RUNNING)
+		MyFlag = MyFlag
+	ENDWHILE
+
+	//RUN STAND TO DEFEND
+	MODELANIM>BOSSES\CAVEBOSS\CAVEBOSS.RDO>DefenceStand>REPEAT
+
+	//WAIT UNTIL GET OUT
+	defendtime = 0
+	DefendBreak = 0
+	WHILE ((!DefendBreak) AND IAmAimStrat() AND SeePlayerZ(TWOPI/5.0))
+		defendtime = defendtime + 1
+		IF (defendtime > BREAKOUTTIME)
+			IF (RandRange(0,5.0) < (2.0 / BOSSSTAGE))
+				DefendBreak = 1
+			ENDIF
+		ENDIF
+	ENDWHILE
+
+	//RUN STAND TO DEFEND
+	MODELANIM>BOSSES\CAVEBOSS\CAVEBOSS.RDO>DefenceToStand>0
+
+	//WAIT TILL END OF CURRENT ANIM
+	WHILE (MyAnimFlag & RUNNING)
+		MyFlag = MyFlag
+	ENDWHILE
+
+	MODE = WALKMODE
+	//ENSURE DAMAGE IS OFF FROM CRYSTALS
+	MyVar = 0
+
+	//BACK TO WALK CHECKS
+	InsideCheck = 1
+
+	IF (DefendBreak)
+		FIRE = DUAL
+		STAT>Fire
+	ELSE
+ 		STAT>Walk
+	ENDIF
+ENDSTATE
+
+
+
+STATE StandGroundInit
+	TRIGSET>ChasePlayerCheck EVERY 1
+	STAT>StandGroundMain
+
+ENDSTATE
+
+
+STATE StandGroundMain
+   	MODELANIM>BOSSES\CAVEBOSS\CAVEBOSS.RDO>Stand>REPEAT
+
+	WHILE ((MyAnimFlag & RUNNING))
+		MyFlag = MyFlag
+	ENDWHILE
+
+	IF (!SeePlayerZ(TWOPI/64.0))
+		CheckX = DogX
+		CheckY = DogY
+		CheckZ = DogZ
+		SetCheckPosMyRotate(0)
+
+	    
+		IF (CheckX  > 0)
+		 	MODELANIM>BOSSES\CAVEBOSS\CAVEBOSS.RDO>TurnRight>REPEAT
+			ang = - TWOPI / 4.0
+			//PAL NTSC CHECK NEEDED HERE
+			ang = ang / 30.0
+		ELSE
+		   	MODELANIM>BOSSES\CAVEBOSS\CAVEBOSS.RDO>TurnLeft>REPEAT
+			ang =  TWOPI / 4.0 
+			//PAL NTSC CHECK NEEDED HERE
+			ang = ang / 30.0
+		ENDIF
+
+		WHILE (MyAnimFlag & TWEEN)
+			MyFlag = MyFlag
+		ENDWHILE
+
+		LOOP (5)
+			MyFlag = MyFlag
+		ENDLOOP
+		
+		WHILE (!SeePlayerZ(TWOPI/64.0))
+		   	RelRotateZ(ang)
+		ENDWHILE
+	ENDIF
+ 
+ENDSTATE
+
+STATE Die
+
+	PauseTriggers(-1,FORGET)
+   	MODELANIM>BOSSES\CAVEBOSS\CAVEBOSS.RDO>Die>REPEAT
+
+
+	//RUN DEATH ANIM WITH SOME ELECTRICUTION WAREZ
+	WHILE (MyAnimFlag & RUNNING)
+		temp = 0
+		IMMLOOP (ID)
+			IF ((temp) AND (RandRange(0,10.0) > 7.5))
+				Lightning = DrawLightning (temp, 0, 0, 0, Lightning,3)
+			ENDIF
+			temp = temp + 1
+		IMMENDLOOP
+	ENDWHILE
+
+
+
+
+
+
+	ParentVar = 1.0
+   	DESTROYME SPAWN_EXPLODINGBITS
+
+ENDSTATE
+
+TRIGGER Destroy
+	defendtime = 240
+
+	PauseTriggers(-1,FORGET)
+	MyFlag2 = MyFlag2 | STOPPED
+	WHILE (defendtime > 1.0)
+	  //	SetObjectTrans(CENTRECORE,frame)
+	  //	SetObjectTrans(INNERCORE,frame)
+			SaveX = MyVar
+			IF (RandRange (0,5.0) > 3.4)
+			   	MyVar = 0.0
+				CREATE SPAWN_BLASTEXP 0, 0, RandRange(-3.0,4.0), 0, 0, 0, INNERCORE
+
+				CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, CurrentRingTop
+				MyVar = SaveX
+			ENDIF
+			z = z - RandRange(0.05,0.2)
+		//	x = x + Ssin(ang)
+		   //	y = y + Ssin(ang)
+			CheckX = 0.3 * Ssin(ang)
+			ang = ang + TWOPI/50.0
+			defendtime = defendtime - 1.0
+			SetEnvironmentParms(5.0,200.0,-1,-1,0.3 + CheckX,0.4 + CheckX,0.4 + CheckX)
+
+
+	ENDWHILE
+
+	GlobalVar = 99.0
+
+	DESTROYME SPAWN_EXPLODINGBITS
+
+	 //Delete()
+
+
+
+	TRIGFIN
+ENDTRIGGER
+
+
+//DAMAGE CHECK FOR GENERATOR
+TRIGGER DamageCheck
+	CalculateStratPolyData(1)
+
+	IF (ObjectHitStrat(CENTRECORE))
+		OLDGENHEALTH = GetObjectHealth(CENTRECORE)
+		IF (GetObjectHealth(CENTRECORE) <= 0)
+			//BLAST
+			SaveX = MyVar
+			MyVar = 2.0
+			CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, INNERCORE
+			CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, CurrentRingTop
+			MyVar = SaveX
+
+			HideObject(CurrentRingTop)
+			HideObject(CurrentRingLow)
+			HideObject(CurrentTopBit)
+			InActivateObjectCollision(CurrentTopBit)
+			InActivateObjectCollision(CurrentRingTop)
+			InActivateObjectCollision(CurrentRingLow)
+			IF (CurrentRingTop < 9)
+				CurrentTopBit = CurrentTopBit + 1
+			 	CurrentRingTop = CurrentRingTop + 2
+				CurrentRingLow = CurrentRingLow + 2
+				UnhideObject(CurrentTopBit)
+				UnhideObject(CurrentRingTop)
+				UnhideObject(CurrentRingLow)
+				ActivateObjectCollision(CurrentTopBit)
+				ActivateObjectCollision(CurrentRingTop)
+				ActivateObjectCollision(CurrentRingLow)
+   				TransObjectRel(CurrentRingTop, 0, 0, delta)
+				TransObjectRel(CurrentRingLow, 0, 0, delta)
+				GENhealth = GENhealth * 2.0
+				OLDGENHEALTH = GENhealth
+
+
+				SetObjectHealth(CENTRECORE, OLDGENHEALTH)
+			ELSE
+				TRIGSET>Destroy EVERY 1
+				TRIGSTOP
+			ENDIF
+		ELSE
+			//FLASH
+			IF (!CoreHit)
+				CoreHit = 1
+				TRIGSET>DamageCore EVERY 1
+			ENDIF
+				SetObjectHealth(CENTRECORE, OLDGENHEALTH)
+
+		  //	ENDIF
+		ENDIF
+		ClearObjCollFlag(CENTRECORE,HITSTRAT)
+
+	ENDIF
+
+	
+
+	TRIGFIN
+ENDTRIGGER
+
+
+

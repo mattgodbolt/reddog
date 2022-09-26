@@ -1,0 +1,48 @@
+LOCALINT trail
+LOCALFLOAT offset
+DEFINE size 0.2
+
+TRIGGER CleanUp
+	DeleteBand (trail)
+ENDTRIGGER
+
+STATE Init
+	MyFlag = MyFlag | NOTEXPLODE | NODISP | DELETECALLBACK
+	SetFriction(0.0,0.0,0.0)
+	OBJECT> WEAPON\MISSILE06
+	damage = 100.0
+	offset = ParentVar
+	TRIGSET>KillOff PARENTDEAD
+	trail = CreateBand (1, 16, 0, 1, 1, 0.5, 0, 1, 0, 0, 0)
+	SetBandRotXYZandScaling (trail, 0, 0, 0, 1.0, 1.0, 1.0)
+	AddBandSegment (trail, 0, 0, 0, size)
+	AddBandSegment (trail, 0, 0, 0, size)
+	TRIGSET>Trailer EVERY 1
+	TRIGSET>BandTrigger EVERY 1
+	TRIGSET>CleanUp WHENDELETED
+	MoveY(2.0)
+	//PointTo(DogX, DogY, DogZ)
+	STAT>Start
+ENDSTATE 
+
+STATE BandTrigger
+	AddBandSegment (trail, 0, 0, 0, size)
+	TRIGFIN
+ENDSTATE
+
+STATE Trailer
+	RubberBand (trail, 0, 0, 0, size)
+	TRIGFIN
+ENDSTATE
+
+STATE Start
+	StickToParent(0, offset, 0.0, 0.0, 1)
+ENDSTATE
+
+STATE KillOff
+	MyFlag = MyFlag | NODISP  
+	MyFlag = MyFlag & LNOT(STRATCOLL)
+//	DeleteBand (trail)
+	Delete()
+//	TRIGSTOP
+ENDSTATE

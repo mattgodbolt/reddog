@@ -1,0 +1,18 @@
+LOCALFLOAT	time
+
+STATE Init
+	MyFlag = MyFlag
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+	OBJECT>Bosses\CanyonBoss\CanyonBossBeam
+	time = 1.0
+	//absspeedy = 4.0
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	time = time - 0.1
+	trans = time
+	IF (time <= 0.0)
+		Delete()
+	ENDIF
+ENDSTATE

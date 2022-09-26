@@ -1,0 +1,25 @@
+// Artificially keeps the game running a bit longer
+// When LevelReset is set TRUE, this resets it back to FALSE
+// It sets MissionFailed to be true
+// Then it deletes itself
+// ** ENSURE A DROPSHIP COMES ALONG ON ITS DEATH **
+
+STATE Init
+	MakeMeTheLast()
+	// Make sure we really, really are the last (at least after the player)
+	LOOP 20
+		MyFlag = MyFlag
+	ENDLOOP
+	MakeMeTheLast()
+
+	WHILE (!GameOverFlag)
+		MyFlag = MyFlag
+	ENDWHILE
+
+	Lives = 0
+	LevelReset = 0
+	GameOverFlag = 0
+	MissionFailure = 1
+	Delete()
+ENDSTATE
+

@@ -1,0 +1,22 @@
+STATE Init
+	MyFlag = MyFlag | SPRITE | NOTEXPLODE | FRIENDLY
+
+	SetFriction(0.03,0.03,0.03)
+	scalex = 5.0
+	scaley = 5.0
+	scalez = 5.0
+	OBJECT> Explosions\Explosion00
+ 	ANIM> Explosion00>BLUEBURN
+	TRIGSET>KillOff	WHENANIMOVER
+	AllocStratSoundBlock(1)
+//  PLAYSOUND>RD_WEAPON_MISSILE_1 0 1.0 0.0 0.0 0.0 0
+	PlaySound(0, 11, 1, 0, 0, 0, 0)
+	STAT>Fade
+ENDSTATE
+
+STATE Fade		
+ENDSTATE
+
+STATE KillOff
+	Delete()
+ENDSTATE

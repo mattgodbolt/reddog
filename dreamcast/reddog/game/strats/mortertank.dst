@@ -1,0 +1,249 @@
+LOCALFLOAT Dist
+LOCALINT endreached
+LOCALINT	fireCount
+LOCALINT	fireDelay
+LOCALINT	time
+LOCALFLOAT	fireAngle
+LOCALFLOAT	temp
+LOCALFLOAT	distFromPlayer
+LOCALFLOAT	savex
+LOCALFLOAT	savey
+DEFINE BULLET_SPEED 30.0
+
+STATE Init
+	MyFlag = MyFlag | STRATCOLL | RELVELCALC | ENEMY | HOVERMOVE | FLOORCOLL | GRAVITYON | TARGETABLE | LOWCOLL
+	RegisterCollision()
+	MyFlag2 = MyFlag2 | COLLMOVE
+	SetFriction(1.0,0.2,0.1)
+	health = 100.0
+	InitPath()
+	RotationRestriction(1.0, 1.0, 1.0)
+	fireDelay = 0
+	fireCount = 0
+	time = 0
+	MyVar = 0.7
+	TRIGSET>Kill WHENDEAD
+	TRIGSET>EveryFrame EVERY 1
+	TRIGSET>SpecularMadness EVERY 1
+	AllocStratSoundBlock(1)
+	RegisterDanger(100.0)
+	
+	STAT>Start
+ENDSTATE
+
+LOCALFLOAT SPECAMOUNT
+
+TRIGGER SpecularMadness
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+	IF ((MyFlag & HITSTRAT) AND (CollWithFlag & BULLETTYPE))
+		SPECAMOUNT = 1.0
+	ENDIF
+	IF (SPECAMOUNT > 0)
+  		MyFlag2 = MyFlag2 | SPECULAR
+		SetSpecularColour(0, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		SPECAMOUNT = SPECAMOUNT - 0.1
+	ELSE
+		SPECAMOUNT = 0
+ 		MyFlag2 = MyFlag2 & LNOT(SPECULAR)
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+STATE EveryFrame
+	IF (fireCount = 3)
+		time = time + 1
+	ENDIF
+	IF (time > 60)
+		time = 0
+		fireCount = 0
+		fireDelay = 0
+	ENDIF
+ENDSTATE
+
+STATE Start
+	WHILE (!LastWay())
+		IF (NearCheckPosXY(0.0))
+	   		GetNextWay()
+	   	ENDIF
+		IF (SeeWayZ(0.5))
+			MoveY (0.1)
+		ENDIF
+		TowardWay (0.01,0.01)
+   	ENDWHILE
+   
+   	//IF (NearCheckPosXY(1.0))
+	//	IF (LastWay())	
+			LeaveFixedPath()
+			endreached  = 0 
+   
+			IF (MyParent)
+				MyTarget = MyParent
+				STAT>ChaseMeChaseMe
+			ENDIF
+   		
+			STAT> Network
+	//	ELSE
+	//		GetNextWay()
+	//	ENDIF
+	//ENDIF
+   //	IF (SeeWayZ(0.5))
+   //		MoveY (0.1)
+   //	ENDIF
+   //	TowardWay (0.01,0.01)
+ENDSTATE
+
+
+STATE ChaseMeChaseMe
+	savex = CheckX
+	savey = CheckY
+
+	CheckX = parentx
+	CheckY = parenty
+
+	IF ((ParentDistXY() < 200.0) OR (endreached))
+		IF (PlayerDistXY() < 100.0)
+			STAT>Fire		
+		ELSE
+			IF (ParentDistXY() < 200.0)
+				STAT> TargetFire		
+			ENDIF
+		ENDIF
+	ELSE
+
+		CheckX = savex
+		CheckY = savey
+		endreached  = GetNearestWayToTarget(0.0)
+
+		IF (!endreached)
+			MyFlag = MyFlag | GRAVITYON | FLOORCOLL
+		ENDIF
+
+		WHILE (!endreached)
+			IF (NearCheckPosXY(1.0))
+				endreached = GetNearestWayToTarget(0.0)	
+			ELSE
+				IF (SeeWayZ(0.05))
+					MoveY(0.1)
+				ELSE
+					TowardWay (0.01,0.01)
+				ENDIF
+			ENDIF
+		ENDWHILE
+
+		//KillMyVelocity()
+  		//MyFlag = MyFlag & LNOT(GRAVITYON + FLOORCOLL)
+   ENDIF
+ENDSTATE
+
+STATE Network		
+	IF (NearPlayerXY(200))
+		STAT> Fire		
+	ELSE
+		IF (NearCheckPosXY(1.0))
+			endreached = GetNearestWay(0.0)	
+		ELSE
+			IF (SeeWayZ(0.05))
+				MoveY(0.1)
+			ELSE
+				TowardWay (0.01,0.01)
+			ENDIF
+		ENDIF
+	ENDIF
+ENDSTATE
+
+STATE DistWait
+	Dist = PlayerDistXY()
+	WHILE (PlayerDistXY() <= Dist)
+		endreached = 0
+	ENDWHILE
+	endreached = GetNearestWay(0.0)
+	STAT>Network
+ENDSTATE
+
+STATE Fire
+	distFromPlayer = PlayerDistXY()
+	IF (distFromPlayer > 110.0)
+		STAT>ChaseMeChaseMe
+	ENDIF
+	temp = (-0.000237 * distFromPlayer) + 0.05237
+	IF (SeePlayerZ(temp))
+		IF ((fireCount < 3) AND (fireDelay = 0))
+			fireCount = fireCount + 1
+			fireDelay = 60
+			fireAngle = ProjectileAngle(7, 0.0, 2.0, 0.0, BULLET_SPEED, DogX, DogY, DogZ)
+			SetObjectCrntRot(7, fireAngle,MODEX)
+			SetGlobalParamFloat(0, fireAngle)
+			SetGlobalParamInt(0, 1)
+			CREATE SPAWN_MORTERSHOT 0.0, 2.0, 0.0, 0.0 , 0, 0, 7
+			SetGlobalParamInt(0, 0)
+			MyVar = 4.0
+			CREATE SPAWN_BLASTEXP   0.0, 2.0, 0.0, 0, 0, 0, 7
+			ApplyRelForce(0, 0, -100, 0, 0, 0, 10)
+			TransObjectRel(7, 0, -2, 0)			
+		ELSE
+			IF (fireDelay > 0)
+				fireDelay = fireDelay - 1
+			ENDIF
+		ENDIF
+	ELSE
+		TowardPlayer(0.01, 0.01)
+	ENDIF
+	KillMyVelocity()
+ENDSTATE
+
+LOCALINT SEEN
+
+STATE TargetFire
+	distFromPlayer = ParentDistXY()
+	//IF (distFromPlayer > 250.0)
+	//	STAT> ChaseMeChaseMe
+	//ENDIF
+	IF (PlayerDistXY() < 100.0)
+		STAT>Fire		
+	ENDIF
+
+	temp = (-0.000237 * distFromPlayer) + 0.05237
+
+	SetPlayerToTarget(1)
+	SEEN = SeePlayerZ(temp)
+	SetPlayerBack()
+	IF (SEEN)
+   //	IF (SeeParentZ(temp))
+		IF ((fireCount < 3) AND (fireDelay = 0))
+			fireCount = fireCount + 1
+			fireDelay = 60
+			fireAngle = ProjectileAngle(7, 0.0, 2.0, 0.0, BULLET_SPEED, parentx, parenty, parentz)			
+			SetObjectCrntRot(7, fireAngle,MODEX)
+			SetGlobalParamFloat(0, fireAngle)
+			SetGlobalParamInt(0, 2)
+			SetGlobalParamFloat(1, parentx)
+			SetGlobalParamFloat(2, parenty)
+			SetGlobalParamFloat(3, parentz)
+			CREATE SPAWN_MORTERSHOT 0.0, 2.0, 0.0, 0.0, 0, 0, 7
+			SetGlobalParamInt(0, 0)
+			SetGlobalParamFloat(1, 0.0)
+			SetGlobalParamFloat(2, 0.0)
+			SetGlobalParamFloat(3, 0.0)
+			MyVar = 4.0
+			CREATE SPAWN_BLASTEXP   0.0, 2.0, 0.0, 0, 0, 0, 7
+			ApplyRelForce(0, 0, -100, 0, 0, 0, 10)
+			TransObjectRel(7, 0, -2, 0)
+		ELSE
+			IF (fireDelay > 0)
+				fireDelay = fireDelay - 1
+			ENDIF
+		ENDIF
+	ELSE
+		TowardParent(0.01, 0.01)
+	ENDIF
+	KillMyVelocity()
+ENDSTATE
+
+STATE Kill
+	MakeFrags (0.1, 24)
+//	adrelanin = adrelanin + 0.2
+	MyVar = 0.0
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+	TRIGSTOP
+	DESTROYME SPAWN_EXPLODINGBITS
+ENDSTATE

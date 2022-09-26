@@ -1,0 +1,178 @@
+LOCALFLOAT	time
+LOCALFLOAT	px
+LOCALFLOAT	py
+LOCALFLOAT	pz
+LOCALFLOAT	ax
+LOCALFLOAT	ay
+LOCALFLOAT	az
+LOCALFLOAT	tempf
+LOCALINT	padPush
+LOCALINT	padPress
+LOCALINT	noTargets 
+LOCALINT	ft
+LOCALINT	i
+LOCALINT	pos
+LOCALINT	tempi
+
+DEFINE		SWARM					9
+
+STATE Init
+  	MyFlag = MyFlag | FRIENDLY | FLOORCOLL
+	MyFlag2 = MyFlag2 | PLAYER_CF
+	OBJECT>REDDOG\WSWARM DOCKLANDS
+	SetObjectShadowState(1)
+	SetFriction(0.5, 0.5, 0.5)
+	time = 0.0
+	SetSem(0, 0)
+	IF (LeftGunPickUp = 1)
+		IF (RightGunPickUp = 1)
+			pos = 3
+		ELSE
+			pos = 2
+		ENDIF
+	ELSE
+		pos = 1
+	ENDIF
+	TRIGSET>Always EVERY 1
+	x = DogX
+	y = DogY
+	z = DogZ + 0.5
+	ClearSwarmTargetArray()
+	//SetSecondaryWeaponType(0, 12)
+	SetSecondaryWeaponAmount(0, 10)
+	NoSwarmTargets = 0
+	AllocStratSoundBlock(2)
+	STAT>Start
+ENDSTATE
+
+TRIGGER Always
+	FacePlayerAim(ParentPlayerNumber)
+	time = time + 1.0
+	tempf = time * 0.05
+	
+	IF (pos = 1)
+		px = parentLeftGunX + Ssin(tempf * 2.0) * 0.2
+		py = parentLeftGunY + Scos(tempf) * 0.2
+		pz = parentLeftGunZ + 1.5 + Ssin(tempf * 2.3) * 0.1
+	ENDIF
+	IF (pos = 2)
+		px = parentRightGunX + Ssin(tempf * 2.0) * 0.2
+		py = parentRightGunY + Scos(tempf) * 0.2
+		pz = parentRightGunZ + 1.5 + Ssin(tempf * 2.3) * 0.1
+	ENDIF
+	IF (pos = 3)
+		px = parentTopGunX + Ssin(tempf * 2.0) * 0.2
+		py = parentTopGunY + Scos(tempf) * 0.2
+		pz = parentTopGunZ + 1.5 + Ssin(tempf * 2.3) * 0.1
+	ENDIF
+	
+	ax = (px - x) * 15.0 
+	ay = (py - y) * 15.0
+	az = (pz - z) * 15.0
+	IF (ScoobyDoo)
+		HoldPlayerVY = 4.0
+	ENDIF
+	x = x + HoldPlayerVX * 0.5
+	y = y + HoldPlayerVY * 0.5
+	z = z + HoldPlayerVZ * 0.5
+	
+	ApplyAbsForce(ax, ay, az, 0, 0, 0, 1.0)
+	IF (MyParentFlag & NODISP)
+		MyFlag = MyFlag | NODISP
+	ELSE
+		MyFlag = MyFlag & LNOT(NODISP)
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+STATE Start
+	IF (MyParentHealth <= 0.0)
+		SetSecondaryWeaponType(0, 0)
+		STAT>DIE
+	ENDIF 
+	
+	padPress = GetPadPress(0)
+	
+	IF (GetSecondaryWeaponAmount(0) > 0)
+		tempi = GetSem(0)
+		IF (padPress & PADB)
+			IF (tempi = 0)
+				AddStratToSwarmTargetArray(200.0)
+				IF (NoSwarmTargets > 0)
+					IF (!IsPlaying(0))
+						PLAYSOUND>SWARMPOWER 0 1.0 0.0 0.0 0.0 NOPOSITION
+					ENDIF
+					tempi = GetSecondaryWeaponAmount(0)
+					SetSecondaryWeaponAmount(0, tempi - 1)
+					i = 0
+					IMMLOOP (20)
+						SetGlobalParamInt(0, i)
+						i = i + 1
+						SetGlobalParamFloat(0, ft)
+						AddSem(0, 1)
+						CREATE SPAWN_SWARM 0, 0, 0, 0, 0, 0, 0
+						SetGlobalParamFloat(0, 0.0)
+						SetGlobalParamInt(0, 0)
+					IMMENDLOOP
+					
+					ClearSwarmTargetArray()
+				ELSE
+					IF (!IsPlaying(1))
+						PLAYSOUND>SWARMDOWN 1 1.0 0.0 0.0 0.0 NOPOSITION
+					ENDIF
+				ENDIF
+			ELSE
+				IF (!IsPlaying(1))
+					PLAYSOUND>SWARMDOWN 1 1.0 0.0 0.0 0.0 NOPOSITION
+				ENDIF
+			ENDIF
+		ENDIF
+	ENDIF
+	
+	tempi = GetSecondaryWeaponAmount(0)
+
+	IF (tempi <= 0)
+		MyFlag2 = MyFlag2 | TRANSLUCENT
+		trans = 1.0
+		LOOP (30)
+			trans = trans - 0.03333
+		ENDLOOP
+		SetSecondaryWeaponType(0, 0)
+		STAT>DIE
+	ENDIF
+
+	tempi = GetSecondaryWeaponType(0)
+
+	IF (tempi != SWARM)
+		MyFlag2 = MyFlag2 | TRANSLUCENT
+		trans = 1.0
+		LOOP (30)
+			trans = trans - 0.03333
+		ENDLOOP
+		STAT>DIE
+	ENDIF
+
+   
+	IF (PlayerDistXY() > 20.0)
+		STAT>Restart
+	ENDIF
+ENDSTATE
+
+STATE DIE
+	Delete()
+ENDSTATE
+
+STATE Restart
+	MyFlag = MyFlag & LNOT(FLOORCOLL)
+	LOOP (30)
+		MyFlag = MyFlag
+	ENDLOOP
+	x = DogX
+	y = DogY
+	z = DogZ + 0.5
+	LOOP(2)
+		MyFlag = MyFlag
+	ENDLOOP
+	MyFlag = MyFlag | FLOORCOLL
+	STAT>Start
+ENDSTATE

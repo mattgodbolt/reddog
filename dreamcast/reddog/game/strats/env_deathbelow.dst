@@ -1,0 +1,28 @@
+LOCALFLOAT	tempf
+
+STATE Init
+	MyFlag = MyFlag
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	GetPlayerPos(0)
+	IF (CheckZ < z)
+		SetHealthOfPlayer(0, -1.0)
+	ENDIF
+	GetPlayerPos(1)
+	IF (CheckZ < z)
+		SetHealthOfPlayer(1, -1.0)
+	ENDIF
+	GetPlayerPos(2)
+	IF (CheckZ < z)
+		SetHealthOfPlayer(2, -1.0)
+	ENDIF
+	GetPlayerPos(3)
+	IF (CheckZ < z)
+		SetHealthOfPlayer(3, -1.0)
+	ENDIF
+ENDSTATE
+
+
+		

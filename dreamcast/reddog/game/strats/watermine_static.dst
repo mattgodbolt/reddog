@@ -1,0 +1,72 @@
+LOCALFLOAT	time
+
+STATE Init
+	MyFlag = MyFlag | ENEMY | STRATCOLL | LOWCOLL
+//	MyFlag = MyFlag | FLOORCOLL | GRAVITYON 
+//	z = DogZ + 3.0 
+   
+   	OBJECT>ENEMIES\WaterMine_Static
+	
+//	WHILE (!(IAmOnFloor))
+//		MyFlag = MyFlag
+//	ENDWHILE
+
+//	MyFlag = MyFlag & LNOT(GRAVITYON | FLOORCOLL | NODISP)
+	RegisterCollision()
+	AllocStratSoundBlock(1)
+	RegisterDanger(30.0)
+	TRIGSET>SpecularMadness EVERY 1
+	health = 100.0
+	time = 0.0
+	time = RandRange(0.0, 60.0)
+	WHILE (time > 0.0)
+		time = time - 1.0
+	ENDWHILE
+	time = 0.0
+	STAT>Start
+ENDSTATE
+
+LOCALFLOAT SPECAMOUNT
+
+TRIGGER SpecularMadness
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+	IF ((MyFlag & HITSTRAT) AND (CollWithFlag & BULLETTYPE))
+		SPECAMOUNT = 1.0
+	ENDIF
+	IF (SPECAMOUNT > 0)
+  		MyFlag2 = MyFlag2 | SPECULAR
+		SetSpecularColour(0, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		SPECAMOUNT = SPECAMOUNT - 0.1
+	ELSE
+		SPECAMOUNT = 0
+ 		MyFlag2 = MyFlag2 & LNOT(SPECULAR)
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+STATE Start
+	IF (MyFlag2 & PLAYERHIT)
+		PlayerHealth = PlayerHealth - 20.0
+		STAT>Explode
+	ENDIF
+	time = time + 0.1
+	z = z + (Ssin(time)) * 0.02
+	RelRotateZ(-0.07)
+	IF (health <= 0.0)
+		STAT>Explode
+	ENDIF
+ENDSTATE
+
+STATE Explode
+	MyFlag = MyFlag | NODISP | FRIENDLY 
+	MyFlag = MyFlag & LNOT(STRATCOLL)
+//	adrelanin = adrelanin + 0.2
+	Score = Score + 500
+	IF (RandRange(0, 1) = 0)
+		PLAYSOUND>EX_MINE1 0 1.0 0.0 0.0 0.0 0
+	ELSE
+		PLAYSOUND>EX_MINE2 0 1.0 0.0 0.0 0.0 0
+	ENDIF
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+	DESTROYME SPAWN_EXPLODINGBITS
+ENDSTATE

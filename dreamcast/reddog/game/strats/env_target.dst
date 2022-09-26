@@ -1,0 +1,110 @@
+STATE Init
+	Delete()
+ENDSTATE
+
+
+STATE Init2 
+	//NO DISP AS IT DOES NOT GET DRAWN THROUGH NORMAL RENDERING ROUTE
+	MyFlag = MyFlag | NODISP | PRIMETARGET
+
+ //	MyFlag = SPRITE
+
+	WHILE (MyParentInvalid())
+		MyFlag = MyFlag
+	ENDWHILE
+	MakeMeTheLast()
+//	TRIGSET>Kill PARENTDEAD
+	TRIGSET>KillCheck EVERY 1
+
+	//FIX UP A SPRITE IMAGE TO DRAW WITH
+	OBJECT> HUD\PRIMARYTARGET
+ 	ANIM> PRIMARYTARGET>PRIMARYTARGET
+  //	MyAnimFlag = MyAnimFlag | REPEAT
+
+	AddMeToTarget()	
+  	TRIGSET>Delay WHENANIMOVER
+//	ang = 0
+	STAT>Stick
+ENDSTATE
+
+LOCALFLOAT dist
+LOCALFLOAT scalefac
+
+STATE Stick
+
+	dist = PlayerDistXY()
+
+	IF (dist > 100.0)
+		scalefac = 8.0
+	ELSE
+
+		scalefac = 8.0 * dist/100.0
+
+		IF (scalefac < 1.0)
+			scalefac = 1.0
+		ENDIF
+
+
+	ENDIF
+
+	scalex = scalefac
+	scaley = scalefac
+
+
+
+   
+   
+   scalefac = ((dist * 0.1) / MyParentRadius)
+   
+   IF (scalefac > MyParentRadius)	
+		scalefac = MyParentRadius
+   ENDIF
+
+   	LinkToParentObject(0,0,0,0,0,0.0,scalefac)
+
+
+
+	IF (NearPlayerXY(20.0) AND VisibleFromPlayer(TWOPI/128.0))
+		RemoveTarget(0, -1)
+		//MyFlag = MyFlag | NODISP
+		WHILE (NearPlayerXY(22.0) AND VisibleFromPlayer(TWOPI/16.0))
+			MyFlag = MyFlag
+		ENDWHILE
+		//MyFlag = MyFlag & LNOT(NODISP)
+		AddMeToTarget()
+		
+	ENDIF
+
+
+ //  x = DogX
+ //  y = DogY
+ //  z = DogZ																
+						 
+ENDSTATE
+
+STATE Delay
+	LOOP (50)
+		MyFlag = MyFlag
+	ENDLOOP
+
+	ResetMyAnim
+	MyAnimFlag = MyAnimFlag | RUNNING
+	TRIGFIN
+ENDSTATE
+
+
+
+//STATE Kill
+//	Delete()
+
+//ENDSTATE
+
+STATE KillCheck
+
+	Score = Score - 1
+
+	IF (MyParentHealth <= 0.0)
+		Delete()
+	ENDIF
+
+ENDSTATE

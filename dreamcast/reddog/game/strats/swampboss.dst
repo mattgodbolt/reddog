@@ -1,0 +1,2111 @@
+//DEFINE LASERTURRETLENGTH 90.0
+DEFINE LASERTURRETLENGTH 1.0
+//DEFINE TORPEDOTURRETLENGTH 180.0
+DEFINE TORPEDOTURRETLENGTH 10.0
+DEFINE FLAMEGUNLENGTH	9.0
+
+//OFFSETS FOR POSITION OF FLAMES
+DEFINE TORPEDOFIREOFFY 13.5
+//was -3.5
+DEFINE TORPEDOFIREOFFZ 1.0
+//WAS -22.0
+DEFINE MISSILEFIREOFFY -2.0
+
+DEFINE LEFTLASER  1
+DEFINE LASERBASE	19
+
+DEFINE LEFTTORPEDOBAY	2
+DEFINE RIGHTTORPEDOBAY	16
+
+DEFINE LEFTTORPEDO  3
+DEFINE RIGHTTORPEDO 4
+DEFINE LEFTMISSILE  5
+DEFINE RIGHTMISSILE 6
+DEFINE LEFTMISSILEGUN 7
+DEFINE RIGHTMISSILEGUN 8
+DEFINE HEADSHELL1	9
+DEFINE HEADSHELL2	10
+DEFINE HEADSHELL3	11
+DEFINE HEADSHELL4	12
+DEFINE BEAMLASERBASE 13
+DEFINE BEAMLASERPRONGMOUNT 14
+DEFINE BEAMLASERPRONG 15
+DEFINE BEAMLASERPRONG2 20
+
+DEFINE BODY 17
+
+
+//DAMAGED TORPEDO BAYS
+DEFINE LEFTPEDODAMAGED	18
+DEFINE RIGHTPEDODAMAGED 21
+
+
+LOCALINT	Phase
+LOCALFLOAT	PhaseDamage
+
+LOCALFLOAT OLDLEFTLASERHEALTH
+LOCALFLOAT OLDRIGHTTORPEDOHEALTH
+LOCALFLOAT OLDLEFTTORPEDOHEALTH
+LOCALFLOAT OLDRIGHTMISSILEHEALTH
+LOCALFLOAT OLDLEFTMISSILEHEALTH
+LOCALFLOAT OLDBEAMLASERHEALTH
+
+LOCALFLOAT OBJHEALTH
+LOCALFLOAT DamageDelta
+
+LOCALINT LEFTLASERDEAD
+LOCALINT RIGHTTORPEDODEAD
+LOCALINT LEFTTORPEDODEAD
+LOCALINT RIGHTMISSILEDEAD
+LOCALINT LEFTMISSILEDEAD
+LOCALINT BEAMLASERDEAD
+
+LOCALINT RIGHTTORPEDODIETRIGSET
+LOCALINT  LEFTTORPEDODIETRIGSET
+LOCALINT RIGHTMISSILEDIETRIGSET
+LOCALINT LEFTMISSILEDIETRIGSET
+
+LOCALINT LEFTMISSMODE
+LOCALINT LEFTTORPMODE
+
+//STATUS MODES
+DEFINE ACTIVE		0
+DEFINE TRANSITION	1
+
+
+
+STATE Init
+
+	MyFlag = MyFlag | NODISP
+	MakeMeTheLast()
+	MyFlag = MyFlag | ENEMY | STRATCOLL | FLOORCOLL | GRAVITYON | HOVERMOVE
+
+	Phase = 1
+	LEFTMISSMODE = 0
+	LEFTTORPMODE = 0
+	RIGHTTORPEDODIETRIGSET = 0
+	LEFTTORPEDODIETRIGSET = 0
+	RIGHTMISSILEDIETRIGSET = 0
+	LEFTMISSILEDIETRIGSET = 0
+	OBJECT> BOSSES\SWAMPBOSS\SWAMPBOSS
+   	WHILE (!(MyFlag & HITFLOOR))
+   		MyFlag = MyFlag
+   	ENDWHILE
+	SetObjectShadowState(1)
+
+	MyFlag = MyFlag & LNOT(GRAVITYON + FLOORCOLL)
+
+	KillMyVelocity()
+
+	//ENSURE MAIN BODY DOES NOT CONTRIBUTE TO DAMAGE
+	InActivateObjectDamageable(BODY)
+
+	//ENSURE THE OBJECT'S INDIVIDUAL HEALTH VALS ARE SET
+
+	LEFTLASERDEAD = 0
+	OLDLEFTLASERHEALTH = 200.0
+	SetObjectHealth(LEFTLASER,100)
+	SetObjectHealth(LASERBASE,100)
+
+	
+	LEFTTORPEDODEAD = 0
+	OLDLEFTTORPEDOHEALTH = 400.0
+	SetObjectHealth(LEFTTORPEDO,200)
+	SetObjectHealth(LEFTTORPEDOBAY,200)
+   
+   	RIGHTTORPEDODEAD = 0
+	OLDRIGHTTORPEDOHEALTH = 200.0
+	SetObjectHealth(RIGHTTORPEDO,200)
+	SetObjectHealth(RIGHTTORPEDOBAY,200)
+
+	//ENSURE BEAM LASER OBJECTS ARE HIDDEN AT THE START
+
+	HideObject(BEAMLASERBASE)
+	HideObject(BEAMLASERPRONGMOUNT)
+	HideObject(BEAMLASERPRONG)
+	HideObject(BEAMLASERPRONG2)
+	InActivateObjectCollision(BEAMLASERBASE)
+	InActivateObjectCollision(BEAMLASERPRONGMOUNT)
+	InActivateObjectCollision(BEAMLASERPRONG)
+	InActivateObjectCollision(BEAMLASERPRONG2)
+
+    //HIDE AND INACTIVATE PEDO DAMAGED WINGS
+	HideObject(LEFTPEDODAMAGED)
+	InActivateObjectCollision(LEFTPEDODAMAGED)
+	HideObject(RIGHTPEDODAMAGED)
+	InActivateObjectCollision(RIGHTPEDODAMAGED)
+
+
+	//ENSURE PHASE DAMAGE IS CLEARED
+
+	PhaseDamage = 0
+
+
+	//ENSURE THE SET UP FOR PHASE 1 MAKES FRONT LASERS AND TORPEDOS TARGETABLE
+	ObjectTargetable(LEFTLASER)
+	ObjectTargetable(LASERBASE)
+
+
+	ObjectTargetable(LEFTTORPEDO)
+	ObjectTargetable(RIGHTTORPEDO)
+	ObjectTargetable(LEFTTORPEDOBAY)
+	ObjectTargetable(RIGHTTORPEDOBAY)
+  
+  
+   	SetFriction(0.2,0.2,0.0)
+	RotationRestriction(1.0, 1.0, 1.0)
+
+	IF (MyPath)
+		InitPath()
+		InitSplineData()
+		PATHACC = 1.0
+
+   		STAT>Path
+	ELSE
+		STAT>StartUp
+	ENDIF
+
+					  
+ENDSTATE
+
+TRIGGER DarkMe
+   	SetEnvironmentParms(5,100.0,-1, -1,0,0,0)
+	BossDarkness(0.85)
+	seed = 9.0
+	TRIGSTOP
+ENDTRIGGER
+
+LOCALFLOAT seed
+LOCALFLOAT dang
+
+LOCALFLOAT WHACK
+
+
+TRIGGER Lightning
+
+	IF (RandRange(0,10) < 2.0  )
+
+		LOOP (50)
+			IF (RandRange(0,10 < 4.0))
+				WHACK = 1.0
+				dang = TWOPI/4.0
+			ENDIF
+
+			IF (WHACK > 0.1)
+				WHACK = WHACK - 0.05
+			ENDIF
+			SetEnvironmentParms(-1, 100 + (20 * WHACK), -1, -1,WHACK, WHACK, WHACK)
+			BossDarkness(0.5 + seed)
+			seed = 0.5 * Ssin(dang)
+			dang = dang + RandRange (0.1, 0.3)
+
+		ENDLOOP
+
+		dang = 0
+		BossDarkness(0.85)
+		SetEnvironmentParms(5,100.0,-1, -1,0,0,0)
+
+
+	ENDIF
+
+	dang = RandRange (40.0, 100.0)
+
+	WHILE (dang > 0)
+		dang = dang - 1.0
+	ENDWHILE
+
+
+	TRIGFIN
+ENDTRIGGER
+
+
+TRIGGER MoveToCentre
+  	ysp =  PlayerActVelY
+
+  	IF (NearPlayerXY(50.0) OR (FABS(y - DogY) < 50.0) )
+  		TOPSPEED = 0.25 * ysp
+	 	PATHACC = PATHACC + ((TOPSPEED - PATHACC) * 0.04)
+  	ELSE
+  		TOPSPEED = 1.5 + ysp
+		PATHACC = PATHACC + ((TOPSPEED - PATHACC) * 0.03)
+
+  	ENDIF
+
+	KillMyVelocity()
+	MoveY(PATHACC)
+
+	IF (FABS (x - 340.0) > 2.0)
+		IF (x > 340.0)
+			IF (XACC > -0.5)
+				XACC = XACC - 0.05
+			ENDIF
+		ELSE
+			IF (XACC < 0.5)
+				XACC = XACC + 0.05
+			ENDIF
+		ENDIF
+	ENDIF
+
+	
+	x = x + XACC
+
+
+	XACC = XACC * 0.95
+   	CheckX = x
+   	CheckY = y + 500.0
+   	CheckZ = z
+   	RelTurnTowardCheckPosXY(0.05)
+
+	height = height + ((heightgo - height) * 0.03)
+	z = DogZ + height
+
+	TRIGFIN
+ENDTRIGGER
+
+
+STATE StartUp
+	TRIGSET>MoveToCentre EVERY 1
+	RotationRestriction(1.0, 1.0, 1.0)
+	SetFriction(0.05,0.05,0.05)	
+   
+   	CREATE SPAWN_TWISTER 0,0,0,0,0,0,0
+	//MAKE IMMUNE TO WHITE OUT + FOG
+	DontWhiteMeOut()
+	DontFogMeOut()
+
+   	TRIGSET>DarkMe EVERY 50
+	WHILE (MyVar != 100.0)
+		MyFlag = MyFlag
+	ENDWHILE
+
+	CREATE ENV_LIGHTNING 0,0,0,0,0,0,0
+   	TRIGSET>Lightning EVERY 1
+		
+   
+   	MyFlag = MyFlag & LNOT(NODISP)
+	MyFlag2 = MyFlag2 | TRANSLUCENT | SPECULAR
+	trans = 0.001
+
+	//START THE WEAPON TRIGGERS FOR PHASE 1
+	
+	TRIGSET>FrontLeftLaserControl EVERY 1
+   
+   	WHILE (trans < 1.0)
+		SetSpecularColour(0, 1.0 - trans,1.0 - trans,1.0 - trans)
+
+		trans = trans + 0.009
+
+	ENDWHILE
+
+	MyFlag2 = MyFlag2 & LNOT(SPECULAR | TRANSLUCENT)
+
+	//START THE WEAPON TRIGGERS FOR PHASE 1
+	
+  //	TRIGSET>FrontLeftLaserControl EVERY 1
+	TRIGSET>TorpedoControl EVERY 1
+
+  	TRIGSET>WeaponControlMode1 EVERY 1
+  	TRIGSET>UpdateCollision EVERY 1
+
+	RegisterCollision()
+  	InitHDC()
+  	IAmDaBoss
+	TRIGKILL>MoveToCentre EVERY 1
+	STARTX = x
+   //	STAT>PathMain
+	STAT>StrafeMode
+
+ENDSTATE
+
+LOCALFLOAT STARTX
+
+
+LOCALINT	STATUS
+LOCALINT	MODE
+LOCALFLOAT	TOPSPEED
+LOCALFLOAT time
+LOCALFLOAT PATHACC
+
+
+LOCALFLOAT height
+LOCALFLOAT heightgo
+LOCALFLOAT xsp
+LOCALFLOAT ysp
+
+STATE Path
+ 	IAmDaBoss
+
+
+ 	height = 20.0
+	heightgo = 10
+
+
+	WHILE (y > DogY)
+		MoveAlongPath(1.4)
+	ENDWHILE
+
+
+	WHILE (!(SeePlayerZ(TWOPI/360.0 * 2.0)))
+		RelTurnTowardPlayerXY(0.05)
+	ENDWHILE	
+
+   	STAT>StartUp
+ENDSTATE
+
+LOCALINT TORPSSET
+
+LOCALFLOAT TOPXSPEED
+LOCALFLOAT XACC
+LOCALFLOAT TOPANG
+LOCALFLOAT ROTANG
+LOCALFLOAT XROTANG
+LOCALINT   INXRANGE
+LOCALINT   RANGECOUNT
+LOCALFLOAT XVEL
+LOCALINT WAITHERE
+
+STATE PathMain
+
+  	ysp =  PlayerActVelY
+
+  	IF (NearPlayerXY(50.0) OR (FABS(y - DogY) < 50.0) )
+  		TOPSPEED = 0.25 * ysp
+	 	PATHACC = PATHACC + ((TOPSPEED - PATHACC) * 0.04)
+  	ELSE
+  		TOPSPEED = 1.5 + ysp
+		PATHACC = PATHACC + ((TOPSPEED - PATHACC) * 0.03)
+
+  	ENDIF
+
+
+ 	IF (FABS(x - DogX) < 5.0)
+		WAITHERE = 30
+ 		INXRANGE = 1
+  	ELSE
+		IF (!WAITHERE)
+			INXRANGE = 0
+		ELSE
+			WAITHERE = WAITHERE - 1
+		ENDIF
+   	ENDIF
+
+	KillMyVelocity()
+	MoveY(PATHACC)
+
+	time = time + 1.0
+
+	//GET INTO SOME FUNKY MISSILE MOVES IF VALID TO DO SO
+   	IF (((MISSILEPRIME) OR (Phase = 3)) AND (!TORPEDOPRIME))
+		//ensure missiles fire off
+		frame = 100
+		STAT>MissileMove
+	ENDIF
+
+	IF ((!TORPEDOPRIME) AND (!INXRANGE))
+
+		//TOPXSPEED = ((DogX) - x)
+		//XVEL = XVEL + ((TOPXSPEED - XVEL) * 0.003)
+		//IF (XVEL > 0.6)
+		//	XVEL = 0.6
+		//ELSE
+		//	IF (XVEL < -0.6)
+		//		XVEL = -0.6
+		//	ENDIF
+		//ENDIF
+
+		IF (FABS(x - STARTX) < 15.0)
+			IF (x < DogX)
+				IF (XVEL < 0.3)
+					XVEL = XVEL + 0.01
+				ENDIF
+			ELSE
+				IF (XVEL > -0.3)
+					XVEL = XVEL - 0.01
+				ENDIF
+			 ENDIF
+		 ENDIF
+		 
+
+		 //XROTANG = ((TOPANG - XROTANG) * 0.5)
+		 
+		 IF (Phase < 2)
+   			x = x + XVEL
+		 ENDIF
+
+		 XVEL = XVEL * 0.65
+	ELSE
+		RelTurnTowardPlayerXY(0.05)
+
+		IF (TORPEDOPRIME)
+			TOPXSPEED = (340.0 - x)
+			XVEL = XVEL + ((TOPXSPEED - XVEL) * 0.003)
+			IF (XVEL > 0.6)
+				XVEL = 0.6
+			ELSE
+				IF (XVEL < -0.6)
+					XVEL = -0.6
+				ENDIF
+			ENDIF
+	   		x = x + XVEL
+			Flatten(1.0)
+		   	CheckX = x
+		   	CheckY = y + 500.0
+		   	CheckZ = z
+		   	RelTurnTowardCheckPosXY(0.05)
+		ELSE
+			RelTurnTowardPlayerXY(0.05)
+
+			RANGECOUNT = RANGECOUNT + 1
+		 	Flatten(1.0)
+			//ENTER STRAFE MODE IF OUR LASER IS STILL ACTIVE
+			IF ((Phase < 2) AND  (!LEFTLASERDEAD) AND (RANGECOUNT > 5) AND (FABS(y - DogY) < 55.0))
+				RANGECOUNT = 0
+			   	STAT>StrafeMode
+			ENDIF
+
+		ENDIF
+	ENDIF
+
+	IF (TORPEDOPRIME)
+		heightgo = 15
+		IF (!TORPSSET)
+			frame = 0
+			
+			IF (TORPEDOPRIME & RIGHTPEDO)
+				//CREATE INNER/OUTER LEFT TORPEDOS
+				SetGlobalParamFloat(0,0.0)
+		  		CREATE SPAWN_ENEMY_HOMING_TORPEDO 0.0, TORPEDOTURRETLENGTH, 0.0, 0, 0, 0.0, LEFTTORPEDO
+				SetGlobalParamFloat(0,2.0)
+		  		CREATE SPAWN_ENEMY_HOMING_TORPEDO 0.0, TORPEDOTURRETLENGTH, 0.0, 0, 0, 0.0, LEFTTORPEDO
+				SetGlobalParamFloat(0,4.0)
+		  		CREATE SPAWN_ENEMY_HOMING_TORPEDO 0.0, TORPEDOTURRETLENGTH, 0.0, 0, 0, 0.0, LEFTTORPEDO
+			ENDIF
+				SetGlobalParamFloat(0,6.0)
+		   		CREATE SPAWN_ENEMY_HOMING_TORPEDO 0.0, TORPEDOTURRETLENGTH, 0.0, 0, 0, 0.0, 0
+			IF (TORPEDOPRIME & LEFTPEDO)
+				//CREATE INNER/OUTER RIGHT TORPEDOS
+				SetGlobalParamFloat(0,1.0)
+		   		CREATE SPAWN_ENEMY_HOMING_TORPEDO 0.0, TORPEDOTURRETLENGTH, 0.0, 0, 0, 0.0, RIGHTTORPEDO
+				SetGlobalParamFloat(0,3.0)
+		   		CREATE SPAWN_ENEMY_HOMING_TORPEDO 0.0, TORPEDOTURRETLENGTH, 0.0, 0, 0, 0.0, RIGHTTORPEDO
+				SetGlobalParamFloat(0,5.0)
+		   		CREATE SPAWN_ENEMY_HOMING_TORPEDO 0.0, TORPEDOTURRETLENGTH, 0.0, 0, 0, 0.0, RIGHTTORPEDO
+			ENDIF
+			ClearGlobalParams()
+			TORPSSET = 1
+		ENDIF
+		
+		IF ((FABS(height - heightgo) < 0.5)	AND (FABS(x - 340.0) < 3.0))
+			TORPEDOPRIME = 0
+			TORPSSET = 0
+			frame = 100	
+			STAT>PeelAway
+	   	ENDIF
+
+
+	ELSE
+		heightgo = 10
+	ENDIF
+
+	height = height + ((heightgo - height) * 0.03)
+	z = DogZ + height
+
+ENDSTATE
+
+LOCALINT BEAMACTIVE
+LOCALINT DONECENTRE
+
+TRIGGER MissileStrafe
+	//LET'S GET TO CENTRE POINT 
+	IF (!DONECENTRE)
+		WHILE (FABS(340.0 - x) > 1.5)
+
+			IF (x > 340.0)
+				IF (XACC > -0.5)
+					XACC = XACC - 0.05
+				ENDIF
+			ELSE
+				IF (XACC < 0.5)
+					XACC = XACC + 0.05
+				ENDIF
+			ENDIF
+
+   			x = x + XACC
+		
+			XACC = XACC * 0.99
+		ENDWHILE
+
+
+
+		DONECENTRE = 1
+	ENDIF
+	//NOW SOME STRAFE ACTION
+	LOOP (30)   	 
+		IF ((!BEAMACTIVE) AND (!MISSILECHARGE))   	 
+			IF (XACC < 0.5)
+				XACC = XACC + 0.05
+			ENDIF
+			x = x + XACC
+			XACC = XACC * 0.99
+		ENDIF
+	ENDLOOP
+	
+	LOOP (60)
+		IF ((!BEAMACTIVE) AND (!MISSILECHARGE))   	 
+			IF (XACC > -0.5)
+				XACC = XACC - 0.05
+			ENDIF
+			x = x + XACC
+			XACC = XACC * 0.99
+		ENDIF
+	ENDLOOP
+
+	LOOP (30)
+		IF ((!BEAMACTIVE) AND (!MISSILECHARGE))   	 
+			IF (XACC < 0.5)
+				XACC = XACC + 0.05
+			ENDIF
+			x = x + XACC
+			XACC = XACC * 0.99
+		ENDIF
+	ENDLOOP
+
+	TRIGFIN
+ENDTRIGGER
+
+STATE MissileMove
+   
+   	//FLAGS THE MISSILE TRIGGER WHEN LEGAL TO FIRE, THEN HOLDS POSITION
+	//UNTIL OUT OF THE MISSILE MODE 
+	LASERFIREVALID = 1
+	MISSILEMODE = 1
+	DONECENTRE = 0
+	TRIGSET>MissileStrafe EVERY 1
+	TRIGSET>StrafeHeight EVERY 1
+	WHILE ((MISSILEPRIME) OR (Phase = 3))
+
+		ysp =  PlayerActVelY
+
+		IF (NearPlayerXY(60.0) OR (FABS(y - DogY) < 60.0) )
+			TOPSPEED = 0.25 * ysp
+		 	PATHACC = PATHACC + ((TOPSPEED - PATHACC) * 0.04)
+			MISSILEVALID = 0
+		ELSE
+			MISSILEVALID = 1
+			TOPSPEED = 1.5 + ysp
+			PATHACC = PATHACC + ((TOPSPEED - PATHACC) * 0.03)
+	 	ENDIF
+
+
+		KillMyVelocity()
+		MoveY(PATHACC)
+
+		IF (BEAMACTIVE)
+	   		CheckX = x
+	   		CheckY = y + 500.0
+	   		CheckZ = z
+	   		RelTurnTowardCheckPosXY(0.5)
+		ELSE
+	  		RelTurnTowardPlayerXY(0.01)
+		ENDIF
+		Flatten(1.0)
+	ENDWHILE
+   
+	TRIGKILL>MissileStrafe EVERY 1
+	TRIGKILL>StrafeHeight EVERY 1
+   	MISSILEVALID = MISSILEPRIME = 0
+	LASERFIREVALID = 0
+	MISSILEMODE = 0
+
+	STAT>PathMain
+
+
+ENDSTATE
+
+LOCALINT MISSILEPRIME
+LOCALINT MISSILEVALID
+LOCALFLOAT GOLEFT
+STATE PeelAway
+	heightgo = 20
+	IF (x < 340.0)
+		TOPXSPEED = ((x + 20.0) - x)
+	ELSE
+		TOPXSPEED = ((x - 20.0) - x)
+	ENDIF
+
+	LOOP (20)
+	   	height = height + ((heightgo - height) * 0.03)
+		z = DogZ + height
+		x = x + GOLEFT
+		TOPXSPEED = ((DogX) - x)
+		XVEL = XVEL + ((TOPXSPEED - XVEL) * 0.003)
+		IF (XVEL > 0.6)
+			XVEL = 0.6
+		ELSE
+			IF (XVEL < -0.6)
+				XVEL = -0.6
+			ENDIF
+		ENDIF
+
+
+	  	ROTANG = (TWOPI/360.0) 
+	  	IF (XVEL > 0)
+   	  	   	IF (XROTANG)
+	  	   		RelRotateY(ROTANG * (1.0 - XVEL))
+	  	   	ENDIF
+	  		TOPANG = (TWOPI/360.0) * 36.0
+			
+	   	ELSE	 
+	  	   	IF (XROTANG)
+	  	   		xsp = - ROTANG * (1.0 - FABS(XVEL))
+   	  	   		RelRotateY(xsp )
+	  	   	ENDIF
+	  		TOPANG = -(TWOPI/360.0) * 36.0
+	  	ENDIF
+
+	  	XROTANG = ((TOPANG - XROTANG) * 0.5)
+
+		x = x + XVEL
+	  	RelTurnTowardPlayerXY(0.05)
+	ENDLOOP
+
+	XROTANG = 0
+
+	heightgo = 10
+	PATHACC = 0
+	STAT>PathMain
+
+ENDSTATE
+
+LOCALFLOAT hang
+
+//controls height when in strafe mode
+//strafe mode being run when front laser is active
+
+TRIGGER StrafeHeight
+	heightgo = 10 + 2.0 * Ssin(hang)
+	hang = hang + 0.1
+	height = height + ((heightgo - height) * 0.03)
+   	z = DogZ + height
+   	Flatten(1.0)
+	IF ((LEFTLASERDEAD) AND (!MISSILEMODE))
+		TRIGRESET
+	  	TRIGSTOP
+		STAT>PathMain
+
+	ELSE
+		TRIGFIN
+	ENDIF
+	XACC = XACC * 0.8
+ENDTRIGGER
+
+LOCALINT MISSILEMODE
+
+LOCALINT LASERFIREVALID
+
+STATE StrafeMode
+   
+
+	TRIGSET>StrafeHeight EVERY 1
+	WHILE (FABS(340.0 - x) > 1.5)
+
+		IF (x > 340.0)
+			IF (XACC > -0.5)
+				XACC = XACC - 0.05
+			ENDIF
+		ELSE
+			IF (XACC < 0.5)
+				XACC = XACC + 0.05
+			ENDIF
+		ENDIF
+
+   		x = x + XACC
+	ENDWHILE
+
+
+	LOOP (60)   	 
+	  	ysp =  PlayerActVelY
+
+		IF (NearPlayerXY(60.0) OR (FABS(y - DogY) < 60.0) )
+			LASERFIREVALID = 0 
+			TOPSPEED = 0.25 * ysp
+		 	PATHACC = PATHACC + ((TOPSPEED - PATHACC) * 0.04)
+		ELSE
+			LASERFIREVALID = 1 
+			TOPSPEED = 1.5 + ysp
+			PATHACC = PATHACC + ((TOPSPEED - PATHACC) * 0.03)
+	  	ENDIF
+		KillMyVelocity()
+		MoveY(PATHACC)
+//	   	Flatten(1.0)
+			RelTurnTowardPlayerXY(0.05)
+		IF (XACC < 0.5)
+			XACC = XACC + 0.05
+		ENDIF
+			x = x + XACC
+	ENDLOOP
+
+	LOOP (120)   	 
+		ysp =  PlayerActVelY
+
+		IF (NearPlayerXY(60.0) OR (FABS(y - DogY) < 60.0) )
+			LASERFIREVALID = 0 
+			TOPSPEED = 0.25 * ysp
+		 	PATHACC = PATHACC + ((TOPSPEED - PATHACC) * 0.04)
+		ELSE
+			LASERFIREVALID = 1 
+			TOPSPEED = 1.5 + ysp
+			PATHACC = PATHACC + ((TOPSPEED - PATHACC) * 0.03)
+
+		ENDIF
+		KillMyVelocity()
+		MoveY(PATHACC)
+
+  //	  	Flatten(1.0)
+			RelTurnTowardPlayerXY(0.05)
+		IF (XACC > -0.5)
+			XACC = XACC - 0.05
+		ENDIF
+		x = x + XACC
+	ENDLOOP
+	LOOP (60)   	 
+		ysp =  PlayerActVelY
+
+		IF (NearPlayerXY(60.0) OR (FABS(y - DogY) < 60.0) )
+			LASERFIREVALID = 0 
+			TOPSPEED = 0.25 * ysp
+		 	PATHACC = PATHACC + ((TOPSPEED - PATHACC) * 0.04)
+		ELSE
+			LASERFIREVALID = 1 
+			TOPSPEED = 1.5 + ysp
+			PATHACC = PATHACC + ((TOPSPEED - PATHACC) * 0.03)
+    	ENDIF
+		KillMyVelocity()
+		MoveY(PATHACC)
+	
+	//   	Flatten(1.0)
+		RelTurnTowardPlayerXY(0.05)
+		IF (XACC < 0.5)
+			XACC = XACC + 0.05
+		ENDIF
+		x = x + XACC
+	ENDLOOP
+
+	LASERFIREVALID = 0
+
+	TRIGKILL>StrafeHeight EVERY 1
+
+
+	STAT>PathMain
+ENDSTATE
+
+
+							   
+TRIGGER UpdateCollision	 
+	CalculateStratPolyData(0)
+	TRIGFIN
+ENDTRIGGER
+
+
+//TRIGGER TestPrint
+
+//	LogPrint(20,14,Phase)
+//	LogPrint(20,16,PhaseDamage)
+//	TRIGFIN
+//ENDTRIGGER
+
+LOCALINT LTorpedoTime
+
+
+LOCALINT LLASERINCVAL
+LOCALINT LLaserTime
+
+LOCALINT RMISSILEINCVAL
+LOCALINT RMissileTime
+LOCALINT LMISSILEINCVAL
+LOCALINT LMissileTime
+
+
+LOCALINT LEFTLASERFireState
+LOCALINT LEFTLASERWaitFrame
+
+LOCALINT RIGHTTORPEDOFireState
+LOCALINT RIGHTTORPEDOWaitFrame
+LOCALINT LEFTTORPEDOFireState
+LOCALINT LEFTTORPEDOWaitFrame
+
+LOCALINT RIGHTMISSILEFireState
+LOCALINT RIGHTMISSILEWaitFrame
+LOCALINT LEFTMISSILEFireState
+LOCALINT LEFTMISSILEWaitFrame
+
+LOCALINT BEAMLASERFireState
+LOCALINT BEAMLASERWaitFrame
+
+LOCALINT leftlaserLightning
+
+
+TRIGGER DamageLeftLaser
+	lefttorpedoLightning = 1
+	SPECAMOUNT = 1.0 / 5
+	LOOP (5)
+		SetSpecularColour(LEFTLASER, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		SetSpecularColour(LASERBASE, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		SPECAMOUNT = SPECAMOUNT + 1.0 / 5.0
+		ObjectSpecularFlash(LEFTLASER,1)
+		ObjectSpecularFlash(LASERBASE,1)
+	ENDLOOP
+	ObjectSpecularFlash(LEFTLASER,0)
+	ObjectSpecularFlash(LASERBASE,0)
+	lefttorpedoLightning = 0
+	TRIGSTOP
+ENDTRIGGER
+
+DEFINE MUZZLEROT 0
+
+DEFINE LASERFIRETIME 60
+
+
+LOCALFLOAT TEMPLASEHEALTH
+LOCALFLOAT TEMPBASEHEALTH
+
+
+//CONTROLS FRONT LASERS
+//IN PHASE 1 AND 2 DAMAGE CONTRIBUTES TO PHASEDAMAGE
+//IN PHASE 3 AND 5 DAMAGE DOES NOT CONTRIBUTE TO PHASEDAMAGE
+//IN PHASE 4 AND 6 THE WEAPONS ARE INACTIVE
+TRIGGER FrontLeftLaserControl
+	IF (!LEFTLASERDEAD)
+		IF ((Phase = 4) || (Phase = 6))
+			ReturnToStartTransform(LEFTLASER)
+ 			CrntRotToIdleRotX(LEFTLASER, 0.05)
+ 			CrntRotToIdleRotZ(LEFTLASER, 0.05)
+		ELSE
+	 
+	 	   	ObjectTowardPlayerXZOffset (LEFTLASER, 0.5, 0.5, (TWOPI/360.0) * 22.5, (TWOPI/360.0) * 22.5,0,LASERTURRETLENGTH,0)
+	 		 	CrntRotToIdleRotZ(LEFTLASER, 0.5)
+		   	CrntRotToIdleRotX(LEFTLASER, 0.5)
+	   	
+			MyVar = 4.0
+			LLASERINCVAL = 0
+
+			IF (LASERFIREVALID)
+		 		IF (!LLaserTime)
+	
+					SetGlobalParamFloat(0,LEFTLASER)
+				  //	SetGlobalParamFloat(0,LASERBASE)
+					SetGlobalParamFloat(1,LASERTURRETLENGTH)
+					SetGlobalParamFloat(2,MUZZLEROT)
+		 		 	CREATE SPAWN_LASERPARENT 0.0, LASERTURRETLENGTH, 0.0, 0, 0, 0, LEFTLASER
+		 			ClearGlobalParams()
+				 
+					TEMPLASEHEALTH = GetObjectHealth(LEFTLASER)
+					TEMPBASEHEALTH = GetObjectHealth(LASERBASE)
+				   //WAIT UNTIL ANTICIPATION HAS BEEN DONE
+				   	WHILE (GlobalVar2 != 100.0)
+				   		MyFlag = MyFlag
+				   	ENDWHILE
+					GlobalVar2 = 0
+
+					SetObjectHealth(LEFTLASER,TEMPLASEHEALTH)
+					SetObjectHealth(LASERBASE,TEMPBASEHEALTH)
+				   
+				   	//CREATE THE BOLT
+				   	SetGlobalParamInt(0,1)
+				   	SetGlobalParamFloat(0,LEFTLASER)
+				   //	SetGlobalParamFloat(0,LASERBASE)
+					SetGlobalParamFloat(1,LASERTURRETLENGTH)
+					SetGlobalParamFloat(2,MUZZLEROT)
+		 		 	CREATE SPAWN_LASERPARENT 0.0, LASERTURRETLENGTH, 0.0, 0, 0, 0, LEFTLASER
+		 			ClearGlobalParams()
+
+			  	ENDIF
+		 		LLASERINCVAL = 1
+		 	ENDIF
+
+			IF (LLASERINCVAL)
+				LLaserTime = LLaserTime + 1
+			ELSE
+				LLaserTime = 0
+			ENDIF
+
+
+			IF (LLaserTime > LASERFIRETIME)
+				LLaserTime = 0
+			ENDIF
+
+		ENDIF
+			//LET'S CHECK FOR BLOWN UP STATUS
+
+			IF (ObjectHitStrat(LEFTLASER) OR ObjectHitStrat(LASERBASE))
+				OBJHEALTH = GetObjectHealth(LEFTLASER) + GetObjectHealth(LASERBASE)
+	   		IF (OBJHEALTH < 0.0)
+	   			//DESTROY
+	   			LEFTLASERDEAD = 1
+	   			DamageDelta = OLDLEFTLASERHEALTH 
+	   		ELSE
+				
+				MyVar = 1.0
+				IF (!leftlaserLightning)
+					TRIGSET>DamageLeftLaser EVERY 1 		  
+				ENDIF
+	   			DamageDelta = OLDLEFTLASERHEALTH - OBJHEALTH
+	   		ENDIF
+
+			ClearObjCollFlag(LEFTLASER,HITSTRAT)
+			ClearObjCollFlag(LASERBASE,HITSTRAT)
+
+
+	   		OLDLEFTLASERHEALTH = OBJHEALTH
+
+	   		IF ((Phase = 1) || (Phase = 2))
+	   			PhaseDamage = PhaseDamage + DamageDelta
+	   		ENDIF
+	   	ENDIF
+		
+		TRIGFIN
+	ELSE
+	  	MyVar = 2.0
+	  	HideObject(LEFTLASER)
+		ObjectNotTargetable(LEFTLASER)
+		InActivateObjectCollision(LEFTLASER)
+	   //	HideObject(LASERBASE)
+		ObjectNotTargetable(LASERBASE)
+		InActivateObjectCollision(LASERBASE)
+
+
+	   	CREATE SPAWN_BLASTEXP 0, LASERTURRETLENGTH, 0, 0, 0, 0, LEFTLASER
+	  	LEFTLASERFireState = 2
+	  	WHILE (LEFTLASERFireState)
+	  		LEFTLASERWaitFrame = 150
+	  		WHILE (LEFTLASERWaitFrame)
+	  			IF (LEFTLASERFireState = 2)
+	  				MyVar = 2.0
+	  			ELSE
+	  				MyVar = 0.0
+	  			ENDIF
+				SetGlobalParamInt(0,LEFTLASER)
+	  	 		CREATE SPAWN_ScapeSmoke 0, LASERTURRETLENGTH, 0, 0,0,0, LEFTLASER
+	  	 		CREATE SPAWN_ScapeSmoke 0, LASERTURRETLENGTH, 0, 0,0,0, LEFTLASER
+	  			IF (LEFTLASERFireState = 2)
+	  				MyVar = 3.0
+	  			ELSE
+	  				MyVar = 1.0
+	  			ENDIF
+	  	   		CREATE SPAWN_ScapeSmoke 0, LASERTURRETLENGTH, 0, 0, 0, 0, LEFTLASER
+	  		   	ClearGlobalParams()
+			   	LEFTLASERWaitFrame = LEFTLASERWaitFrame - 1 
+	  		ENDWHILE
+	  		LEFTLASERFireState = LEFTLASERFireState - 1
+	  	ENDWHILE
+
+	  	TRIGSTOP
+
+	ENDIF
+ENDTRIGGER
+
+
+			    
+TRIGGER ExplodeRightTorpedo
+	MyVar = 2.0
+	HideObject(RIGHTTORPEDOBAY)
+	ObjectNotTargetable(RIGHTTORPEDOBAY)
+	InActivateObjectCollision(RIGHTTORPEDOBAY)
+
+	CREATE SPAWN_BLASTEXP 0, TORPEDOTURRETLENGTH, 0, 0, 0, 0, RIGHTTORPEDOBAY
+
+	LOOP (2)
+		MyFlag = MyFlag
+	ENDLOOP
+
+	//HIDE ORIGINAL WING
+	HideObject(RIGHTTORPEDO)
+	InActivateObjectCollision(RIGHTTORPEDO)
+   
+   	//BRING IN NEW DAMAGED MODEL
+  	UnhideObject(RIGHTPEDODAMAGED)
+	ActivateObjectCollision(RIGHTPEDODAMAGED)
+
+
+
+
+
+	RIGHTTORPEDOFireState = 2
+  	RIGHTTORPEDOWaitFrame = 150
+  	WHILE ((RIGHTTORPEDOWaitFrame) AND (RIGHTTORPEDOFireState))
+	 
+		SetGlobalParamFloat(2,5.0)
+	 	IF (RIGHTTORPEDOFireState = 2)
+			MyVar = 2.0
+		ELSE
+			MyVar = 0.0
+		ENDIF
+		
+	    SetGlobalParamInt(0,RIGHTTORPEDOBAY)
+		SetGlobalParamFloat(0,TORPEDOFIREOFFY)
+		SetGlobalParamFloat(1,TORPEDOFIREOFFZ)
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, RIGHTTORPEDOBAY
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, RIGHTTORPEDOBAY
+	  	IF (RIGHTTORPEDOFireState = 2)
+	  		MyVar = 3.0
+	  	ELSE
+	  		MyVar = 1.0
+	  	ENDIF
+		
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, RIGHTTORPEDOBAY
+		ClearGlobalParams()
+	  	RIGHTTORPEDOWaitFrame = RIGHTTORPEDOWaitFrame - 1 
+	  	IF ((!(RIGHTTORPEDOWaitFrame)) AND (RIGHTTORPEDOFireState))
+			RIGHTTORPEDOWaitFrame = 150
+			RIGHTTORPEDOFireState = RIGHTTORPEDOFireState - 1
+		ENDIF
+				   
+  	ENDWHILE
+
+	TRIGSTOP
+ENDTRIGGER
+
+TRIGGER ExplodeLeftTorpedo
+	MyVar = 2.0
+	HideObject(LEFTTORPEDOBAY)
+	ObjectNotTargetable(LEFTTORPEDOBAY)
+	InActivateObjectCollision(LEFTTORPEDOBAY)
+	ObjectNotTargetable(LEFTTORPEDO)
+	InActivateObjectCollision(LEFTTORPEDO)
+
+
+
+	CREATE SPAWN_BLASTEXP 0, TORPEDOTURRETLENGTH, 0, 0, 0, 0, LEFTTORPEDOBAY
+	LOOP (2)
+		MyFlag = MyFlag
+	ENDLOOP
+
+	//HIDE ORIGINAL WING
+	HideObject(LEFTTORPEDO)
+	InActivateObjectCollision(LEFTTORPEDO)
+
+  	//BRING IN NEW DAMAGED MODEL
+  	UnhideObject(LEFTPEDODAMAGED)
+	ActivateObjectCollision(LEFTPEDODAMAGED)
+
+	LEFTTORPEDOFireState = 2
+  	LEFTTORPEDOWaitFrame = 150
+  	WHILE ((LEFTTORPEDOWaitFrame) AND (LEFTTORPEDOFireState))
+		SetGlobalParamFloat(2,5.0)
+		IF (LEFTTORPEDOFireState = 2)
+			MyVar = 2.0
+		ELSE
+			MyVar = 0.0
+		ENDIF
+		SetGlobalParamInt(0,LEFTTORPEDOBAY)
+		SetGlobalParamFloat(0,TORPEDOFIREOFFY)
+		SetGlobalParamFloat(1,TORPEDOFIREOFFZ)
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, LEFTTORPEDOBAY
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, LEFTTORPEDOBAY
+	  	IF (LEFTTORPEDOFireState = 2)
+	  		MyVar = 3.0
+	  	ELSE
+	  		MyVar = 1.0
+	  	ENDIF
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, LEFTTORPEDOBAY
+		ClearGlobalParams()
+	  	LEFTTORPEDOWaitFrame = LEFTTORPEDOWaitFrame - 1 
+	  	IF ((!(LEFTTORPEDOWaitFrame)) AND (LEFTTORPEDOFireState))
+			LEFTTORPEDOWaitFrame = 150
+			LEFTTORPEDOFireState = LEFTTORPEDOFireState - 1
+		ENDIF
+				   
+  	ENDWHILE
+
+	TRIGSTOP
+ENDTRIGGER
+
+LOCALINT lefttorpedoLightning
+LOCALFLOAT SPECAMOUNT
+TRIGGER DamageLeftTorpedo
+	
+	lefttorpedoLightning = 1
+	SPECAMOUNT = 1.0 / 5
+	LOOP (5)
+		SetSpecularColour(LEFTTORPEDO, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		SetSpecularColour(LEFTTORPEDOBAY, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		SPECAMOUNT = SPECAMOUNT + 1.0 / 5.0
+		ObjectSpecularFlash(LEFTTORPEDO,1)
+		ObjectSpecularFlash(LEFTTORPEDOBAY,1)
+	ENDLOOP
+	ObjectSpecularFlash(LEFTTORPEDO,0)
+	ObjectSpecularFlash(LEFTTORPEDOBAY,0)
+	lefttorpedoLightning = 0
+	TRIGSTOP
+ENDTRIGGER
+
+LOCALINT righttorpedoLightning
+TRIGGER DamageRightTorpedo
+	righttorpedoLightning = 1
+	SPECAMOUNT = 1.0 / 5
+	LOOP (5)
+		SetSpecularColour(RIGHTTORPEDO, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		SetSpecularColour(RIGHTTORPEDOBAY, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		SPECAMOUNT = SPECAMOUNT + 1.0 / 5.0
+		ObjectSpecularFlash(RIGHTTORPEDO,1)
+		ObjectSpecularFlash(RIGHTTORPEDOBAY,1)
+	ENDLOOP
+	ObjectSpecularFlash(RIGHTTORPEDO,0)
+	ObjectSpecularFlash(RIGHTTORPEDOBAY,0)
+	righttorpedoLightning = 0
+	TRIGSTOP
+ENDTRIGGER
+
+
+DEFINE LEFTPEDO		2
+DEFINE RIGHTPEDO	4
+
+LOCALINT TORPEDOPRIME
+
+//CONTROLS FRONT TORPEDOS
+//IN PHASE 1 AND 2 DAMAGE CONTRIBUTES TO PHASEDAMAGE
+//IN PHASE 3 AND 5 DAMAGE DOES NOT CONTRIBUTE TO PHASEDAMAGE
+//IN PHASE 4 AND 6 THE WEAPONS ARE INACTIVE
+TRIGGER TorpedoControl
+	IF ((!LEFTTORPEDODEAD) OR (!RIGHTTORPEDODEAD))
+		IF ((Phase = 4) || (Phase = 6))
+			MyFlag = MyFlag
+		ELSE
+			IF (LEFTTORPEDODEAD)
+				LEFTTORPMODE = 0
+			ENDIF
+			IF (RIGHTTORPEDODEAD)
+				LEFTTORPMODE = 1
+			ENDIF
+
+			IF (FABS(DogX - x) < 20.0)
+
+			   	IF ((!LEFTTORPEDODEAD) AND (!(TORPEDOPRIME & LEFTPEDO)))
+					IF (LTorpedoTime > 180)
+						TORPEDOPRIME = TORPEDOPRIME | LEFTPEDO
+				  	ENDIF
+	   			ENDIF
+
+			   	IF ((!RIGHTTORPEDODEAD) AND (!(TORPEDOPRIME & RIGHTPEDO)))
+					IF (LTorpedoTime > 180)
+						TORPEDOPRIME =  TORPEDOPRIME | RIGHTPEDO
+					ENDIF
+				ENDIF
+
+
+
+			ENDIF
+			IF (!TORPEDOPRIME)
+	  			LTorpedoTime = LTorpedoTime + 1
+		 	ELSE
+				LTorpedoTime = 0
+			ENDIF
+
+
+	   ENDIF
+
+		//LET'S CHECK FOR BLOWN UP STATUS
+		IF (!LEFTTORPEDODEAD)	
+			IF (ObjectHitStrat(LEFTTORPEDO) OR ObjectHitStrat(LEFTTORPEDOBAY))
+				OBJHEALTH = GetObjectHealth(LEFTTORPEDO) + GetObjectHealth(LEFTTORPEDOBAY)
+				IF (OBJHEALTH < 0.0)
+					//DESTROY
+					LEFTTORPEDODEAD = 1
+					DamageDelta = OLDLEFTTORPEDOHEALTH 
+				ELSE
+					MyVar = 1.0
+					IF (!lefttorpedoLightning)
+						TRIGSET>DamageLeftTorpedo EVERY 1 		  
+					ENDIF
+					DamageDelta = OLDLEFTTORPEDOHEALTH - OBJHEALTH
+				ENDIF
+
+				OLDLEFTTORPEDOHEALTH = OBJHEALTH
+
+				ClearObjCollFlag(LEFTTORPEDO,HITSTRAT)
+				ClearObjCollFlag(LEFTTORPEDOBAY,HITSTRAT)
+
+
+				IF ((Phase = 1) || (Phase = 2))
+					PhaseDamage = PhaseDamage + DamageDelta
+				ENDIF
+			ENDIF
+		ENDIF
+		IF (LEFTTORPEDODEAD)
+			IF (!LEFTTORPEDODIETRIGSET)
+				TRIGSET>ExplodeLeftTorpedo EVERY 1
+				LEFTTORPEDODIETRIGSET = 1
+				TORPEDOPRIME = TORPEDOPRIME & LNOT(LEFTPEDO)
+			ENDIF
+		ENDIF
+
+		IF (!RIGHTTORPEDODEAD)
+			IF (ObjectHitStrat(RIGHTTORPEDO) OR ObjectHitStrat(RIGHTTORPEDOBAY))
+				OBJHEALTH = GetObjectHealth(RIGHTTORPEDO) + GetObjectHealth(RIGHTTORPEDOBAY)
+				IF (OBJHEALTH < 0.0)
+					//DESTROY
+					RIGHTTORPEDODEAD = 1
+					DamageDelta = OLDRIGHTTORPEDOHEALTH 
+				ELSE
+					MyVar = 1.0
+					IF (!righttorpedoLightning)
+						TRIGSET>DamageRightTorpedo EVERY 1 		  
+					ENDIF
+		 			DamageDelta = OLDRIGHTTORPEDOHEALTH - OBJHEALTH
+		 		ENDIF
+
+		 		OLDRIGHTTORPEDOHEALTH = OBJHEALTH
+
+				ClearObjCollFlag(RIGHTTORPEDO,HITSTRAT)
+				ClearObjCollFlag(RIGHTTORPEDOBAY,HITSTRAT)
+
+
+	 			IF ((Phase = 1) || (Phase = 2))
+	 				PhaseDamage = PhaseDamage + DamageDelta
+	 			ENDIF
+	 		ENDIF
+		ENDIF
+		IF (RIGHTTORPEDODEAD)
+			IF (!RIGHTTORPEDODIETRIGSET)
+				TRIGSET>ExplodeRightTorpedo	EVERY 1
+				RIGHTTORPEDODIETRIGSET = 1
+				TORPEDOPRIME = TORPEDOPRIME & LNOT(RIGHTPEDO)
+			ENDIF
+		ENDIF
+		TRIGFIN
+	ELSE
+	  	TRIGSTOP
+	ENDIF
+ENDTRIGGER
+
+//LASER TURRETS AND TORPEDOES
+
+TRIGGER WeaponControlMode1
+	IF (PhaseDamage >= 600.0)
+		Phase = 2
+		PhaseDamage = 0
+		TRIGSET>WeaponControlSwitchMode2 EVERY 1
+	   	TRIGSTOP
+	ELSE
+
+	  //	CalculateStratPolyData()
+		MyFlag = MyFlag
+		TRIGFIN
+	ENDIF
+ENDTRIGGER
+
+LOCALINT leftmissileLightning
+TRIGGER DamageLeftMissile
+	leftmissileLightning = 1
+	SPECAMOUNT = 1.0 / 5
+	LOOP (5)
+		SetSpecularColour(LEFTMISSILE, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		SetSpecularColour(LEFTMISSILEGUN, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		SPECAMOUNT = SPECAMOUNT + 1.0 / 5.0
+		ObjectSpecularFlash(LEFTMISSILE,1)
+		ObjectSpecularFlash(LEFTMISSILEGUN,1)
+	ENDLOOP
+	ObjectSpecularFlash(LEFTMISSILE,0)
+	ObjectSpecularFlash(LEFTMISSILEGUN,0)
+	leftmissileLightning = 0
+	TRIGSTOP
+ENDTRIGGER
+
+LOCALINT rightmissileLightning
+TRIGGER DamageRightMissile
+	rightmissileLightning = 1
+	SPECAMOUNT = 1.0 / 5
+	LOOP (5)
+		SetSpecularColour(RIGHTMISSILE, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		SetSpecularColour(RIGHTMISSILEGUN, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		SPECAMOUNT = SPECAMOUNT + 1.0 / 5.0
+		ObjectSpecularFlash(RIGHTMISSILE,1)
+		ObjectSpecularFlash(RIGHTMISSILEGUN,1)
+	ENDLOOP
+	ObjectSpecularFlash(RIGHTMISSILE,0)
+	ObjectSpecularFlash(RIGHTMISSILEGUN,0)
+	rightmissileLightning = 0
+	TRIGSTOP
+ENDTRIGGER
+
+TRIGGER TempDamageCheck
+		//LET'S CHECK FOR BLOWN UP STATUS
+	   	IF (!LEFTMISSILEDEAD)	
+			IF (ObjectHitStrat(LEFTMISSILEGUN) OR ObjectHitStrat(LEFTMISSILE))
+				IF (!leftmissileLightning)
+					TRIGSET>DamageLeftMissile EVERY 1
+				ENDIF
+
+				ClearObjCollFlag(LEFTMISSILEGUN,HITSTRAT)
+				ClearObjCollFlag(LEFTMISSILE,HITSTRAT)
+
+			ENDIF
+		ENDIF
+
+	   	IF (!RIGHTMISSILEDEAD)
+		 	IF (ObjectHitStrat(RIGHTMISSILEGUN) OR ObjectHitStrat(RIGHTMISSILE))
+				IF (!rightmissileLightning)
+					TRIGSET>DamageRightMissile EVERY 1
+				ENDIF
+	 			DamageDelta = OLDRIGHTMISSILEHEALTH - OBJHEALTH
+
+				ClearObjCollFlag(RIGHTMISSILEGUN,HITSTRAT)
+				ClearObjCollFlag(RIGHTMISSILE,HITSTRAT)
+
+		 	ENDIF
+		ENDIF
+
+	TRIGFIN
+ENDTRIGGER
+
+LOCALINT MISSILECHARGE
+LOCALFLOAT THEALTH
+
+//CONTROLS FRONT MISSILES
+//IN PHASE 2  DAMAGE CONTRIBUTES TO PHASEDAMAGE
+//IN PHASE 4 AND 6 THE WEAPONS ARE INACTIVE
+
+TRIGGER MissileControl
+	IF ((!LEFTMISSILEDEAD) OR (!RIGHTMISSILEDEAD))
+		IF ((Phase = 4) || (Phase = 6))
+			ReturnToStartTransform(LEFTMISSILE)
+ 			CrntRotToIdleRotX(LEFTMISSILE, 0.05)
+ 			CrntRotToIdleRotZ(LEFTMISSILE, 0.05)
+			ReturnToStartTransform(RIGHTMISSILE)
+ 			CrntRotToIdleRotX(RIGHTMISSILE, 0.05)
+ 			CrntRotToIdleRotZ(RIGHTMISSILE, 0.05)
+		ELSE
+			IF (LEFTMISSILEDEAD)
+				LEFTMISSMODE = 0
+			ENDIF
+
+			IF (RIGHTMISSILEDEAD)
+				LEFTMISSMODE = 1
+			ENDIF
+
+		   	IF ((!LEFTMISSILEDEAD) AND (LEFTMISSMODE))
+				MISSILEPRIME = 1
+				WHILE (!MISSILEVALID)
+					MyFlag = MyFlag
+				ENDWHILE
+
+				LMISSILEINCVAL = 0
+				IF (!LMissileTime)
+					THEALTH = GetObjectHealth(LEFTMISSILEGUN)
+					TRIGSET>TempDamageCheck EVERY 1
+					MISSILECHARGE = 1
+					LOOP (50)
+						SparkSuck(LEFTMISSILEGUN,SPARKHOOVER, 5, 0, 0) 
+					ENDLOOP
+
+					LOOP (100)
+						MyFlag = MyFlag
+					ENDLOOP	
+					TRIGKILL>TempDamageCheck EVERY 1
+					SetObjectHealth(LEFTMISSILEGUN,THEALTH)
+					MISSILECHARGE = 0
+
+					MISSILEPRIME = 0
+					SetGlobalParamFloat(0,LEFTMISSILEGUN)
+					CREATE SPAWN_SWAMP_HOMING_MISSILE 0.0, 0.0, 0.0, 0, 0, 0.0, LEFTMISSILEGUN
+					ClearGlobalParams()
+				  	LEFTMISSMODE = !LEFTMISSMODE
+				ENDIF
+	 			LMISSILEINCVAL = 1
+
+				IF (LMISSILEINCVAL)
+					LMissileTime = LMissileTime + 1
+				ELSE
+					LMissileTime = 0
+				ENDIF
+
+
+				IF (LMissileTime > 60)
+					LMissileTime = 0
+				ENDIF
+			ENDIF
+
+		   	IF ((!RIGHTMISSILEDEAD) AND (!LEFTMISSMODE))
+				RMISSILEINCVAL = 0
+				MISSILEPRIME = 1
+				WHILE (!MISSILEVALID)
+					MyFlag = MyFlag
+				ENDWHILE
+				
+
+				IF (!RMissileTime)
+					MISSILECHARGE = 1
+					THEALTH = GetObjectHealth(RIGHTMISSILEGUN)
+					TRIGSET>TempDamageCheck EVERY 1
+					LOOP (50)
+				 		SparkSuck(RIGHTMISSILEGUN,SPARKHOOVER, 5, 0, 0) 
+						MyFlag = MyFlag
+				  	ENDLOOP
+					LOOP (100)
+						MyFlag = MyFlag
+					ENDLOOP
+					SetObjectHealth(RIGHTMISSILEGUN,THEALTH)
+					TRIGKILL>TempDamageCheck EVERY 1
+					MISSILECHARGE = 0
+					MISSILEPRIME = 0
+					SetGlobalParamFloat(0,RIGHTMISSILEGUN)
+					CREATE SPAWN_SWAMP_HOMING_MISSILE 0.0, 0.0, 0.0, 0, 0, 0.0, RIGHTMISSILEGUN
+					ClearGlobalParams()
+				  	LEFTMISSMODE = !LEFTMISSMODE
+				ENDIF
+	 			RMISSILEINCVAL = 1
+
+				IF (RMISSILEINCVAL)
+					RMissileTime = RMissileTime + 1
+				ELSE
+					RMissileTime = 0
+				ENDIF
+
+
+				IF (RMissileTime > 60)
+					RMissileTime = 0
+				ENDIF
+			ENDIF
+
+		   	ClearGlobalParams()
+
+
+
+ 		ENDIF
+
+		//LET'S CHECK FOR BLOWN UP STATUS
+		IF (!LEFTMISSILEDEAD)	
+			IF (ObjectHitStrat(LEFTMISSILEGUN) OR ObjectHitStrat(LEFTMISSILE))
+				OBJHEALTH = GetObjectHealth(LEFTMISSILEGUN)	+ GetObjectHealth(LEFTMISSILE)
+				IF (OBJHEALTH < 0.0)
+					//DESTROY
+					LEFTMISSILEDEAD = 1
+					DamageDelta = OLDLEFTMISSILEHEALTH 
+				ELSE
+					IF (!leftmissileLightning)
+						TRIGSET>DamageLeftMissile EVERY 1
+					ENDIF
+				  
+					DamageDelta = OLDLEFTMISSILEHEALTH - OBJHEALTH
+				ENDIF
+
+				ClearObjCollFlag(LEFTMISSILEGUN,HITSTRAT)
+				ClearObjCollFlag(LEFTMISSILE,HITSTRAT)
+
+
+				OLDLEFTMISSILEHEALTH = OBJHEALTH
+
+				IF ((Phase = 2))
+					PhaseDamage = PhaseDamage + DamageDelta
+				ENDIF
+			ENDIF
+		ENDIF
+		IF (LEFTMISSILEDEAD)
+			IF (!LEFTMISSILEDIETRIGSET)
+				TRIGSET>ExplodeLeftMissile EVERY 1
+				LEFTMISSILEDIETRIGSET = 1
+				LMissileTime = 0
+			ENDIF
+		ENDIF
+
+		IF (!RIGHTMISSILEDEAD)
+		 	IF (ObjectHitStrat(RIGHTMISSILEGUN) OR ObjectHitStrat(RIGHTMISSILE))
+		 		OBJHEALTH = GetObjectHealth(RIGHTMISSILEGUN) + GetObjectHealth(RIGHTMISSILE)
+		 		IF (OBJHEALTH < 0.0)
+		 			//DESTROY
+		 			RIGHTMISSILEDEAD = 1
+		 			DamageDelta = OLDRIGHTMISSILEHEALTH 
+		 		ELSE
+					IF (!rightmissileLightning)
+						TRIGSET>DamageRightMissile EVERY 1
+					ENDIF
+		 			DamageDelta = OLDRIGHTMISSILEHEALTH - OBJHEALTH
+		 		ENDIF
+
+				ClearObjCollFlag(RIGHTMISSILEGUN,HITSTRAT)
+				ClearObjCollFlag(RIGHTMISSILE,HITSTRAT)
+
+
+		 		OLDRIGHTMISSILEHEALTH = OBJHEALTH
+
+		 		IF ((Phase = 2))
+		 			PhaseDamage = PhaseDamage + DamageDelta
+		 		ENDIF
+		 	ENDIF
+		ENDIF
+		IF (RIGHTMISSILEDEAD)
+		 	IF (!RIGHTMISSILEDIETRIGSET)
+		 		TRIGSET>ExplodeRightMissile	EVERY 1
+		 		RIGHTMISSILEDIETRIGSET = 1
+				RMissileTime = 0
+		 	ENDIF
+		ENDIF
+		TRIGFIN
+	ELSE
+		MISSILEPRIME = 0
+		MISSILECHARGE = 0
+	  	TRIGSTOP
+
+	ENDIF
+ENDTRIGGER
+
+TRIGGER ExplodeRightMissile
+	MyVar = 2.0
+	HideObject(RIGHTMISSILEGUN)
+	ObjectNotTargetable(RIGHTMISSILEGUN)
+	InActivateObjectCollision(RIGHTMISSILEGUN)
+
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, RIGHTMISSILEGUN
+	RIGHTMISSILEFireState = 2
+  	RIGHTMISSILEWaitFrame = 150
+  	WHILE ((RIGHTMISSILEWaitFrame) AND (RIGHTMISSILEFireState))
+		//SET THE SCALE
+	   	SetGlobalParamFloat(2,3.0)
+		IF (RIGHTMISSILEFireState = 2)
+			MyVar = 2.0
+		ELSE
+			MyVar = 0.0
+		ENDIF
+	   	SetGlobalParamInt(0,RIGHTMISSILEGUN)
+		SetGlobalParamFloat(0,MISSILEFIREOFFY)
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, RIGHTMISSILEGUN
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, RIGHTMISSILEGUN
+	  	IF (RIGHTMISSILEFireState = 2)
+	  		MyVar = 3.0
+	  	ELSE
+	  		MyVar = 1.0
+	  	ENDIF
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, RIGHTMISSILEGUN
+	  	RIGHTMISSILEWaitFrame = RIGHTMISSILEWaitFrame - 1 
+	  	IF ((!(RIGHTMISSILEWaitFrame)) AND (RIGHTMISSILEFireState))
+			RIGHTMISSILEWaitFrame = 150
+			RIGHTMISSILEFireState = RIGHTMISSILEFireState - 1
+		ENDIF
+		ClearGlobalParams()
+				   
+  	ENDWHILE
+
+	TRIGSTOP
+ENDTRIGGER
+
+TRIGGER ExplodeLeftMissile
+	MyVar = 2.0
+	HideObject(LEFTMISSILEGUN)
+	ObjectNotTargetable(LEFTMISSILEGUN)
+	InActivateObjectCollision(LEFTMISSILEGUN)
+
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, LEFTMISSILEGUN
+	LEFTMISSILEFireState = 2
+  	LEFTMISSILEWaitFrame = 150
+  	WHILE ((LEFTMISSILEWaitFrame) AND (LEFTMISSILEFireState))
+		//SET THE SCALE
+		SetGlobalParamFloat(2,3.0)
+		IF (LEFTMISSILEFireState = 2)
+			MyVar = 2.0
+		ELSE
+			MyVar = 0.0
+		ENDIF
+	   	SetGlobalParamInt(0,LEFTMISSILEGUN)
+		SetGlobalParamFloat(0,MISSILEFIREOFFY)
+		CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, LEFTMISSILEGUN
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, LEFTMISSILEGUN
+	  	IF (LEFTMISSILEFireState = 2)
+	  		MyVar = 3.0
+	  	ELSE
+	  		MyVar = 1.0
+	  	ENDIF
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, LEFTMISSILEGUN
+	  	LEFTMISSILEWaitFrame = LEFTMISSILEWaitFrame - 1 
+	  	IF ((!(LEFTMISSILEWaitFrame)) AND (LEFTMISSILEFireState))
+			LEFTMISSILEWaitFrame = 150
+			LEFTMISSILEFireState = LEFTMISSILEFireState - 1
+		ENDIF
+		ClearGlobalParams()
+				   
+  	ENDWHILE
+
+	TRIGSTOP
+ENDTRIGGER
+
+//BRING OUT THE MISSILES
+TRIGGER WeaponControlSwitchMode2
+	STATUS = TRANSITION
+	//BRING OUT THE MISSILES
+	LOOP (20)
+		TransObjectRel(LEFTMISSILE, -0.1, 0, 0)
+		TransObjectRel(RIGHTMISSILE, 0.1, 0, 0)
+	ENDLOOP
+
+
+	//ROTATE UP
+	LOOP (135)
+	  	RotateObjectXYZ(LEFTMISSILE, TWOPI/360.0, 0, 0)
+	  	RotateObjectXYZ(RIGHTMISSILE, TWOPI/360.0, 0, 0)
+   	ENDLOOP
+
+
+	//EXTEND THE MISSILE GUNS OUT
+
+	LOOP (20)
+		TransObjectRel(LEFTMISSILEGUN, 0, 0.1, 0)
+		TransObjectRel(RIGHTMISSILEGUN, 0, 0.1, 0)
+
+	ENDLOOP
+
+	//LET THIS ORIENTATION BE CLASSED AS THE MISSILE'S 'BASE' ROTATION
+ 	PNODESetInitToCrnt(LEFTMISSILEGUN)
+ 	PNODESetInitToCrnt(RIGHTMISSILEGUN)
+ 	PNODESetInitToCrnt(LEFTMISSILE)
+ 	PNODESetInitToCrnt(RIGHTMISSILE)
+
+ 
+	//SET THE MISSILE DAMAGE
+ 	LEFTMISSILEDEAD = 0
+	OLDLEFTMISSILEHEALTH = 500.0
+	SetObjectHealth(LEFTMISSILEGUN,250)
+	SetObjectHealth(LEFTMISSILE,250)
+   
+   	RIGHTMISSILEDEAD = 0
+	OLDRIGHTMISSILEHEALTH = 500.0
+	SetObjectHealth(RIGHTMISSILEGUN,250)
+	SetObjectHealth(RIGHTMISSILE,250)
+
+
+
+  
+  	ObjectTargetable(LEFTMISSILEGUN)
+	ObjectTargetable(RIGHTMISSILEGUN)
+
+
+
+	STATUS = ACTIVE
+
+	TRIGSET>MissileControl EVERY 1
+	TRIGSET>WeaponControlMode2 EVERY 1
+	TRIGSTOP
+ENDTRIGGER
+
+//LASER TURRETS, TORPEDOES AND MISSILES
+
+TRIGGER WeaponControlMode2
+
+	IF (PhaseDamage >= 600.0)
+		Phase = 3
+		PhaseDamage = 0
+		TRIGSET>WeaponControlSwitchMode3 EVERY 1
+	   	TRIGSTOP
+	ELSE
+
+	   //	CalculateStratPolyData()
+		MyFlag = MyFlag
+		TRIGFIN
+	ENDIF
+ENDTRIGGER
+
+//BRING OUT BEAM LASER
+
+LOCALINT BEAMENTRANCEDONE
+LOCALFLOAT SaveX
+LOCALFLOAT SaveY
+LOCALFLOAT SaveZ
+LOCALFLOAT zrol
+
+
+TRIGGER BringOutDaBeam
+	LOOP (30)
+		TransObjectRel(BEAMLASERBASE, 0, 0, 0.125)
+	ENDLOOP
+
+	BEAMENTRANCEDONE = 1 
+	TRIGSTOP
+ENDTRIGGER
+
+LOCALFLOAT Boffset
+LOCALINT BeamFire
+LOCALINT BEAMMODEFORWARD
+LOCALINT BEAMDONE
+
+LOCALFLOAT DISTLENGTH
+LOCALFLOAT ang
+LOCALFLOAT ydiff
+
+LOCALFLOAT xoff
+LOCALFLOAT deltz
+DEFINE PRONGLENGTH 2.0
+
+LOCALFLOAT BACC
+TRIGGER FireBeam
+
+	ydiff = FABS(y - DogY)
+
+	health = 4.0
+
+	DISTLENGTH = ydiff
+ 	Boffset = 15.0
+	BeamFire = 0
+	BEAMMODEFORWARD = 1
+	BEAMDONE = 0
+	ang = 0
+
+	SetGlobalParamInt(0,0)
+	SetGlobalParamFloat(0,BEAMLASERPRONG)
+   	CREATE SPAWN_SWAMPBOSSBEAM 0.0, 0, 0.0, 0, 0, 0, BEAMLASERPRONG
+
+	SetGlobalParamInt(0,1)
+	SetGlobalParamFloat(0,BEAMLASERPRONG2)
+   	CREATE SPAWN_SWAMPBOSSBEAM 0.0, 0, 0.0, 0, 0, 0, BEAMLASERPRONG2
+	ClearGlobalParams()
+
+
+
+   	deltz = GetObjectCrntPos(BEAMLASERBASE,MODEZ)
+	//GET VECTOR HEIGHT TO THE PLAYER
+   	deltz = ((deltz + z) - DogZ)
+
+
+	BEAMACTIVE = 1
+
+	BACC = 0
+	WHILE (!BEAMDONE)
+		SaveX = DogX	  
+		SaveY = DogY
+		SaveZ = DogZ
+
+		xoff = 8.0 * Ssin(ang)
+		ang = ang + 0.1
+
+		deltz = GetObjectCrntPos(BEAMLASERBASE,MODEZ)
+		deltz = (deltz + z) - DogZ
+		deltz = - deltz
+	   	SetCheckPosRel(0,xoff,Boffset + PRONGLENGTH,deltz)
+
+		MyVar = CheckX
+
+
+		SetCheckPosRel(BEAMLASERBASE,xoff,Boffset + PRONGLENGTH,deltz)
+
+	   //	CheckX = CheckX + xoff
+		CheckX = MyVar
+
+		DogX = CheckX
+		DogY = CheckY
+		DogZ = CheckZ
+
+			//POINT AT POS IN FRONT OF THE PLAYER
+	   	   //	ObjectTowardPlayerXZ (BEAMLASERBASE, 0.0, 0.025, (TWOPI/360.0) * 45.0, 0)
+	   	   //	CrntRotToIdleRotZ(BEAMLASERBASE, 0.025)
+		   	ObjectTowardPlayerXZ (BEAMLASERPRONGMOUNT, 0.5, 0.0, 0, (TWOPI/360.0) * 90.0)
+		   	CrntRotToIdleRotX(BEAMLASERPRONGMOUNT, 0.5)
+		  
+		
+			DogX = SaveX
+			DogY = SaveY
+			DogZ = SaveZ
+			IF (BEAMMODEFORWARD)					    
+				Boffset = Boffset + BACC
+			ELSE
+				Boffset = Boffset - BACC
+			ENDIF
+
+			IF (BACC < 5.0)
+				BACC = BACC + 0.05
+			ENDIF
+		  	IF (BeamFire > 2)
+				BeamFire = 0
+		 	  // 	CREATE SPAWN_ENEMYMISSILE 0.0, 0, 0.0, 0, 0, 0, BEAMLASERPRONG
+			   //	CREATE SPAWN_ENEMY_HOMING_MISSILE 0.0, 0.0, 0.0, 0, 0, 0.0, BEAMLASERPRONG
+
+			ELSE
+				BeamFire = BeamFire + 1
+			ENDIF
+
+			IF (BEAMMODEFORWARD)
+				IF (Boffset > DISTLENGTH)
+					BEAMMODEFORWARD = 0
+				ENDIF
+			ELSE
+				health = 2.0
+			 //	MyTargetVar = 2.0
+			  //	GlobalVar = 2.0
+	  			IF (Boffset < 15.0)
+					BEAMDONE = 1
+				ENDIF
+			ENDIF
+
+
+
+	ENDWHILE
+   
+	BEAMACTIVE = 0
+   	//KILL OUR BEAM
+
+
+	BeamFireValid = 120
+	BeamFiring = 0
+	health = 1.0
+	TRIGSTOP
+ENDTRIGGER
+
+TRIGGER ExplodeBeam
+	MyVar = 2.0
+	HideObject(BEAMLASERPRONG)
+	HideObject(BEAMLASERPRONG2)
+	ObjectNotTargetable(BEAMLASERPRONG)
+	InActivateObjectCollision(BEAMLASERPRONG)
+
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, BEAMLASERPRONG
+	BEAMLASERFireState = 2
+  	BEAMLASERWaitFrame = 150
+  	WHILE ((BEAMLASERWaitFrame) AND (BEAMLASERFireState))
+		IF (BEAMLASERFireState = 2)
+			MyVar = 2.0
+		ELSE
+			MyVar = 0.0
+		ENDIF
+	   	SetGlobalParamInt(0,BEAMLASERPRONG)
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, BEAMLASERPRONG
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, BEAMLASERPRONG
+	  	IF (BEAMLASERFireState = 2)
+	  		MyVar = 3.0
+	  	ELSE
+	  		MyVar = 1.0
+	  	ENDIF
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, BEAMLASERPRONG
+	  	BEAMLASERWaitFrame = BEAMLASERWaitFrame - 1 
+	  	IF ((!(BEAMLASERWaitFrame)) AND (BEAMLASERFireState))
+			BEAMLASERWaitFrame = 150
+			BEAMLASERFireState = BEAMLASERFireState - 1
+		ENDIF
+		ClearGlobalParams()
+				   
+  	ENDWHILE
+
+	TRIGSTOP
+ENDTRIGGER
+
+LOCALINT BeamLightning
+TRIGGER DamageBeam
+	BeamLightning = 1
+	SPECAMOUNT = 1.0 / 5
+	LOOP (5)
+		SetSpecularColour(BEAMLASERBASE, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		SetSpecularColour(BEAMLASERPRONG, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		SetSpecularColour(BEAMLASERPRONG2, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		SetSpecularColour(BEAMLASERPRONGMOUNT, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		SPECAMOUNT = SPECAMOUNT + 1.0 / 5.0
+		ObjectSpecularFlash(BEAMLASERBASE,1)
+		ObjectSpecularFlash(BEAMLASERPRONG,1)
+		ObjectSpecularFlash(BEAMLASERPRONG2,1)
+		ObjectSpecularFlash(BEAMLASERPRONGMOUNT,1)
+	ENDLOOP
+	ObjectSpecularFlash(BEAMLASERBASE,0)
+	ObjectSpecularFlash(BEAMLASERPRONG,0)
+	ObjectSpecularFlash(BEAMLASERPRONG2,0)
+	ObjectSpecularFlash(BEAMLASERPRONGMOUNT,0)
+	BeamLightning = 0
+	TRIGSTOP
+ENDTRIGGER
+
+
+
+
+//CONTROLS BEAM LASER
+//IN PHASE 3 AND 5 DAMAGE CONTRIBUTES TO PHASE DAMAGE
+//IN PHASE 4 AND 6 THE WEAPON IS INACTIVE 
+
+LOCALINT BeamFireValid
+LOCALINT BeamFiring
+LOCALINT BEAMDAMAGE
+
+TRIGGER BeamControl
+
+	IF ((Phase = 4) || (Phase = 6))
+		IF (BeamFiring)
+			//ensure beam goes
+			GlobalVar = 1.0
+			TRIGKILL>FireBeam EVERY 1
+			BeamFiring = 0
+		ENDIF
+		ObjectNotTargetable(BEAMLASERPRONG)
+
+	ELSE
+		ObjectTargetable(BEAMLASERPRONG)
+
+		//ACTIVE LOGIC
+		IF (!BeamFiring)
+
+			//POINT AT POS IN FRONT OF THE PLAYER
+			ObjectTowardPlayerXZ (BEAMLASERBASE, 0.0, 0.025, (TWOPI/360.0) * 45.0, 0)
+			CrntRotToIdleRotZ(BEAMLASERBASE, 0.025)
+			ObjectTowardPlayerXZ (BEAMLASERPRONGMOUNT, 0.025, 0.0, 0, (TWOPI/360.0) * 22.5)
+			CrntRotToIdleRotX(BEAMLASERPRONGMOUNT, 0.025)
+		
+		   //	IF ((!BeamFireValid) AND (ObjectSeePlayerZ(TWOPI/64.0,BEAMLASERPRONG,0,0,0)))
+			IF ((!BeamFireValid) AND (FABS(x - DogX) < 1.5))
+				//SET A TRIGGER TO FIRE
+				
+				TRIGSET>FireBeam EVERY 1
+			    	BeamFireValid = 120
+				BeamFiring = 1
+			ELSE
+
+				IF (BeamFireValid)
+					BeamFireValid = BeamFireValid - 1
+				ENDIF
+			ENDIF
+
+		ENDIF
+
+	ENDIF
+	BEAMDAMAGE = 0
+
+	//DAMAGE CHECKS HERE
+	IF (ObjectHitStrat(BEAMLASERBASE)) 
+		BEAMDAMAGE = 1
+	ENDIF
+	IF (ObjectHitStrat(BEAMLASERPRONGMOUNT)) 
+		BEAMDAMAGE = 1
+	ENDIF
+	IF (ObjectHitStrat(BEAMLASERPRONG2)) 
+		BEAMDAMAGE = 1
+	ENDIF
+	IF (ObjectHitStrat(BEAMLASERPRONG))
+		BEAMDAMAGE = 1
+	ENDIF
+	IF ((Phase = 3) AND (BEAMDAMAGE) AND (STATUS = ACTIVE))
+   		OBJHEALTH = GetObjectHealth(BEAMLASERBASE) + GetObjectHealth(BEAMLASERPRONG) + GetObjectHealth(BEAMLASERPRONG2) + GetObjectHealth(BEAMLASERPRONGMOUNT)
+   		IF (OBJHEALTH < 0.0)
+   			//DESTROY
+			BEAMLASERDEAD = 1
+	 	  	DamageDelta = OLDBEAMLASERHEALTH 
+		ELSE
+			IF (!BeamLightning)
+				TRIGSET>DamageBeam EVERY 1
+			ENDIF
+			DamageDelta = OLDBEAMLASERHEALTH - OBJHEALTH
+		ENDIF
+
+		ClearObjCollFlag(BEAMLASERPRONG,HITSTRAT)
+		ClearObjCollFlag(BEAMLASERPRONG2,HITSTRAT)
+		ClearObjCollFlag(BEAMLASERPRONGMOUNT,HITSTRAT)
+		ClearObjCollFlag(BEAMLASERBASE,HITSTRAT)
+	   
+		OLDBEAMLASERHEALTH = OBJHEALTH
+
+		IF ((Phase = 3) || (Phase = 5))
+			PhaseDamage = PhaseDamage + DamageDelta
+		ENDIF
+	ENDIF
+
+	IF (BEAMLASERDEAD)
+		TRIGSET>ExplodeBeam EVERY 1
+		//ENSURE BEAM IS TURNED OFF
+	   	IF (BeamFiring)
+			GlobalVar = 1.0
+	   		TRIGKILL>FireBeam EVERY 1
+		ENDIF
+		TRIGSTOP
+	ELSE
+		TRIGFIN
+	ENDIF
+
+ENDTRIGGER
+
+
+//CONTROLS THE HEAD MOVING BACK AND THE BEAM LASER COMING OUT TO PLAY
+
+TRIGGER WeaponControlSwitchMode3
+
+	STATUS = TRANSITION
+	//UNHIDE THE HIDDEN OBJECTS
+ 	UnhideObject(BEAMLASERBASE)
+	UnhideObject(BEAMLASERPRONGMOUNT)
+	UnhideObject(BEAMLASERPRONG)
+	UnhideObject(BEAMLASERPRONG2)
+
+
+	//CLOSE HEADSHELL 1
+	LOOP (60)
+	  	RotateObjectXYZ(HEADSHELL1, TWOPI/720.0, 0, 0)
+	ENDLOOP
+
+
+	//CLOSE HEADSHELL 2
+	LOOP (60)
+	  	RotateObjectXYZ(HEADSHELL2, TWOPI/720.0, 0, 0)
+	ENDLOOP
+
+	BEAMENTRANCEDONE = 0
+	TRIGSET>BringOutDaBeam EVERY 1
+
+	//CLOSE HEADSHELL 3
+	LOOP (60)
+	  	RotateObjectXYZ(HEADSHELL3, TWOPI/720.0, 0, 0)
+	ENDLOOP
+
+
+
+	//CLOSE HEADSHELL 4
+	LOOP (50)
+	  	RotateObjectXYZ(HEADSHELL4, TWOPI/720.0, 0, 0)
+	ENDLOOP
+
+	//await the semaphore to say beam is out
+	WHILE (!BEAMENTRANCEDONE)
+		MyFlag = MyFlag
+	ENDWHILE 
+
+
+	//SET THE MISSILE DAMAGE
+ 	BEAMLASERDEAD = 0
+	OLDBEAMLASERHEALTH = 1500.0
+	SetObjectHealth(BEAMLASERPRONG,400.0)
+	ActivateObjectCollision(BEAMLASERPRONG)
+	ObjectTargetable(BEAMLASERPRONG)
+   
+   	SetObjectHealth(BEAMLASERPRONG2,400.0)
+	ActivateObjectCollision(BEAMLASERPRONG2)
+	ObjectTargetable(BEAMLASERPRONG2)
+
+	SetObjectHealth(BEAMLASERPRONGMOUNT,400.0)
+	ActivateObjectCollision(BEAMLASERPRONGMOUNT)
+	ObjectTargetable(BEAMLASERPRONGMOUNT)
+
+	SetObjectHealth(BEAMLASERBASE,300.0)
+	ActivateObjectCollision(BEAMLASERBASE)
+	ObjectTargetable(BEAMLASERBASE)
+
+	//SET INITIAL BEAM FIRING VARS
+	BeamFireValid = 120
+	BeamFiring = 0
+	TRIGSET>BeamControl EVERY 1
+
+	STATUS = ACTIVE
+
+	TRIGSET>WeaponControlMode3 EVERY 1
+	TRIGSTOP
+ENDTRIGGER
+
+
+//BEAM LASER
+//750 DAMAGE TO GO TO MODE 4
+
+TRIGGER WeaponControlMode3
+	IF (PhaseDamage >= 1500.0)
+		Phase = 4
+		PhaseDamage = 0
+	   	TRIGRESET
+		TRIGSTOP
+	   	STAT>Kill
+	ELSE
+		TRIGFIN
+	ENDIF
+ENDTRIGGER
+
+
+TRIGGER Kill
+	//ENSURE BOSS STRAT IS NULLED
+	BossStrat = 0
+   	DESTROYME SPAWN_EXPLODINGBITS
+ENDTRIGGER
+

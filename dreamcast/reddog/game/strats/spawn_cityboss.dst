@@ -1,0 +1,1384 @@
+
+
+DEFINE ROCKETARM 3
+//WAS 10
+DEFINE WEAKZONE 10
+DEFINE DISLOCATOR 1
+
+DEFINE DISLOCATORLENGTH 3000.0
+DEFINE DISLOCATORHEIGHT -1200.0
+DEFINE DISLOCATORARM 2
+
+DEFINE NORMAL  0
+DEFINE TURNING 1
+
+//DEFINE BEAMTIP 8
+LOCALINT endreached
+LOCALINT tempInt
+LOCALFLOAT OldVar
+ 
+
+DEFINE BASEATTACKTYPE 10.0
+LOCALFLOAT Type
+
+//parentvar of 10.0 for BaseAttackType
+
+LOCALFLOAT firescale
+STATE BossBeamInit
+  	MakeMeTheLast()
+	scalex = scaley = scalez = 0.1
+	scaley = 0.001
+
+	AllocStratSoundBlock (2)
+	SetAudibleRange(0,50,150)
+	SetAudibleRange(1,50,150)
+	//get the object we are linked to
+	MyVar = GetGlobalParamInt(1)
+
+	IF (ParentSemaphore = BASEATTACKTYPE)
+		Type = BASEATTACKTYPE
+	ENDIF
+ 		OBJECT> BOSSES\CITYBOSS\CITYBOSSBEAM
+ 	MODELANIM>BOSSES\CITYBOSS\CITYBOSSBEAM.RDO>Beam>REPEAT
+
+ 	damage = 0.05
+
+//	Delete()
+   	STAT>BeamMain
+
+ENDSTATE
+
+
+LOCALINT VALID
+
+
+DEFINE FRONTWALL 1
+DEFINE LEFTWALL 2
+DEFINE BACKWALL 3
+DEFINE RIGHTWALL 4
+
+
+
+//DAVE T'S CRAZY SCALE SYSTEM
+DEFINE BEAMLENGTH 390.0
+DEFINE BEAMRAD 3.0
+DEFINE BEAMDAM 0.04
+
+//DEFINE BEAMDAM 400.0
+
+STATE BeamMain
+   PLAYSOUND>cityb_LASER 1 0.7 0.0 0.0 0.0 CONTINUOUS | NODOPPLER
+	WHILE ((!GlobalVar) AND (MyParentFlag) AND (ParentFrame))
+		IF (MyAnimFrame = 0)
+			PLAYSOUND>cityb_pulse 0 1.0 0.0 0.0 0.0 RANDOM
+		ENDIF
+		KillMyVelocity()
+		IMMLOOP	3
+			VALID = ValidToBeam(0,BEAMLENGTH,0, 0)
+			IF (VALID)
+				IF (scaley < 0.1)
+				scaley = scaley + 0.01
+				ENDIF
+			ELSE
+				IF (scaley > 0.001)
+					scaley = scaley - 0.01
+				ENDIF
+			ENDIF
+		IMMENDLOOP
+		// Always make it a bit longer
+		scaley = scaley + 0.01
+
+		//IF WE'RE ATTACKING REDDOG, PERFORM RANGE/DAMAGE CHECKS ON HIM
+		IF (Type != BASEATTACKTYPE)
+
+			IF (BeamHit(BEAMLENGTH,BEAMRAD,DogX,DogY,DogZ))
+			 	//HURT REDDOG
+			 	PlayerHealth = PlayerHealth - 0.5
+			 ENDIF
+		ELSE
+		   	MyParentParentHealth = MyParentParentHealth - 20.0
+			//A BUNKER ATTACK, SO LET'S SEE IF 
+			//A) IT'S STILL ALIVE, and
+			//B) WHETHER THE BEAM IS CANING IT
+			//IF (MyParentParent)
+				//SWAP INTO MY PARENT'S PARENT SPACE, FOR A QUICK SHIFTY 
+				//MyTarget = Me
+				//MyParentParentTarget = Me
+				//Me = MyParentParent
+
+				//GlobalFloat0 = GetObjectCrntPos(LEFTWALL,MODEX)	+ x
+				//GlobalFloat1 = GetObjectCrntPos(LEFTWALL,MODEY)	+ y
+				//GlobalFloat2 = GetObjectCrntPos(LEFTWALL,MODEZ)	+ z
+				
+				//Me = MyTarget
+			   
+			   	//IF (BeamHit(BEAMLENGTH,BEAMRAD * 15.0,GlobalFloat0,GlobalFloat1,GlobalFloat2))
+					//Me = MyParentParent
+			   		//GlobalFloat0 = GetObjectHealth(LEFTWALL)
+					//Me = MyTarget
+					//IF (GlobalFloat0 >= 0)
+////					MyParentParentHealth = GlobalFloat0 - BEAMDAM
+						//Me = MyParentParent
+						//SetObjectHealth(LEFTWALL,health)
+						//Me = MyTarget
+				 	//ENDIF
+				//ENDIF
+			  
+				//Me = MyParentParent
+			  	//GlobalFloat0 = GetObjectCrntPos(RIGHTWALL,MODEX) + x
+				//GlobalFloat1 = GetObjectCrntPos(RIGHTWALL,MODEY) + y
+				//GlobalFloat2 = GetObjectCrntPos(RIGHTWALL,MODEZ) + z
+				//Me = MyTarget
+			   
+				//IF (BeamHit(BEAMLENGTH,BEAMRAD * 15.0,GlobalFloat0,GlobalFloat1,GlobalFloat2))
+					//Me = MyParentParent
+			 		//GlobalFloat0 = GetObjectHealth(RIGHTWALL)
+					//Me = MyTarget
+					//IF (GlobalFloat0 >= 0)
+////					MyParentParentHealth = GlobalFloat0 - BEAMDAM
+						//Me = MyParentParent
+						//SetObjectHealth(RIGHTWALL,health)
+						//Me = MyTarget
+				 	//ENDIF
+				//ENDIF
+			  
+				//Me = MyParentParent
+			  	//GlobalFloat0 = GetObjectCrntPos(FRONTWALL,MODEX) + x
+				//GlobalFloat1 = GetObjectCrntPos(FRONTWALL,MODEY) + y
+				//GlobalFloat2 = GetObjectCrntPos(FRONTWALL,MODEZ) + z
+				//Me = MyTarget
+			   
+				//IF (BeamHit(BEAMLENGTH,BEAMRAD * 15.0,GlobalFloat0,GlobalFloat1,GlobalFloat2))
+					//Me = MyParentParent
+					//GlobalFloat0 = GetObjectHealth(FRONTWALL)
+					//Me = MyTarget
+				   	//IF (GlobalFloat0 >= 0)
+////						MyParentParentHealth = GlobalFloat0 - BEAMDAM
+						//Me = MyParentParent
+						//SetObjectHealth(FRONTWALL,health)
+						//Me = MyTarget
+				   	//ENDIF
+				//ENDIF
+
+				//Me = MyParentParent
+			  	//GlobalFloat0 = GetObjectCrntPos(BACKWALL,MODEX)	+ x
+				//GlobalFloat1 = GetObjectCrntPos(BACKWALL,MODEY)	+ y
+				//GlobalFloat2 = GetObjectCrntPos(BACKWALL,MODEZ)	+ z
+				//Me = MyTarget
+			   
+				//IF (BeamHit(BEAMLENGTH,BEAMRAD * 15.0,GlobalFloat0,GlobalFloat1,GlobalFloat2))
+					//Me = MyParentParent
+					//GlobalFloat0 = GetObjectHealth(BACKWALL)
+					//Me = MyTarget
+					//IF (GlobalFloat0 >= 0)
+////						MyParentParentHealth = GlobalFloat0 - BEAMDAM
+					  	//Me = MyParentParent
+						//SetObjectHealth(BACKWALL,health)
+						//Me = MyTarget
+				   	//ENDIF
+				//ENDIF
+			  
+				//Me = MyTarget
+				//ClearGlobalParams()
+			//ENDIF
+		ENDIF
+	   
+	   	LinkToParentObject(MyVar,0,0,0,0,3000.0,-1200.0)
+		
+	ENDWHILE
+
+	Delete()
+ENDSTATE
+
+
+
+LOCALFLOAT OLDWEAKZONEHEALTH
+LOCALFLOAT DAMAMOUNT
+LOCALINT HitLightning
+
+TRIGGER DamageBody
+	DAMAMOUNT = 1.0 / 10
+	HitLightning = 1
+	LOOP (10)
+		SetSpecularColour(WEAKZONE, DAMAMOUNT,DAMAMOUNT,DAMAMOUNT)
+		DAMAMOUNT = DAMAMOUNT + 1.0 / 10.0
+		ObjectSpecularFlash(WEAKZONE,1)
+	ENDLOOP
+	ObjectSpecularFlash(WEAKZONE,0)
+	HitLightning = 0
+	TRIGSTOP
+ENDTRIGGER
+
+
+LOCALINT SUCCESS
+
+//CALCULATES COLLISION DATA AND CHECKS FOR VALID HIT ON BODY
+TRIGGER Calculate
+	//IF PLAYER IS SUCCESSFUL, THEN END
+	IF (GlobalVar)
+	  	PauseTriggers(-1,FORGET)
+	   	TRIGRESET
+		TRIGSTOP
+		SUCCESS = 1
+	   	STAT>Die
+	ENDIF
+
+
+	CalculateStratPolyData(0)
+
+	IF (ObjectHitStrat(WEAKZONE))
+		PLAYSOUND>cityb_hit 2 1.0 0.0 0.0 0.0 RANDOM
+
+		OLDWEAKZONEHEALTH = GetObjectHealth(WEAKZONE)
+		IF (OLDWEAKZONEHEALTH <= 0)
+			PauseTriggers(-1,FORGET)
+		  	TRIGRESET
+			TRIGSTOP
+		   	STAT>Die
+		ENDIF
+		IF (!HitLightning)
+			TRIGSET>DamageBody EVERY 1 		  
+		ENDIF
+
+		SetObjectHealth(WEAKZONE,OLDWEAKZONEHEALTH)
+	   	ClearObjCollFlag(WEAKZONE,HITSTRAT)
+	ENDIF
+
+	TRIGFIN
+ENDTRIGGER
+
+
+
+DEFINE LEGCOLL1 15
+DEFINE LEGCOLL2 22
+
+TRIGGER FadeMe
+  	MyFlag2 = MyFlag2 | TRANSLUCENT
+	WHILE (trans < 1.0)
+		trans = trans + 0.01
+	ENDWHILE
+	trans = 1.0
+	MyFlag2 = MyFlag2 & LNOT(TRANSLUCENT)
+	TRIGSTOP
+
+ENDTRIGGER
+
+
+//INT 1 - BOSS = BEAM LASER
+//INT 2 - BOSS = HOMINGS
+
+STATE Init
+
+	IF (GetGlobalParamInt(0) = 1)
+		STAT>BossBeamInit
+	ENDIF
+   
+   	IF (GetGlobalParamInt(0) = 2)
+		STAT>BossHomers
+	ENDIF
+
+	AllocStratSoundBlock(6)
+	SetAudibleRange(0, 50, 500)
+	SetAudibleRange(1, 50, 500)
+	SetAudibleRange(2, 50, 500)
+	SetAudibleRange(3, 50, 500)
+	SetAudibleRange(4, 50, 500)
+	SetAudibleRange(5, 50, 500)
+
+	MakeMeTheLast()
+	
+	RadarUpdate(RADARREG)
+
+	//ELSE MAIN BOSS
+	//SO INHERIT PARENT INFO.
+
+	InheritMyParent()
+
+	//SAVE OUT THE PARENT INFO. FOR LATER USE
+
+	MyTarget = MyParent
+
+	//NOW SET MY PARENT TO BE THE PARENT'S PARENT
+	//(WHICH SHOULD BE THE BUNKER)
+	MyParent = MyParentParent
+
+
+	MyFlag = MyFlag | NODISP | RELVELCALC | HOVERMOVE | FLOORCOLL | GRAVITYON | ENEMY | STRATCOLL
+   	OBJECT> BOSSES\CITYBOSS\CITYBOSS
+
+	//ENSURE OUR FOOT COLL POLYS ARE HIDDEN
+
+	HideObject(LEGCOLL1)
+	HideObject(LEGCOLL2)
+	UpdateObjectCollFlag(LEGCOLL1, NOBULLETCOLLIDE | NOCAMERACOLLIDE)
+	UpdateObjectCollFlag(LEGCOLL2, NOBULLETCOLLIDE | NOCAMERACOLLIDE)
+
+	//SETS THE SHADOW
+	SetObjectShadowState(1)
+
+
+
+	WHILE (!(IAmOnFloor))
+		MyFlag = MyFlag
+	ENDWHILE
+
+	trans = 0.0
+
+
+	TRIGSET>FadeMe EVERY 1
+	//CREATE THE COLLISION POLYS ON BOSS LEGS
+	//SetGlobalParamInt(0,3)
+	//SetGlobalParamInt(1,14)
+	//CREATE SPAWN_CITYBOSS 0,0,0,0,0,0,0
+	//SetGlobalParamInt(1,20)
+	//CREATE SPAWN_CITYBOSS 0,0,0,0,0,0,0
+	// ClearGlobalParams()
+
+
+	MyFlag = MyFlag & LNOT(NODISP)
+
+
+	RegisterCollision()
+	InitHDC()
+
+	OLDWEAKZONEHEALTH = 80.0
+	SetObjectHealth(WEAKZONE,OLDWEAKZONEHEALTH)		   
+
+	WALKING = 1
+   	MODELANIM>BOSSES\CITYBOSS\CITYBOSS.RDO>Walk>REPEAT
+	TRIGSET>Calculate EVERY 1
+	TRIGSET>WalkSFX EVERY 1
+	TRIGSET>EngageCheck EVERY 1
+//	TRIGSET>GetPlayerCheck EVERY 1
+	IF (MyPath)
+		InitPath()
+		IF (MyPatrol)
+			ONPATROL = 1
+			STAT>StartPatrol   
+
+		ENDIF
+  
+  	ENDIF
+ 	STAT>Idle
+
+   
+ENDSTATE
+
+LOCALINT WALKING
+TRIGGER WalkSFX
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+
+	IF (WALKING)
+	 	WHILE ((MyAnimFrame) OR (MyAnimFlag & TWEEN))
+	 		MyFlag = MyFlag
+	 	ENDWHILE
+
+	  //	WHILE ((MyAnimFlag & TWEEN))
+	  //		MyFlag = MyFlag
+	  //	ENDWHILE
+
+	  //	WHILE ((MyAnimFrame))
+	  //		MyFlag = MyFlag
+	  //	ENDWHILE
+
+		IF (PAL)
+			WHILE ((WALKING) AND (MyAnimFrame < 10))
+				MyFlag = MyFlag
+			ENDWHILE
+			IF (WALKING)
+				PLAYSOUND>CITYB_STEPL 1 1.0 0.0 0.0 0.0 0
+			ENDIF
+			WHILE ((WALKING) AND (MyAnimFrame < 25))
+				MyFlag = MyFlag
+			ENDWHILE
+			IF (WALKING)
+				PLAYSOUND>CITYB_STEPR 1 1.0 0.0 0.0 0.0 0
+	   		ENDIF
+		ELSE
+			WHILE ((WALKING) AND (MyAnimFrame < 12))
+				MyFlag = MyFlag
+			ENDWHILE
+			IF (WALKING)
+				PLAYSOUND>CITYB_STEPL 1 1.0 0.0 0.0 0.0 0
+			ENDIF			
+			WHILE ((WALKING) AND (MyAnimFrame < 30))
+				MyFlag = MyFlag
+			ENDWHILE
+			IF (WALKING)
+				PLAYSOUND>CITYB_STEPR 1 1.0 0.0 0.0 0.0 0
+			ENDIF
+		ENDIF
+
+
+	ENDIF
+
+	TRIGFIN
+
+ENDTRIGGER
+
+
+LOCALINT ONPATROL
+
+
+
+LOCALFLOAT FIREX
+LOCALFLOAT FIREY
+LOCALFLOAT FIREZ
+LOCALFLOAT SFIREX
+LOCALFLOAT SFIREY
+LOCALFLOAT SFIREZ
+
+
+LOCALINT FIRESEEN
+LOCALINT FIREINPROGRESS
+
+LOCALFLOAT spec
+LOCALFLOAT wang
+LOCALINT time
+
+
+//ENSURES NO COLLISION MOVEMENT
+TRIGGER VelocityStop
+	SetGlobalParamInt(0,1)
+	KillMyVelocity()
+	ClearGlobalParams()
+ 	TRIGFIN
+ENDTRIGGER
+
+
+LOCALFLOAT VISANG
+//CHECKS FOR THE PLAYER BEING IN FRONT OF ME
+TRIGGER EngageCheck
+	VISANG = TWOPI/360.0 
+   //	IF ((MODE != TURNING) AND NearPlayerXY(40.0) AND SeePlayerZ(VISANG * 22.0))
+
+	IF ((MODE != TURNING) AND NearPlayerXY(40.0) AND SeePlayerZ(VISANG * 22.0) AND LineSightPlayer())
+
+		TRIGSET>FireControl EVERY 1
+		TRIGSET>VelocityStop EVERY 1
+		MyFlag2 = MyFlag2 | STOPPED
+		WHILE (MyAnimFlag & RUNNING)
+			MyFlag = MyFlag
+		ENDWHILE
+	  
+		WALKING = 0
+	   	MODELANIM>BOSSES\CITYBOSS\CITYBOSS.RDO>Stand>REPEAT
+		WHILE (NearPlayerXY(40.0) AND SeePlayerZ(VISANG * 25.0) AND LineSightPlayer())
+	   		MyFlag = MyFlag
+	   	ENDWHILE
+
+
+		//ENSURE FIRING IS COMPLETED, BEFORE WE MOVE ON
+		WHILE (FIREINPROGRESS)
+			MyFlag = MyFlag
+		ENDWHILE
+
+		//LET'S SEE IF WE NEED TO MOVE ON
+
+		IF (!(NearPlayerXY(40.0) AND SeePlayerZ(VISANG * 25.0) AND LineSightPlayer()))
+
+			IF (NETWORKMODE)
+		   	 	MODELANIM>BOSSES\CITYBOSS\CITYBOSS.RDO>Run>REPEAT
+			ELSE
+				WALKING = 1
+			 	MODELANIM>BOSSES\CITYBOSS\CITYBOSS.RDO>Walk>REPEAT
+	   		ENDIF
+		ENDIF
+
+
+		TRIGKILL>VelocityStop EVERY 1
+		TRIGKILL>FireControl EVERY 1
+		MyFlag2 = MyFlag2 & LNOT(STOPPED)
+
+	ELSE
+		ReturnToStartTransform(DISLOCATOR)
+		ReturnToStartTransform(DISLOCATORARM)
+ 	  	CrntRotToIdleRotZ(DISLOCATORARM, 0.025)
+ 		CrntRotToIdleRotX(DISLOCATOR, 0.025)
+ 		CrntRotToIdleRotZ(DISLOCATOR, 0.025)
+
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+LOCALINT NETWORKMODE
+
+LOCALFLOAT SaveX
+LOCALFLOAT SaveY
+LOCALFLOAT SaveZ
+LOCALINT MODE
+LOCALFLOAT ang
+DEFINE LEFT 0
+DEFINE RIGHT 1
+LOCALINT SEEN
+LOCALINT BUNKERATTACKMODE
+
+STATE StartPatrol
+	SetGlobalParamInt(0,1)
+	KillMyVelocity()
+	ClearGlobalParams()
+
+	//TEMP SCALEX DOWN TO ALLOW MORE ACCURATE WAYPOINT HIT
+	scalex = 0.1
+	IF (NearCheckPosXY(0.0))
+		scalex = 1.0
+		//if last hit or left patrol
+		IF (LastWay()) 
+			ONPATROL = 0	
+			LeaveFixedPath()
+			endreached  = 0 
+			WALKING = 0
+		   	MODELANIM>BOSSES\CITYBOSS\CITYBOSS.RDO>Stand>REPEAT
+			TRIGKILL>EngageCheck EVERY 1
+			TRIGSET>FireAtBunker EVERY 1
+			BUNKERATTACKMODE = 1
+			STAT> StartBunkerKill
+		ELSE
+			GetNextWay()
+		ENDIF
+
+
+  		IF (!SeeWayZ(TWOPI/16.0))
+			MODE = TURNING
+
+			SaveX = CheckX
+			SaveY = CheckY
+			SaveZ = CheckZ
+		
+
+			SetCheckPosMyRotate(0)
+
+			IF (CheckX  > 0)
+   			 	MODELANIM>BOSSES\CITYBOSS\CITYBOSS.RDO>TurnRight>REPEAT
+				ang = - TWOPI / 4.0
+				//PAL NTSC CHECK NEEDED HERE
+			   	ang = ang / 30.0
+			ELSE
+			   	MODELANIM>BOSSES\CITYBOSS\CITYBOSS.RDO>TurnLeft>REPEAT
+				ang =  TWOPI / 4.0 
+				//PAL NTSC CHECK NEEDED HERE
+				ang = ang / 30.0
+			ENDIF
+
+			WHILE (MyAnimFlag & TWEEN)
+				MyFlag = MyFlag
+			ENDWHILE
+
+			CheckX = SaveX
+			CheckY = SaveY
+			CheckZ = SaveZ 
+		
+			WHILE (!SeeWayZ(TWOPI/128.0))
+				IF ((PAL))
+					IF ((MyAnimFrame = 10) OR (MyAnimFrame = 20))
+						PLAYSOUND>CITYB_TURNSTEP 1 1.0 0.0 0.0 0.0 RANDOM
+					ENDIF
+				ELSE
+					IF ((MyAnimFrame = 12) OR (MyAnimFrame = 24))
+						PLAYSOUND>CITYB_TURNSTEP 1 1.0 0.0 0.0 0.0 RANDOM
+					ENDIF
+
+				ENDIF
+
+			   	RelRotateZ(ang)
+			ENDWHILE
+
+			WALKING = 1
+			MODELANIM>BOSSES\CITYBOSS\CITYBOSS.RDO>Walk>REPEAT
+
+			WHILE (MyAnimFlag & TWEEN)
+				MyFlag = MyFlag
+			ENDWHILE
+
+		ENDIF
+
+		MODE = NORMAL
+
+	ENDIF
+	scalex = 1.0
+
+	ang = TWOPI / (4.0  * 30.0)
+	movement = AnimMoveOffset(CITYBOSSWALK)
+	MoveY(movement)
+   //	MoveY (0.2)
+	RelTurnTowardCheckPosXY(ang)
+  
+ENDSTATE
+
+LOCALFLOAT movement
+
+LOCALFLOAT BFIREX
+LOCALFLOAT BFIREY
+LOCALFLOAT BFIREZ
+
+LOCALFLOAT BSFIREX
+LOCALFLOAT BSFIREY
+LOCALFLOAT BSFIREZ
+
+LOCALINT BFIRESEEN
+LOCALINT BFIREINPROGRESS
+LOCALINT FIREFRAMEDELAY
+
+DEFINE NTSCFIREDELAY 5 
+
+
+
+TRIGGER FireAtBunker
+
+   //	TRIGKILL>EngageCheck EVERY 1
+	//TAKE A SNAPSHOT OF RD
+
+	BFIREX = CheckX
+	BFIREY = CheckY
+	BFIREZ = CheckZ
+
+	BFIREX = parentx
+	BFIREY = parenty
+	BFIREZ = parentz
+
+	BFIRESEEN = 0
+
+
+	//AWAIT BODY TO FACE 
+	SaveX = CheckX
+	SaveY = CheckY
+	SaveZ = CheckZ
+
+
+
+	WHILE (!BFIRESEEN)
+
+		CheckX = BFIREX
+		CheckY = BFIREY
+		CheckZ = BFIREZ
+
+
+		SetCheckPosMyRotate(0)
+
+		IF (CheckX  > 0)
+   			MODELANIM>BOSSES\CITYBOSS\CITYBOSS.RDO>TurnRight>REPEAT
+			ang = -TWOPI / 4.0
+			ang = ang / 30.0
+		ELSE
+			MODELANIM>BOSSES\CITYBOSS\CITYBOSS.RDO>TurnLeft>REPEAT
+			ang =  TWOPI / 4.0 
+			ang = ang / 30.0
+		ENDIF
+				IF (!(MyAnimFlag & TWEEN))
+				IF ((PAL))
+					IF ((MyAnimFrame = 10) OR (MyAnimFrame = 20))
+						PLAYSOUND>CITYB_TURNSTEP 1 1.0 0.0 0.0 0.0 RANDOM
+					ENDIF
+				ELSE
+					IF ((MyAnimFrame = 12) OR (MyAnimFrame = 24))
+						PLAYSOUND>CITYB_TURNSTEP 1 1.0 0.0 0.0 0.0 RANDOM
+					ENDIF
+
+				ENDIF
+				ENDIF
+
+
+		//TEMP. SAVE OF RD
+		BSFIREX = DogX
+		BSFIREY = DogY
+		BSFIREZ = DogZ
+
+		//RETRIEVE SNAPSHOT POS
+		DogX = BFIREX
+		DogY = BFIREY
+		DogZ = BFIREZ
+
+	   	RelRotateZ(ang)
+	   //	RelTurnTowardPlayerXY(ang)
+	    BFIRESEEN = SeePlayerZ(TWOPI/64.0)
+	
+		//RESTORE RD BACK TO TEMP
+		DogX = BSFIREX
+		DogY = BSFIREY
+		DogZ = BSFIREZ
+  	ENDWHILE
+
+	MODELANIM>BOSSES\CITYBOSS\CITYBOSS.RDO>Stand>REPEAT
+	CheckX = SaveX
+	CheckY = SaveY
+	CheckZ = SaveZ
+
+
+	BFIRESEEN = 0
+
+	//AWAIT ARM TO FACE
+
+
+	WHILE (!BFIRESEEN)
+		//TEMP. SAVE OF RD
+		BSFIREX = DogX
+		BSFIREY = DogY
+		BSFIREZ = DogZ
+
+		//RETRIEVE SNAPSHOT POS
+		DogX = BFIREX
+		DogY = BFIREY
+		DogZ = BFIREZ
+
+		RelTurnTowardPlayerXY(0.05)
+		//MOVE ARM UNTIL WE CAN SEE POINT
+  		BFIRESEEN = ObjectSeePlayerZ(TWOPI/128.0,DISLOCATOR,0,DISLOCATORLENGTH,DISLOCATORHEIGHT)
+		ObjectTowardPlayerXZ(DISLOCATORARM, 0, 0.05, (TWOPI/360.0) * 22.0, 0)
+		CrntRotToIdleRotZ(DISLOCATORARM, 0.75)
+		ObjectTowardPlayerXZOffset(DISLOCATOR, 0.1, 0.1, (TWOPI/360.0) * 22.0, (TWOPI/360.0) * 22.0, 0, DISLOCATORLENGTH, DISLOCATORHEIGHT)
+		CrntRotToIdleRotX(DISLOCATOR, 0.05)
+	  	CrntRotToIdleRotZ(DISLOCATOR, 0.05)
+
+		//RESTORE RD BACK TO TEMP
+		DogX = BSFIREX
+		DogY = BSFIREY
+		DogZ = BSFIREZ
+  	ENDWHILE
+
+	BFIREINPROGRESS = 1
+
+	MODELANIM>BOSSES\CITYBOSS\CITYBOSS.RDO>PowerUpStart>0
+
+
+	WHILE (MyAnimFlag & RUNNING)
+		MyFlag = MyFlag
+	ENDWHILE
+
+	MODELANIM>BOSSES\CITYBOSS\CITYBOSS.RDO>PowerUpMain>REPEAT
+
+
+
+	//SPAWN THE BEAM
+
+	SetGlobalParamInt(0,1)
+	SetGlobalParamInt(1,DISLOCATOR)
+	frame = 1
+	OldVar = MyVar
+	MyVar = BASEATTACKTYPE
+	CREATE SPAWN_CITYBOSS 0,0,0,0,0,0, DISLOCATOR
+	MyVar = OldVar
+	ClearGlobalParams()
+	   
+   	//NOW FIRE BEAM FOR 5 SECS
+	//TRACKING TO THE BUNKER
+	time = 0
+	WHILE (time < 150)
+		//TEMP. SAVE OF RD
+		BSFIREX = DogX
+		BSFIREY = DogY
+		BSFIREZ = DogZ
+
+		//RETRIEVE SNAPSHOT POS
+		DogX = BFIREX
+		DogY = BFIREY
+		DogZ = BFIREZ
+
+		ObjectTowardPlayerXZ(DISLOCATORARM, 0, 0.05, (TWOPI/360.0) * 22.0, 0)
+		CrntRotToIdleRotZ(DISLOCATORARM, 0.009)
+		ObjectTowardPlayerXZOffset(DISLOCATOR, 0.1, 0.1, (TWOPI/360.0) * 22.0, (TWOPI/360.0) * 22.0, 0, DISLOCATORLENGTH, DISLOCATORHEIGHT)
+		CrntRotToIdleRotX(DISLOCATOR, 0.005)
+		CrntRotToIdleRotZ(DISLOCATOR, 0.005)
+
+		//RETRIEVE RD POS
+		DogX = BSFIREX
+		DogY = BSFIREY
+		DogZ = BSFIREZ
+
+		time = time + 1
+	ENDWHILE
+
+	//SEMAPHORE TO TURN OFF THE BEAM
+	frame = 0
+	   
+	//FIRE FROM MISSILE ARM
+   	MODELANIM>BOSSES\CITYBOSS\CITYBOSS.RDO>Fire>0
+
+	BFIREINPROGRESS = 0
+
+	//ENSURE WE ARE NOT TWEENING
+
+	WHILE (MyAnimFlag & TWEEN)
+		MyFlag = MyFlag
+	ENDWHILE
+
+	//NTSC
+	FIREFRAMEDELAY =  NTSCFIREDELAY
+	//A SMALL DELAY BEFORE WE FIRE
+ 	LOOP (FIREFRAMEDELAY)
+ 		MyFlag = MyFlag
+ 	ENDLOOP
+
+	//CREATE HOMERS
+	//TEMP. SAVE OF RD
+	BSFIREX = DogX
+	BSFIREY = DogY
+	BSFIREZ = DogZ
+
+	//RETRIEVE SNAPSHOT POS
+	DogX = BFIREX
+	DogY = BFIREY
+	DogZ = BFIREZ
+
+
+	DogX = BSFIREX
+	DogY = BSFIREY
+	DogZ = BSFIREZ
+	TIME = 0 
+   
+   	WHILE (MyAnimFlag & RUNNING)
+		IF (TIME = 2)
+		SetGlobalParamInt(0,2)
+		SetGlobalParamInt(1,250)
+		CREATE SPAWN_CITYBOSS 0.0,2000.0, -1200.0, 0,0,0, ROCKETARM
+		ClearGlobalParams()
+		TIME = 0
+	   	ENDIF
+		TIME = TIME + 1
+		MyFlag = MyFlag
+	ENDWHILE
+
+	//GO BACK TO STAND
+   	MODELANIM>BOSSES\CITYBOSS\CITYBOSS.RDO>Stand>REPEAT
+
+   //	TRIGSET>EngageCheck EVERY 1
+
+	TRIGFIN
+ENDTRIGGER
+DEFINE LEFTGUN	6
+DEFINE RIGHTGUN 8
+DEFINE LEFTGUNTIP 5
+DEFINE RIGHTGUNTIP 7
+DEFINE TIPLENGTH 1000.0
+DEFINE PLAYERATTACK 0
+
+LOCALINT StillInRange
+//FLAG TO SAY WE'VE REACHED OUR LIMITS OF MOVEMENT
+LOCALINT MAX
+
+LOCALINT LeftFire
+TRIGGER FireControl
+
+	//TAKE A SNAPSHOT OF RD
+
+	FIREX = DogX
+	FIREY = DogY
+	FIREZ = DogZ
+
+	FIRESEEN = 0
+	MAX = 0
+
+
+	WHILE ((!MAX) AND (!FIRESEEN))
+		//TEMP. SAVE OF RD
+		SFIREX = DogX
+		SFIREY = DogY
+		SFIREZ = DogZ
+
+		//RETRIEVE SNAPSHOT POS
+		DogX = FIREX
+		DogY = FIREY
+		DogZ = FIREZ
+
+		//MOVE ARM UNTIL WE CAN SEE POINT
+  		FIRESEEN = ObjectSeePlayerZ(TWOPI/128.0,DISLOCATOR,0,DISLOCATORLENGTH,DISLOCATORHEIGHT)
+		MAX = ObjectTowardPlayerXZ(DISLOCATORARM, 0, 0.05, (TWOPI/360.0) * 5.0, 0)
+	    CrntRotToIdleRotZ(DISLOCATORARM, 0.05)
+		MAX = ObjectTowardPlayerXZOffset(DISLOCATOR, 0.1, 0.1, (TWOPI/360.0) * 10.0, (TWOPI/360.0) * 22.0, 0, DISLOCATORLENGTH, DISLOCATORHEIGHT)
+	  	CrntRotToIdleRotX(DISLOCATOR, 0.1)
+	  	CrntRotToIdleRotZ(DISLOCATOR, 0.1)
+
+		//RESTORE RD BACK TO TEMP
+		DogX = SFIREX
+		DogY = SFIREY
+		DogZ = SFIREZ
+  	ENDWHILE
+
+	//LET'S SEE IF THE BEAM IS VALID
+	IF (!MAX)
+		FIREINPROGRESS = 1
+
+		PLAYSOUND>CITYB_POWERUPL 4 1.0 0.0 0.0 0.0 0
+		PLAYSOUND>CITYB_POWERUPR 5 1.0 0.0 0.0 0.0 0
+
+		//SEEN THE POINT NOW CHARGE
+		IMMLOOP 20
+			tempInt = RandRange(128,255)
+			tempInt = tempInt * 256
+			tempInt = tempInt + (tempInt * 256)
+			tempInt = tempInt + 255
+			SparkSuckPos (DISLOCATOR, SPARKCHARGEUP, 10, tempInt, 14, 0, 3000, -1200) 
+		IMMENDLOOP
+	   	SetObjectTrans(DISLOCATOR,0.65)
+
+		tempInt = RandRange(0, 2)
+		IF (tempInt = 0)
+			PLAYSOUND>CITYB_ARC1 3 1.0 0.0 0.0 0.0 RANDOM
+		ENDIF
+		IF (tempInt = 1)
+			PLAYSOUND>CITYB_ARC2 3 1.0 0.0 0.0 0.0 RANDOM
+		ENDIF
+		IF (tempInt = 2)
+			PLAYSOUND>CITYB_ARC3 3 1.0 0.0 0.0 0.0 RANDOM
+		ENDIF
+		
+		LOOP (30)
+			IMMLOOP 10
+				tempInt = RandRange(128,255)
+				tempInt = tempInt * 256
+				tempInt = tempInt + (tempInt * 256)
+				tempInt = tempInt + 255
+				SparkSuckPos (DISLOCATOR, SPARKCHARGEUP, 10, tempInt, 14, 0, 3000, -1200) 
+			IMMENDLOOP
+			spec = Ssin(wang) * 0.25
+			wang = wang + 0.2
+			ObjectSpecularFlash(DISLOCATOR,1)
+			SetSpecularColour(DISLOCATOR, 0.25 + spec,0.35 + spec,0.5 + spec)
+		ENDLOOP		
+		
+		//SPAWN THE BEAM
+
+		SetGlobalParamInt(0,1)
+		SetGlobalParamInt(1,DISLOCATOR)
+	   	MyVar = PLAYERATTACK
+		frame = 1
+		CREATE SPAWN_CITYBOSS 0,0,0,0,0,0, DISLOCATOR
+		ClearGlobalParams()
+	   
+	   	//NOW FIRE BEAM FOR 5 SECS
+		//TRACKING TO THE PLAYER
+		//OR UNTIL THE PLAYER IS OUT OF RANGE
+		time = 0
+		StillInRange = 1
+		WHILE ((time < 150) AND (MyVar != 99.0) AND (StillInRange))
+	   		spec = Ssin(wang) * 0.25
+			wang = wang + 0.2
+			ObjectSpecularFlash(DISLOCATOR,1)
+			SetSpecularColour(DISLOCATOR, 0.25 + spec,0.35 + spec,0.5 + spec)
+			ObjectTowardPlayerXZ(DISLOCATORARM, 0, 0.05, (TWOPI/360.0) * 5.0, 0)
+			CrntRotToIdleRotZ(DISLOCATORARM, 0.009)
+			MAX = ObjectTowardPlayerXZOffset(DISLOCATOR, 0.1, 0.1, (TWOPI/360.0) * 10.0, (TWOPI/360.0) * 10.0, 0, DISLOCATORLENGTH, DISLOCATORHEIGHT)
+			CrntRotToIdleRotX(DISLOCATOR, 0.005)
+			CrntRotToIdleRotZ(DISLOCATOR, 0.005)
+			IF (MAX)
+			time = time + 2
+		   	ELSE
+		   	time = time + 1
+			ENDIF
+			StillInRange = NearPlayerXY(50.0) AND SeePlayerZ(TWOPI/4.0)
+
+		ENDWHILE
+
+		//SEMAPHORE TO TURN OFF THE BEAM
+		frame = 0
+	   
+  	   	ObjectSpecularFlash(DISLOCATOR,0)
+	   	SetObjectTrans(DISLOCATOR,1.0)
+
+		TIME = 0
+		FIREINPROGRESS = 0
+	ELSE
+		//CAN THE TOASTER SEE THE PLAYER ?
+
+  		FIRESEEN = ObjectSeePlayerZ(TWOPI/32.0,ROCKETARM,0,0,0)
+		ObjectTowardPlayerXZ(ROCKETARM, (TWOPI/360.0) * 10.0, 0.0, 0, (TWOPI/360.0) * 22.0)
+	    CrntRotToIdleRotX(ROCKETARM, (TWOPI/360.0) * 0.5)
+
+		IF (FIRESEEN)
+		
+		
+			FIREINPROGRESS = 1
+			//SPAWN THE FLAMES OF DOOM
+
+			IF (TIME > 5)
+				SetGlobalParamInt(0,2)
+				SetGlobalParamInt(1,100)
+				CREATE SPAWN_CITYBOSS 0,2000.0, -1200.0,0,0,0, ROCKETARM
+				ClearGlobalParams()
+				// SFX:
+				PLAYSOUND>CITYB_FLAMES 0 1.0 0.0 0.0 0.0 0
+				TIME = 0
+			ENDIF
+			TIME = TIME + 1
+
+			FIREINPROGRESS = 0
+		ELSE
+			//TOASTER CANNOT SEE PLAYER, SO USE THE ROCKETS
+	
+			ObjectTowardPlayerXZ(LEFTGUN, (TWOPI/360.0) * 10.0, 0.0, 0, (TWOPI/360.0) * 22.0)
+			CrntRotToIdleRotX(LEFTGUN, (TWOPI/360.0) * 0.5)
+			ObjectTowardPlayerXZ(RIGHTGUN, (TWOPI/360.0) * 10.0, 0.0, 0, (TWOPI/360.0) * 22.0)
+			CrntRotToIdleRotX(RIGHTGUN, (TWOPI/360.0) * 0.5)
+	
+	
+			IF (TIME > 5)
+   
+   				//START USING FRONT WEAPONS
+				SetGlobalParamInt(0,2)
+				//set to say go for Reddog
+				SetGlobalParamInt(1,99)
+				IF (LeftFire)
+					CREATE SPAWN_CITYBOSS 0.0, TIPLENGTH, 0.0, 0,0,0, LEFTGUNTIP
+				ELSE
+					CREATE SPAWN_CITYBOSS 0.0, TIPLENGTH, 0.0, 0,0,0, RIGHTGUNTIP
+				ENDIF
+				ClearGlobalParams()
+				MyVar = 4.0
+				IF (LeftFire)
+					CREATE SPAWN_BLASTEXP 0.0, TIPLENGTH, 0.0, 0.0, 0.0, 0.0, LEFTGUNTIP
+				ELSE
+					CREATE SPAWN_BLASTEXP 0.0, TIPLENGTH, 0.0, 0.0, 0.0, 0.0, RIGHTGUNTIP
+				ENDIF
+				LeftFire = !LeftFire
+	   			TIME = 0
+	   		ENDIF
+	   		TIME = TIME + 1
+		ENDIF
+
+	ENDIF
+
+	LOOP (3)
+		MyFlag = MyFlag
+	ENDLOOP
+  //	ENDWHILE
+
+
+	TRIGFIN
+ENDTRIGGER
+
+LOCALINT TIME
+
+
+
+
+STATE StartBunkerKill
+	SetGlobalParamInt(0,1)
+	KillMyVelocity()
+	ClearGlobalParams()
+ //	CheckX = parentx
+ //	CheckY = parenty
+ //	CheckZ = parentz
+//   	ReturnToStartTransform(DISLOCATOR)
+//   	ReturnToStartTransform(DISLOCATORARM)
+//   	CrntRotToIdleRotZ(DISLOCATORARM, 0.025)
+//   	CrntRotToIdleRotX(DISLOCATOR, 0.025)
+//   	CrntRotToIdleRotZ(DISLOCATOR, 0.025)
+ENDSTATE
+
+STATE Idle
+ENDSTATE
+
+LOCALINT trail
+
+
+STATE Trail
+ 	CREATE SPAWN_TRAILER 0.0, -13.0, 0.0, 0.0, 0.0, 0.0, 0
+	TRIGFIN
+ENDSTATE
+
+
+STATE BossHomers
+
+	MakeMeTheLast()
+
+	AllocStratSoundBlock(1)
+	PLAYSOUND>CITYB_MISSILE 0 1.0 0.0 0.0 0.0 RANDOM
+
+	MyFlag = MyFlag | ENEMY | NOTEXPLODE | PLANEMOVE | LOWCOLL | NODISP
+   	SetFriction(0.1,0.1,0.1)
+
+	OBJECT> WEAPON\MISSILE06
+   //	RegisterCollision()
+   //	TRIGSET>KillOff	WHENHIT
+   //	TRIGSET>KillOffFloor	ONFLOOR
+	damage = 10.0
+
+
+
+	IF (GetGlobalParamInt(1) < 100.0)
+		trail = CreateBand (1, 16, 0, 1, 0, 0, 1, 1, 0, 0, 0)
+		SetBandRotXYZandScaling (trail, 0.0, 0, 0.2, 1.1, 1.1, 1.1)
+		AddBandSegment (trail, 0, 0, 0, 0.2)
+		AddBandSegment (trail, 0, 0, 0, 0.2)
+		TRIGSET>Trailer EVERY 1
+		TRIGSET>BandTrigger EVERY 2
+	ELSE
+		tempInt = 1
+
+	ENDIF
+	CheckX = DogX
+	CheckY = DogY
+	CheckZ = DogZ 
+	IF (GetGlobalParamInt(1 ) >= 99)
+		//at rd type
+	   	MyVar = 1.0
+		RegisterCollision()
+		MyFlag = MyFlag | STRATCOLL	| FLOORCOLL
+		TRIGSET>KillOff	WHENHIT
+		TRIGSET>KillOff	ONFLOOR
+		IF (tempInt)
+		   frame = 0.1		
+		   TRIGSET>BeamShock EVERY 4
+		ELSE
+			MyFlag = MyFlag & LNOT(NODISP)
+		ENDIF
+		IF (GetGlobalParamInt(1) < 200.0)
+			PointTo(DogX, DogY, DogZ)
+		ELSE
+			MyParent = MyParentParent
+			PointTo(parentx, parenty, parentz)
+	   	ENDIF
+   	ELSE
+
+		CREATE SPAWN_FACE_ALONG_DIR 0, 0, 0, 0, 0, 0, 0
+   		TRIGSET>KillOff	EVERY 60
+	ENDIF
+	STAT>Start
+ENDSTATE
+
+
+STATE BandTrigger
+	AddBandSegment (trail, 0, 0, 0, 0.2)
+	TRIGFIN
+ENDSTATE
+
+STATE Trailer
+	RubberBand (trail, 0, 0, 0, 0.1)
+	TRIGFIN
+ENDSTATE
+
+
+STATE Start
+	//myvar set true when attacking the player
+   	IF (MyVar)
+		IF (frame < 0.2)
+			frame = frame + 0.003
+		ENDIF
+		MoveY(frame)
+	ELSE
+		MoveY(0.11)
+	//	PointTo(CheckX, CheckY, CheckZ)
+	ENDIF
+ENDSTATE
+
+STATE KillOff
+	MyFlag = MyFlag | NODISP  
+	IF (!tempInt)
+	  	DeleteBand (trail)
+		MyVar = 2.0
+		CREATE SPAWN_BLASTEXP 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0
+	ENDIF
+	
+	Delete()
+	TRIGSTOP
+ENDSTATE
+
+LOCALINT WEAKZONEFireState
+LOCALINT WEAKZONEWaitFrame
+
+TRIGGER ExplodeWeak
+	MyVar = 2.0
+	HideObject(WEAKZONE)
+	ObjectNotTargetable(WEAKZONE)
+	InActivateObjectCollision(WEAKZONE)
+
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, WEAKZONE
+	WEAKZONEFireState = 2
+	IF (PAL)
+  	WEAKZONEWaitFrame = 70
+	ELSE
+  	WEAKZONEWaitFrame = 80
+
+	ENDIF
+  	WHILE ((WEAKZONEWaitFrame) AND (WEAKZONEFireState))
+		//SCALE OF THE FIRE
+	   	SetGlobalParamFloat(2,3.0)
+		IF (WEAKZONEFireState = 2)
+			MyVar = 2.0
+		ELSE
+			MyVar = 0.0
+		ENDIF
+	   	SetGlobalParamInt(0,WEAKZONE)
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, WEAKZONE
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, WEAKZONE
+	  	IF (WEAKZONEFireState = 2)
+	  		MyVar = 3.0
+	  	ELSE
+	  		MyVar = 1.0
+	  	ENDIF
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, WEAKZONE
+	  	WEAKZONEWaitFrame = WEAKZONEWaitFrame - 1 
+	  	IF ((!(WEAKZONEWaitFrame)) AND (WEAKZONEFireState))
+			WEAKZONEWaitFrame = 150
+			WEAKZONEFireState = WEAKZONEFireState - 1
+		ENDIF
+		ClearGlobalParams()
+				   
+  	ENDWHILE
+
+	TRIGSTOP
+ENDTRIGGER
+
+
+TRIGGER KeepUp
+	x = y = z = 0
+	TRIGFIN
+ENDTRIGGER
+
+//SUCCESS FLAG SET WHEN PLAYER HAS SUCCESSFULLY DONE THE MISSION
+//IN THIS CASE, THE BOSS IS PLACED FAR AWAY AND HIDDEN, WITH
+//NO SPAWNED FLAMES.
+//THIS IS TO ENSURE THE ANIM DOES NOT 'RUN-INTO' HIM.
+
+TRIGGER Monitor
+	IF ((GlobalVar) OR SUCCESS)
+		SUCCESS = 1
+	  	MyFlag = MyFlag | NODISP
+		TRIGSET>KeepUp EVERY 1
+		TRIGSTOP
+	ELSE
+		TRIGFIN
+	ENDIF
+
+
+ENDTRIGGER
+
+//SUCCESS FLAG SET WHEN PLAYER HAS SUCCESSFULLY DONE THE MISSION
+//IN THIS CASE, THE BOSS IS PLACED FAR AWAY AND HIDDEN, WITH
+//NO SPAWNED FLAMES.
+//THIS IS TO ENSURE THE ANIM DOES NOT 'RUN-INTO' HIM.
+TRIGGER FALLSOUND
+	PLAYSOUND>cityb_fall 3 1.0 0.0 0.0 0.0 0
+	TRIGSTOP
+ENDTRIGGER
+
+STATE Die
+	PauseTriggers(-1,FORGET)
+	LOOP (2)
+		MyFlag = MyFlag
+	ENDLOOP
+		
+	TRIGSET>Monitor EVERY 1
+   //	IF (SUCCESS)
+   //		MyFlag = MyFlag & LNOT(NODISP)
+   //		TRIGSET>KeepUp EVERY 1
+   //	ENDIF
+
+
+	//TURN OFF COLLISION
+	MyFlag = MyFlag & LNOT(STRATCOLL)
+	
+	
+	//ENSURE BEAM IS OFF
+	frame = 0
+	MODELANIM>BOSSES\CITYBOSS\CITYBOSS.RDO>Die>0
+	
+	//ENSURE I'M OFF THE RADAR
+	RadarUpdate(RADARUNREG)
+
+
+	TRIGSET>FALLSOUND EVERY 5
+  //	WHILE (frame < 5)
+  //		frame = frame + 1
+  //		SetGlobalParamInt(0,1)
+  //		KillMyVelocity()
+  //		ClearGlobalParams()
+  //	ENDWHILE
+
+	WHILE (MyAnimFlag & RUNNING)
+		SetGlobalParamInt(0,1)
+		KillMyVelocity()
+		ClearGlobalParams()
+	ENDWHILE
+  
+  	//EXPLODE THE WEAKZONE
+	IF (!SUCCESS)
+	  	TRIGSET>ExplodeWeak EVERY 2
+	ENDIF
+	
+	//RUN THE DEATH IDLE ANIM
+	MODELANIM>BOSSES\CITYBOSS\CITYBOSS.RDO>DeathIdle>REPEAT
+	Score = Score + 5000
+
+	//LET'S HOOK BACK TO OUR PARENT
+	MyParent = MyTarget
+	//..AND ENSURE IT CAN CONTINUE GENERATING
+	ParentSemaphore = 0.0
+	//..AND DECREMENT THE GLOBAL BOSS COUNTER
+	GlobalVar2 = GlobalVar2 - 1.0
+
+
+
+	//SMALL DELAY
+	LOOP (100)
+		SetGlobalParamInt(0,1)
+		KillMyVelocity()
+		ClearGlobalParams()
+  	ENDLOOP
+
+	//RUN THE DEATH ANIM
+  //	MODELANIM>BOSSES\CITYBOSS\CITYBOSS.RDO>Die>REPEAT
+
+   //	WHILE (MyAnimFlag & RUNNING)
+   //		KillMyVelocity()
+   //	ENDWHILE
+
+
+
+
+   //	IF (BUNKERATTACKMODE)
+		
+		//FINISH WHAT WE WERE DOING
+   //	   	WHILE (BFIREINPROGRESS)
+   //			MyFlag = MyFlag
+   //		ENDWHILE
+  //	ENDIF
+
+	//LET'S HOOK BACK TO OUR PARENT
+   //	MyParent = MyTarget
+	//..AND ENSURE IT CAN CONTINUE GENERATING
+  //	ParentSemaphore = 0.0
+	//..AND DECREMENT THE GLOBAL BOSS COUNTER
+  //	GlobalVar2 = GlobalVar2 - 1.0
+	//FADE OUT HERE
+  
+  	MyFlag2 = MyFlag2 | TRANSLUCENT
+	WHILE (trans > 0.02)
+		IF (trans < 0.4)
+			HideObject(LEFTGUN)
+			HideObject(RIGHTGUN)
+			HideObject(LEFTGUNTIP)
+			HideObject(RIGHTGUNTIP)
+		ENDIF
+		IF (PAL)
+			trans = trans - (0.02 * 1.2)
+		ELSE
+			trans = trans - 0.02
+		ENDIF
+	ENDWHILE
+
+	Delete()
+
+	
+	
+//	DESTROYME SPAWN_EXPLODINGBITS
+ENDSTATE
+
+TRIGGER BeamShock
+	TRIGSTOP
+	TRIGSET>BeamShock2 EVERY 2
+ENDTRIGGER
+
+TRIGGER BeamShock2
+ 	SetGlobalParamFloat(0,firescale)
+   	MyVar = 0.5
+	CREATE SPAWN_BLASTEXP 0,0,0,0,0,0, tempInt
+ 	ClearGlobalParams()
+ 	IF (firescale < 1.0)
+ 		firescale = firescale + 0.05
+ 	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+
+
+ 

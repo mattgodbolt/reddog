@@ -1,0 +1,50 @@
+LOCALINT trail
+LOCALFLOAT	xOffset
+LOCALFLOAT	yOffset
+LOCALFLOAT dx
+LOCALFLOAT dy
+LOCALFLOAT dz
+
+
+STATE Trail
+ 	CREATE SPAWN_TRAILER 0.0, -13.0, 0.0, 0.0, 0.0, 0.0, 0
+
+	TRIGFIN
+ENDSTATE
+
+
+STATE Init
+ //	absspeedx = parentabsspeedx
+ //	absspeedy = parentabsspeedy
+ //	absspeedz = parentabsspeedz
+
+	MakeMeTheLast()
+	//GET ID
+	MyVar = GetGlobalParamFloat(0)
+	//GET Y OFFSET
+	frame = GetGlobalParamFloat(1)
+
+//	MyFlag = MyFlag | FLOORCOLL | STRATCOLL | ENEMY | NOTEXPLODE | LOWCOLL 
+//	RegisterCollision()
+//   	SetFriction(0.1,0.1,0.1)
+//	damage = 5.0
+ 
+	STAT>Go
+ENDSTATE
+
+STATE Go
+	LOOP (20)
+		SparkSuck(0,SPARKCOLWHIRL, 10, 0, 0) 
+		LinkToParentObject(MyVar, 0, 0, 0, 0, frame, 0) 
+		frame = frame + (PlayerActVelY) * 1.1
+	ENDLOOP
+	//ENSURE THE HOMERS ARE FLAGGED AS FROM THE SWAMP BOSS
+	SetGlobalParamInt(0,1)
+	CREATE SPAWN_ENEMY_HOMING_MISSILE 8.0, 0.0, 0.0, 0, 0, 0.0, 0
+	CREATE SPAWN_ENEMY_HOMING_MISSILE 4.0, 0.0, 0.0, 0, 0, 0.0, 0
+	CREATE SPAWN_ENEMY_HOMING_MISSILE -4.0, 0.0, 0.0, 0, 0, 0.0, 0
+	CREATE SPAWN_ENEMY_HOMING_MISSILE -8.0, 0.0, 0.0, 0, 0, 0.0, 0
+  	ClearGlobalParams()
+	Delete()	
+ENDSTATE 
+ 

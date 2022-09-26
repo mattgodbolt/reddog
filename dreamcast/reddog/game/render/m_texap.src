@@ -1,0 +1,551 @@
+; M_TexA.src
+; Completely OnScreen Strip Model Renderer
+				.CPU			SH4
+				.OUTPUT			DBG=DWARF
+				.SECTION		RASTERISERS, CODE, ALIGN=4
+				.INCLUDE		"..\RedDog.pre"
+
+				.EXPORT			_texMStripRasteriserPasted
+; Prototype: PKMDWORD texMStripRasteriserPasted (ModelContext *context, Uint32 nStrip, Uint32 matNum, PKMDWORD kmPtr);
+strip:			.REG			R8
+kmPtr:			.REG			R7	; parm
+matNum:			.REG			R6	; parm
+nStrip:			.REG			R5	; parm
+context:		.REG			R4	; parm
+vertArray:		.REG			R3
+kmVertParam:	.REG			R2
+uvArray:		.REG			R1
+vert:			.REG			R0
+nextVert:		.REG			R9
+kmPtrNext:		.REG			R10
+kmPtrPasted:	.REG			R11
+uvArrayPasted:	.REG			R12
+uvPasted:		.REG			R13
+
+XY:				.FREG			DR0
+X:				.FREG			FR0
+Y:				.FREG			FR1
+ZW:				.FREG			DR2
+Z:				.FREG			FR2
+W:				.FREG			FR3
+UV:				.FREG			DR4
+U:				.FREG			FR4
+V:				.FREG			FR5
+PQ:				.FREG			DR6
+P:				.FREG			FR6
+Q:				.FREG			FR7
+
+diffColA:		.FREG			FR8
+trans:			.FREG			FR9
+pastedUV:		.FREG			DR10
+
+_texMStripRasteriserPasted:
+				; Push used registers
+				PUSH	R8
+				PUSH	R9
+				PUSH	R10
+				PUSH	R11
+				PUSH	R12
+				PUSH	R13
+
+				; Set up the registers based on the context
+				MOV.L	@(0, context), vertArray
+				MOV.L	@(8, context), uvArray
+				MOV.L	@(12, context), strip
+				ADD		#68, context
+				MOV.L	@context+, kmPtrPasted
+				MOV.L	@context+, uvArrayPasted
+				FMOV.S	@context+, trans	; get transparency
+				
+				ADD		#32-(68+12), context	; get to the colour part of the context
+				FMOV.S	@context, diffColA	; only get alpha colour out
+				ADD		#16, vertArray		; vertArray points at the x, y, rW, pad0
+				FSCHG						; change to double size
+				ADD		#-32, context		; put context back 
+
+?mTexLoopReset
+				MOV.L	#H'e0000000, kmVertParam
+				DT		nStrip				; predecrement so we exit the main loop one cycle early
+
+				MOV.W	@strip+, vert		; get the vertex number
+				ADD		#24, kmPtr			; move kmPtr past UV
+
+				FMOV.D	@uvArray+, UV		; get the UV values
+				MOV		vert, uvPasted
+
+				ADD		#24, kmPtrPasted	; move kmPtrPasted past
+				SHLL2	uvPasted			; uvPasted *= 4
+
+				MOV.W	@strip+, nextVert	; get the next vertex number
+
+				SHLL8	vert				; vert = vert * 256
+
+				ADD		uvPasted, uvPasted	; uvPasted *= 8 in total now
+
+				SHLR2	vert				; vert = (vert * 256) / 4  == vert * 64
+
+				ADD		uvArrayPasted, uvPasted	; uvPasted points at the pasted UVs
+
+				ADD		vertArray, vert		; vert now points at the prepped vertex's co-ords
+?mTexLoop		FMOV.D	UV, @-kmPtr			; store in the UV coordinates [R]
+
+				FMOV.D	@uvPasted, pastedUV	; get pasted UV
+
+				FMOV.D	@vert+, XY			; get X, Y [T]
+
+				FMOV.D	@vert+, ZW			; get Z, W (w == pad0)
+				MOV		nextVert, uvPasted	; hang on to the next uv address
+
+				FMOV.D	pastedUV, @-kmPtrPasted	; store pasted UV value
+				FSCHG						; change to single stores (mutter mutter) [R]
+
+				; [R][R][R] - ack! so put in these badgers
+				SHLL8	nextVert
+
+				PREF	@strip
+				SHLR2	nextVert
+
+				SHLL2	uvPasted			; uvPasted *= 4
+
+				ADD		vertArray, nextVert	; now nextVert lives at the next vertex
+				FMOV.S	Z, @-kmPtr			; store Z
+
+				FMOV.S	Y, @-kmPtr			; store Y
+				ADD		uvPasted, uvPasted	; uvPasted *= 8 in total
+
+				FMOV.S	Z, @-kmPtrPasted	; store Z pasted
+				ADD		uvArrayPasted, uvPasted	; uvPasted points at next vertices array
+
+				FMOV.S	Y, @-kmPtrPasted	; store Y pasted
+
+				FMOV.S	X, @-kmPtr			; store X
+
+				FMOV.S	X, @-kmPtrPasted	; store X pasted
+				FSCHG						; change back to double stores (hooray)
+
+				MOV.L	kmVertParam, @-kmPtr; store in the KM_VERTPARAM_NORMAL
+
+				MOV.L	kmVertParam, @-kmPtrPasted ; store in the KM_VERTPARAM_NORMAL for the pasted addess
+
+				PREF	@kmPtr				; and SQ it to the TA (wooooooo!) [T]
+				ADD		#48, kmPtr			; move kmPtr to the next SQ (and next address) and to the end of the diffuse colour
+
+				FMOV.D	@vert+, XY
+				ADD		#48, kmPtrPasted	; move kmPtrPasted on
+
+				FMUL	diffColA, X			; attenuate colour
+				FMOV.D	@vert+, ZW			; get the colour (XYZW == ARGB here)
+				MOV		kmPtr, kmPtrNext	; start getting kmPtr -> specular bit
+				
+				FMOV.D	@vert+, UV			; start getting the specular colour
+				ADD		#32-16, kmPtrNext	; kmPtrNext -> specular bit
+
+				FMOV.D	@vert+, PQ			; UVPQ = specular colour now
+
+				FMOV.D	ZW, @-kmPtr			; store in diffuse GB
+				DT		nStrip				; decrement the strip counter
+
+				FMOV.D	ZW, @-kmPtrPasted	; store in diffuse GB pasted
+				; [R] see if 
+				FMOV.D	XY, @-kmPtr			; store in diffuse AR
+
+				FMUL	trans, X			; multiply opacity for pasted
+				MOV		nextVert, vert		; set up next vert
+
+				FMOV.D	XY, @-kmPtrPasted	; store in diffuse GB pasted
+
+				FMOV.D	PQ, @-kmPtrNext		; store specGB
+				ADD		#32, kmPtrPasted	; move kmPtrPasted on to specular
+
+				FMOV.D	UV, @-kmPtrNext		; store specAR
+				
+				PREF	@kmPtr				; SQ blast!
+				ADD		#32+24, kmPtr		; point at the next entry in the TA and move to past UV
+
+				FMOV.D	PQ, @-kmPtrPasted
+
+				FMOV.D	UV, @-kmPtrPasted	; store specular pasted
+
+				ADD		#32+24-16, kmPtrPasted	; move pasted pointer on
+
+				FMOV.D	@uvArray+, UV		; get the UV values
+				BF/S	?mTexLoop			; and loop until we've done
+				MOV.W	@strip+, nextVert	; get the next vertex number [s]
+				
+				; We still have one vert to do, after we make sure kmVertParam is ENDOFSTRIP
+				MOV.L	#H'f0000000, kmVertParam
+
+				FMOV.D	UV, @-kmPtr			; store in the UV coordinates [T]
+
+				FMOV.D	@uvPasted, pastedUV	; get pasted UV
+
+				FMOV.D	@vert+, XY			; get X, Y [T]
+
+				FMOV.D	pastedUV, @-kmPtrPasted; store pasted UV
+
+				FMOV.D	@vert+, ZW			; get Z, W (w == pad0) [T]
+				FSCHG						; change to single stores (mutter mutter)
+
+				;[R][R][R]
+				FMOV.S	Z, @-kmPtr			; store Z
+
+				FMOV.S	Y, @-kmPtr			; store Y [T]
+
+				FMOV.S	X, @-kmPtr			; store X [T]
+
+				FMOV.S	Z, @-kmPtrPasted	; store Z pasted
+
+				FMOV.S	Y, @-kmPtrPasted	; store Y [T] pasted 
+
+				FMOV.S	X, @-kmPtrPasted	; store X [T] pasted
+
+				MOV.L	kmVertParam, @-kmPtr; store in the KM_VERTPARAM_EOS [T]
+				PREF	@kmPtr				; and SQ it to the TA (wooooooo!)
+
+				MOV.L	kmVertParam, @-kmPtrPasted ; store in pasted EOS
+				FSCHG						; change back to double stores (hooray)
+
+				; Now to do the colour warez
+				ADD		#48, kmPtr			; move kmPtr to the next SQ (and next address) and to the end of the diffuse colour
+				FMOV.D	@vert+, XY	
+
+				FMUL	diffColA, X			; multiply colour
+				FMOV.D	@vert+, ZW			; get the colour (XYZW == ARGB here)
+				ADD		#48, kmPtrPasted	; move pasted on
+
+				;[R][R]
+				FMOV.D	@vert+, UV			; start getting the specular colour
+
+				FMOV.D	@vert+, PQ			; UVPQ = specular colour now
+
+				;[R][R][R]
+				FMOV.D	ZW, @-kmPtr			; store in diffuse GB
+
+				FMOV.D	XY, @-kmPtr			; store in diffuse AR
+
+				FMUL	trans, X			; X*= opacity
+
+				FMOV.D	ZW, @-kmPtrPasted	; store in diffuse GB pasted
+				ADD		#32, kmPtr			; Point kmPtr at the end of the specular stuff
+
+				FMOV.D	XY, @-kmPtrPasted	; store in diffuse AR pasted
+
+				;[R][R][R]
+				FMOV.D	PQ, @-kmPtr			; store specGB
+				ADD		#32, kmPtrPasted	; kmPtrPasted past specular
+
+				FMOV.D	UV, @-kmPtr			; store specAR [T]
+
+				FMOV.D	PQ, @-kmPtrPasted	; store specGB pasted
+
+				FMOV.D	UV, @-kmPtrPasted	; store specAR pasted
+
+				; Now to check if the next strip is the same material
+				CMP/EQ	nextVert, matNum
+				ADD		#16, kmPtrPasted
+
+				PREF	@kmPtr				; SQ blast!
+				ADD		#16, kmPtr			; point at the next entry in the TA for the retVal
+
+				BF		?ItsTheEnd
+				; Check this isn't a terminator
+				MOV.W	@strip, vert
+				CMP/EQ	#0, vert
+				BT		?ItsTheEnd
+				; OK - we can go round again, so update vert and kmVert and loop back
+				ADD		#2, strip
+				BRA		?mTexLoopReset
+				MOV		vert, nStrip ; slot
+
+?ItsTheEnd		; We now have to update UV and strip
+				ADD		#-2, strip
+				FSCHG						; back to boring single stores
+				MOV.L	strip, @(12, context)
+
+				MOV		context, R0
+				ADD		#68, R0
+				MOV.L	kmPtrPasted, @R0	 ; store back pasted address
+
+				MOV.L	uvArray, @(8, context)
+				MOV		kmPtr, R0			; get return value
+
+				; pop-a-lop
+				POP		R13
+				POP		R12
+				POP		R11
+				POP		R10
+				POP		R9
+				RTS
+				POP		R8		; slot
+
+; --------------------------------------------------------------------------------------------------
+; Bump-mapped version
+; --------------------------------------------------------------------------------------------------
+
+bumpArray:		.REG			R12
+bumpPtr:		.REG			R13
+specAR:			.FREG			DR10
+specGB:			.FREG			DR12
+
+				.EXPORT _texMStripRasteriserBumped
+_texMStripRasteriserBumped:
+				; Push used registers
+				PUSH	R8
+				PUSH	R9
+				PUSH	R10
+				PUSH	R11
+				PUSH	R12
+				PUSH	R13
+
+				; Set up the registers based on the context
+				MOV.L	@(0, context), vertArray
+				MOV.L	@(8, context), uvArray
+				MOV.L	@(12, context), strip
+				ADD		#68, context
+				MOV.L	@context+, kmPtrPasted
+				ADD		#4, context
+				FMOV.S	@context+, trans	; get transparency
+				MOV.L	@context+, bumpArray	; get bumpmaparray
+				
+				ADD		#32-(68+16), context; get to the colour part of the context
+				FMOV.S	@context, diffColA	; only get alpha colour out
+				ADD		#16, vertArray		; vertArray points at the x, y, rW, pad0
+				FSCHG						; change to double size
+				ADD		#-32, context		; put context back 
+
+				; Cheesey hack
+				FLDI1	diffColA
+
+?mTexLoopReset
+				MOV.L	#H'e0000000, kmVertParam
+				DT		nStrip				; predecrement so we exit the main loop one cycle early
+
+				MOV.W	@strip+, vert		; get the vertex number
+				ADD		#24, kmPtr			; move kmPtr past UV
+
+				FMOV.D	@uvArray+, UV		; get the UV values
+				MOV		vert, bumpPtr
+
+				ADD		#24, kmPtrPasted	; move kmPtrPasted past
+				SHLL2	bumpPtr				; bumpPtr *= 4
+
+				MOV.W	@strip+, nextVert	; get the next vertex number
+
+				SHLL8	vert				; vert = vert * 256
+
+				SHLL2	bumpPtr				; bumpPtr *= 16 in total now
+
+				SHLR2	vert				; vert = (vert * 256) / 4  == vert * 64
+
+				ADD		bumpArray, bumpPtr	; bumpPtr points at the specular bump data
+
+				ADD		vertArray, vert		; vert now points at the prepped vertex's co-ords
+?mTexLoop		FMOV.D	UV, @-kmPtr			; store in the UV coordinates [R]
+
+				FMOV.D	@bumpPtr+, specAR	; get specular AR
+				FMOV.D	@bumpPtr, specGB	; get specular GB
+
+				FMOV.D	@vert+, XY			; get X, Y [T]
+
+				FMOV.D	@vert+, ZW			; get Z, W (w == pad0)
+				MOV		nextVert, bumpPtr	; hang on to the next bump address
+
+				FMOV.D	UV, @-kmPtrPasted	; store UV value
+				FSCHG						; change to single stores (mutter mutter) [R]
+
+				; [R][R][R] - ack! so put in these badgers
+				SHLL8	nextVert
+
+				PREF	@strip
+				SHLR2	nextVert
+
+				SHLL2	bumpPtr			; bumpPtr *= 4
+
+				ADD		vertArray, nextVert	; now nextVert lives at the next vertex
+				FMOV.S	Z, @-kmPtr			; store Z
+
+				FMOV.S	Y, @-kmPtr			; store Y
+				SHLL2	bumpPtr				; bumpPtr *= 16 in total
+
+				FMOV.S	Z, @-kmPtrPasted	; store Z pasted
+				ADD		bumpArray, bumpPtr	; uvPasted points at next vertices array
+
+				FMOV.S	Y, @-kmPtrPasted	; store Y pasted
+
+				FMOV.S	X, @-kmPtr			; store X
+
+				FMOV.S	X, @-kmPtrPasted	; store X pasted
+				FSCHG						; change back to double stores (hooray)
+
+				MOV.L	kmVertParam, @-kmPtr; store in the KM_VERTPARAM_NORMAL
+
+				MOV.L	kmVertParam, @-kmPtrPasted ; store in the KM_VERTPARAM_NORMAL for the pasted addess
+
+				PREF	@kmPtr				; and SQ it to the TA (wooooooo!) [T]
+				ADD		#48, kmPtr			; move kmPtr to the next SQ (and next address) and to the end of the diffuse colour
+
+				FMOV.D	@vert+, XY
+				ADD		#48, kmPtrPasted	; move kmPtrPasted on
+
+				FMUL	diffColA, X			; attenuate colour
+				FMOV.D	@vert+, ZW			; get the colour (XYZW == ARGB here)
+				MOV		kmPtr, kmPtrNext	; start getting kmPtr -> specular bit
+				
+				FMOV.D	@vert+, UV			; start getting the specular colour
+				ADD		#32-16, kmPtrNext	; kmPtrNext -> specular bit
+
+				FMOV.D	@vert+, PQ			; UVPQ = specular colour now
+
+				FMOV.D	ZW, @-kmPtr			; store in diffuse GB
+				DT		nStrip				; decrement the strip counter
+
+				FLDI0	Z					; white out
+				FLDI0	W
+
+				FMOV.D	ZW, @-kmPtrPasted	; store in diffuse GB pasted
+				; [R] see if 
+				FMOV.D	XY, @-kmPtr			; store in diffuse AR
+
+				FLDI0	Y					; make it white
+				FMUL	trans, X			; multiply opacity for pasted
+				MOV		nextVert, vert		; set up next vert
+
+
+				FMOV.D	XY, @-kmPtrPasted	; store in diffuse GB pasted
+
+				FMOV.D	PQ, @-kmPtrNext		; store specGB
+				ADD		#32, kmPtrPasted	; move kmPtrPasted on to specular
+
+				FMOV.D	UV, @-kmPtrNext		; store specAR
+				
+				PREF	@kmPtr				; SQ blast!
+				ADD		#32+24, kmPtr		; point at the next entry in the TA and move to past UV
+
+				FMOV.D	specGB, @-kmPtrPasted
+
+				FMOV.D	specAR, @-kmPtrPasted	; store specular pasted
+
+				ADD		#32+24-16, kmPtrPasted	; move pasted pointer on
+
+				FMOV.D	@uvArray+, UV		; get the UV values
+				BF/S	?mTexLoop			; and loop until we've done
+				MOV.W	@strip+, nextVert	; get the next vertex number [s]
+				
+				; We still have one vert to do, after we make sure kmVertParam is ENDOFSTRIP
+				MOV.L	#H'f0000000, kmVertParam
+
+				FMOV.D	UV, @-kmPtr			; store in the UV coordinates [T]
+
+				FMOV.D	@bumpPtr+, specAR	; get pasted UV
+				FMOV.D	@bumpPtr, specGB	; get pasted UV
+
+				FMOV.D	@vert+, XY			; get X, Y [T]
+
+				FMOV.D	UV, @-kmPtrPasted	; store pasted UV
+
+				FMOV.D	@vert+, ZW			; get Z, W (w == pad0) [T]
+				FSCHG						; change to single stores (mutter mutter)
+
+				;[R][R][R]
+				FMOV.S	Z, @-kmPtr			; store Z
+
+				FMOV.S	Y, @-kmPtr			; store Y [T]
+
+				FMOV.S	X, @-kmPtr			; store X [T]
+
+				FMOV.S	Z, @-kmPtrPasted	; store Z pasted
+
+				FMOV.S	Y, @-kmPtrPasted	; store Y [T] pasted 
+
+				FMOV.S	X, @-kmPtrPasted	; store X [T] pasted
+
+				MOV.L	kmVertParam, @-kmPtr; store in the KM_VERTPARAM_EOS [T]
+				PREF	@kmPtr				; and SQ it to the TA (wooooooo!)
+
+				MOV.L	kmVertParam, @-kmPtrPasted ; store in pasted EOS
+				FSCHG						; change back to double stores (hooray)
+
+				; Now to do the colour warez
+				ADD		#48, kmPtr			; move kmPtr to the next SQ (and next address) and to the end of the diffuse colour
+				FMOV.D	@vert+, XY	
+
+				FMUL	diffColA, X			; multiply colour
+				FMOV.D	@vert+, ZW			; get the colour (XYZW == ARGB here)
+				ADD		#48, kmPtrPasted	; move pasted on
+
+				;[R][R]
+				FMOV.D	@vert+, UV			; start getting the specular colour
+
+				FMOV.D	@vert+, PQ			; UVPQ = specular colour now
+
+				;[R][R][R]
+
+				FMOV.D	ZW, @-kmPtr			; store in diffuse GB
+
+				FMOV.D	XY, @-kmPtr			; store in diffuse AR
+
+				FLDI0	Y					; make it white
+				FLDI0	Z					; white out
+				FLDI0	W
+
+				FMUL	trans, X			; X*= opacity
+
+				FMOV.D	ZW, @-kmPtrPasted	; store in diffuse GB pasted
+				ADD		#32, kmPtr			; Point kmPtr at the end of the specular stuff
+
+				FMOV.D	XY, @-kmPtrPasted	; store in diffuse AR pasted
+
+				;[R][R][R]
+				FMOV.D	PQ, @-kmPtr			; store specGB
+				ADD		#32, kmPtrPasted	; kmPtrPasted past specular
+
+				FMOV.D	UV, @-kmPtr			; store specAR [T]
+
+				FMOV.D	specGB, @-kmPtrPasted	; store specGB pasted
+
+				FMOV.D	specAR, @-kmPtrPasted	; store specAR pasted
+
+				; Now to check if the next strip is the same material
+				CMP/EQ	nextVert, matNum
+				ADD		#16, kmPtrPasted
+
+				PREF	@kmPtr				; SQ blast!
+				ADD		#16, kmPtr			; point at the next entry in the TA for the retVal
+
+				BF		?ItsTheEnd
+				; Check this isn't a terminator
+				MOV.W	@strip, vert
+				CMP/EQ	#0, vert
+				BT		?ItsTheEnd
+				; OK - we can go round again, so update vert and kmVert and loop back
+				ADD		#2, strip
+				BRA		?mTexLoopReset
+				MOV		vert, nStrip ; slot
+
+?ItsTheEnd		; We now have to update UV and strip
+				ADD		#-2, strip
+				FSCHG						; back to boring single stores
+				MOV.L	strip, @(12, context)
+
+				MOV		context, R0
+				ADD		#68, R0
+				MOV.L	kmPtrPasted, @R0	 ; store back pasted address
+
+				MOV.L	uvArray, @(8, context)
+				MOV		kmPtr, R0			; get return value
+
+				; pop-a-lop
+				POP		R13
+				POP		R12
+				POP		R11
+				POP		R10
+				POP		R9
+				RTS
+				POP		R8		; slot
+
+
+
+				.SECTION		DATA
+				.IMPORT			_pViewSize
+a_pViewSize		.DATA.L			_pViewSize
+				.END

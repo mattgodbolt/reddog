@@ -1,0 +1,69 @@
+// Persistant challenge timer
+// Starts when its parent deletes, keeps going over multiple lives
+// Stops on activation 0
+
+PARAMINT	LimitTicks 5200
+
+STATE Init
+	MyFlag = MyFlag | NODISP | DELETECALLBACK
+
+	TRIGSET>CleanUp WHENDELETED
+
+	IF (!(MyFlag2 & OWNIPARAMS))
+		LimitTicks = 5200
+	ENDIF
+
+	// PAL friendliness
+	IF (PAL)
+		LimitTicks = LimitTicks / 1.2
+  	ENDIF
+
+
+	// If the timer isn't running, wait action
+	IF (InitTimer(0, -1) = 0)
+		// Show the timer
+		InitTimer (0, LimitTicks)
+		// Do we have a parent?
+		IF (MyParent)
+			// Wait for parent creation
+			WHILE (MyParentInvalid())
+				MyVar = MyVar
+			ENDWHILE
+			// Wait for parent to delete
+			WHILE (MyParentFlag)
+				MyVar = MyVar
+			ENDWHILE
+		ENDIF
+		// Start the ball rolling
+		InitTimer (-1, LimitTicks)
+	ELSE
+		MyVar = InitTimer(0, -1)
+		InitTimer(-1, MyVar)
+	ENDIF
+
+	// Wait for the timer to tick down
+	WHILE (InitTimer(0,0) != 0)
+		MyVar = MyVar
+		IF (PlayerNearActivationXY(0))
+			STAT>Disable
+		ENDIF
+	ENDWHILE
+
+	// Delete myself, after setting the mission failure madness
+	MissionFailure = 1
+	HideTimer()
+	Delete()
+ENDSTATE
+
+STATE Disable
+	// Stay created so as not to annoy anything waiting for us to delete
+	InitTimer(0, 1)
+	HideTimer()
+	WHILE (1)
+		MyVar = MyVar
+	ENDWHILE
+ENDSTATE
+
+STATE CleanUp
+	HideTimer()
+ENDSTATE

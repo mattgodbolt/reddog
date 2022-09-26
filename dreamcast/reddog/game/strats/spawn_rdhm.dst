@@ -1,0 +1,89 @@
+LOCALFLOAT	time
+LOCALFLOAT	px
+LOCALFLOAT	py
+LOCALFLOAT	pz
+LOCALFLOAT	ax
+LOCALFLOAT	ay
+LOCALFLOAT	az
+LOCALFLOAT	tempf
+LOCALINT	padPush
+LOCALINT	padPress
+LOCALINT	noTargets 
+LOCALINT	tempi
+LOCALINT	pn
+
+DEFINE		MISSILES_ACTIVE	0
+DEFINE		RDHM					15
+
+STATE Init
+  	MyFlag = MyFlag | FRIENDLY | FLOORCOLL
+	time = 0.0
+	health = 100.0
+	pn = GetGlobalParamInt(0)
+	IAmPlayerRDHM(pn)
+	TRIGSET>Always EVERY 1
+	AllocStratSoundBlock(1)
+	SetSem(MISSILES_ACTIVE, 0)
+	//SetSecondaryWeaponType(pn, RDHM)
+	STAT>Start
+ENDSTATE
+
+TRIGGER Always
+	GetPlayerPos(pn)
+	x = CheckX
+	y = CheckY
+	z = CheckZ
+	TRIGFIN
+ENDTRIGGER
+
+LOCALINT VALID
+
+STATE Die
+	Delete()
+ENDSTATE
+
+
+STATE Start
+	IF (MyParentHealth <= 0.0)
+		STAT>Die
+	ENDIF 
+	
+	VALID = !((PlayerState & PS_SCRIPTHELD) | (PlayerState & PS_INDROPSHIP))
+	IF (VALID)
+		padPush = GetPadPush(0)
+	ELSE
+		padPush = 0
+	ENDIF
+
+	//padPush = GetPadPush(0)
+
+	padPress = 	GetPadPress(0)
+	
+	IF (padPress & PADFIRE)
+		MyFlag = MyFlag
+	ELSE
+		IF (GetFireSecondary(pn) = 1)
+			SetFireSecondary(pn, 0)
+			IF (GetSem(MISSILES_ACTIVE) = 0)
+				noTargets = GetTargetCount(pn)
+				IF (noTargets)
+					PLAYSOUND>RD_WEAPON_MISSILE_1 0 1.0 0.0 0.0 0.0 0
+				ENDIF
+				tempi = 0
+				IMMLOOP (noTargets)
+					tempi = tempi + 1
+					SetGlobalParamInt(0, pn)
+					AddSem(MISSILES_ACTIVE, 1)
+					IF (tempi % 2)
+						CREATE SPAWN_REDDOGMISSILE -0.5, 0.5, 0.0, 0, 0, 0, 0
+					ELSE
+						CREATE SPAWN_REDDOGMISSILE 0.5, 0.5, 0.0, 0, 0, 0, 0
+					ENDIF
+					ClearGlobalParams()
+				IMMENDLOOP
+			ELSE
+				ClearTargetArray(pn)
+			ENDIF
+		ENDIF
+	ENDIF
+ENDSTATE

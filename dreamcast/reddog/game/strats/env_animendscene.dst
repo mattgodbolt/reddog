@@ -1,0 +1,77 @@
+//
+// End Scene anim
+//
+
+LOCALFLOAT	MUSVOL
+LOCALFLOAT	temp
+LOCALFLOAT	frame
+
+LOCALINT SND_VAL1
+LOCALINT SND_VAL2
+LOCALINT SND_VAL3
+LOCALINT SND_VAL4
+
+LOCALFLOAT PITCH
+LOCALFLOAT VOLUME
+
+TRIGGER MUSFADE
+	temp = MUSVOL
+	WHILE (temp > (MUSVOL / 3.0))
+		MusicFade((1.0 - temp))
+		temp = temp * 0.6
+	ENDWHILE
+  	TRIGSTOP
+ENDTRIGGER
+
+STATE Init
+	MUSVOL = sfxGetCDVolume()
+	IF (sfxGetCDVolume() > 0.3)
+		TRIGSET>MUSFADE EVERY 1
+	ENDIF
+ 	
+	//kill all existing sounds
+	StopSound(-1,-1)
+	AllocStratSoundBlock(4)
+
+	IF (PAL)
+		SND_VAL1 = 75
+		SND_VAL2 = 89
+		SND_VAL3 = 129
+	ELSE
+		SND_VAL1 = 90
+		SND_VAL2 = 107
+		SND_VAL3 = 155
+	ENDIF
+	frame = 0
+
+	PITCH = 0.0
+	VOLUME = 0.9
+	PLAYSOUND>ESCAPESHIP 0 VOLUME  0.0 0.0 0.0  NOPOSITION | CONTINUOUS
+
+	while (frame < SND_VAL1)
+		frame = frame + 1
+		PITCH = frame/SND_VAL1
+		SetPitch(0, PITCH)
+	endwhile
+	PLAYSOUND>ROCKET 1 1.0  0.0 0.0 0.0  NOPOSITION
+
+	while (frame < SND_VAL2)
+		frame = frame + 1
+	endwhile
+
+	while (frame < SND_VAL3)
+		frame = frame + 1
+		PITCH = PITCH - 0.005
+		VOLUME = VOLUME - 0.005
+		SetPitch (0, PITCH)
+		SetVolume(0, VOLUME)
+	endwhile
+
+	STAT>FINISHED
+ENDSTATE
+
+STATE FINISHED
+	MusicFade((1.0 - MUSVOL))
+  	Delete()
+ENDSTATE
+

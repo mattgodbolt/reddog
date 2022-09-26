@@ -1,0 +1,71 @@
+LOCALINT	objId
+LOCALFLOAT	tx
+LOCALFLOAT	ty
+LOCALFLOAT	tz
+LOCALFLOAT	px
+LOCALFLOAT	py
+LOCALFLOAT	pz
+LOCALFLOAT	rad
+
+DEFINE		SHOCK_THICKNESS	0.3
+
+STATE Init
+	MyFlag = MyFlag | ENEMY
+	objId = GetGlobalParamInt(0)
+	rad = GetGlobalParamFloat(0) * 0.5
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	LOOP (10)
+		StickToParent(objId, 0, 0, 0, 0)
+		SetGlobalParamFloat(0, 0.5)
+		SetGlobalParamFloat(1, 0.5)
+		SetGlobalParamFloat(2, 1.0)
+		SetGlobalParamFloat(3, 0.5)
+
+		SetGlobalParamFloat(4, 0.3)
+		SetGlobalParamFloat(5, 0.2)
+		SetGlobalParamFloat(6, 1.0)
+		SetGlobalParamFloat(7, 0.2)
+
+		SetGlobalParamInt(0, 1)
+		tx = RandRange(-rad, rad)
+		ty = RandRange(-rad, rad)
+		tz = RandRange(-rad, rad)
+		px = RandRange(-rad, rad)
+		py = RandRange(-rad, rad)
+		pz = RandRange(-rad, rad)
+		DrawShock(x + px, y + py, z + pz, x + tx, y + ty, z + tz, 1.0, SHOCK_THICKNESS, SHOCK_THICKNESS)
+		tx = RandRange(-rad, rad)
+		ty = RandRange(-rad, rad)
+		tz = RandRange(-rad, rad)
+		px = RandRange(-rad, rad)
+		py = RandRange(-rad, rad)
+		pz = RandRange(-rad, rad)
+		DrawShock(x + px, y + py, z + pz, x + tx, y + ty, z + tz, 1.0, SHOCK_THICKNESS, SHOCK_THICKNESS)
+		tx = RandRange(-rad, rad)
+		ty = RandRange(-rad, rad)
+		tz = RandRange(-rad, rad)
+		px = RandRange(-rad, rad)
+		py = RandRange(-rad, rad)
+		pz = RandRange(-rad, rad)
+		DrawShock(x + px, y + py, z + pz, x + tx, y + ty, z + tz, 1.0, SHOCK_THICKNESS, SHOCK_THICKNESS)
+		tx = RandRange(-rad, rad)
+		ty = RandRange(-rad, rad)
+		tz = RandRange(-rad, rad)
+		px = RandRange(-rad, rad)
+		py = RandRange(-rad, rad)
+		pz = RandRange(-rad, rad)
+		DrawShock(x + px, y + py, z + pz, x + tx, y + ty, z + tz, 1.0, SHOCK_THICKNESS, SHOCK_THICKNESS)
+		tx = RandRange(-rad, rad)
+		ty = RandRange(-rad, rad)
+		tz = RandRange(-rad, rad)
+		px = RandRange(-rad, rad)
+		py = RandRange(-rad, rad)
+		pz = RandRange(-rad, rad)
+		DrawShock(x + px, y + py, z + pz, x + tx, y + ty, z + tz, 1.0, SHOCK_THICKNESS, SHOCK_THICKNESS)
+		ClearGlobalParams()
+	ENDLOOP
+	Delete()
+ENDSTATE

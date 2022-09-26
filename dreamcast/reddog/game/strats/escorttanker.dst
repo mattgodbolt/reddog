@@ -1,0 +1,220 @@
+
+DEFINE MINSPEED 0.05
+LOCALINT	flashTime
+LOCALINT	doneit
+LOCALINT	reachedEnd
+LOCALINT	i
+
+LOCALFLOAT tempf
+LOCALFLOAT TOPSPEED 
+
+STATE AlertPlayer
+	PLAYSOUND>ALERT 1 1.0 0.0 0.0 0.0 NOPOSITION
+	TRIGFIN
+ENDTRIGGER
+
+STATE DIENOW
+	SetGlobalParamInt(0,1)
+	CREATE ESCORTTANKER 0,0,0,0,0,0,0
+	ClearGlobalParams()
+	MyFlag = MyFlag | NODISP
+	i = 0
+	WHILE (i < 1000)
+		i = i + 1
+	ENDWHILE
+	Delete()
+ENDSTATE
+ 
+STATE Init
+	TOPSPEED = 0.3
+	doneit = 0
+	reachedEnd = 0
+	IF (RestartSet = 4)
+		Delete()
+	ELSE
+		IF (GetGlobalParamInt(0))
+			STAT>TANKDIE
+		ENDIF
+
+
+		AllocStratSoundBlock(2)
+
+		SetFriction(1.0, 0.1, 0.05)
+		EscortTankerSpeed = 0.05
+		MyFlag = MyFlag | FRIENDLY | FLOORCOLL | STRATCOLL | GRAVITYON
+		MyFlag = MyFlag & LNOT(ENEMY)
+		MyFlag2 = MyFlag2 | ENEMY_CF | COLLMOVE 
+		//| HOLDPLAYER
+		RegisterCollision()
+		flashTime = 0
+		InitPath()
+		InitSplineData()
+		SetObjectShadowState(1)
+		IF (RestartSet = 2)
+			IF (PAL)
+				MoveAlongPath(665 * 0.833333)
+			ELSE
+				MoveAlongPath(665)
+			ENDIF
+		ENDIF
+		IF (RestartSet = 3)
+			IF (PAL)
+				MoveAlongPath(1000 * 0.83333)
+			ELSE
+				MoveAlongPath(1000)
+			ENDIF
+		ENDIF
+		SetGlobalParamInt(0, 100)
+		CREATE SPAWN_PointToTarget 0, 0, 0, 0, 0, 0, 0
+		SetGlobalParamInt(0, 0)
+		NoCollObject(2) 
+		InitHDC()
+		damage = 1.0
+		//IAmHoldPlayer()
+		CalculateStratPolyData(1)
+		health = 100.0
+		HideObject(1)
+		EscortTankerSpeed = 0
+		
+		IF ((RestartSet = 0) OR (RestartSet = 1))
+			WHILE (!PlayerNearActivationXY(0))
+				MyFlag = MyFlag
+			ENDWHILE
+		ENDIF
+		//MyFlag = MyFlag | FLOORCOLL | STRATCOLL | GRAVITYON
+		EscortTanker = Me
+		RotationRestriction(1.0, 1.0, 1.0)
+		PLAYSOUND>BOMBGRAVF 0 0.88 0.0 0.0 0.0 CONTINUOUS
+		TRIGSET>AlertPlayer WHENHIT
+		TRIGSET>SpeedControl EVERY 1
+		TRIGSET>DrawHealth EVERY 1
+		TRIGSET>DrawHealth WHENPAUSED
+		STAT> Start
+	ENDIF
+ENDSTATE 
+
+TRIGGER SpeedControl
+	TrigCheckMe()
+
+	IF (DogY > y + 50.0)
+		TOPSPEED = 0.5
+	ELSE
+		TOPSPEED = 0.3
+	ENDIF
+	IF (EnemyInFrontXY(10, 10, 2) OR PlayerInFrontXY(7, 7))
+		IF (EscortTankerSpeed >= 0.05)
+			EscortTankerSpeed = EscortTankerSpeed - 0.05
+		ELSE
+			EscortTankerSpeed = 0.0
+		ENDIF
+	ELSE		 
+		IF (EscortTankerSpeed <= TOPSPEED - 0.05)
+			EscortTankerSpeed = EscortTankerSpeed + 0.05
+		ELSE
+			EscortTankerSpeed = TOPSPEED
+		ENDIF
+	ENDIF
+
+	SetPitch(0, EscortTankerSpeed)
+
+	TRIGFIN
+ENDTRIGGER
+
+STATE Start
+	IF (!MoveAlongPathXY(EscortTankerSpeed))
+		STAT>DoYourThingBaby
+	ENDIF
+	IF (doneit = 0)
+		IF (!MyParentInvalid())
+			IF (MyParentFlag = 0)
+				doneit = 1
+			ENDIF
+		ENDIF
+	ENDIF
+	IF (doneit = 1)
+		IF (MyParent)
+			IF (!MyParentFlag)
+				IF (PAL)
+					tempf = (820 - y) * 0.83333
+					MoveAlongPath(tempf)
+				ELSE
+					MoveAlongPath(820 - y)
+				ENDIF
+				z = 55.0
+				ResetOCP()
+				doneit = 2
+			ENDIF
+		ENDIF
+	ENDIF
+	IF (EscortTankerSpeed >= 0.0)
+		FaceAlongDirXY(1)
+	ELSE
+		FaceAlongDirXY(-1)
+	ENDIF
+	CalculateStratPolyData(0)
+	//HoldPlayer()
+	IF (health <= 0.0)
+		STAT>Explode
+	ENDIF
+ENDSTATE
+
+LOCALFLOAT tempf2
+
+TRIGGER DrawHealth
+	IF (!reachedEnd)
+		IF (EscortTankerSpeed = 0.0)
+			IF (flashTime & 4)
+				DrawStratBar(0, health/100, 0, 1)
+			ELSE
+				DrawStratBar(0, health/100, 0.5, 1)
+			ENDIF
+			flashTime = flashTime + 1
+		ELSE
+			DrawStratBar(0, health/100, 0, 1)
+			flashTime = 0
+		ENDIF
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+STATE DoYourThingBaby
+	tempf = 0.0
+	MyFlag2 = MyFlag2 | SPECULAR
+	reachedEnd = 1
+	WHILE (1)
+		tempf = tempf + 0.1
+		tempf2 = Ssin(tempf)
+		IF (tempf2 < 0.0)
+			tempf2 = -tempf2
+		ENDIF
+		SetSpecularColour(0, tempf2,tempf2,tempf2)
+	ENDWHILE
+ENDSTATE
+
+STATE Explode
+	tempf = 0.0
+	SetGlobalParamInt(0, 1)
+	CREATE camTrack 5, 20, 10, 0, 0, 0, 0
+	SetGlobalParamInt(0, 0)
+	ChangeCamStrat()
+	MyFlag2 = MyFlag2 | SPECULAR
+	LOOP (90)
+		MyFlag = MyFlag
+		tempf = tempf + 0.1
+		tempf2 = Ssin(tempf)
+		IF (tempf2 < 0.0)
+			tempf2 = -tempf2
+		ENDIF
+		SetSpecularColour(0, tempf2,tempf2,tempf2)
+	ENDLOOP
+    STAT>DIENOW
+ENDSTATE
+
+
+STATE TANKDIE
+	Explosion(300.0, 50.0)
+	CREATE ENV_KillPlayerActivation 0, 0, 0, 0, 0, 0, 0
+	OBJECT>Misc\BrokenEscortTanker
+	EscortTanker = 0
+	DESTROYME SPAWN_EXPLODINGBITS
+ENDSTATE

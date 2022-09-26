@@ -1,0 +1,27 @@
+STATE Init
+	MyFlag = MyFlag | ENEMY | STRATCOLL
+	RegisterCollision()
+	InitHDC()
+	CalculateStratPolyData(1)
+	health = 30
+	STAT> Wait
+ENDSTATE
+
+STATE Wait
+	MyFlag = MyFlag
+	IF (NearPlayerXY(100.0))
+		IF (health <= 0.0)
+			STAT>Explode
+		ENDIF
+	ELSE
+		health = 30.0
+	ENDIF
+ENDSTATE
+
+STATE Explode
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+	TRIGSTOP
+	AddParentSem (0,1)
+	Score = Score + 500
+	Delete()
+ENDSTATE

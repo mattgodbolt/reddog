@@ -1,0 +1,245 @@
+Microsoft Developer Studio Workspace File, Format Version 6.00
+# WARNING: DO NOT EDIT OR DELETE THIS WORKSPACE FILE!
+
+###############################################################################
+
+Project: "Convert"=.\Convert\Convert.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    "$/RedDog/Convert", IWAAAAAA
+    .\convert
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "Final"=.\final\Final.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    "$/Dreamcast/RedDog/Final", QGCAAAAA
+    .\final
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "Game"=.\Game\Game.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    "$/Dreamcast/RedDog/Game", KBBAAAAA
+    .\game
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "GetGBIX"=.\GetGBIX\GetGBIX.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    "$/Dreamcast/RedDog/GetGBIX", XLCAAAAA
+    .\getgbix
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "IStrip"=.\IStrip\IStrip.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    "$/Dreamcast/RedDog/IStrip", TJCAAAAA
+    .\istrip
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "KLEDIT"=.\KLEDIT\KLEDIT.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    "$/KLEDIT", BPDAAAAA
+    .\KLEDIT
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "Known Bugs"=".\Known Bugs\Known Bugs.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    "$/Dreamcast/RedDog/Known Bugs", AICAAAAA
+    .\known bugs
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "RDEdit"=.\RDEdit\RDEdit.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    "$/Dreamcast/RedDog/RDEdit", QFBAAAAA
+    .\rdedit
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "Render"=.\Game\Render\Render.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    "$/Dreamcast/RedDog/Game/Render", JCBAAAAA
+    .\game\render
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "Stream"=.\Stream\Stream.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    "$/Dreamcast/RedDog/Stream", TVBAAAAA
+    .\stream
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "VMSGame"=.\VMSGame\VMSGame.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    "$/Dreamcast/RedDog/VMSGame", WKCAAAAA
+    .\vmsgame
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "VMStool"=.\VMStool\VMStool.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    "$/Dreamcast/RedDog/VMStool", XJCAAAAA
+    .\vmstool
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "Wadder"=.\Wadder\Wadder.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    "$/Dreamcast/RedDog/Wadder", UEBAAAAA
+    .\wadder
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "WhatFlag"=.\WhatFlag\WhatFlag.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    "$/RedDog/WhatFlag", MEDAAAAA
+    .\whatflag
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Global:
+
+Package=<5>
+{{{
+    begin source code control
+    "$/Dreamcast/RedDog", FBBAAAAA
+    .
+    end source code control
+}}}
+
+Package=<3>
+{{{
+}}}
+
+###############################################################################
+

@@ -1,0 +1,23 @@
+PARAMINT WaitTime 0
+LOCALINT Time
+STATE Init
+
+	Time = 0
+	STAT>Del
+	
+ENDSTATE
+
+STATE Del
+
+	WHILE (Time < WaitTime)
+		Time = Time + 1
+	ENDWHILE
+
+	WHILE (MyParentInvalid())
+		MyParent = MyParent
+	ENDWHILE
+	SetParentSem (0,1)
+
+	Delete ()
+
+ENDSTATE

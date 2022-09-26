@@ -1,0 +1,123 @@
+LOCALFLOAT length
+LOCALFLOAT tempf
+LOCALINT	side
+
+STATE Init
+	MyFlag = MyFlag | BULLETTYPE | FRIENDLY
+
+	side = GetGlobalParamInt(0)
+	SetGlobalParamInt(0, 0)
+	MyFlag = MyFlag | ENEMY
+	length = DistToAim(0)
+	OBJECT>Weapon\GunFlare
+	scalex = 6.0
+	scaley = 6.0
+	scalez = 6.0
+	tempf = RandRange(0.0, 1.0)
+	IF (tempf < 0.5)
+		HideObject(1)
+	ELSE
+		HideObject(2)
+	ENDIF
+
+	IF (length < 290)
+		IF (PlayerWeaponPower = 0)
+			//Params
+			SetGlobalParamInt(0, 1)
+			//Red
+			SetGlobalParamInt(1, 255)
+			//Green
+			SetGlobalParamInt(2, 255)
+			//Blue
+			SetGlobalParamInt(3, 0)
+			//frames
+			SetGlobalParamInt(4, 3)
+			//no sparks
+			SetGlobalParamInt(5, 10)
+			//spread
+			SetGlobalParamFloat(0, 6.3)
+			//speed
+			SetGlobalParamFloat(1, 1.0)
+			//delete
+			SetGlobalParamInt(6, 1)
+			CREATE ENV_Spark 0, length, 0, 0, 0, 0, 0
+			ClearGlobalParams()
+		ENDIF
+		IF (PlayerWeaponPower = 1)
+			//Params
+			SetGlobalParamInt(0, 1)
+			//Red
+			SetGlobalParamInt(1, 255)
+			//Green
+			SetGlobalParamInt(2, 255)
+			//Blue
+			SetGlobalParamInt(3, 0)
+			//frames
+			SetGlobalParamInt(4, 6)
+			//no sparks
+			SetGlobalParamInt(5, 10)
+			//spread
+			SetGlobalParamFloat(0, 6.3)
+			//speed
+			SetGlobalParamFloat(1, 1.0)
+			//delete
+			SetGlobalParamInt(6, 1)
+			CREATE ENV_Spark 0, length, 0, 0, 0, 0, 0
+			ClearGlobalParams()
+		ENDIF
+		IF (PlayerWeaponPower = 2)
+			//Params
+			SetGlobalParamInt(0, 1)
+			//Red
+			SetGlobalParamInt(1, 255)
+			//Green
+			SetGlobalParamInt(2, 255)
+			//Blue
+			SetGlobalParamInt(3, 0)
+			//frames
+			SetGlobalParamInt(4, 15)
+			//no sparks
+			SetGlobalParamInt(5, 10)
+			//spread
+			SetGlobalParamFloat(0, 6.3)
+			//speed
+			SetGlobalParamFloat(1, 1.0)
+			//delete
+			SetGlobalParamInt(6, 1)
+			CREATE ENV_Spark 0, length, 0, 0, 0, 0, 0
+			ClearGlobalParams()
+		ENDIF
+
+		SetGlobalParamInt(0, 1)
+		SetGlobalParamFloat (0, length)
+		DamageAim(0, 10)
+		SetGlobalParamFloat (0, 0.0)
+		SetGlobalParamInt(0, 0)
+		IF (!AimStrt)
+			tempf = RandRange(-PI, PI)
+			CheckX = RandRange(-0.3, 0.3)
+			CheckY = RandRange(-0.3, 0.3)
+			SetGlobalParamFloat(0, AimNormalX)
+			SetGlobalParamFloat(1, AimNormalY)
+			SetGlobalParamFloat(2, AimNormalZ)
+			SetGlobalParamInt(0, 1)
+			CREAIND SPAWN_GatlinGroundFlare AimPointX + CheckX, AimPointY + CheckY, AimPointZ, 0, 0, tempf
+			SetGlobalParamFloat(0, 0.0)
+			SetGlobalParamFloat(1, 0.0)
+			SetGlobalParamFloat(2, 0.0)
+		ENDIF
+	ENDIF
+
+	SetGlobalParamInt(0, side)
+	CREATE SPAWN_SHELL 0, -1.0, 0, 0, 0, 0, 0
+	SetGlobalParamInt(0, 0)
+	DrawVLine(length)
+	STAT>SetPos
+ENDSTATE 
+
+STATE SetPos
+	LOOP (2)
+		MyFlag = MyFlag
+	ENDLOOP
+	Delete()
+ENDSTATE

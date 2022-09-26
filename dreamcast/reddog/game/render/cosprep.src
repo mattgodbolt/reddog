@@ -1,0 +1,224 @@
+; COSprep.src
+; Completely OnScreen preparation routines
+				.CPU			SH4
+				.OUTPUT			DBG=DWARF
+				.SECTION		COSPREP, CODE, ALIGN=4
+				.INCLUDE		"..\RedDog.pre"
+
+; Perspectivize a set of vertices
+; Prototype: void rPrepCOSVertices (PrepVtx *dest, Point3 *src, int numVerts)
+; R4 -> destination of prepared vertices
+; R5 -> Directional light vector
+; R6 -> Point position source
+; R7 -> Point normal source#
+; @R15> numVerts (moved to R3 soon enough)
+
+outcode:		.REG		R2
+dest:			.REG		R4
+src:			.REG		R5
+numVerts:		.REG		R6
+ocIt:			.REG		R7
+
+				DEC_XYZW	point,0,1,2,3
+rW:				.FREG		FR4
+xSize:			.FREG		FR5
+ySize:			.FREG		FR6
+
+; Globals/registers
+; XMTRX == model to view matrix
+; pViewSize == size of the viewport
+				.EXPORT			_rPrepCOSVertices
+_rPrepCOSVertices:
+				; First, load in the view size into float registers
+				MOV.L	#a_pViewSize, R0
+				MOV.L	@R0, R0
+				FMOV.S	@R0+, xSize			; FR5 == xSize
+				MOV		dest, ocIt
+				FMOV.S	@R0+, ySize			; FR6 == ySize
+				MOV		dest, R2
+
+				; Get the store queue address
+				MOV.L	#H'03ffffff, R1
+				FLDI0	FR7
+				AND		R1, dest
+				MOV.L	#H'e0000000, R0
+				FLDI1	FR8
+				OR		R0, dest			; dest now points at the store queue
+				SHLR16	R2
+				MOV.L	#H'ff000038, R1
+				SHLR8	R2
+				MOV		R2, @R1
+				ADD		#4, R1
+				MOV		R2, @R1
+
+				MOV		#0, outcode
+
+loop: 
+				; Read the vertex into FV0
+				FMOV.S	@src+, pointX
+				FLDI1	pointW
+
+				FMOV.S	@src+, pointY
+
+				FMOV.S	@src+, pointZ	; now FV0 is the point position { x, y, z, 1 }
+				FLDI1	rW				; get ready for the 1/
+
+				FTRV	XMTRX, point	; Transform the point
+				
+				OCBI	@ocIt
+				ADD		#32, ocIt
+				OCBI	@ocIt
+				ADD		#32, ocIt
+				PREF	@src
+
+				ADD		#64, dest		; point at the end
+				FMOV.S	FR7, @-dest
+				FMOV.S	FR7, @-dest
+				FMOV.S	FR7, @-dest
+				FMOV.S	FR7, @-dest
+				ADD		#-12, dest
+				FMOV.S	FR8, @-dest
+				PREF	@dest
+				ADD		#16-32, dest	; rewind a bit
+
+				MOV.L	outcode, @-dest
+
+				FMOV.S	pointZ, @-dest	; store Z position
+				FMOV.S	pointY, @-dest	; store Y position
+				FDIV	pointW, rW		; FR4 = 1/w
+				FMOV.S	pointX, @-dest	; store X position
+
+				ADD		#16+12, dest
+				FMUL	rW, pointY
+				FMUL	rW, pointX
+
+				FADD	ySize, pointY
+				FMOV.S	FR4, @-dest		; store rW
+				FADD	xSize, pointX
+
+				FMOV.S	pointY, @-dest	; store y
+				DT		numVerts
+				FMOV.S	pointX, @-dest	; store x
+
+				PREF	@dest			; blast it through
+
+				BF/S	loop
+				ADD		#32+16, dest		; move to next destination
+
+
+				; Clean up and return
+endRoutine:
+				; And return
+				RTS
+				NOP
+
+; ************************************************************************
+; Prepares the environment map UVs
+; ************************************************************************
+				.EXPORT	_rPrepEMapVertices
+; prototype: void rPrepEMapVertices (Point3 *points, Vector3 *normals, UV *output, int nVerts,
+;									 float eX, float eY, float eZ);
+; modelToView must be in XMTRX
+points:			.REG	R4
+normals:		.REG	R5
+output:			.REG	R6
+nVerts:			.REG	R7
+
+				DEC_XYZW p, 0, 1, 2, 3
+				DEC_XYZW e, 4, 5, 6, 7
+				DEC_XYZW n, 8, 9, 10, 11
+half:			.FREG	FR12
+a_half:			.FDATA	F'0.5
+_rPrepEMapVertices:
+				FPUSH	FR12
+
+				; Load in the point
+				FMOV.S	@points+, pX
+
+				MOV.L	#a_half, R0
+				FMOV.S	@R0, FR12
+
+				FMOV.S	@points+, pY
+
+				FMOV.S	@points+, pZ
+?loop			FLDI0	eW					; load 0 into eW ready for the FIPR
+
+				; Load in the normal, and calculate <E>
+				FMOV.S	@normals+, nX
+				FSUB	eX, pX
+
+				FMOV.S	@normals+, nY
+				FSUB	eY, pY
+
+				FMOV.S	@normals+, nZ
+				FSUB	eZ, pZ				; p is now in eye-space
+
+				FIPR	p, p				; pW is now the magnitude of vector p
+
+				FSRRA	pW					; Get 1 / pW
+
+				FMUL	pW, pX				; scale pX
+				FLDI0	nW					; zero nW ready for the inner product
+
+				FMUL	pW, pY				; scale pY
+
+				FMUL	pW, pZ				; scale pZ
+
+				FLDI0	pW					; zero pW ready for inner product
+
+				FIPR	n, p				; now pW is <N> . <E>
+
+				FSUB	pX, nX				; nX = nX - pX
+
+				FSUB	pY, nY				; nY = nY - pY
+
+				FSUB	pZ, nZ				; nZ = nZ - pY
+
+				FADD	pW, pW				; pW = 2 . (<N> . <E>)
+				FLDI1	nW					; get 1 into nW ready for the transform
+
+				FMUL	pW, nX
+
+				FMUL	pW, nY
+
+				FMUL	pW, nZ				; now N = 2 . (<N> . <E>) * (<N> - <E>)
+				FMOV.S	@points+, pX		; get next X
+
+				FTRV	XMTRX, n			; n is now in world space
+				FMOV.S	@points+, pY		; get next Y
+
+				FLDI0	nW					; get ready for the last inner product
+				FMOV.S	@points+, pZ		; get next Z
+
+				FIPR	n, n				; nW is now the magnitude of the reflected vector
+
+				FSRRA	nW
+		
+				FMUL	nW, nX				; nX is now the U value
+
+				FMUL	nW, nY				; nY is the V value
+				DT		nVerts
+
+				FMUL	half, nX
+
+				FMUL	half, nY
+
+				FADD	half, nX
+
+				FADD	half, nY
+
+				FMOV.S	nX, @output
+				ADD		#4, output
+
+				FMOV.S	nY, @output
+				BF/S	?loop
+				ADD		#4, output
+
+				RTS
+				FPOP	FR12
+
+; Imports
+				.SECTION		DATA
+				.IMPORT			_pViewMidPoint
+a_pViewSize		.DATA.L			_pViewMidPoint
+				.END

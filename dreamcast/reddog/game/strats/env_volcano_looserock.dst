@@ -1,0 +1,44 @@
+// Sits around waiting for a signal from its parent to randomly spawn falling rocks
+
+STATE Init
+	IF (!MyParent)
+		STAT>DIE
+	ENDIF
+	WHILE (MyParentInvalid())
+		MyFlag = MyFlag
+	ENDWHILE
+	TRIGSET>CheckParent EVERY 1
+//	AllocStratSoundBlock(1)
+//	SetAudibleRange(0, 20, 50)
+	STAT>Main
+ENDSTATE
+
+STATE DIE
+	Delete()
+ENDSTATE
+
+STATE Main
+	IF (MyParent)
+		IF (ParentVar)
+			IF (RandRange(0.0, 1.0) > 0.97)
+//				PLAYSOUND>ROCKFALL 0 1.0 0.0 0.0 0.0 (REDUCEMULTI | RANDOM)
+				CREATE SPAWN_Volcano_LooseRock 0,0,0, 0,0,0, 0
+				STAT>Wait
+			ENDIF
+		ENDIF
+	ENDIF
+ENDSTATE
+
+TRIGGER CheckParent
+	IF (!MyParentFlag)
+		Delete()
+	ELSE
+		TRIGFIN
+	ENDIF
+ENDTRIGGER
+
+STATE Wait
+	IF (!ParentVar)
+		STAT>Main
+	ENDIF
+ENDSTATE

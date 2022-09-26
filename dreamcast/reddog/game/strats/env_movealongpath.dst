@@ -1,0 +1,19 @@
+PARAMFLOAT	speed 1.0
+
+STATE Init
+	IF (!(MyFlag & OWNFPARAMS))
+		speed = 1.0
+	ENDIF
+	InitPath()
+	InitSplineData()
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	IF (LastWay())
+		Delete()
+	ELSE
+		MoveAlongPath(speed)
+	ENDIF
+ENDSTATE
+	

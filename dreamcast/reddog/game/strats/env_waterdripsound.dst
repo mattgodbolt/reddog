@@ -1,0 +1,46 @@
+// Env_WaterDripSound - plays random drip sounds
+
+LOCALINT randval
+
+STATE Init
+	IF (!HasActivation(0))
+		STAT>Die
+	ENDIF
+
+	AllocStratSoundBlock(1)
+	SetAudibleRange(0, 20, 100)
+
+	STAT>Main
+ENDSTATE
+
+STATE Die
+	Delete()
+ENDSTATE
+
+STATE Main
+	IF (MyParent)
+		IF (ParentVar)
+			randval = RandRange(0, 5)
+			IF (randval = 0)
+				PLAYSOUND>DRIPS1 0 1.0 0.0 0.0 0.0 (RANDOM)
+			ENDIF
+			IF (randval = 1)
+				PLAYSOUND>DRIPS2 0 1.0 0.0 0.0 0.0 (RANDOM)
+			ENDIF
+			IF (randval = 2)
+				PLAYSOUND>DRIPS3 0 1.0 0.0 0.0 0.0 (RANDOM)
+			ENDIF
+			IF (randval = 3)
+				PLAYSOUND>DRIPS4 0 1.0 0.0 0.0 0.0 (RANDOM)
+			ENDIF
+			IF (randval = 4)
+				PLAYSOUND>DRIPS5 0 1.0 0.0 0.0 0.0 (RANDOM)
+			ENDIF
+			IF (randval = 5)
+				PLAYSOUND>DRIPS6 0 1.0 0.0 0.0 0.0 (RANDOM)
+			ENDIF
+			STAT>Wait
+		ENDIF
+	ENDIF
+ENDSTATE
+

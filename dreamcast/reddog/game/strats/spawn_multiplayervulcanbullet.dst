@@ -1,0 +1,83 @@
+DEFINE		VULCAN					2
+LOCALFLOAT	Temp
+
+STATE Init
+	MakeMeTheLast()
+  	MyFlag = MyFlag | RELVELCALC | FLOORCOLL | STRATCOLL | FRIENDLY | NOTEXPLODE | BULLETTYPE | DIRECTMOVE
+	MyFlag2 = MyFlag2 | BULLET_CF
+	RegisterCollision()
+	SetFriction(0.0, 0.0, 0.0)
+	damage = 10.0
+   	TRIGSET>KillOff			WHENHIT
+	TRIGSET>KillOffFloor	ONFLOOR
+	
+	MyVar = GetParentPlayerNumber()
+	OBJECT> WEAPON\REDDOGLASER
+	ResetOCP()
+	MoveY(8.0)
+	TRIGSET>Remove	EVERY 30
+ 	
+	
+	// Record those collisions
+	RecordCollision(0)
+
+	IF ((PlayerState = PS_ONTRAIN) OR (PlayerState = PS_TOWERLIFT) OR (PlayerState = PS_WATERSLIDE))
+	//DELAY NEEDED ON TRAIN
+   
+   		LOOP (2)
+			MyFlag = MyFlag
+		ENDLOOP
+	ENDIF
+
+	STAT>SetPos
+ENDSTATE 
+
+STATE SetPos
+   	IF ((PlayerState = PS_ONTRAIN) OR (PlayerState = PS_TOWERLIFT) OR (PlayerState = PS_WATERSLIDE))
+   	 	x = x + PlayerActVelX
+   	 	y = y + PlayerActVelY
+   	 	z = z + PlayerActVelZ
+   	ENDIF
+
+	IF (UnderWater)
+		SubParentSem(0, 1)
+		Delete()
+	ENDIF
+ENDSTATE
+
+STATE KillOff
+   	SubParentSem(0, 1)
+	Delete()
+  //	TRIGSTOP
+ENDSTATE
+
+STATE ResetColl
+	TRIGSET>Remove EVERY 90
+	TRIGSET>KillOff WHENHIT
+	TRIGSTOP
+ENDSTATE
+
+STATE KillOffFloor
+	IF (PlayerState = PS_ONTRAIN)
+		MyVar = 0.0
+		CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+	ENDIF
+
+	Temp = RandRange(0, 1.99)
+	IF (!(MyFlag2 & HITHDC))
+		IF (!(PolyType & NODECAL))
+			AddDecal(0, Temp, 0.5, 0.5, 0.2, 0.2, 0.2)
+		ENDIF
+	ENDIF
+	MoveBackOneFrame()
+	SubParentSem(0, 1)
+	Delete()
+  //	TRIGSTOP
+ENDSTATE
+
+STATE Remove
+	SubParentSem(0, 1)
+	Delete()
+ //	TRIGSTOP
+ENDSTATE
+

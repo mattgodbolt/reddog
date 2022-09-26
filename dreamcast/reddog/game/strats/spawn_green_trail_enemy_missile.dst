@@ -1,0 +1,81 @@
+LOCALINT trail
+LOCALFLOAT tempf
+
+
+DEFINE size 0.5
+
+TRIGGER CleanUp
+  	DeleteBand (trail)
+ENDTRIGGER
+
+STATE Init
+	MyFlag = MyFlag | FLOORCOLL | DELETECALLBACK | STRATCOLL | ENEMY | NOTEXPLODE |  BULLETTYPE | LOWCOLL
+	MyFlag2 = MyFlag2 | BULLET_CF
+   	SetFriction(0.0,0.0,0.0)
+	OBJECT> WEAPON\EnergyBall
+	RegisterCollision()
+	AllocStratSoundBlock(1)
+	TRIGSET>StratHit		WHENHIT
+	TRIGSET>KillOffFloor	ONFLOOR
+	TRIGSET>KillOffFloor	EVERY 100
+	TRIGSET>CleanUp WHENDELETED
+	damage = 10.0
+	trail = CreateBand (1, 16, 0, 1, 0, 1, 0, 1, 0, 0, 0)
+	SetBandRotXYZandScaling (trail, 0, 0, 0, 0.95, 0.95, 0.95)
+	AddBandSegment (trail, 0.0, 0, 0, size)
+	AddBandSegment (trail, 0.0, 0, 0, size)
+	TRIGSET>Trailer EVERY 1
+	TRIGSET>BandTrigger EVERY 2
+	MoveY(2.0)
+	//PointTo(DogX, DogY, DogZ)
+	STAT>Start
+ENDSTATE 
+
+STATE BandTrigger
+	tempf = RandRange(size - 0.4, size + 0.4)
+	AddBandSegment (trail, 0.0, 0, 0, tempf)
+	TRIGFIN
+ENDSTATE
+
+STATE Trailer
+	tempf = RandRange(size - 0.4, size + 0.4)
+	RubberBand (trail, 0.0, 0, 0, tempf)
+	TRIGFIN
+ENDSTATE
+
+STATE Start
+	RelRotateY(0.5)
+ENDSTATE
+
+STATE KillOff
+	MyFlag = MyFlag | NODISP  
+	MyFlag = MyFlag & LNOT(STRATCOLL)
+//	DeleteBand (trail)
+	MyVar = 8.0
+	CREATE SPAWN_BLASTEXP 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0
+	Delete()
+//	TRIGSTOP
+ENDSTATE
+
+STATE KillOffFloor
+//	DeleteBand (trail)
+	MyVar = 8.0
+	CREATE SPAWN_BLASTEXP 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0
+	Delete()
+//	TRIGSTOP
+ENDSTATE
+
+Trigger StratHit
+	IF (CollWith = PlayerShieldStrat(0))
+		PLAYSOUND>DAMAGE3 0 1.0  0.0 0.0 0.0  RANDOM
+		MyFlag = MyFlag | FRIENDLY
+		BounceOffShield(0)
+		TRIGFIN
+	ELSE
+		MyVar = 10.0
+		CREATE SPAWN_BLASTEXP 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0
+ //		DeleteBand (trail)
+		Delete()
+//		TRIGSTOP
+	ENDIF
+ENDTRIGGER

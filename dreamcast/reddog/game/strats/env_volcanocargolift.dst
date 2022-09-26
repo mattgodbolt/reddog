@@ -1,0 +1,48 @@
+PARAMINT WaitTime 0
+
+LOCALINT DoorTime
+
+STATE Init
+	MyFlag = MyFlag | ENEMY | STRATCOLL | LOWCOLL
+	RegisterCollision()
+	InitHDC()
+	DoorTime = 0
+	STAT> WaitForOpen
+ENDSTATE
+
+STATE WaitForOpen
+
+	CalculateStratPolyData(1)
+	IF PlayerNearActivationXY(0)
+		STAT>OpenDoor
+	ENDIF
+
+ENDSTATE
+
+STATE OpenDoor
+	WHILE (DoorTime < WaitTime)
+		DoorTime = DoorTime + 1
+	ENDWHILE
+
+//rotate door to the open state
+
+	LOOP (78)
+		RelRotateY(0.02)
+	ENDLOOP
+
+//lower doors into the ground
+
+	DoorTime = 0
+	WHILE (DoorTime < 43)
+		z = z - 0.2
+		CalculateStratPolyData(0)
+		DoorTime = DoorTime + 1
+	ENDWHILE
+	KillMyVelocity()
+	CalculateStratPolyData(1)
+	DoorTime = 0
+	STAT>Finish
+ENDSTATE
+
+STATE Finish
+ENDSTATE

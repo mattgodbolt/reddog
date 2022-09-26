@@ -1,0 +1,230 @@
+//PAL FRIENDLY
+// Hydro Boss Missile A
+// Flies upwards under the influence of gravity
+// Blows up after a few frames, which is nice
+// Leaves some nasty Missile B boys to come hassle the player
+
+LOCALINT Life
+LOCALINT innerBand
+LOCALINT outerBand
+LOCALINT ONESEC			
+
+
+
+
+STATE Init
+	IF (PAL)
+		ONESEC = 25
+	ELSE
+		ONESEC = 30
+	ENDIF
+
+	//lightID = -1
+   	absspeedx = parentabsspeedx
+	absspeedy = parentabsspeedy
+	absspeedz = parentabsspeedz
+
+	// Firstly set up the object used
+	OBJECT>BOSSES\HYDROBOSS\HYDROMISSILEB
+   //	MyFlag = MyFlag | DELETECALLBACK | RELVELCALC | FLOORCOLL | STRATCOLL | ENEMY | LOWCOLL 
+	MyFlag = MyFlag | RELVELCALC | FLOORCOLL | STRATCOLL | ENEMY | LOWCOLL 	| TARGETABLE
+	
+   	SetFriction(0.1,0.1,0.1)
+	RegisterCollision()
+
+	AllocStratSoundBlock(2)
+
+   	damage = 7.5
+
+	//TRIGSET>Test WHENDELETED
+  //	innerBand = -1
+
+
+ 	LOOP (ONESEC)
+		IF (MyVar < 0.15)
+			IF (PAL)
+				MyVar = MyVar + 0.05
+			ELSE
+				MyVar = MyVar + 0.05 * 1.2
+			ENDIF
+		ENDIF
+		MoveY(MyVar)
+	ENDLOOP
+
+  	TRIGSET>KillOff	ONFLOOR
+   	TRIGSET>KillOff	WHENHIT
+   	TRIGSET>KillOff	EVERY 150
+	innerBand = CreateBand (1, 5, 0, 1, 1, 0.5, 0.5, 0.4, 0.5, 0, 0)
+	outerBand = CreateBand (1, 10, 0, 1, 1, 0, 0, 0.4, 0, 0, 0)
+	
+	AddBandSegment (innerBand, 0, 0, 0, 0.5)
+	AddBandSegment (outerBand, 0, 0, 0, 1.2)
+	TRIGSET>BandAction EVERY 1
+
+	ang = (TWOPI/360.0) * 22.5
+   
+	PLAYSOUND>ROCKETFLY_CUT 0 0.9 0.0 0.0 0.0 CONTINUOUS
+
+	STAT>Start
+
+ENDSTATE
+
+
+STATE Start
+
+	MoveY(MyVar)
+	TowardPlayer(0.5,0.5)
+	IF (SeePlayerZ(ang))
+	 	PointPlayer()
+		MyFlag = MyFlag | DIRECTMOVE | TARGETABLE
+	  //	StopSound(0,0)
+  	STAT>Commit 
+	ENDIF
+ENDSTATE
+
+
+STATE Commit
+	IF (!SeePlayerZ(TWOPI/90.0))
+	   PASSEDBY = 1
+	ENDIF
+	IF (!PASSEDBY)
+		TowardPlayer(TWOPI,TWOPI)
+	ENDIF
+	MoveY(0.2)
+	IF (z < (DogZ  - 3.0))
+		STAT>KillOff
+	ENDIF
+
+ENDSTATE
+
+//LOCALFLOAT DAMP
+LOCALFLOAT TOTX
+LOCALFLOAT TOTY
+
+
+
+STATE Fly
+
+	CheckX = BossX
+	CheckY = BossY
+	CheckZ = BossZ
+
+  	IF (SeeWay(TWOPI/360.0 * 15.0))
+  		SetFriction(0,0,0)
+  	 	MyVar = 1.0
+  	ENDIF
+  
+  	IF ((!MyVar) AND (frame < 6.0))
+		frame = frame + 1.0
+   	RelRotateZ(-SmoothJoyX * 0.05)
+	
+	TOTX = 3.0 * SmoothJoyX
+	TOTY = 3.0 * SmoothJoyY
+	ENDIF
+	MoveY(0.2)
+ENDSTATE
+
+
+TRIGGER KillOff
+		IF (CollWith = PlayerShieldStrat(0))
+			Score = Score + 25.0
+			PLAYSOUND>DAMAGE3 1 1.0 0.0 0.0 0.0 0
+			MyFlag = MyFlag | FRIENDLY | DIRECTMOVE
+	   	BounceOffShield(0)
+	   	PlayerShieldEnergy = PlayerShieldEnergy - 0.04
+		CollWith = 0
+		CheckX = 0
+		CheckY = 0
+		frame = 0
+		MyVar = 0
+	   	damage = 7.0
+		SetCheckPosRel(0,0,1000.0,0)
+  	   //	DAMP = 1.0
+		TRIGKILL>BandAction EVERY 1
+		TRIGSET>BandAction EVERY 2
+		TRIGKILL>KillOff EVERY 150
+	   	TRIGSET>KillOff EVERY 150
+		TRIGRESET
+		TRIGSTOP
+		STAT>Fly
+
+	ELSE
+		TRIGRESET
+		TRIGSTOP
+		STAT>DIE
+	ENDIF
+ENDTRIGGER
+
+//LOCALINT DEAD
+LOCALINT add
+
+STATE DIE
+  //	IF (!DEAD)
+  //		DEAD = 1
+  //	ELSE
+  //		DEAD = DEAD
+  //	ENDIF
+	IF (CollWith = BossStrat)
+		MyVar = RandRange(10.0,20.0)
+		add = TOINT(MyVar)
+
+		add = add * 10
+
+		Score = Score + add
+		MyVar = 2.0
+		CREATE SPAWN_ENEMYDEBRIS 0, 0, 0, 0, 0, 0, 0
+	ELSE
+		MyVar = 0.0
+
+	ENDIF
+	//	IF (innerBand = -1)
+	//		MyFlag = MyFlag
+	//	ENDIF
+
+		MyFlag = MyFlag & LNOT(STRATCOLL)
+		 PLAYSOUND>EX_HEAVY_IMPACT2 1 1.0 0.0 0.0 0.0 0
+		CREATE SPAWN_BlastExp 0,0,0, 0,0,0, 0
+		DeleteBand (innerBand)
+		DeleteBand (outerBand)
+		innerBand = outerBand = -1
+		DESTROYME SPAWN_ExplodingBits
+
+
+ENDSTATE
+
+
+LOCALFLOAT ang
+
+
+LOCALINT MODE
+LOCALINT PASSEDBY
+
+TRIGGER BandAction
+ 	IF (MODE)
+		AddBandSegment (innerBand, 0, 0, 0, 0.5)
+		AddBandSegment (outerBand, 0, 0, 0, 1.2)
+	ELSE
+ 		RubberBand (innerBand, 0, 0, 0, 0.5)
+ 		RubberBand (outerBand, 0, 0, 0, 1.2)
+ 	ENDIF
+	MODE = !MODE
+ 	TRIGFIN
+ENDTRIGGER
+
+TRIGGER BandAction2
+ 		RubberBand (innerBand, 0, 0, 0, 0.5)
+ 		RubberBand (outerBand, 0, 0, 0, 1.2)
+ 	TRIGFIN
+ENDTRIGGER
+
+
+
+//TRIGGER BlowUp
+//	Score = Score + 1000
+//	PLAYSOUND>EX_HEAVY_IMPACT2 0 1.0 0.0 0.0 0.0 0
+//	CREATE SPAWN_BlastExp 0,0,0, 0,0,0, 0
+//	DeleteBand (innerBand)
+//	DeleteBand (outerBand)
+//	Delete()
+//	TRIGSTOP
+//ENDTRIGGER

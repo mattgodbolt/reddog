@@ -1,0 +1,491 @@
+//ANIM PLAYER
+//NEEDS AN ATTACHED .RDO FROM MAX
+//TO PLAY A CUTSCENE ANIM
+
+//OPTIONAL MAX PARENT ATTACHED TO A CAMTRACK STRAT
+//ACTIVATION 0 POINT IN WHICH PLAYER MUST MOVE BEFORE ANIM STARTS
+//ACTIVATION 1 OPTIONAL POSITION TO HOLD THE PLAYER IF NEEDED
+//ACTIVATION 2 OPTIONAL POSITION IN WHICH TO FACE THE PLAYER IN X AND Y
+
+
+//PARAMINT 0 - INTERACTIVE OR NOT, IE: CAN THE PLAYER DRIVE ONTO IT
+//PARAMINT 1 - WHETHER IT DELETES OR REPEATS
+//PARAMINT 2 - WHETHER OR NOT IT HOLDS THE PLAYER
+//PARAMINT 3 - 
+//PARAMINT 4 - 
+//PARAMINT 5 - INDICATE THAT THE CAMERA WILL BE LOOKING AT THIS STRAT
+//PARAMINT 6 - ID OF OBJECT WHICH THE CAMERA POSITION GOES TO 
+//PARAMINT 7 - ID OF OBJECT WHICH THE CAMERA WILL LOOK AT
+
+PARAMINT PlayerInteract 0
+PARAMINT RepeatMe		0
+PARAMINT HoldPlay		0
+PARAMINT DelayTime		0
+PARAMINT InvisibleDelay 0
+PARAMINT DoNotDelete	0
+PARAMINT IncludeCamera  0
+PARAMINT CamPosId		0
+PARAMINT CamLookPosId	0
+PARAMINT NoFade			0
+PARAMINT OnDeath		0
+PARAMINT Health			0
+PARAMINT ActivateOnParentDeath	0
+PARAMINT ChangeCamera	1
+PARAMINT FadeThenDie	1
+PARAMINT HideObject1	0
+PARAMINT HideObject2	0
+PARAMINT HideObject3	0
+PARAMINT UnHideObjectActive	0
+PARAMINT HidePlayer		0
+PARAMINT HideObjectEnd	0
+PARAMINT RunOnce		0
+PARAMINT VisBitClear	0
+PARAMINT FadeAfter		0
+PARAMINT LowColl		0
+PARAMINT PlayerDamage	1
+PARAMINT SparkID		0
+PARAMINT CamColl		1
+PARAMINT ShadowMan      0
+PARAMINT PlayerNoControl 0
+PARAMINT FadeCrazy		0
+
+PARAMFLOAT BoostAmbient	0.0
+
+LOCALFLOAT STOPX
+LOCALFLOAT STOPY
+LOCALFLOAT OldPlayerHealth
+LOCALINT   lightID
+
+
+TRIGGER CleanUp
+	//ENSURE THE PLAYER IS RELEASED
+  	IF (HoldPlay)
+  		PlayerHeld = 0
+  		PlayerState = PS_NORMAL
+  	ENDIF
+	// Put the ambience back
+	BoostAmbient = - BoostAmbient
+	AdjustAmbient (BoostAmbient)
+	//CLEAN CAMERAS
+	IF (!DoNotDelete)
+	IF ((MyParent) AND (!(MyParentInvalid())))
+	 	ChangeCam(0,0)
+		DeleteMyParent() 
+	ENDIF
+	ENDIF
+	IF (lightID != -1)
+		RemoveLight (lightID)
+	ENDIF
+ENDTRIGGER
+
+TRIGGER Always
+	IF (MyAnimFlag & RUNNING)
+		PlayerHealth = OldPlayerHealth
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+LOCALINT	runTime
+
+STATE Init
+	//MakeMeTheLast()
+
+	lightID = -1
+	
+	//ENSURE WE HAVE A PNODE TO USE
+	IF (!PNode)
+		STAT>Die
+	ENDIF
+
+	runTime = 0
+	IF (!(MyFlag & OWNFPARAMS))
+		BoostAmbient = 0
+	ENDIF
+	IF (!(MyFlag2 & OWNIPARAMS))
+		PlayerInteract = 0
+		RepeatMe = 0
+		HoldPlay = 0
+		DelayTime = 0
+		DoNotDelete = 0
+		IncludeCamera = 0
+		CamPosId = 0
+		CamLookPosId = 0
+		NoFade = 0
+		InvisibleDelay = 0
+		OnDeath = 0
+		Health = 0
+		ActivateOnParentDeath = 0
+		ChangeCamera = 1
+		FadeThenDie = 1
+		HideObject1 = 0
+		HideObject2 = 0
+		HideObject3 = 0
+		UnHideObjectActive = 0
+		HidePlayer = 0
+		HideObjectEnd = 0
+		RunOnce = 0
+		FadeAfter = 0
+		LowColl = 0
+		PlayerDamage = 1
+		CamColl = 1
+		PlayerNoControl = 0
+		FadeCrazy = 0
+		ShadowMan = 0
+	ENDIF
+
+	IF (ShadowMan)
+		SetObjectShadowState(1)
+	ENDIF
+
+	IF (PAL)
+		IF (FadeCrazy > 0)
+			FadeCrazy = FadeCrazy / 1.2
+		ENDIF
+	ENDIF
+
+	IF (CamColl = 0)
+		StrtNoCamColl()
+	ENDIF
+  //	IF (RunOnce)
+  //	 	TRIGSET>CleanUp WHENDELETED
+  //		MyFlag = MyFlag | RUNONCE 
+  //	ENDIF
+
+	health = Health
+
+	IF (HideObject1 != 0)
+		HideObject(HideObject1)
+	ENDIF
+	IF (HideObject2 != 0)
+		HideObject(HideObject2)
+	ENDIF
+	IF (HideObject3 != 0)
+		HideObject(HideObject3)
+	ENDIF
+
+	IF (NoFade = 1)
+		StrtNoFade()
+	ENDIF
+
+	IF (InvisibleDelay = 1)
+		MyFlag = MyFlag | NODISP
+	ENDIF
+
+	IF (ActivateOnParentDeath = 1)
+		WHILE (MyParentInvalid())
+			MyFlag = MyFlag
+		ENDWHILE
+		WHILE (MyParentFlag != 0)
+			MyFlag = MyFlag
+		ENDWHILE
+	ENDIF
+
+	MyVar = DelayTime
+	IF (PAL)
+		MyVar = MyVar / 1.2
+	ENDIF
+
+	WHILE (MyVar > 0)
+		MyVar = MyVar - 1.0
+	ENDWHILE
+
+	MyFlag = MyFlag & LNOT(NODISP)
+ 
+	// Adjust the ambience
+	AdjustAmbient (BoostAmbient)
+
+	//SET UP FLOOR COLLISIONS, IF NEEDED
+	IF (PlayerInteract)
+		MyFlag = MyFlag | STRATCOLL
+		IF (LowColl)
+			MyFlag = MyFlag | NOMOVE | LOWCOLL
+		ELSE
+			InitHDC()
+			CalculateStratPolyData(1)
+		ENDIF
+		RegisterCollision()
+	ENDIF
+
+	//AWAIT PLAYER ACTIVATION, IF NEEDED
+
+	IF (OnDeath = 1)
+		WHILE (health > 0)
+			MyFlag = MyFlag
+		ENDWHILE
+		Score = Score + 50
+	ENDIF
+
+	IF (HasActivation(0))
+		WHILE (!(PlayerNearActivationXY(0)))
+			MyFlag = MyFlag
+		ENDWHILE  
+	ENDIF
+
+  	IF (RunOnce)
+		//set the appropriate game map field
+		UpdateGameMapEntry()
+  	 	TRIGSET>CleanUp WHENDELETED
+		MyFlag = MyFlag | DELETECALLBACK
+  		MyFlag = MyFlag | RUNONCE 
+  	ENDIF
+
+	IF (HasActivation(1))
+		LOOP (1)
+			MyFlag = MyFlag
+		ENDLOOP
+
+		GetActivationPos(1)
+		STOPX = CheckX
+		STOPY = CheckY
+		DogZ = CheckZ
+	ELSE
+		STOPX = DogX
+		STOPY = DogY
+	ENDIF
+   
+	IF (ActivateOnParentDeath = 0)
+   		IF (MyParent)
+			
+			WHILE ((!Camera))
+				MyFlag = MyFlag
+			ENDWHILE
+
+			WHILE (MyParentInvalid())
+				MyParent = MyParent
+			ENDWHILE
+
+			//need to look at this
+			MyTarget = MyParent
+			IF (MyParentParent)
+				MyParent = MyParentParent
+				WHILE (MyParentInvalid())
+					MyParent = MyTargetParent
+				ENDWHILE
+				MyParent = MyTarget
+
+			ENDIF
+			
+			
+			
+		
+		ENDIF
+	ENDIF
+	
+	//SET VIS BITS MASK FOR SCENE HIDING
+	IF (VisBitClear)
+	 	ClearVisBit(VisBitClear)
+	ENDIF
+
+
+	IF (RepeatMe)
+		ThisModelAnimPlay(REPEAT)
+	ELSE
+		ThisModelAnimPlay(0)
+	ENDIF
+
+	IF (PlayerDamage = 0)
+		OldPlayerHealth = PlayerHealth
+		TRIGSET>Always EVERY 1
+	ENDIF
+
+
+
+	IF (MyParent)
+		IF (ActivateOnParentDeath = 0)
+			IF (IncludeCamera = 1)
+				MyParentParent = Me
+				SetParentSem(0, CamPosId)
+				SetParentSem(1, CamLookPosId)
+			ENDIF
+			ChangeCamStrat()
+		ENDIF
+	ENDIF
+	IF (UnHideObjectActive != 0)
+		UnhideObject(UnHideObjectActive)	
+	ENDIF
+
+	IF (HidePlayer = 1)
+		PlayerFlag = PlayerFlag | NODISP
+	ENDIF
+	
+	IF (FadeAfter > 0)
+		TRIGSET>FadeCheck EVERY 1
+	ENDIF
+	IF (SparkID > 0)
+		TRIGSET>DoSparks EVERY 1
+		TRIGSET>CleanUp WHENDELETED
+		MyFlag = MyFlag | DELETECALLBACK
+		AllocStratSoundBlock(2)
+	ENDIF
+	MyVar = PlayerHealth
+	WHILE (MyAnimFlag & RUNNING)
+		IF (FadeCrazy > 1)
+			FadeCrazy = FadeCrazy - 1
+		ENDIF
+		IF (FadeCrazy = 1)
+			CREATE SPAWN_CrazyFade 0, 0, 0, 0, 0, 0, 0
+			FadeCrazy = 0
+		ENDIF
+
+		IF (PlayerNoControl)
+			PlayerState = PS_ONPATH
+		ENDIF
+		IF (PlayerInteract)
+			IF (LowColl = 0)
+				CalculateStratPolyData(0)
+			ENDIF
+		ENDIF
+
+		IF (HoldPlay)
+			IF (PlayerNoControl = 0)
+				PlayerHeld = 1
+				PlayerState = PS_ONPATH
+				//FlattenHoldPlayer(100.0)
+			ENDIF
+		   	PlayerInteract = 0
+		   	
+			IF (HasActivation(2))
+				GetActivationPos(2)
+				PlayerCheckX = CheckX
+				PlayerCheckY = CheckY
+			    //set the player target
+			   	PlayerTarget = Me
+				//become the player
+				Me = Player
+				//point to right position
+			  	PointToXY(CheckX,CheckY,DogZ)
+				//restore
+				Me = MyTarget
+				PlayerTarget = 0
+		   	ENDIF
+			
+			DogX = STOPX
+			DogY = STOPY
+
+		   //	DogZ = STOPZ
+			PlayerHealth = MyVar
+		ENDIF
+	ENDWHILE 
+	IF (PlayerInteract)
+		IF (LowColl = 0)
+			CalculateStratPolyData(1)
+		ENDIF
+	ENDIF
+
+   	IF (!RepeatMe)
+		//IF EXTERNAL CAMERA ATTACHED THEN REVERT BACK TO GAME CAMERA
+		//AND DELETE THE EXTERNAL
+		PlayerFlag = PlayerFlag & LNOT(NODISP)
+		//IF (ActivateOnParentDeath = 0)
+		//	IF (MyParent)
+		//		IF (ChangeCamera = 1)
+		//			ChangeCam(0,0)
+		//		ENDIF
+		//		DeleteMyParent()
+		//	ENDIF
+		//ENDIF
+		
+		
+		IF (HideObjectEnd > 0)
+			HideObject(HideObjectEnd)
+			InActivateObjectCollision(HideObjectEnd)
+		ENDIF
+		
+		IF (HoldPlay)
+	   		PlayerHeld = 0
+	   		PlayerState = PS_NORMAL
+	   	ENDIF
+
+
+		IF (ActivateOnParentDeath = 0)
+			IF (MyParent)
+				IF (ChangeCamera = 1)
+					ChangeCam(0,0)
+				ENDIF
+				DeleteMyParent()
+			ENDIF
+		ENDIF
+
+
+
+
+		IF (DoNotDelete = 0)		
+			IF (FadeThenDie = 1)
+				MyFlag2 = MyFlag2 | TRANSLUCENT
+				trans = 1.0
+				LOOP (30)
+					trans = trans - 0.03333
+				ENDLOOP
+			ENDIF
+			MyFlag = MyFlag & LNOT(DELETECALLBACK)
+
+	   		Delete()	  
+		ELSE
+			STAT>DoNothing
+		ENDIF
+	ELSE
+		STAT>DoNothing
+	ENDIF	
+ENDSTATE
+
+TRIGGER FadeCheck
+	IF (MyAnimFlag & RUNNING)
+		runTime = runTime + 1
+		IF (runTime >= FadeAfter)	
+			IF (runTime = FadeAfter)
+				trans  = 1.0
+				MyFlag2 = MyFlag2 | TRANSLUCENT
+			ENDIF
+			trans = trans - 0.1
+		ENDIF
+	ENDIF
+	IF (trans <= 0.0)
+		Delete()
+	ELSE
+		TRIGFIN
+	ENDIF
+ENDTRIGGER
+
+STATE DoNothing
+ENDSTATE
+
+STATE Die
+	IF (lightID != -1)
+		RemoveLight (lightID)
+		lightID = -1
+	ENDIF
+
+	PlayerFlag = PlayerFlag & LNOT(NODISP)
+	MyFlag = MyFlag & LNOT(DELETECALLBACK)
+
+	Delete()
+ENDSTATE
+
+TRIGGER DoSparks
+	IF (RandRange(0,100) > 85)
+		MyVar = RandRange(-1.0, 1.0)
+		IF (MyVar > 0.0)
+			PLAYSOUND>SPARK3 0 0.9 0.0 0.0 0.0 0
+		ELSE
+			PLAYSOUND>SPARK11 1 0.9 0.0 0.0 0.0 0
+		ENDIF
+		MyVar = RandRange(0.1, 0.2)
+		CheckX = RandRange(22, 28)
+		ExplosionLight (0.1, 0.1, MyVar, CheckX, 0.8, 4)
+		lightID = MakePointLight (0.8, 0.8, 1.05, CheckX, CheckX/4, 0,0,0)
+		MyVar = CheckX
+		LOOP 2
+			CheckX = GetObjectCrntPos (SparkID, MODEX)
+			CheckY = GetObjectCrntPos (SparkID, MODEY)
+			CheckZ = GetObjectCrntPos (SparkID, MODEZ)
+			IMMLOOP 6
+				MakeSpark (CheckX,CheckY,CheckZ)
+			IMMENDLOOP
+		ENDLOOP
+		WHILE (MyVar > 4)
+			SetPointLightRadius (lightID, MyVar, MyVar/4)
+			MyVar = MyVar * 0.8
+		ENDWHILE
+		lightID = -1
+	ENDIF
+ENDTRIGGER

@@ -1,0 +1,42 @@
+LOCALINT	doTurn
+
+STATE Init
+	MyFlag = MyFlag | STRATCOLL | ENEMY
+	MyFlag2 = MyFlag2 | COLLMOVE
+	RegisterCollision()
+	MyVar = 0.0
+	IAmHoldPlayer()
+	InitHDC()
+	TRIGSET>Turn	EVERY 1
+	CalculateStratPolyData(1)
+	doTurn = 0
+	STAT>Start
+ENDSTATE
+
+TRIGGER Turn
+	IF (doTurn > 0)
+		IF (doTurn < 60)
+			doTurn = doTurn + 1
+			RotateObjectXYZ(1, 0, 0, 0.05)
+			CalculateStratPolyData(0)
+		ENDIF
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+STATE Start
+	MyFlag = MyFlag
+	IF (ObjectHitStrat(2))
+		MyVar = MyVar + 1.0
+		IF (MyVar > 20.0)
+			STAT>Destroy
+		ELSE
+			doTurn = 1
+		ENDIF
+	ENDIF
+ENDSTATE
+
+STATE Destroy
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+	DESTROYME SPAWN_EXPLODINGBITS
+ENDSTATE

@@ -1,0 +1,301 @@
+// Hydro Boss Bobby				   
+
+LOCALINT myID
+LOCALINT siblingID
+LOCALINT invulnCounter
+LOCALFLOAT f
+LOCALFLOAT Speed
+LOCALFLOAT OutwardMotion
+LOCALFLOAT time
+
+TRIGGER Open
+	IF (time > GlobalVar2)
+		//MODELANIM>BOSSES\HYDROBOSS\HYDROBOSSMINE.RDO>Open>0
+		GlobalVar2 = GlobalVar2 + 1.0
+		//WHILE (MyAnimFlag & RUNNING)
+		//	MyFlag = MyFlag
+		//ENDWHILE
+		ANIMDONE = 1
+
+
+		TRIGSTOP
+	ELSE
+		time = time + 1.0
+		TRIGFIN
+	ENDIF
+
+ENDTRIGGER
+
+
+LOCALFLOAT ang
+
+LOCALFLOAT startz
+LOCALFLOAT temp
+LOCALFLOAT zoffset
+
+TRIGGER ZBob
+   	Flatten(1.0)
+	ang = ang + 1.0
+	temp = Ssin(ang * 0.06)
+	RelRotateY(temp * 0.005)
+	temp = Ssin(ang * 0.1)
+	z = startz + zoffset
+
+	IF (PAL)
+		zoffset = zoffset + temp * (0.02 * 1.2)
+	ELSE
+		zoffset = zoffset + temp * 0.02 
+	ENDIF
+
+	TRIGFIN
+
+
+ENDTRIGGER
+
+
+LOCALINT ANIMDONE
+LOCALINT DELAY
+LOCALINT Near
+LOCALINT TWOSEC
+LOCALINT FIVESEC
+LOCALFLOAT SPECAMOUNT
+
+TRIGGER SpecularMadness
+	IF (MyFlag & HITSTRAT)
+		SPECAMOUNT = 1.0
+	ENDIF
+	IF (SPECAMOUNT > 0)
+		MyFlag2 = MyFlag2 | SPECULAR
+		SetSpecularColour(0, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		IF (PAL)
+		   	SPECAMOUNT = SPECAMOUNT - (0.1 * 1.2)
+		ELSE
+		   	SPECAMOUNT = SPECAMOUNT - 0.1
+		ENDIF
+	ELSE
+		SPECAMOUNT = 0
+ 		MyFlag2 = MyFlag2 & LNOT(SPECULAR)
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+LOCALFLOAT damp
+LOCALFLOAT XDIST
+LOCALINT NEG
+LOCALFLOAT STARTX
+
+
+TRIGGER MakeSplash
+			SetGlobalParamInt(0, 1)
+			CheckX = RandRange (-0.5,0.5)
+			CheckZ = RandRange (-0.5,0.5)
+	  //	CheckY = RandRange (-TWOPI, TWOPI)
+			CheckY = 0
+			CREATE SPAWN_SPLASH CheckZ, CheckX, 0, 0, 0, CheckY, 0
+			SetGlobalParamInt(0, 0)
+			TRIGFIN
+
+ENDTRIGGER
+
+STATE Init
+	IF (PAL)
+		TWOSEC = 50
+		FIVESEC = 125
+	ELSE
+		TWOSEC = 60
+		FIVESEC = 150
+	ENDIF
+
+  	OBJECT>BOSSES\HYDROBOSS\HydroBossMine
+  
+	XDIST = ParentSemaphore
+
+	IF (XDIST < 0)
+		NEG = 1
+	ENDIF
+
+	XDIST = FABS(XDIST)
+
+	STARTX = x	
+	ang = RandRange(0,TWOPI/360.0)
+	MyFlag = MyFlag | ENEMY | NODISP
+
+	// Hide the dummy textured object
+  	HideObject (3)
+
+	// Register this in the virtual array of bobbies
+	//myID = RegisterInSiblingArray()
+
+	// Move out of the circle and place underwater
+	z = z - 22.5
+ 
+ //	LOOP (1)
+ //		KillMyVelocity()
+ //		MoveY(80)
+ //	ENDLOOP
+
+	MyFlag = MyFlag & LNOT(NODISP)
+ //	MODELANIM>BOSSES\HYDROBOSS\HYDROBOSSMINE.RDO>Open>0
+	// Surface
+   	LOOP (FIVESEC)
+   		KillMyVelocity()
+   		IF (PAL)
+			z = z + (0.15 * 1.2)
+	   	ELSE
+			z = z + 0.15
+   		ENDIF
+	ENDLOOP
+
+   	MyFlag = MyFlag | STRATCOLL | LOWCOLL | COLLMOVE
+  	RegisterCollision()
+	startz = z
+    TRIGSET>ZBob EVERY 1
+
+
+ //	TRIGSET>SpecularMadness EVERY 1
+	WHILE ((DELAY < TWOSEC) AND (!Near))
+		CheckX = x
+		CheckY = y
+		x = parentx
+		y = parenty
+		Near = NearPlayerXY(40.0)
+		x = CheckX
+		y = CheckY
+
+
+		DELAY = DELAY + 1
+	ENDWHILE
+
+ //	IF (NearPlayerXY(20))
+ //	  	health = 50
+ //	ELSE
+ //		health = 100
+ //	ENDIF
+
+	health = 40
+	health = 100000000.0 
+
+	IF (myID & 3)
+		AllocStratSoundBlock(1)
+		PLAYSOUND>BUOY_SPARK 0 0.9 0.0 0.0 0.0 CONTINUOUS
+	ENDIF
+	
+	// Mark as alive and start the line drawing up
+	MyVar = 1
+  // 	TRIGSET>DrawLinesToSiblings EVERY 1
+  // 	TRIGSET>DrawLinesToSiblings WHENPAUSED
+	//InitHDC()
+
+	//we die normally, if we hit the player or are destroyed, but could be
+	//spawned outside the map collision polys so
+	//ensure we die eventually
+	TRIGSET>Die EVERY 300
+	invulnCounter = 0
+	Speed = 0
+	OutwardMotion = 0.04
+	OutwardMotion = 0.5
+	OutwardMotion = RandRange(0.25,0.5)
+	damp = 0.65
+  //	damp = RandRange(0.08,0.17)
+  	damp = 0.17
+	TRIGSET>MakeSplash EVERY 3
+  	WHILE (1)
+	   //	CalculateStratPolyData(1)
+		invulnCounter = invulnCounter + 1
+		IF (MyFlag2 & PLAYERHIT)
+			PlayerHealth = PlayerHealth - 20
+			MyVar = 0
+		   	CREAIND SPAWN_enemydebris x, y, DogZ, 0,0,0
+			STAT>Die
+		   //	GlobalVar2 = GlobalVar2 - 1.0
+		   //	CREATE SPAWN_BlastExp 0,0,0, 0,0,0, 0
+		   //	Delete()
+		ENDIF
+		IF (health <= 0)
+			Score = Score + 100
+			MyVar = 2
+			STAT>Die
+		ENDIF
+
+	  //	IF (MyFlag & HITSTRAT)
+	   //		Speed = Speed * damp
+	   //		IF (damp > 0.3)
+	   //			damp = damp - 0.1
+	   //		ENDIF
+	   //	ENDIF
+		
+		
+		
+		IF (invulnCounter > TWOSEC / 2)
+			MyFlag = MyFlag  | FLOORCOLL
+		   	IF (IAmOnFloor)
+		  
+		  		MyVar = 0
+				STAT>Die
+			   //	GlobalVar2 = GlobalVar2 - 1.0
+		  	   //	CREATE SPAWN_BlastExp 0,0,0, 0,0,0, 0
+		  	   //	Delete()
+		  	ENDIF
+		ENDIF
+		KillMyVelocity()
+  		MoveY(Speed)
+		//IF (XDIST > 0)
+		  //		IF (NEG)
+		//		MoveX(-OutwardMotion * Speed)
+
+	  //			ELSE
+	//			MoveX(OutwardMotion * Speed)
+
+  //				ENDIF
+
+
+
+//		ENDIF
+  //		MoveX(OutwardMotion * Speed)
+  
+  //		IF (PAL)
+  //			Speed = Speed + (((1 - Speed) * 0.2) * 1.2)
+  //			OutwardMotion = OutwardMotion * (0.95 * 1.2)
+  //		ELSE
+		  //	Speed = Speed + ((1 - Speed) * 0.17)
+			Speed = Speed + ((1 - Speed) * damp)
+	 //		OutwardMotion = OutwardMotion * 0.95
+   //		ENDIF
+	ENDWHILE
+ENDSTATE
+
+STATE Die
+	GlobalVar2 = GlobalVar2 - 1.0
+
+	CREATE SPAWN_BlastExp 0,0,0, 0,0,0, 0
+	Delete()
+ENDSTATE
+
+// Each bobby is responsible for drawing a line to the next bobby
+//STATE DrawLinesToSiblings
+//	siblingID = myID + 1
+//	IF (siblingID = GetNumSiblings())
+//		siblingID = 0
+//	ENDIF
+	// Set my parent to be my sibling (this creates a looped link list...)
+//	MyParent = GetSibling(siblingID)
+//	IF (MyParent AND MyParentFlag AND ParentVar = 1)
+//		TexturedLine (3, 0, 800.0, x, y, z + 1.0, parentx, parenty, parentz + 1.0)
+		// Check to see if Red Dog lurks within
+//		f = ParentDistXY()
+//		IF (PlayerDistXY() < f)
+//			RelRotateZ (-PI / 2)
+//			IF (SeePlayer(0.1))
+//				PlayerHealth = PlayerHealth - 2
+//			ENDIF
+//			RelRotateZ (PI / 2)
+//		ENDIF
+//	ENDIF
+
+	// Set my parent back to being the boss
+//	MyParent = BossStrat
+	// If the boss has died, or if it has set its var to 0 then die out
+//	IF (!(MyParent AND MyParentFlag AND ParentVar))
+//		Delete()
+//	ENDIF
+//ENDSTATE

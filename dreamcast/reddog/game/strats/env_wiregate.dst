@@ -1,0 +1,45 @@
+//PAL FRIENDLY
+LOCALFLOAT time
+
+STATE Init
+	MyFlag = MyFlag | STRATCOLL
+	RegisterCollision()
+   	MyFlag2 = MyFlag2 | COLLMOVE
+	OBJECT> MISC\FENCEGATE
+	health = 1.0
+	AllocStratSoundBlock(1)
+	STAT> Start
+ENDSTATE
+
+STATE Start
+	IF (MyFlag2 & PLAYERHIT)
+		IF (PlayerBoostButtonCount = 2)
+			PLAYSOUND>GATE 0 0.9 0.0 0.0 0.0 0
+			STAT> Open
+		ELSE
+			IF (health < 0.0)
+				time = 0.0
+				CREATE SPAWN_BLASTEXP 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0
+				PLAYSOUND>GATE 0 0.9 0.0 0.0 0.0 0
+				STAT> Open
+			ENDIF
+		ENDIF
+	ENDIF
+ENDSTATE
+
+STATE Open
+	RotateObjectXYZ(1, 0.0, 0.0, -0.2)
+	RotateObjectXYZ(2, 0.0, 0.0, 0.2)
+	time = time + 0.0166667
+	IF (PAL)
+   		time = time * 1.2
+   	ENDIF
+	IF (time > 0.25)
+		MyFlag = MyFlag & LNOT(STRATCOLL)
+		STAT> End
+	ENDIF
+ENDSTATE
+
+STATE End
+
+ENDSTATE

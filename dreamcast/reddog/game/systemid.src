@@ -1,0 +1,27 @@
+;=======================================================================
+;	systemid.src -- System ID sample
+;	Copyright(c) SEGA ENTERPRISES, LTD., 1998
+;	Ver.1.00(1998-09-01) Written by eMuKei
+;   Ver.1.01(1998-10-13) SEKI Masahiro
+;=======================================================================
+	.section IP,code,align=4
+;
+	.sdata	"SEGA SEGAKATANA "	;00:H/W identifier(Do NOT change!)
+	.sdata	"SEGA ENTERPRISES"	;10:Maker identifier(Do NOT change!)
+	.sdata	"1CF5 ","GD-ROM1/1  "	;20:Device information
+	.sdata	"JUE     ","0799000 "	;30:Area symbols / Peripherals
+	.sdata  "GM-9999999","V1.000"	;40:Product number / Version
+	.sdata	"19990501","        "	;50:Release date / Reserved(Space)
+	.sdata	"1ST_READ.BIN","    "	;60:1st read file name / Reserved(Space)
+	.sdata	"ARGONAUT LTD    "	;70:Software Maker Information
+ 	.sdata	"RED DOG / NEW WO"	;80:Game Title
+	.sdata	"RLD DEFENDER /  "	;90:	;
+	.sdata	"(C) ARGONAUT SOF"	;a0:	;
+	.sdata	"TWARE LIMITED 19"	;b0:	;
+	.sdata	"99              "	;c0:	;
+	.sdata	"E3 DEMO         "	;d0:	;
+	.sdata	"                "	;e0:Reserved(Space)
+	.sdata	"                "	;f0:Reserved(Space)
+;
+	.end
+;====== End of file ====================================================

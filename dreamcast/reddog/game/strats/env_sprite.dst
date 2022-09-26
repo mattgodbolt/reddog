@@ -1,0 +1,8 @@
+STATE Init
+	MyFlag = MyFlag | SPRITE
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	MyFlag = MyFlag
+ENDSTATE

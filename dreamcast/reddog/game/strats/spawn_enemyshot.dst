@@ -1,0 +1,57 @@
+
+STATE Init
+	MyFlag = MyFlag | FLOORCOLL | STRATCOLL | ENEMY | NOTEXPLODE |  BULLETTYPE | LOWCOLL
+	MyFlag2 = MyFlag2 | BULLET_CF
+	RegisterCollision()
+	SetFriction(0.0,0.0,0.0)
+
+	IF (Skill = HARD)
+		damage = 5.0
+	ELSE
+		damage = 2.5
+	ENDIF
+
+
+	OBJECT> WEAPON\MISSILE02
+	TRIGSET>KillOff	WHENHIT
+	TRIGSET>KillOffFloor	ONFLOOR
+	TRIGSET>KillOffFloor	EVERY 300
+	AddOmniLight (0, -1, 0, 3, 4)
+	SetLightColour (0, 0.1, 1.0, 0.1)
+
+	MoveY(3.7)
+	STAT>SetPos
+ENDSTATE 
+
+STATE SetPos
+	IF (UnderWater)
+		LOOP 2
+			MakeFrags (0.2, 8) 
+		ENDLOOP
+		Delete()
+	ENDIF
+ENDSTATE
+
+//ON DYING TRIGGER CHANGE THE MAIN RUN ADDRESS TO DEATH
+STATE KillOff
+	
+	MyFlag = MyFlag | NODISP  
+	MyFlag = MyFlag & LNOT(STRATCOLL)
+//	Explosion(1000)
+
+
+	
+	LOOP 2
+		MakeFrags (0.2, 8) 
+	ENDLOOP
+	Delete()
+  //	TRIGSTOP
+ENDSTATE
+
+STATE KillOffFloor
+	LOOP 2
+		MakeFrags (0.2, 8) 
+	ENDLOOP
+	Delete()
+  //	TRIGSTOP
+ENDSTATE

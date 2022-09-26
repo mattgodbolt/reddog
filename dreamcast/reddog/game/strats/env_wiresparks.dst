@@ -1,0 +1,43 @@
+
+//PAL FRIENDLY
+// Occasional sparks
+LOCALINT lightID
+LOCALFLOAT radius
+STATE Init
+	MyFlag = MyFlag | NODISP | DELETECALLBACK
+	lightID = -1
+	AllocStratSoundBlock(2)
+	TRIGSET>CleanUp WHENDELETED
+	STAT>Spark
+ENDSTATE
+
+STATE Spark
+	IF (RandRange(0,1000) > 993)
+		radius = RandRange(-1.0, 1.0)
+		IF (radius > 0.0)
+			PLAYSOUND>SPARK3 0 0.9 0.0 0.0 0.0 0
+		ELSE
+			PLAYSOUND>SPARK11 1 0.9 0.0 0.0 0.0 0
+		ENDIF
+		MyVar = RandRange(0.1, 0.2)
+		radius = RandRange(22, 28)
+		ExplosionLight (0.1, 0.1, MyVar, radius, 0.8, 4)
+		lightID = MakePointLight (0.8, 0.8, 1.05, radius, radius/4, 0,0,0)
+		LOOP 2
+			IMMLOOP 6
+				MakeSpark (0,0,0)
+			IMMENDLOOP
+		ENDLOOP
+		WHILE (radius > 4)
+			SetPointLightRadius (lightID, radius, radius/4)
+			radius = radius * 0.8
+		ENDWHILE
+		RemoveLight (lightID)
+		lightID = -1
+	ENDIF
+ENDSTATE
+
+STATE CleanUp
+	// Hoorah - clean up the light
+	RemoveLight (lightID)
+ENDSTATE

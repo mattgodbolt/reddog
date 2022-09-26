@@ -1,0 +1,38 @@
+STATE Init
+	IF (!MyParent)
+		STAT>Die
+	ENDIF
+
+	WHILE (MyParentInvalid())
+		MyFlag = MyFlag
+	ENDWHILE
+
+	AllocStratSoundBlock(1)
+	SetAudibleRange(0,0,150.0)
+	PLAYSOUND>ICE_RIVER 0 0.0 0.0 0.0 0.0 CONTINUOUS
+
+	WHILE (MyVar < 0.5)
+		MyVar = MyVar + 0.02
+		SetVolume(0,MyVar)
+	ENDWHILE
+
+	WHILE (MyParentFlag)
+		LinkToParentObject(0,0,0,0, 0, 0, 0)
+	ENDWHILE
+
+	MyVar = 0.5
+
+	WHILE (MyVar > 0.01)
+		MyVar = MyVar * 0.98
+		SetVolume(0,MyVar)
+	ENDWHILE
+
+
+	Delete()
+
+ENDSTATE
+
+
+STATE Die
+	Delete()
+ENDSTATE

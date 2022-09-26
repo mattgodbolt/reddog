@@ -1,0 +1,64 @@
+// Floating object
+
+PARAMFLOAT amt 1.0
+
+LOCALFLOAT velZ
+
+LOCALFLOAT rot
+
+STATE Die
+	Delete()
+ENDSTATE
+
+STATE Init
+	MyFlag = MyFlag | STRATCOLL | ENEMY
+	MyFlag2 = MyFlag2 | COLLMOVE
+	IAmHoldPlayer()
+	InitHDC()
+	IF (!(MyFlag & OWNFPARAMS))
+		amt = 1
+	ENDIF
+
+	IF (!MyParent)
+		STAT>Die
+	ENDIF
+
+	// Wait for parent backpatching
+	WHILE (MyParentInvalid())
+		MyVar = MyVar
+	ENDWHILE
+
+	rot = RandRange(0,1)
+	velZ = 0
+
+	STAT>Bob
+ENDSTATE
+
+STATE Bob
+	CalculateStratPolyData(0)
+	x = x + (Ssin(rot) * 0.005)
+	y = y + (Scos(rot * 1.02) * 0.006)
+	rot = rot + 0.001
+
+	// Rotate a bit
+	MyVar = Ssin(rot*20) * 0.001
+	RelRotateX (MyVar)
+	MyVar = Scos(rot*20) * 0.001
+	RelRotateY (MyVar)
+	MyVar = Ssin(rot*18) * 0.001
+	RelRotateZ (MyVar)
+
+	// Bob up and down
+	z = z + velZ
+	velZ = velZ + (((amt * WatNoise(x, y)) + parentz - z) * 0.002)
+	velZ = (velZ * 0.98)
+	
+//	IF PlayerOnHoldPlayer
+//		velZ = velZ - 0.002
+//	ELSE
+//		velZ = velZ - 0.001
+//	ENDIF
+
+	HoldPlayer()
+
+ENDSTATE

@@ -1,0 +1,40 @@
+LOCALINT i
+LOCALFLOAT tempf
+LOCALFLOAT tempf2
+
+STATE Init
+	MyFlag = MyFlag | ENEMY | STRATCOLL
+	OBJECT>Scenery\Canyon\CanyonBridgeBarrier
+	RegisterCollision()
+	InitHDC()
+	CalculateStratPolyData(1)
+	WHILE (!EscortTankerInActivationXY(0))
+		MyFlag = MyFlag
+	ENDWHILE
+
+	i = 0
+	LOOP (40)
+		tempf = SmoothFromTo(3.14159 * 0.5, i, 40)
+		tempf2 = GetObjectCrntRot(1, MODEX)
+		SetObjectCrntRot(1, tempf2 + tempf, MODEX)
+		CalculateStratPolyData(1)
+		i = i + 1
+	ENDLOOP
+
+	WHILE (!PlayerNearActivationXY(1))
+		MyFlag = MyFlag
+	ENDWHILE
+
+	i = 0
+	LOOP (40)
+		tempf = SmoothFromTo(3.14159 * 0.5, i, 40)
+		tempf2 = GetObjectCrntRot(1, MODEX)
+		SetObjectCrntRot(1, tempf2 - tempf, MODEX)
+		CalculateStratPolyData(1)
+		i = i + 1
+	ENDLOOP
+	STAT>DoNothing
+ENDSTATE
+
+STATE DoNothing
+ENDSTATE

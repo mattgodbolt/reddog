@@ -1,0 +1,47 @@
+LOCALFLOAT	tempf
+LOCALFLOAT	scale	
+LOCALINT	tempi
+LOCALFLOAT	time
+
+STATE Init
+	MyFlag = MyFlag | ENEMY | STRATCOLL
+	OBJECT>MISC\CRANE\CABLE
+	SetSem(0, 0)
+	InitHDC()
+	time = 0.0
+	scale = 7.0
+	SetSem(0, 0)
+	CalculateStratPolyData(1)
+	MakeMeTheLast()
+	StickToParent(2, -0.2, 14, 0, 0)
+	scalez = scale
+	z = z - (scale * 0.5) - 1.0
+	CREATE ENV_TRAIN_CRANE_HOLDER 0, 0, 0, 0, 0, 0, 0 
+	tempi = GetParentSem(0)
+	
+	WHILE (tempi = 0)
+		tempi = GetParentSem(0)
+		MyFlag = MyFlag
+	ENDWHILE
+	SetSem(0, tempi)
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	time = time + 1.0
+	IF (time <= 120.0)
+		tempf = SmoothFromTo(200.0, time, 120.0)
+		CalculateStratPolyData(0)
+		scale = 7.0 - tempf
+	ENDIF
+	IF ((time > 240.0) AND (time < 360))
+		tempf = SmoothFromTo(200.0, time - 240, 120.0)
+		CalculateStratPolyData(0)
+		scale = 7.0 - tempf
+	ENDIF
+	StickToParent(2, -0.2, 14, 0, 0)
+	scalez = scale
+	z = z - (scale * 0.5) - 1.0
+	CalculateStratPolyData(0)
+	MyFlag = MyFlag
+ENDSTATE

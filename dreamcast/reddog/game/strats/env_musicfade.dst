@@ -1,0 +1,58 @@
+PARAMINT	Track		0
+PARAMFLOAT	FadeSpeed	0.05
+LOCALFLOAT	FadeVal		0.0
+
+// Fades current music track and starts new track
+STATE Init
+	MyFlag = MyFlag
+
+	//IF JUST DROPPED IN MAX
+	IF (!MyParent)
+		//SET THE CORRECT DEFAULTS IF NEEDED
+		IF (!(MyFlag & OWNFPARAMS))
+			FadeSpeed = 0.05
+	   	ENDIF
+	   
+	   	IF (!(MyFlag2 & OWNIPARAMS))
+		   Track = 0
+		ENDIF
+
+	ELSE
+		//SPAWNED FROM THE BRIEFING STRAT
+		//FadeSpeed = GetGlobalParamFloat(0)
+		FadeSpeed = 0.05
+		Track = GetGlobalParamInt(0)
+	ENDIF
+
+  //	IF (!(MyFlag & OWNFPARAMS))
+  //		FadeSpeed = GetGlobalParamFloat(0)
+  //	ELSE
+  //		FadeSpeed = 0.05
+  //	ENDIF
+
+  //	IF (!(MyFlag2 & OWNIPARAMS))
+  //		Track = GetGlobalParamInt(0)
+  //	ELSE
+  //		Track = 0
+  //	ENDIF
+	
+	FadeVal = 0.0
+
+	WHILE (FadeVal < 1.0)			
+		MusicFade(FadeVal)
+		FadeVal = FadeVal + FadeSpeed
+	ENDWHILE
+
+	MusicFade(1.0)
+	SoundStopTrack()
+		
+	// Delay before starting next track
+	WHILE (FadeVal > 0.0) 
+		FadeVal = FadeVal - 0.1
+	ENDWHILE
+
+	MusicFade(0.0)
+	SoundPlayTrack(Track)
+	Delete()	
+ENDSTATE
+

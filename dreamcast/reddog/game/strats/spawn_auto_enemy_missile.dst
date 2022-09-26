@@ -1,0 +1,43 @@
+LOCALFLOAT	time
+LOCALFLOAT	randx
+LOCALFLOAT	randy
+
+STATE Init
+	MyFlag = MyFlag | FLOORCOLL | STRATCOLL | ENEMY | NOTEXPLODE |  BULLETTYPE
+    MyFlag2 = MyFlag2 | BULLET_CF
+	RegisterCollision()
+	SetFriction(0.0,0.0,0.0)
+	OBJECT> WEAPON\HELIMISSILE
+	TRIGSET>KillOff	WHENHIT
+	TRIGSET>KillOffFloor	ONFLOOR
+	TRIGSET>KillOffFloor	EVERY 300
+	randx = RandRange(-10.0, 10.0)
+	randy = RandRange(-10.0, 10.0)
+	damage = 0.0
+	time = 0.0
+	PointTo(DogX + randx, DogY + randy, DogZ)
+	MoveY(1.7)
+	STAT>Start
+ENDSTATE 
+
+STATE Start
+	//CREATE MISSILETRAILER 0.0, 0.0, 0.0, 0, 0, 0, 0
+ENDSTATE
+
+STATE KillOff
+	MyFlag = MyFlag | NODISP  
+	MyFlag = MyFlag & LNOT(STRATCOLL)
+	LOOP 2
+		MakeFrags (0.2, 8) 
+	ENDLOOP
+	Delete()
+  //	TRIGSTOP
+ENDSTATE
+
+STATE KillOffFloor
+	LOOP 2
+		MakeFrags (0.2, 8) 
+	ENDLOOP
+	Delete()
+  //	TRIGSTOP
+ENDSTATE

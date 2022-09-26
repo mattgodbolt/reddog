@@ -1,0 +1,122 @@
+// Hurts the player if he drives into it when it is on
+// Offset is so we can have them running out of sequence
+// All parameters are in frames
+
+PARAMINT Ontime 90 
+PARAMINT Offtime 45
+PARAMINT Offset
+PARAMINT NoRotate 0
+PARAMINT ORANGE 0
+
+LOCALINT counter
+LOCALFLOAT volume
+
+STATE Init 
+	IF (!(MyFlag2 & OWNIPARAMS))
+		Ontime = 90
+		Offtime = 45
+		Offset = 0
+		NoRotate = 0
+		ORANGE = 0
+	ENDIF
+	MyFlag = MyFlag | STRATCOLL | ENEMY
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+	InitHDC()
+	TRIGSET>Always EVERY 1
+	ObjectNotSolid(1)
+	UpdateObjectCollFlag(1, NOBULLETCOLLIDE | NOCAMERACOLLIDE)
+	CalculateStratPolyData(1)		
+	AllocStratSoundBlock(2)
+	TRIGSET>Hurt WHENHIT
+	counter = 0
+	WHILE (counter < Offset)
+		counter = counter + 1
+		MyFlag = MyFlag
+	ENDWHILE
+	SetAudibleRange(0, 15, 80)
+	IF (!ORANGE)
+	volume = 1.0
+		PLAYSOUND>BARRIER 0 volume 0.0 0.0 0.0 CONTINUOUS | NODIRECTION
+	ELSE
+	volume = 0.75
+		PLAYSOUND>BARRIER_ORANGE 0 volume 0.0 0.0 0.0 CONTINUOUS | NODIRECTION
+	ENDIF
+	
+	IF (Offtime = 0)
+		STAT>AlwaysOn
+	ENDIF
+	STAT> WaitOn
+ENDSTATE
+
+STATE Hurt
+	IF ((MyFlag2 & PLAYERHIT))
+		IF (volume > 0.0)
+			PLAYSOUND>HITMETAL2_M 1 1.0 0.0 0.0 0.0 RANDOM
+		ENDIF
+	ENDIF
+	LOOP (2)
+		MyFlag = MyFlag
+	ENDLOOP
+	TRIGFIN
+ENDSTATE 
+
+TRIGGER Always
+	IF (NoRotate = 0)
+		RelRotateZ(TWOPI / 150.0)
+	ENDIF
+	CalculateStratPolyData(0)		
+	TRIGFIN
+ENDTRIGGER
+
+STATE AlwaysOn
+	damage = 0.5
+ENDSTATE
+
+STATE WaitOn
+	counter = 0
+	damage = 0.5
+	WHILE (counter < Ontime)
+		counter = counter + 1
+	ENDWHILE
+	STAT> PulseOff
+ENDSTATE
+
+
+STATE PulseOff
+	counter = 0	
+	damage = 0.25
+	WHILE (counter < 15)
+		counter = counter + 1
+		trans = trans - 0.06666
+		volume = 0.75 - (counter/24.0)
+		SetVolume(0, volume) 
+	ENDWHILE
+	volume = 0.0
+	SetVolume(0, volume) 
+	trans = 0.0
+	STAT> WaitOff
+ENDSTATE
+
+STATE WaitOff
+	counter = 0
+	damage = 0
+	WHILE (counter < Offtime)
+		counter = counter + 1
+	ENDWHILE
+	STAT> PulseOn
+ENDSTATE
+
+STATE PulseOn
+	counter = 0	
+	damage = 0.25
+	WHILE (counter < 15)
+		counter = counter + 1
+		trans = trans + 0.06666
+		volume = (counter/24.0)
+		SetVolume(0, volume) 
+	ENDWHILE
+	volume = 0.75
+	SetVolume(0, volume) 
+	trans = 1.0
+	STAT>WaitOn
+ENDSTATE

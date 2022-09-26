@@ -1,0 +1,58 @@
+LOLOCALINT	time
+LOCALINT	accTime
+LOCALINT	i
+LOCALFLOAT speed
+LOCALFLOAT tempf
+
+STATE Init
+	MyFlag = MyFlag | ENEMY
+	OBJECT>Scenery\Ice\Ice_Lift_Section_door
+	time = GetGlobalParamInt(0)
+	accTime = GetGlobalParamInt(1)
+	speed = GetGlobalParamFloat(0)
+	WHILE (GetParentSem(0) = 0)
+		MyFlag = MyFlag
+	ENDWHILE
+	AllocStratSoundBlock(1)
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	i = 0
+	PLAYSOUND>LIFT_DOOR_OPEN 0 1.0 0.0 0.0 0.0 0
+	WHILE (i < accTime)
+		tempf = SmoothFromToSum(speed, i, accTime)
+		i = i + 1
+		z = z - tempf
+
+		IF (z < parentz - 80.4)
+			z = z + 187.6
+		ENDIF
+	ENDWHILE
+	STAT>MoveDown
+ENDSTATE
+
+STATE MoveDown
+	PLAYSOUND>LIFT_DOOR_CLOSE 0 1.0 0.0 0.0 0.0 0
+	WHILE (time > accTime * 2)
+		z = z - speed
+		IF (z < parentz - 80.4)
+			z = z + 187.6
+
+		ENDIF
+		time = time - 1
+	ENDWHILE
+	STAT>Stop
+ENDSTATE
+
+STATE Stop
+	i = 0
+	WHILE (i < accTime)
+		tempf = speed - SmoothFromToSum(speed, i, accTime)
+		i = i + 1
+		z = z - tempf
+		IF (z < parentz - 80.4)
+			z = z + 187.6
+		ENDIF
+	ENDWHILE
+ENDSTATE

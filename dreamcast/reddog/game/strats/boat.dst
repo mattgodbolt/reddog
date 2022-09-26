@@ -1,0 +1,92 @@
+LOCALFLOAT xa
+LOCALFLOAT ya
+LOCALFLOAT za
+LOCALINT time
+LOCALINT i
+
+TRIGGER CleanUp
+	BoatStrat = 0
+ENDTRIGGER
+
+
+//USED TO CONTROL THE APPEARANCE OF BOAT WHEN A CUT-SCENE IS PLAYING
+TRIGGER Appear
+	WHILE (PlayerState != PS_NORMAL)
+		MyFlag = MyFlag
+	ENDWHILE
+
+	MyFlag = MyFlag & LNOT(NODISP)
+	TRIGSTOP
+ENDTRIGGER
+
+STATE Init
+	MyFlag = MyFlag | GRAVITYON | NODISP | FLOORCOLL | ENEMY | RELVELCALC | DELETECALLBACK
+	TRIGSET>CleanUp WHENDELETED
+	TRIGSET>Appear EVERY 1
+	OBJECT>MISC\BOAT
+	RegisterCollision()
+	time = 0
+
+	//WAIT FOR THE PLAYER
+	WHILE (!Player)
+		MyFlag = MyFlag
+	ENDWHILE
+
+		
+
+	
+	RotationRestriction(1.0, 1.0, 1.0)
+	BoatStrat = Me
+	WHILE (PlayerOnBoat = 0)
+		MyFlag = MyFlag
+	ENDWHILE
+	AllocStratSoundBlock(1)
+	TRIGSET>SoundControl EVERY 1
+	SetPlayerOCP()	
+	SetFriction(1.0, 0.0, 0.0)
+	BoatPAC = 0
+	STAT>Start
+ENDSTATE
+
+LOCALFLOAT tempf
+
+TRIGGER SoundControl
+	tempf = (absspeedx * absspeedx) + (absspeedy * absspeedy)
+	SetPitch(0, 0.0)
+	SetPitch(0, (tempf * 0.5) - 0.9)
+	IF (!IsPlaying(0))
+		PLAYSOUND>rd_raft 0 1.0 0.0 0.0 0.0 CONTINUOUS
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+STATE Start
+	IF (MyFlag2 & PLAYERHIT)
+		PlayerFlag = PlayerFlag & LNOT(GRAVITYON)
+		PlayerFlag = PlayerFlag & LNOT(REALGRAVITYON)
+	ENDIF
+	IF (PlayerOnBoat = 0)
+		BoatStrat = 0
+		IF (IsPlaying(0))
+			StopSound(0,0.0)
+		ENDIF
+		STAT>Die
+	ENDIF
+	i = BoatPAC
+	IF (BoatPAC > 0)
+		IMMLOOP (i)
+			BoatPAC = BoatPAC - 1
+			GetBoatPA(BoatPAC)
+			xa = RandRange(-1.0, 1.0)
+			ya = RandRange(-1.0, 1.0)
+			za = RandRange(1.0, 2.0)
+			SetGlobalParamInt(0, 1)
+			CREAIND SPAWN_SPLASH CheckX + xa, CheckY + ya, CheckZ - za, 0, 0, 0
+			SetGlobalParamInt(0, 0)
+		IMMENDLOOP
+	ENDIF
+ENDSTATE
+
+STATE Die
+	Delete()
+ENDSTATE

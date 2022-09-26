@@ -1,0 +1,45 @@
+// Fluffy cloud used in the intro
+LOCALFLOAT transAmt
+STATE Init
+	MyFlag = MyFlag | SPRITE
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+
+//	SetFriction(0.03,0.03,0.03)
+	
+	scalex = RandRange(50.0,125.0)
+	scaley = scalex
+
+	transAmt = RandRange (0.4, 1.0)
+	trans = 0
+
+	OBJECT> SFX\WhiteSmoke
+//	ANIM> DARKPUFF>Smoke
+
+	MoveY (-1.7)
+
+	MyVar = RandRange (0, TWOPI)
+	RelRotateY (MyVar)
+	RelRotateX (MyVar)
+	RelRotateZ (MyVar)
+
+	STAT>HangAround
+ENDSTATE
+
+STATE HangAround
+
+	WHILE (trans < transAmt)
+		absspeedz = 0
+		trans = trans + ((transAmt - trans) * 0.1 + 0.01)
+	ENDWHILE
+
+	WHILE (ParentDistXY() < 300)
+		absspeedz = 0
+		MyFlag = MyFlag		
+	ENDWHILE
+
+	WHILE (trans > 0.01)
+		trans = trans * 0.9
+	ENDWHILE
+
+	Delete()
+ENDSTATE

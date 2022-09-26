@@ -1,0 +1,10 @@
+; Dummy file which is tacked on last to get the end of the whole doobry
+				.CPU			SH4
+				.OUTPUT			DBG=DWARF
+				.SECTION		BLAST_SECTION,DATA,ALIGN=4
+
+				.EXPORT			_TheEndOfTheProgam
+_TheEndOfTheProgam:
+				.RES			4
+
+				.END

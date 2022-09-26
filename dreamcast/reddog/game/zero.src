@@ -1,0 +1,12 @@
+;=======================================================================
+;   zero.src -- 
+;   Copyright(c) SEGA ENTERPRISES, LTD., 1998
+;   Ver.0.82(1998-10-05) Written by H.Hayashi
+;	moog> Oh what a clever guy you are, Hayashi-san
+;=======================================================================
+     .SECTION IP,CODE,ALIGN=4
+;
+
+;
+    .end
+;====== End of file ====================================================

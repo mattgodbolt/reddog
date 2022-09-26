@@ -1,0 +1,281 @@
+//script entry into script table
+//secondscript - optional entry for second viewing of the script
+
+PARAMINT script	0
+PARAMINT xpos	6
+PARAMINT ypos	6
+PARAMINT secondscript	-1
+PARAMINT LifeOver 0
+PARAMINT change_cam 1
+PARAMINT	FadeCrazy			0
+
+LOCALFLOAT num
+LOCALFLOAT oAmt
+LOCALFLOAT oAdd
+LOCALINT line 
+LOCALINT time
+LOCALINT entry
+LOCALINT Scene
+LOCALINT tempScript
+LOCALINT STOPSGAME
+LOCALINT timedScript
+DEFINE	CHAR_BY_CHAR 0
+DEFINE	ALLTEXT   1 
+
+
+STATE Init 
+  
+  
+	IF (!(MyFlag2 & OWNIPARAMS))
+		script = 0 
+		xpos = 6
+		ypos = 6
+		LifeOver = 0
+		change_cam = 1
+		FadeCrazy = 0
+	ENDIF
+
+	IF (PAL)
+		IF (FadeCrazy > 0)
+			FadeCrazy = FadeCrazy / 1.2
+		ENDIF
+	ENDIF
+
+	IF (GetGlobalParamInt(0) = 1)
+		parent = 0
+		script = GetGlobalParamInt(1)
+	ENDIF
+
+	entry = 0
+	MyVar = 0.0
+
+	IF (HasActivation(0))
+		WHILE (!(PlayerNearActivationXY(0)))
+			MyFlag = MyFlag
+		ENDWHILE
+	ENDIF
+
+ 	IF ((secondscript >= 0) AND (LifeLost))
+		MyVar = 2.0
+ 		Scene = secondscript
+ 	ELSE
+		Scene = script
+ 	ENDIF
+
+	script = GetScriptEntry(Scene,entry)
+	entry  = entry + 1
+
+	time = GetScriptTime(script)
+	IF (time > 0)
+		timedScript = 1
+	ENDIF
+
+
+	oAdd = 0.05
+	oAmt = 0
+   
+	//IF AN INVALID SCRIPT ENTRY THEN DELETE
+   	IF (time)
+	  	//WHILE (frame)
+	  		//frame = frame - 1.0
+	  	//ENDWHILE
+		num = 0
+		line = 0
+  
+		mode = CHAR_BY_CHAR
+  
+			//IS THE SCRIPT LINKED TO AN EXTERNAL CAMERA
+			//AND IT IS VALID TO PLAY
+			IF ((MyParent) AND (!MyVar))
+		
+				WHILE ((!Camera))
+					MyFlag = MyFlag
+				ENDWHILE
+
+				WHILE (MyParentInvalid())
+		 			MyParent = MyParent
+		 		ENDWHILE
+		
+				MyTarget = MyParent
+				IF (MyParentParent)
+					MyParent = MyParentParent
+					WHILE (MyParentInvalid())
+						MyParent = MyTargetParent
+					ENDWHILE
+					MyParent = MyTarget
+				ENDIF
+		
+				ChangeCamStrat()
+
+
+
+			ENDIF
+
+		IF (GetScriptFlag(script) & STOPGAME)
+		
+			//ENSURE NOT CHANGING STATE
+		 //	WHILE (ChangingState() OR (!Camera))
+			WHILE ((!Camera))
+				MyFlag = MyFlag
+			ENDWHILE
+
+			//PAUSE THE PLAYER
+
+			PlayerState = PS_SCRIPTHELD
+			STOPSGAME = 1
+
+		ENDIF
+
+		TRIGSET>Disp EVERY 1
+
+  
+
+		STAT>Wait
+	ELSE
+		Delete()
+	ENDIF
+ENDSTATE
+
+LOCALINT mode
+LOCALINT valid
+LOCALFLOAT	ph
+
+STATE Wait
+ 
+	//LET THE SCRIPT PLAY AND THEN WAIT FOR THE DESIGNATED AMOUNT OF TIME
+	//BEFORE DELETING
+	
+
+	valid = 1
+
+//	WHILE (script != -1)
+	ph = PlayerHealth
+	WHILE ((valid) AND (!Skipped))
+		IF (line = GetScriptLines(script) )
+			PlayerState = PS_SCRIPTHELD
+
+			//IF (GetScriptFlag(script) & STOPGAME)
+			//	PlayerState = PS_NORMAL
+			//ENDIF
+			tempScript = script
+			script = GetScriptEntry(Scene,entry)
+			entry  = entry + 1
+
+			IF (script > 0)
+				time = GetScriptTime(script)
+	  			num = 0
+				line = 0
+  
+				mode = CHAR_BY_CHAR
+				//IF (GetScriptFlag(script) & STOPGAME)
+				//	PlayerState = PS_SCRIPTHELD
+				//ENDIF
+
+			ELSE
+				valid = 0
+			ENDIF
+		ENDIF
+		IF (FadeCrazy > 1)
+			FadeCrazy = FadeCrazy - 1
+		ENDIF
+		IF (FadeCrazy = 1)
+			CREATE SPAWN_CrazyFade 0, 0, 0, 0, 0, 0, 0
+			FadeCrazy = 0
+		ENDIF
+		PlayerHealth = ph
+	ENDWHILE
+	IF (Skipped)
+		time = 0
+	ENDIF
+	WHILE (time > 0)
+		IF (FadeCrazy > 1)
+			FadeCrazy = FadeCrazy - 1
+		ENDIF
+		IF (FadeCrazy = 1)
+			CREATE SPAWN_CrazyFade 0, 0, 0, 0, 0, 0, 0
+			FadeCrazy = 0
+		ENDIF
+		PlayerState = PS_SCRIPTHELD
+		PlayerHealth = ph
+	ENDWHILE
+
+	script = tempScript
+
+	IF (LifeOver)
+		IF (LifeOver = 2)
+		 	GameOver()
+		ELSE
+			CREATE STATECHANGE_KILLPLAYER 0, 0, 0, 0, 0, 0, 0
+		ENDIF
+	ENDIF
+	
+	DEAD = 1
+	
+	STAT>Kill
+
+ENDSTATE
+
+LOCALINT DEAD
+
+STATE Kill
+
+	oAmt = 1
+	oAdd = -0.1
+	WHILE (oAmt > 0)
+		MyFlag = MyFlag
+	ENDWHILE
+	PlayerHealth = ph
+
+   	//IF EXTERNAL CAMERA ATTACHED THEN REVERT BACK TO GAME CAMERA
+   	//AND DELETE THE EXTERNAL
+   	IF (MyParent)
+		IF (change_cam)
+   			ChangeCam(0,0)
+		ENDIF
+		// Rewind to the last camera to get the right char
+   		DeleteMyParent()
+   	ENDIF
+
+	IF ((STOPSGAME) AND (PlayerState = PS_SCRIPTHELD))
+		PlayerState = PS_NORMAL
+	ENDIF
+ 	Delete()
+ENDSTATE
+
+LOCALINT Skipped
+
+
+STATE  Disp
+	IF (!DEAD)
+		num = num + 0.33
+	ENDIF
+   	oAmt = oAmt + oAdd
+
+	IF script = -1
+		MyVar = GetScriptCharacter(tempScript)
+	ELSE
+		MyVar = GetScriptCharacter(script)
+	ENDIF
+	IF (MyVar >= 0)
+		Overlay (MyVar, oAmt)
+	ENDIF
+  	IF ((GetScriptFlag(script) & SKIPPABLE) AND (GetPadPush(0) & PADFIRE))
+		Skipped = 1
+	 	mode = ALLTEXT
+   	ENDIF
+	IF (time > 0)
+		time = time - 1
+	ELSE
+		IF (timedScript)
+			valid = 0
+		ENDIF
+	ENDIF
+
+	 IF (DisplayScript(script,num,line,xpos,ypos,mode))
+		IF (!DEAD)
+			num =0
+			line = line + 1
+		ENDIF
+	 ENDIF
+	 TRIGFIN
+ENDSTATE

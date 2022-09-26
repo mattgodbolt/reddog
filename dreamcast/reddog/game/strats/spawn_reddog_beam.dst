@@ -1,0 +1,35 @@
+LOCALINT tempi
+LOCALINT	pn
+LOCALFLOAT length
+
+STATE Init
+	OBJECT> REDDOG\REDDOGBEAM
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+	trans = 1.0
+	pn = GetGlobalParamInt(1)
+	scaley = DistToAim(pn)
+	tempi = GetGlobalParamInt(0)
+	tempi = (tempi * tempi) + 1
+	DamageAim(pn, tempi)
+	CheckX = AimPointX
+	CheckY = AimPointY
+	CheckZ = AimPointZ
+	DrawShock(x, y, z, CheckX, CheckY, CheckZ, 0.0, 10.0, 10.0)
+	AllocStratSoundBlock(1)
+	PLAYSOUND>SNIPEMIX4 0 1.0 0.0 0.0 0.0 RANDOM
+	STAT>SetPos
+ENDSTATE 
+
+STATE SetPos
+	IF (trans > 0.05)
+		trans = trans - 0.05
+		IF (!Multiplayer)
+			IF (trans > 0.8)
+				DrawShock(x, y, z, CheckX, CheckY, CheckZ, 0.0, 10.0, 10.0)
+			ENDIF
+		ENDIF
+	ELSE
+		trans = 0.0
+		Delete()
+	ENDIF
+ENDSTATE

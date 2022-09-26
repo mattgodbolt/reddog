@@ -1,0 +1,47 @@
+PARAMINT	aliveTime
+PARAMFLOAT	seconds
+PARAMFLOAT	scale
+PARAMFLOAT	speed
+PARAMFLOAT	vis_dist
+
+
+LOCALFLOAT	time
+
+STATE Init
+	MyFlag = MyFlag
+	time = seconds * 30.0
+	IF (seconds = 0.0)
+		seconds = RandRange(2.0, 5.0)
+	ENDIF
+
+	IF (scale = 0.0)
+		scale = 1.0
+	ENDIF
+
+	IF (vis_dist = 0.0)
+		vis_dist = 50.0
+	ENDIF
+
+	IF (aliveTime = 0)
+		aliveTime = 3
+	ENDIF
+
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	IF (NearPlayerXY(vis_dist))
+		time = time - 1.0
+		IF (time <= 0.0)
+			SetGlobalParamFloat(0, speed)	
+			SetGlobalParamFloat(1, scale)	
+			SetGlobalParamInt(0, aliveTime)	
+			CREATE ENV_ROCK	0, 0, 0, 0, 0, 0, 0
+			ClearGlobalParams()
+		   //	SetGlobalParamFloat(0, 0.0)	
+		   //	SetGlobalParamFloat(1, 0.0)	
+		   //	SetGlobalParamInt(0, 0.0)	
+			time = seconds * 30.0
+		ENDIF
+	ENDIF
+ENDSTATE

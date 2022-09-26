@@ -1,0 +1,39 @@
+LOCALINT time
+LOCALINT noSpiders
+
+STATE Init 
+	MyFlag = MyFlag | NODISP
+	time = 0
+	noSpiders = 0
+	MyVar = 0.0
+	STAT> WaitFirst
+ENDSTATE
+
+STATE WaitFirst
+	time = time + 1
+	IF (time > 60)
+		time = 0
+		STAT> Wait
+	ENDIF
+ENDSTATE
+
+STATE Wait
+	time = time + 1
+	IF (time = 1)
+		CREATE RAPIER_MINI 0, 0, 0, 0, 0, 0, 0
+	ENDIF 
+	IF (time = 100)
+		CREATE RAPIER_MINI 0, 0, 0, -1.57, 1.57, 0, 0
+		CREATE RAPIER_MINI 0, 0, 0, -1.57, -1.57, 0, 0
+	ENDIF
+	IF (time > 201)
+		STAT> End
+	ENDIF
+ENDSTATE
+
+STATE End
+	IF (MyVar = 3.0)
+		GlobalVar = GlobalVar + 1.0
+		Delete()
+	ENDIF
+ENDSTATE

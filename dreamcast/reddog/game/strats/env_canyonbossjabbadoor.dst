@@ -1,0 +1,36 @@
+DEFINE	OPEN_DOOR_TIME	200
+DEFINE	OPEN_DOOR_DIST	25
+LOCALFLOAT	tempf
+LOCALFLOAT	tempf2
+LOCALINT	time
+
+STATE Init
+	MyVar = 0
+	MyFlag = MyFlag | ENEMY | STRATCOLL
+	RegisterCollision()
+	InitHDC()
+	CalculateStratPolyData(1)
+	WHILE (GetSem(0) < 3)
+		MyFlag = MyFlag
+	ENDWHILE
+	time = 0
+	AllocStratSoundBlock(1)
+	SetAudibleRange(0, 60, 500)
+	PLAYSOUND>DOOR1_OPEN 0 1.0 0.0 0.0 0.0 0
+	STAT>Open
+ENDSTATE
+
+STATE Open
+	LOOP (OPEN_DOOR_TIME)
+		time = time + 1
+		tempf = SmoothFromTo(OPEN_DOOR_DIST, time, OPEN_DOOR_TIME)
+		tempf2 = GetObjectCrntPos(1, MODEX)
+		SetObjectCrntPos(1, tempf2 + tempf, MODEX)
+		CalculateStratPolyData(1)
+	ENDLOOP
+	STAT>Finish
+ENDSTATE
+
+STATE Finish
+ENDSTATE
+	

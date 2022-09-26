@@ -1,0 +1,63 @@
+PARAMINT	delayTime 0
+PARAMFLOAT	scale	1.0
+LOCALFLOAT	time
+
+STATE Init
+	MyFlag = MyFlag | ENEMY
+	IF (!(MyFlag & OWNFPARAMS))
+		scale = 1.0
+	ENDIF
+
+	IF (!(MyFlag2 & OWNIPARAMS))
+		delayTime = 0
+	ENDIF
+
+	scalex = scalex * scale
+	scaley = scaley * scale
+	scalez = scalez * scale
+
+	IF (delayTime > 0)
+	MyVar = delayTime
+	IF (PAL)
+		MyVar = MyVar / 1.2
+	ENDIF
+
+	WHILE (MyVar > 0)
+		MyVar = MyVar - 1.0
+	ENDWHILE
+
+//		LOOP (delayTime)
+//			MyFlag = MyFlag
+//		ENDLOOP
+	ENDIF
+
+ //	IF (delayTime > 0)
+ //		LOOP (delayTime)
+ //			MyFlag = MyFlag
+ //		ENDLOOP
+ //	ENDIF
+   
+   	IMMLOOP (10)
+		SetGlobalParamFloat(0, scale)
+		CREATE SPAWN_EnemyDebris 0, 0, 0, 0, 0, 0, 0
+		SetGlobalParamFloat(0, 0.0)
+	IMMENDLOOP
+	SetGlobalParamFloat(0, scale)
+	CREATE SPAWN_ExplosionShardGround 0, 0, 0, 0, 0, 0, 0
+	SetGlobalParamFloat(0, 0.0)
+	OBJECT>SFX\ExplosionBall
+	MODELANIM>SFX\ExplosionBall.RDO>Play>0
+	time = 0.0
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	WHILE (MyAnimFlag & RUNNING)
+		time = time + 1.0	
+		IF (time >= 15.0)
+			MyFlag2 = MyFlag2 | TRANSLUCENT
+			trans = (20.0 - time) / 5.0
+		ENDIF
+	ENDWHILE
+	Delete()
+ENDSTATE

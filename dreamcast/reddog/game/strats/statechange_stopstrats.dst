@@ -1,0 +1,6 @@
+STATE Init
+	StopTheStrats()
+	Delete()
+ENDSTATE
+
+

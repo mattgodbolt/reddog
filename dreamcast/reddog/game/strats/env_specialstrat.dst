@@ -1,0 +1,8 @@
+STATE Init
+	MyFlag = MyFlag | ENEMY
+	SpecialStrat = Me
+	STAT>Start
+ENDSTATE
+
+STATE Start
+ENDSTATE

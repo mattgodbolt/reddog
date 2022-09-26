@@ -1,0 +1,42 @@
+LOCALINT	time 
+LOCALINT	dir
+
+STATE Init
+	dir = GetGlobalParamInt(0)
+	MyFlag = ENEMY | REALGRAVITYON
+	IF (!Multiplayer)
+		MyFlag = MyFlag | ENEMY
+		//| FLOORCOLL
+	ENDIF
+	SetFriction(0.0, 0.0, 0.0)
+	OBJECT>MISC\Shell
+	SetObjectShadowState(1)
+
+	absspeedx = parentabsspeedx
+	absspeedy = parentabsspeedy
+	absspeedz = parentabsspeedz
+	IF (dir)
+		MyVar = RandRange( 0.05, 0.1)
+		MoveX(MyVar)
+	ELSE
+		MyVar = RandRange( 0.05, 0.1)
+		MoveX(-MyVar)
+	ENDIF
+	MyVar = RandRange( 0.05, 0.1)
+	MoveZ(MyVar)
+	time = RandRange(10.0, 30.0)
+	trans = 1.0
+
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	time = time - 1.0
+	IF (time < 0.0)
+		MyFlag2 = MyFlag2 | TRANSLUCENT
+		trans = trans - 0.05
+		IF (trans < 0.05)
+			Delete()
+		ENDIF
+	ENDIF
+ENDSTATE

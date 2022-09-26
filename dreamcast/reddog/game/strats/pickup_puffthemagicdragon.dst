@@ -1,0 +1,16 @@
+PARAMINT	amount
+
+STATE Init
+	MyFlag = MyFlag | ENEMY | STRATCOLL | LOWCOLL
+	IF (amount < 100)
+		amount = 100
+	ENDIF
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	IF (MyFlag2 & PLAYERHIT)
+		PickUpPuffTheMagicDragon(amount)
+		Delete()
+	ENDIF
+ENDSTATE

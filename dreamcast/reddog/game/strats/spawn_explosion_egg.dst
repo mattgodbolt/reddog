@@ -1,0 +1,25 @@
+STATE Init
+	OBJECT> Explosions\PolyExplosion_Explosion_egg
+	MODELANIM>EXPLOSIONS\POLYEXPLOSION_EXPLOSION_EGG.RDO>EGG>0
+	UnitiseMatrix()
+	AllocStratSoundBlock(1)
+	PLAYSOUND>EX_MEDIUM_BLAST1 0 1.0 0.0 0.0 0.0 0
+	LOOP 25
+		MyVar = MyVar
+	ENDLOOP
+	ANIM>POLYEXPLOSION_EXPLOSION_EGG>EXPLODE
+	LOOP 40
+		scalex = scalex * 0.98
+		scaley = scaley * 0.98
+		scalez = scalez * 0.98
+	ENDLOOP
+	trans = 1
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+	LOOP 10
+		scalex = scalex * 0.98
+		scaley = scaley * 0.98
+		scalez = scalez * 0.98
+		trans = trans - 0.1
+	ENDLOOP
+	Delete()
+ENDSTATE

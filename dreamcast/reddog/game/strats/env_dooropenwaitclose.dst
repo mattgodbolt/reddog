@@ -1,0 +1,68 @@
+PARAMINT	delayTime	90
+LOCALFLOAT	temp
+LOCALINT	time
+
+STATE Init
+	IF (!(MyFlag2 & OWNIPARAMS))
+		delayTime = 90
+	ENDIF
+	time = 0
+	MyFlag = MyFlag | STRATCOLL | ENEMY
+	RegisterCollision()
+  	MyFlag2 = MyFlag2 | COLLMOVE
+	InitHDC()
+	CalculateStratPolyData(1)
+	AllocStratSoundBlock(1)
+	SetPitch(0,-0.2)
+	STAT> Start
+ENDSTATE
+
+STATE Start
+	IF (PlayerNearActivationXY(0))
+		LOOP (120)
+			MyFlag = MyFlag
+		ENDLOOP
+		PLAYSOUND>VOLCANO_DOOR_OP 0 1.0 0.0 0.0 0.0 0
+		SetObjectCrntPos(1, 0.0,MODEX)
+		SetObjectCrntPos(2, 0.0,MODEX)
+		STAT>Open
+	ENDIF
+ENDSTATE
+
+
+STATE Open
+	temp = GetObjectCrntPos(1,MODEX)
+	IF (temp > -5.0)
+		SetObjectCrntPos(1, temp - 0.1,MODEX)
+		temp = GetObjectCrntPos(2,MODEX)
+		SetObjectCrntPos(2, temp + 0.1,MODEX)
+		CalculateStratPolyData(1)
+	ELSE
+		STAT>Openned
+	ENDIF
+ENDSTATE
+
+STATE Openned
+	time = time + 1
+	IF (time > delayTime)
+		PLAYSOUND>VOLCANO_DOOR_CL 0 1.0 0.0 0.0 0.0 0
+		STAT>Close
+	ENDIF
+ENDSTATE
+
+STATE Close
+	IF (EscortTanker)
+		WHILE ( EscortTanker AND (EscortTankerY < y + 30) OR (DogY < y + 30))
+			MyFlag = MyFlag
+		ENDWHILE
+	ENDIF
+	temp = GetObjectCrntPos(1,MODEX)
+	IF (temp < 0.1)
+		SetObjectCrntPos(1, temp + 0.1,MODEX)
+		temp = GetObjectCrntPos(2,MODEX)
+		SetObjectCrntPos(2, temp - 0.1,MODEX)
+		CalculateStratPolyData(1)
+	ELSE
+		STAT>Start
+	ENDIF
+ENDSTATE

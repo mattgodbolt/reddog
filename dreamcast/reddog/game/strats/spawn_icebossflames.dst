@@ -1,0 +1,118 @@
+STATE Init
+	OBJECT>Weapon\FootSoldierLaser
+ 	SetFriction(0.0,0.0,0.0)
+	damage = 6.0
+	MakeMeTheLast()
+	AllocStratSoundBlock(1)
+	TRIGSET>DoTail EVERY 1
+
+	TRIGSET>HitStrat WHENHIT
+	TRIGSET>KillOff	ONFLOOR
+	//ALLOW LITTLE OVER 3 SECS TO BE ALIVE
+	IF (PAL)
+		TRIGSET>KillOff	EVERY 80
+	ELSE
+		TRIGSET>KillOff	EVERY 100
+	ENDIF
+
+	ExplosionLight (0.5, 0.45, 0.3, 10, 1, 0)
+
+	MyFlag = MyFlag  | STRATCOLL | NODISP | ENEMY | NOTEXPLODE | BULLETTYPE | LOWCOLL | FLOORCOLL
+	MyFlag2 = MyFlag2 | BULLET_CF
+   	//MyFlag2 = MyFlag2 | NOHDC
+	RegisterCollision()
+
+	MyTarget = MyParentTarget
+	IF (MyTarget)
+		CheckX = TargetX
+		CheckY = TargetY
+		CheckZ = TargetZ
+	   	PointToTarget()
+   		TRIGSET>KillOff WHENTARGETDEAD
+   	ELSE
+		//IF THE PLAYER IS ON THE TRAIN TARGET A POINT AHEAD OF HIM
+		//BY SPEED
+
+		IF ((PlayerState = PS_ONTRAIN) OR (PlayerState = PS_WATERSLIDE))
+			health = PlayerActVelX * PlayerActVelX
+			MyVar = PlayerActVelY * PlayerActVelY
+			frame = PlayerActVelZ * PlayerActVelZ
+
+			frame = FSQRT(health + MyVar + frame)
+			health = PlayerActVelX / frame
+			MyVar = (PlayerActVelY / frame) * 3.0
+			frame = PlayerActVelZ / frame
+		  	SetCheckPosRelOffsetPlayerObject(0,health,MyVar, frame)
+		
+			PointToTarget()
+		ELSE
+			PointPlayer ()
+		ENDIF
+	ENDIF
+  	MoveY(0.1)
+
+	//frames = 0
+	STAT>SetPos
+ENDSTATE
+
+STATE DoTail
+	SparkSuck(0,SPARKWHIRL, 7, 0, 0) 
+	FaceAlongDir()
+	TRIGFIN
+ENDSTATE
+
+
+STATE SetPos
+	IF (MyTarget)
+		PointToTarget()
+	ELSE
+		PointPlayer ()
+	ENDIF
+	MoveY(1.5)
+	TRIGSET>JonnyBazooka EVERY 2
+	STAT>MoveMe
+ENDSTATE
+
+STATE MoveMe
+	IF ((PlayerState = PS_ONTRAIN) OR (PlayerState = PS_WATERSLIDE))
+   	   	x = x + PlayerActVelX
+   	 	y = y + PlayerActVelY
+   	 	z = z + PlayerActVelZ
+   	   TowardPlayer(0.05,0.05)	
+	ENDIF
+ENDSTATE
+
+STATE KillOff
+	KillMyVelocity()
+	MyVar = 1.0
+   	CREATE SPAWN_BLASTEXP 0,0,0,0,0,0,0
+
+	Delete()
+ENDSTATE
+
+TRIGGER HitStrat
+	IF (CollWith = PlayerShieldStrat(0))
+		PLAYSOUND>DAMAGE3 0 1.0  0.0 0.0 0.0  RANDOM
+		MyFlag = MyFlag | FRIENDLY
+		BounceOffShield(0)
+		TRIGFIN
+	ELSE
+		Delete()
+		TRIGSTOP
+	ENDIF
+ENDTRIGGER
+
+
+TRIGGER JonnyBazooka
+	MyVar = 1.5
+	SetGlobalParamInt(0,99)
+	SetGlobalParamFloat(0,0.3)
+	CREATE SPAWN_BLASTEXP 0,0,0,0,0,0,0
+	ClearGlobalParams()
+
+
+	TRIGFIN
+ENDTRIGGER
+
+
+

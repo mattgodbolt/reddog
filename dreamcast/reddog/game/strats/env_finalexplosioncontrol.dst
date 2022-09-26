@@ -1,0 +1,67 @@
+
+TRIGGER NUKEME
+	IF (PAL)
+		MyVar = 170 / 1.2
+	ELSE
+		MyVar = 170
+	ENDIF
+
+
+	LOOP (MyVar)
+		MyFlag = MyFlag
+	ENDLOOP
+
+
+  	AllocStratSoundBlock(2)
+    PLAYSOUND>EX_NUKE 0 1.0 0.0 0.0 0.0 NOPOSITION
+
+	LOOP (7)
+		MyFlag = MyFlag
+	ENDLOOP
+    PLAYSOUND>EX_NUKE_WAVE 1 1.0 0.0 0.0 0.0 NOPOSITION
+
+
+
+	TRIGSTOP
+ENDTRIGGER
+
+STATE Init
+
+	MyFlag = MyFlag | NODISP
+   IF (MyParent)
+		WHILE (MyParentInvalid())
+			MyFlag = MyFlag
+		ENDWHILE
+  	ENDIF
+
+	frame = 0
+
+
+
+	TRIGSET>NUKEME EVERY 1
+	WHILE (frame < 200.0)
+		frame = frame + 1.0
+	ENDWHILE
+
+	PNode = ParentPNode
+	ObjId = ParentObjId
+
+	//MAIN SHIP
+	HideObject(46)
+
+ //	AllocStratSoundBlock(1)
+ //   PLAYSOUND>EX_NUKE 0 1.0 0.0 0.0 0.0 NOPOSITION
+
+	frame = 0
+	WHILE (frame < 10.0)
+		frame = frame + 1.0
+	ENDWHILE
+
+	//GEOSPHERE
+	HideObject(47)
+
+
+	PNode = NULL
+	ObjId = NULL
+	Delete()
+ENDSTATE

@@ -1,0 +1,145 @@
+//waits until player state is PS_READYTOENTER
+
+
+LOCALFLOAT	speed
+
+
+STATE Init
+	MyFlag = MyFlag & LNOT(ENEMY)
+	MyFlag = MyFlag | FRIENDLY
+	InitPath()
+	speed = 0.0
+	STAT> Start
+ENDSTATE
+
+STATE Start
+	PlayerHeld = 1
+	IF (PlayerState = PS_READYTOENTER)
+
+		//ensure player flag is off
+		PlayerHeld = 0
+ 		PlayerFlag = PlayerFlag & LNOT(STRATCOLL)
+		PlayerState = PS_ONPATH
+
+		//GET NEAREST WAY TO THE PLAYER
+		x = DogX
+		y = DogY
+		z = DogZ
+
+		GetNearestWay(0)
+
+
+	   //	GetPrevWay()
+		PlayerCheckX = CheckX
+		PlayerCheckY = CheckY
+		PlayerCheckZ = CheckZ
+	  //	WHILE (!PlayerSeePlayerCheckPosXY(TWOPI/8.0))
+	  //		PlayerTurnTowardPlayerCheckPosXY()
+	  //	ENDWHILE
+
+
+		STAT> FollowPath
+	ENDIF
+ENDSTATE
+
+//LOCALINT MISSIONTEXT
+//LOCALINT oAmt
+//LOCALINT oTar
+
+
+//TRIGGER MissionTextPrint
+
+//	oAmt = oAmt + ((oTar - oAmt) * 0.025)
+//	IF (DisplayBriefing (0, oAmt, 1))
+//		TRIGSTOP
+//	ENDIF
+
+//	TRIGFIN
+//ENDTRIGGER
+
+
+STATE FollowPath
+	PlayerTurnTowardPlayerCheckPosXY()
+	PlayerControlPadPress = PADSHOULDERR | PADFORWARD
+	IF (LastWay())
+		speed = PlayerDistPlayerCheckXY() * 0.004
+		IF (speed > 1.0)
+			speed = 1.0
+		ENDIF
+	ELSE
+		speed = 1.0
+	ENDIF
+	PlayerControlPlayerAcc = speed
+	IF (LastWay())
+		IF (PlayerNearPlayerCheckPosXY(0.0))
+		  //	IF (!MISSIONTEXT)
+		  //		oAmt = -1
+		  //		oTar = 1
+		  //		TRIGSET>MissionTextPrint EVERY 1
+				//CREATE THE MISSION DEBRIEFING
+				//SetGlobalParamInt(0,99)
+			 	//CREATE MISSIONBRIEFING 0,0,0,0,0,0,0
+				//ClearGlobalParams()
+		   //		MISSIONTEXT = 1
+		   //	ENDIF
+			IF (HasActivation(0))
+				GetActivationPos(0)
+				PlayerCheckX = CheckX
+				PlayerCheckY = CheckY
+				PlayerCheckZ = CheckZ
+			ENDIF
+			LOOP (15)
+				PlayerControlPlayerAcc = 0.1
+			ENDLOOP
+			STAT> FacePlayerCheckPos
+		ENDIF
+	ELSE
+		IF (PlayerNearPlayerCheckPosXY(5.0))
+			GetNextWay()
+			PlayerCheckX = CheckX
+			PlayerCheckY = CheckY
+			PlayerCheckZ = CheckZ
+		ENDIF
+	ENDIF
+ENDSTATE
+
+STATE FacePlayerCheckPos
+	PlayerControlPlayerAcc = 0.0
+	PlayerTurnTowardPlayerCheckPosXY()
+	IF (PlayerSeePlayerCheckPosXY(0.03))
+		PlayerState = PS_INDROPSHIP
+
+		//AWAIT SEMAPHORE FROM DROPSHIP STRAT TO GO BACK TO ON-PATH
+		WHILE (PlayerState = PS_INDROPSHIP)
+			MyFlag = MyFlag
+		ENDWHILE
+
+		PlayerFlag = PlayerFlag | STRATCOLL
+
+		WHILE (!PlayerSeePlayerCheckPosXY(0.03))
+			PlayerTurnTowardPlayerCheckPosXY()
+
+		ENDWHILE
+
+		WHILE (!PlayerNearPlayerCheckPosXY(0.0))
+			PlayerTurnTowardPlayerCheckPosXY()
+			PlayerControlPadPress = PADSHOULDERR | PADFORWARD
+			speed = PlayerDistPlayerCheckXY() * 0.004
+			IF (speed > 1.0)
+				speed = 1.0
+			ENDIF
+			speed = 1.0
+			PlayerControlPlayerAcc = speed
+		ENDWHILE
+
+
+		PlayerFlag = PlayerFlag & LNOT(STRATCOLL)
+	   
+
+		//SEMAPHORE BACK TO DROPSHIP TO SAY WE ARE DONE
+	   	PlayerState = PS_INDROPSHIP
+	  
+	   	Delete()
+	ENDIF
+ENDSTATE
+

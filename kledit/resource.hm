@@ -1,0 +1,5 @@
+// Microsoft Developer Studio generated Help ID include file.
+// Used by RDEdit.rc
+//
+#define HIDC_EDIT4                      0x80650410    // IDD_PANEL
+#define HIDC_EDIT5                      0x80650411    // IDD_PANEL

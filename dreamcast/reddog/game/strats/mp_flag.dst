@@ -1,0 +1,10 @@
+//
+// Flag generator for keep-the-flag multiplayer game
+//
+
+STATE Init
+	MyFlag = MyFlag | NODISP
+	IF (ShallISpawnAFlag())
+		CREATE SPAWN_MP_FLAG 0,0,0, 0,0,0, 0
+	ENDIF
+ENDSTATE

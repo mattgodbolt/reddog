@@ -1,0 +1,430 @@
+//THE TARGET OF THE CITY WALKER BOSS
+DEFINE TIMEVALUE 3600
+//DEFINE PAL_TIMEVALUE 3000
+//DEFINE TIMEVALUE 200
+DEFINE WALLHEALTH 400.0
+PARAMINT RescuedPresidentType
+
+LOCALINT Counter
+
+TRIGGER MakeSuccessControl
+	SetGlobalParamInt(0,2)
+	CREATE ENV_CITYBUNKER 0,0,0,0,0,0,0
+	ClearGlobalParams()
+	TRIGSTOP
+ENDTRIGGER
+
+//GlobalVar shall be used to signal the bosses that the game is up and the 
+//president has escaped
+
+TRIGGER DamageChecks
+	
+
+	IF (health <= 0)
+		//hide the bunker geometry in landscape
+   		ClearVisBit(1)
+
+		MyFlag = MyFlag & LNOT(NODISP)
+		//LET'S STOP THE PROCESSING SO WE CAN'T BE INTERRUPTED BY SUCCESS
+		MyFlag2 = MyFlag2 | STOPPED
+		//****** GAMEOVER EXCEPTION NEEDED ME HEARTIES
+		//SWITCH TO CAMERA IF WE HAVE ONE
+	   	IF (MyParent)
+	   	  	ChangeCamStrat()
+		ENDIF
+
+
+		HideTimer()
+		PauseTriggers(-1,FORGET)
+
+	   	MODELANIM>BOSSES\CITYBOSS\PRESIDENTBUNKER.RDO>BUNKERBLOW>REPEAT
+
+	
+		ID = MyPNODEIDS + 1
+		frame = 0
+
+		LOOP (36)
+			IF (frame < 0.8)
+				temp = 0
+				IMMLOOP (ID)
+					IF (temp)
+  						SetSpecularColour(temp,frame,frame,frame)
+						ObjectSpecularFlash(temp,1)
+					ENDIF
+					temp = temp + 1
+				IMMENDLOOP
+				 frame = frame + 0.05
+
+
+
+			ENDIF
+		ENDLOOP
+
+
+		SetGlobalParamInt(0,1)
+		CREATE ENV_CITYBUNKER 0,0,0,0,0,0,0
+		ClearGlobalParams()
+		MyFlag = MyFlag | NODISP
+
+		TRIGRESET
+		TRIGSTOP
+		STAT>Idle
+
+	ENDIF
+
+
+	TRIGFIN
+ENDTRIGGER
+
+STATE BunkerBlow
+   		OBJECT> BOSSES\CITYBOSS\PRESIDENTBUNKERBLOW
+	   	MODELANIM>BOSSES\CITYBOSS\PRESIDENTBUNKERBLOW.RDO>BUNKERBLOW>0
+
+		TRIGSET>Blast EVERY 1
+		TRIGSET>Flash EVERY 1
+	   	WHILE (MyAnimFlag & RUNNING)
+	   		MyFlag = MyFlag
+	   	ENDWHILE
+
+		LOOP (100)
+			MyFlag = MyFlag
+		ENDLOOP
+
+		CREATE STATECHANGE_KillPlayer 0, 0, 0, 0, 0, 0, 0
+		ID = MyPNODEIDS + 1
+		frame = 0.8
+		STAT>Idle
+
+
+ENDSTATE
+
+LOCALINT ID
+LOCALINT temp
+
+TRIGGER Flash
+		ID = MyPNODEIDS + 1
+
+		WHILE (frame > 0.0)
+
+			temp = 0
+			IMMLOOP (ID)
+				IF (temp)
+				 	SetSpecularColour(temp,frame,frame,frame)
+					ObjectSpecularFlash(temp,1)
+				ENDIF
+				temp = temp + 1
+			IMMENDLOOP
+			frame = frame - 0.05
+
+		ENDWHILE
+		TRIGFIN
+
+ENDTRIGGER
+
+LOCALINT DELAYTIME
+LOCALFLOAT ALPHA
+
+//HAVE TAKEN THE BELOW OUT
+//have added 5 frames onto the actual runtimes of anims
+
+DEFINE NTSC_STAGE1LENGTH 324
+DEFINE NTSC_STAGE1END 25
+DEFINE NTSC_STAGE2LENGTH 169
+DEFINE NTSC_STAGE2END 25
+DEFINE NTSC_STAGE3LENGTH 245
+DEFINE NTSC_STAGE3END 25
+
+DEFINE PAL_STAGE1LENGTH 266
+DEFINE PAL_STAGE1END 20
+DEFINE PAL_STAGE2LENGTH 144
+DEFINE PAL_STAGE2END 15
+DEFINE PAL_STAGE3LENGTH 245
+DEFINE PAL_STAGE3END 20
+
+
+//globalvar2 being used for semaphore 'tween this strat and the lightning processor
+//to stop flashes during fade-ins/outs
+	 
+STATE Success
+
+	GlobalVar2 = 0
+
+	IF (PAL)
+		DELAYTIME = PAL_STAGE1LENGTH - PAL_STAGE1END
+	ELSE
+		DELAYTIME = NTSC_STAGE1LENGTH - NTSC_STAGE1END
+	ENDIF
+
+	WHILE (DELAYTIME)
+		DELAYTIME = DELAYTIME - 1
+	ENDWHILE
+
+	IF (PAL)
+		DELAYTIME = PAL_STAGE1END 
+	ELSE
+		DELAYTIME = NTSC_STAGE1END 
+   	ENDIF
+   
+   	ALPHA = 0
+	GlobalVar2 = 99.0
+	LOOP (DELAYTIME)
+		SetScreenARGB(ALPHA,0,0,0)
+		ALPHA = ALPHA + 1.0 / DELAYTIME
+	ENDLOOP
+
+	IF (PAL)
+		DELAYTIME = 4
+	ELSE
+		DELAYTIME = 5
+	ENDIF
+
+	//hold black screen from 1 to 2
+	ALPHA = 1.0 
+ 	LOOP (DELAYTIME)
+ 		SetScreenARGB(ALPHA,0,0,0)
+ 	ENDLOOP
+
+	IF (PAL)
+		DELAYTIME = PAL_STAGE2LENGTH  - PAL_STAGE2END  
+	ELSE
+		DELAYTIME = NTSC_STAGE2LENGTH  - NTSC_STAGE2END 
+	ENDIF
+
+	
+	WHILE (DELAYTIME)
+			SetScreenARGB(ALPHA,0,0,0)
+		//HANDLE THE FADE BACK IN TO SCENE 2
+	   	IF (ALPHA > 0.0)
+		 	SetScreenARGB(ALPHA,0,0,0)
+			IF (PAL)
+				ALPHA = ALPHA - 1.0 / (PAL_STAGE1END * 2.0)
+			ELSE
+				ALPHA = ALPHA - 1.0 / (NTSC_STAGE1END * 2.0)
+			ENDIF
+	   	ELSE
+			GlobalVar2 = 0
+		ENDIF
+
+		DELAYTIME = DELAYTIME - 1
+	ENDWHILE
+
+	IF (PAL)
+		DELAYTIME = PAL_STAGE2END 
+	ELSE
+		DELAYTIME = NTSC_STAGE2END - 5 
+	ENDIF
+  //	GlobalVar = 0
+
+	ALPHA = 0
+	LOOP (DELAYTIME)
+		SetScreenARGB(ALPHA,0,0,0)
+		ALPHA = ALPHA + 1.0 / DELAYTIME
+	ENDLOOP
+  
+	IF (PAL)
+		DELAYTIME = 24
+	ELSE
+		DELAYTIME = 30
+	ENDIF
+
+	GlobalVar2 = 99.0
+	//HOLD THE BLACK SCREEN TWEEN 2 AND 3
+	ALPHA = 1.0
+ 	LOOP (DELAYTIME)
+ 		SetScreenARGB(ALPHA,0,0,0)
+ 	ENDLOOP
+
+
+	IF (PAL)
+		DELAYTIME = PAL_STAGE3LENGTH - PAL_STAGE3END
+	ELSE
+		DELAYTIME = NTSC_STAGE3LENGTH - NTSC_STAGE3END
+	ENDIF
+
+	WHILE (DELAYTIME)
+			SetScreenARGB(ALPHA,0,0,0)
+		//HANDLE THE FADE BACK IN TO 3
+	   	IF (ALPHA > 0)
+			SetScreenARGB(ALPHA,0,0,0)
+			IF (PAL)
+				ALPHA = ALPHA - 1.0 / (PAL_STAGE2END * 2.0)
+			ELSE
+				ALPHA = ALPHA - 1.0 / (NTSC_STAGE2END * 2.0)
+			ENDIF
+		ELSE
+			GlobalVar2 = 0
+		ENDIF
+
+		DELAYTIME = DELAYTIME - 1
+	ENDWHILE
+
+
+
+
+
+
+
+	Delete()
+
+
+
+ENDSTATE
+
+
+STATE Init
+
+ // 	IF (RescuedPresidentType)
+ //		STAT>SeeU
+ //	ENDIF
+  
+  	IF (GetGlobalParamInt(0) = 2)
+		STAT>Success
+	ENDIF
+
+
+	IF (GetGlobalParamInt(0))
+		STAT>BunkerBlow
+	ENDIF
+
+	//GLOBALVAR SET TO 1 ONCE PLAYER IS SUCCESSFUL
+	GlobalVar = 0
+	health = 100.0  
+
+  	IF (!PNode)
+   		OBJECT> BOSSES\CITYBOSS\PRESIDENTBUNKER
+   	ENDIF
+
+	MyFlag = MyFlag | NODISP
+
+	//SPAWN THE STRAT THAT WILL BE USED AS OUR RADAR CONTROLLER
+
+	SetGlobalParamInt(0,1)
+	CREATE SPAWN_POINTTOTARGET 0, 0, 0, 0, 0, 0, 0
+
+	ClearGlobalParams()
+
+
+
+	TRIGSET>ProcessArrow EVERY 1
+
+	TRIGSET>DamageChecks EVERY 1
+
+
+
+
+	MyFlag = MyFlag & LNOT(ENEMY)
+	//MyFlag = MyFlag | FRIENDLY | STRATCOLL | NODISP
+
+	
+	//MyFlag2 = MyFlag2 | PLAYER_CF
+  //	InitHDC()
+  //	CalculateStratPolyData(1)
+   
+   
+   MyFlag = MyFlag | NODISP
+   //	RegisterCollision()
+ 
+ 	health = WALLHEALTH * 4
+ 
+ 
+ 	// Pop the timer up
+   //	InitTimer (0, 200)
+
+	LOOP (30)
+		MyVar = MyVar
+	ENDLOOP
+
+	Counter = TIMEVALUE
+
+
+	IF (PAL)
+		Counter = Counter / 1.2
+	ENDIF
+ 
+   //	Counter = 600
+	// Now start the timer off!
+	InitTimer (-1, Counter)
+	//start recording boss time for scores at level's end
+	TimeFunction(1)
+	
+   	SetEnvironmentParms(5,100.0,-1, -1,0,0,0)
+	BossDarkness(0.85)
+   
+   	// Wait for the timer to expire
+	WHILE (Counter)
+		Counter = Counter - 1
+	ENDWHILE
+
+	//wait for bosses to be killed
+	//REMOVED FOR NOW FOR SEFTON
+ // 	WHILE (GlobalVar2)
+ // 		MyFlag = MyFlag
+ // 	ENDWHILE
+
+
+	GlobalVar = 1
+
+   	//TRIGKILL>ProcessArrow EVERY 1
+	//ENSURE THE BLOW UP STAGE CANNOT COME INTO PLAY
+   	PauseTriggers(-1,FORGET)
+
+	//end of recorded boss time	for scores at level's end
+	TimeFunction(2)
+	HideTimer()
+
+  //spawn the anim controller city bunker
+	TRIGSET>MakeSuccessControl EVERY 1
+
+	LOOP (2)
+		MyFlag = MyFlag
+	ENDLOOP
+   
+	
+   
+	//must be successful event set up here
+	Delete()
+
+	//STAT>Success
+
+ENDSTATE
+
+TRIGGER ProcessArrow
+	//AWAIT THE CAMERA'S CREATION
+	WHILE (!Camera)
+		MyFlag = MyFlag
+	ENDWHILE
+	TRIGSET>ProcArrowMain EVERY 1
+	TRIGSTOP
+ENDTRIGGER
+
+TRIGGER ProcArrowMain
+	//to ensure the arrow is not drawn again within GAME.C
+   	MyVar = 1.0
+	RadarUpdate(RADARDRAW)
+	TRIGFIN
+ENDTRIGGER
+
+
+STATE Idle
+ENDSTATE
+
+
+
+TRIGGER Blast
+	IF (RandRange(0,5.0) > 3.8)
+		CheckX = RandRange(-3.0,3.0)
+		CheckY = RandRange(-3.0,3.0)
+   		//CREATE BIG XPLOSION, WITH NO SOUND
+		IF (RandRange(0,5.0) > 4.0)
+			MyVar = 2.0
+		ELSE
+			MyVar = 2.5
+		ENDIF
+	 	CREATE SPAWN_BLASTEXP CheckX, CheckY, 0, 0, 0, 0, 0
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+STATE Die
+	Delete()
+ENDSTATE

@@ -1,0 +1,71 @@
+LOCALFLOAT	MySpeedX
+LOCALFLOAT	MySpeedY
+LOCALFLOAT	MySpeedZ
+LOCALFLOAT	aTime
+LOCALFLOAT	bTime
+LOCALINT	time
+LOCALINT	deathTime
+
+STATE Init
+	MyFlag = MyFlag | SPRITE | NOTEXPLODE | FRIENDLY
+	OBJECT> SFX\ExplosionSparkWhite
+	scalex = 0.5
+	scaley = 0.5
+	scalez = 0.5
+	time = 0
+	deathTime = RandRange(60, 90)
+	IF (GetGlobalParamInt(0) = 1)
+		STAT>FloatInit
+	ENDIF
+	IF (GetGlobalParamInt(0) = 0)
+		STAT>GravInit
+	ENDIF
+ENDSTATE
+
+STATE FloatInit
+	aTime = RandRange(-PI, PI)
+	bTime = RandRange(-PI, PI)
+	x = x + RandRange(-2.0, 2.0)
+	y = y + RandRange(-2.0, 2.0)
+	MySpeedZ = RandRange(0.1, 0.3)
+	MoveZ(MySpeedZ)
+	STAT>FloatStart
+ENDSTATE
+
+STATE FloatStart
+	x = x + Ssin(aTime) * 0.05
+	y = y + Ssin(bTime) * 0.05
+	aTime = aTime + 0.4
+	bTime = bTime + 0.3
+	time = time + 1
+	IF (time > deathTime)
+		STAT>KillOff
+	ENDIF
+ENDSTATE
+
+STATE GravInit
+	MyFlag = MyFlag | GRAVITYON
+	MySpeedX = RandRange(-0.3, 0.3)
+	MoveX(MySpeedX)
+	MySpeedY = RandRange(-0.3, 0.3)
+	MoveY(MySpeedY)
+	MySpeedZ = RandRange(0.4, 1.0)
+	MoveZ(MySpeedZ)
+	STAT>GravStart
+ENDSTATE
+	
+STATE GravStart
+	time = time + 1
+	IF (time > deathTime)
+		STAT>KillOff
+	ENDIF
+ENDSTATE
+	
+STATE KillOff
+	LOOP (10)
+		scalex = scalex - 0.05
+		scaley = scaley - 0.05
+		scalez = scalez - 0.05
+	ENDLOOP
+	Delete()
+ENDSTATE

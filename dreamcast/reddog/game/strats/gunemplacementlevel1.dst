@@ -1,0 +1,486 @@
+// GUN EMPLACEMENT LEVEL 1
+
+//TWO MODES  POPUPTYPE 0 - THE DEFAULT, JUST ACTS LIKE A REGULAR TRACKING EMPLACEMENT
+//						this mode requires an activation point that the player need enter
+//						before going into track player mode
+//						When outside, the thing will just be left right scanning 
+
+
+//			 POPUPTYPE 1 - WHEN PLAYER IN RANGE, WILL POP UP AND FIRE UNTIL PLAYER OUT OF RANGE
+
+
+PARAMINT PopUpType 0
+
+
+LOCALINT    TRGSET
+LOCALINT	AimState
+LOCALINT	WaitFrame
+LOCALINT	hasBeenHit
+LOCALINT	destroyed
+LOCALINT	doneCC
+LOCALFLOAT	tempf
+
+DEFINE GUNBODY 3
+DEFINE LEFTGUN 2
+DEFINE RIGHTGUN 1
+DEFINE GUNBASE 5
+
+DEFINE DORMANT		0
+DEFINE POPPINGUP	1
+DEFINE AIMING		2
+DEFINE POPPINGDOWN	3
+
+STATE Init
+	
+	IF (!(MyFlag2 & OWNIPARAMS))
+		PopUpType = 0
+		
+	ENDIF
+
+	destroyed = 0
+	TRGSET = 0
+	doneCC = 0
+	hasBeenHit = 0
+
+
+
+    //CONTROLLER FOR FIRING EXPLOSION
+   	MyVar = 4.0 
+	MyFlag = MyFlag | ENEMY | STRATCOLL
+	RegisterCollision()
+  
+  	OBJECT>ENEMIES\GUNEMPLACEMENTLEVEL1
+	InitHDC()
+	TRIGSET>SpecularMadness EVERY 1
+	
+	TRIGSET>CheckCol EVERY 1
+	health = 1
+	SetObjectHealth(1, 80)
+	SetObjectHealth(2, 80)
+	SetObjectHealth(3, 80)
+	SetObjectHealth(4, 80)
+	SetObjectHealth(5, 80)
+	TRIGSET>Always EVERY 1
+	AimState = DORMANT
+
+	// One sound at a time
+	AllocStratSoundBlock(3)
+	RegisterDanger(50.0)
+
+	TSMADE = 0
+
+
+	IF (!PopUpType)
+		ObjectTargetable(3)
+
+//Commented out to fix the volcano bug where the guns pop in when the player restarts just before the boss
+
+//		MyFlag2 = MyFlag2 | TRANSLUCENT
+//		trans = 0.0
+	  	MODELANIM>ENEMIES\GUNEMPLACEMENTLEVEL1.RDO>POPUP>0
+		WHILE (MyAnimFlag & RUNNING)
+			MyFlag = MyFlag
+		ENDWHILE
+
+		MODELANIM>ENEMIES\GUNEMPLACEMENTLEVEL1.RDO>FIRING>REPEAT
+
+//		MyFlag2 = MyFlag2 & LNOT(TRANSLUCENT)
+		STAT>Main
+
+	ELSE
+		STAT>Main
+	ENDIF
+
+ENDSTATE
+
+LOCALFLOAT SPECAMOUNT
+
+TRIGGER SpecularMadness
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+	
+	IF (MyFlag & HITSTRAT)
+		IF (destroyed = 0)
+			IF (ObjectHitStrat(1) OR ObjectHitStrat(2) OR ObjectHitStrat(3) OR ObjectHitStrat(4) OR ObjectHitStrat(5))
+				SPECAMOUNT = 1.0
+				PLAYSOUND>ENEMY_HIT 2 1.0 0.0 0.0 0.0 RANDOM
+			ENDIF
+		ENDIF
+	ENDIF
+	IF (SPECAMOUNT > 0)
+  		MyFlag2 = MyFlag2 | SPECULAR
+		SetSpecularColour(1, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		SetSpecularColour(2, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		SetSpecularColour(3, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		SetSpecularColour(4, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		SetSpecularColour(5, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		IF (PAL)
+			SPECAMOUNT = SPECAMOUNT - 0.12
+		ELSE
+			SPECAMOUNT = SPECAMOUNT - 0.1
+		ENDIF
+   	ELSE
+		SPECAMOUNT = 0
+ 		MyFlag2 = MyFlag2 & LNOT(SPECULAR)
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+TRIGGER CheckCol
+	IF ((destroyed = 1) AND (doneCC = 0))
+		CalculateStratPolyData(1)
+		doneCC = 1
+	ELSE
+		IF (destroyed = 0)
+			CalculateStratPolyData(0)
+		ENDIF
+	ENDIF
+	IF (MyFlag & HITSTRAT)
+		hasBeenHit = 1
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+LOCALINT MODE
+LOCALFLOAT SaveX
+LOCALFLOAT SaveY
+LOCALFLOAT SaveZ
+LOCALINT PlayerNear
+LOCALINT TSMADE
+
+STATE Main
+	
+	//IF (!TSMADE)
+
+		//TRIGSET>UpdateCollision EVERY 1
+
+		// OnDead handler
+		
+
+	//ENDIF
+	IF (!PopUpType)
+		IF (TRGSET)
+			TRIGKILL>KeepOnAiming EVERY 1
+			TRGSET = 0
+	   	ENDIF
+ 	ENDIF
+
+	IF (!PopUpType)
+
+		MODE = 0
+		PlayerNear = 0
+	  	SetCheckPosRel(GUNBASE,10.0,0,0)
+
+		WHILE ((!PlayerNear) && (hasBeenHit = 0))
+
+			PlayerNear = PlayerNearActivationXY(0) | NearPlayer(40.0) 
+
+			SaveX = DogX
+			SaveY = DogY
+			SaveZ = DogZ
+
+			DogX = CheckX
+			DogY = CheckY
+			DogZ = CheckZ
+
+			ObjectTowardPlayerXZ (GUNBASE, 0.0, 0.025, TWOPI, TWOPI)
+			ObjectTowardPlayerXZ (GUNBODY, 0.05, 0.0, 0.0, (TWOPI/360.0) * 80.0)
+			CrntRotToIdleRotZ(GUNBASE, 0.025)
+			CrntRotToIdleRotX(GUNBODY, 0.05)
+		
+			IF (ObjectSeePlayerZ(TWOPI/8.0,GUNBODY,TURRETOFFX,TURRETOFFY,TURRETOFFZ))
+			  	MODE = !MODE
+				IF (MODE = 0)
+					SetCheckPosRel(GUNBASE,80.0,-10.0,0)
+				ELSE
+			 		SetCheckPosRel(GUNBASE,-80.0,-10.0,0)
+				ENDIF
+
+			ENDIF
+
+
+			DogX = SaveX
+			DogY = SaveY
+			DogZ = SaveZ
+
+
+		ENDWHILE
+
+	   	// Keep a trigger aiming the gun
+	 	TRIGSET>KeepOnAiming EVERY 1
+		//ENSURE WE ARE DAMAGEABLE
+		MyFlag2 = MyFlag2 & LNOT(NODAMAGE)
+
+
+
+		TSMADE = 1
+		TRGSET = 1
+		//continually track until player outside range
+		STAT>Aim
+
+	ELSE
+		TRIGSET>KeepOnAiming EVERY 1
+
+		//wait for player near then POP UP MOTHERF***
+		STAT>Wait
+
+
+	ENDIF
+								   
+ENDSTATE
+
+TRIGGER Always	
+	tempf = GetObjectHealth(1)
+	IF (tempf <= 0.0)
+		TRIGRESET
+		TRIGSTOP
+		STAT>Die
+	ENDIF
+	tempf = GetObjectHealth(2)
+	IF (tempf <= 0.0)
+		TRIGRESET
+		TRIGSTOP
+		STAT>Die
+	ENDIF
+	tempf = GetObjectHealth(3)
+	IF (tempf <= 0.0)
+		TRIGRESET
+		TRIGSTOP
+		STAT>Die
+	ENDIF
+	tempf = GetObjectHealth(4)
+	IF (tempf <= 0.0)
+		TRIGRESET
+		TRIGSTOP
+		STAT>Die
+	ENDIF
+	tempf = GetObjectHealth(5)
+	IF (tempf <= 0.0)
+		TRIGRESET
+		TRIGSTOP
+		STAT>Die
+	ENDIF
+	health = 1
+	TRIGFIN
+ENDTRIGGER
+
+
+
+LOCALINT colloff
+
+TRIGGER UpdateCollision
+
+	colloff = 0
+
+	IF (!PopUpType)
+		IF (!NearPlayer(100.0))
+			colloff = 1
+		ENDIF
+	ELSE
+		IF (AimState = DORMANT)
+			colloff = 1
+		ENDIF
+	ENDIF
+
+
+	IF (colloff)
+		MyFlag = MyFlag & LNOT(STRATCOLL)
+	ELSE
+	
+		CalculateStratPolyData(0)
+		MyFlag = MyFlag | STRATCOLL
+	ENDIF
+
+
+	TRIGFIN
+
+ENDTRIGGER
+
+
+// Wait for the player to come into range
+STATE Wait
+	AimState = DORMANT
+   //	MyFlag = MyFlag & LNOT(TARGETABLE | STRATCOLL)
+	IF (HasActivation(0))
+		// Has activation and is near it..
+		IF (PlayerNearActivationXY(0))
+			STAT>Popup
+		ENDIF
+	ELSE
+		IF (NearPlayer(40))
+			// Popup when within range of the player
+			STAT>Popup
+		ENDIF
+	ENDIF
+ENDSTATE
+
+// Pop up and get ready to aim at the player
+STATE Popup
+	WaitFrame = RandRange(0,10)
+	LOOP WaitFrame
+		MyFlag = MyFlag
+	ENDLOOP
+	AimState = POPPINGUP
+	MODELANIM>ENEMIES\GUNEMPLACEMENTLEVEL1.RDO>POPUP>0
+
+	WHILE (MyAnimFlag & RUNNING)
+		MyFlag = MyFlag
+	ENDWHILE
+	ObjectTargetable(3)
+
+	MODELANIM>ENEMIES\GUNEMPLACEMENTLEVEL1.RDO>FIRING>REPEAT
+
+	//ENSURE WE ARE DAMAGEABLE
+	MyFlag2 = MyFlag2 & LNOT(NODAMAGE)
+
+	STAT>Aim
+ENDSTATE
+
+// Pop back down
+STATE Popdown
+	AimState = POPPINGDOWN
+   	MODELANIM>ENEMIES\GUNEMPLACEMENTLEVEL1.RDO>POPDOWN>0
+	WHILE (MyAnimFlag & RUNNING)
+		MyFlag = MyFlag
+	ENDWHILE
+	//MAKE NO DAMAGEABLE
+	MyFlag2 = MyFlag2 | NODAMAGE
+	
+	STAT>Wait
+ENDSTATE
+
+// Do the aiming and firing
+STATE Aim
+	IF (PopUpType AND !NearPlayer(80.0) AND (hasBeenHit = 0))
+		STAT>Popdown
+	ELSE
+		IF (!PopUpType)
+			IF (HasActivation(0))
+				IF (!PlayerNearActivationXY(0) AND (hasBeenHit = 0))
+					STAT>Main
+				ENDIF
+			ELSE
+				IF (!NearPlayer(40.0) && (hasBeenHit = 0))
+					STAT>Main
+				ENDIF	 
+			ENDIF
+		ENDIF
+		
+	ENDIF
+
+	AimState = AIMING
+   	IF (ObjectSeePlayerZ(TWOPI/128.0,GUNBODY,TURRETOFFX,TURRETOFFY,TURRETOFFZ))
+		PLAYSOUND>SQUAR009PMIX2 0 1.0 0.0 0.0 0.0 0
+		CREATE SPAWN_ENEMYMISSILE 0.0, 0.0, 0.0, 0, 0, 0, LEFTGUN
+		CREATE SPAWN_BLASTEXP 0.0, 0.0, 0.0, 0, 0, 0, LEFTGUN
+		PLAYSOUND>SQUAR009PMIX2 0 1.0 0.0 0.0 0.0 0
+		CREATE SPAWN_ENEMYMISSILE 0.0, 0.0, 0.0, 0, 0, 0, RIGHTGUN
+		CREATE SPAWN_BLASTEXP 0.0, 0.0, 0.0, 0, 0, 0, RIGHTGUN
+	   
+	   //wait 3 seconds
+	   	LOOP (90)
+			MyFlag = MyFlag
+		ENDLOOP
+
+	ENDIF
+ENDSTATE
+
+   
+DEFINE TURRETOFFX 0.0
+DEFINE TURRETOFFY 0.0
+DEFINE TURRETOFFZ 0.0
+
+STATE KeepOnAiming
+   
+   	IF (AimState = AIMING)
+		ObjectTowardPlayerXZ (GUNBASE, 0.0, 0.025, TWOPI, TWOPI)
+ 
+ 		//ENSURE THE CENTRE OF THE GUN BARRELS GOES TOWARDS THE PLAYER
+ 		ObjectTowardPlayerXZOffset (GUNBODY, 0.05, 0.0, 0.0, (TWOPI/360.0) * 80.0, TURRETOFFX, TURRETOFFY, TURRETOFFZ)
+
+		CrntRotToIdleRotZ(GUNBASE, 0.025)
+		CrntRotToIdleRotX(GUNBODY, 0.05)
+
+	ENDIF
+
+	IF (ObjectSeePlayerZ(0.05, GUNBODY, 0.0, 0.0, 0.0))
+		IF (IsPlaying(1))
+			StopSound(1,0)
+		ENDIF
+	ELSE
+		IF (!IsPlaying(1))
+			PLAYSOUND>GUN_TURN 1 0.75 0.0 0.0 0.0 CONTINUOUS
+		ENDIF
+	ENDIF
+   
+	TRIGFIN
+ENDSTATE
+
+STATE Die
+	IF ((!PopUpType))
+		IF (TRGSET)
+			TRIGKILL>KeepOnAiming EVERY 1
+		ENDIF
+	ENDIF
+
+	destroyed = 1
+	HideObject(GUNBODY)
+	HideObject(LEFTGUN)
+	HideObject(RIGHTGUN)
+	NoCollObject(GUNBODY)
+	NoCollObject(LEFTGUN)
+	NoCollObject(RIGHTGUN)
+
+	PLAYSOUND>EX_SOFT 1 1.0 0.0 0.0 0.0 RANDOM
+
+	Score = Score + 1000
+	MyFlag = MyFlag & LNOT(ENEMY)
+	// Resurrect the object to live on as a dead sentry
+   	MyFlag = MyFlag | ALIVE
+	MyVar = 2.0
+	CREATE SPAWN_ExplosionShardGround 0, 0, 5, 0, 0, 0, 0
+	IMMLOOP (10) 
+		CREATE SPAWN_EnemyDebris 0, 0, 5, 0, 0, 0, 0
+	IMMENDLOOP
+	CREATE SPAWN_ExplosionBall 0, 0, 5, 0, 0, 0, 0
+//	adrelanin = adrelanin + 0.2
+   	STAT>Finish
+ENDSTATE
+
+STATE Finish
+ENDSTATE
+
+STATE Dead
+	AimState = 2
+	WHILE (AimState)
+		WaitFrame = 150
+		WHILE (WaitFrame)
+			IF (AimState = 2)
+				MyVar = 2.0
+			ELSE
+				MyVar = 0.0
+			ENDIF
+			CREATE SPAWN_ScapeSmoke 0.0,0,0, TWOPI/2.0,0,0, GUNBODY
+			CREATE SPAWN_ScapeSmoke 0.0,0,0, TWOPI/2.0,0,0, GUNBODY
+			IF (AimState = 2)
+				MyVar = 3.0
+			ELSE
+				MyVar = 1.0
+			ENDIF
+			CREATE SPAWN_ScapeSmoke 0.0,0,0, TWOPI/2.0,0,0, GUNBODY
+			WaitFrame = WaitFrame - 1 
+		ENDWHILE
+		AimState = AimState - 1
+	ENDWHILE
+	STAT>Idle
+ENDSTATE
+
+STATE Idle
+	AimState = DORMANT
+	IF (NearPlayer(40.0))
+		MyVar = 0.0
+		CREATE SPAWN_ScapeSmoke 0.0,0,0, TWOPI/2.0,0,0, GUNBODY
+		CREATE SPAWN_ScapeSmoke 0.0,0,0, TWOPI/2.0,0,0, GUNBODY
+		MyVar = 1.0
+		CREATE SPAWN_ScapeSmoke 0.0,0,0, TWOPI/2.0,0,0, GUNBODY
+	ENDIF
+ENDSTATE

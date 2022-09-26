@@ -1,0 +1,77 @@
+//PAL FRIENDLY
+// A strat light: this lights only strats in the vicinity
+
+// The maximum distance that this light has effect over
+PARAMFLOAT		radius			10.0
+// The relative 'brightness' of the light; higher means strats are more effective
+PARAMFLOAT		multiplier		1.0
+// The colour of the light, 0 is none, 255 is brightest.  Values over 255 affect the specular colour of the strats
+PARAMFLOAT		red				220.0
+PARAMFLOAT		green			220.0
+PARAMFLOAT		blue			220.0
+// If non-zero, then brightness is perturbed by up to +/- this amount every frame
+PARAMFLOAT		flickerAmount	0.0
+// The distance from Red Dog at which this light becomes active
+PARAMFLOAT		activeDist		250.0
+
+LOCALINT		lightID
+
+STATE Init
+	// Don't show anything for this object
+	MyFlag = MyFlag & LNOT(ENEMY)
+	MyFlag = MyFlag | NODISP | DELETECALLBACK
+	// Default parameters
+	IF (!(MyFlag & OWNFPARAMS))
+		radius = 10
+		multiplier = 1
+		red = 220
+		green = 220
+		blue = 220
+		flickerAmount = 0
+		activeDist = 250
+	ENDIF
+
+	lightID = -1
+
+	red = red * (1.0 / 256.0)
+	green = green * (1.0 / 256.0)
+	blue = blue * (1.0 / 256.0)
+
+	TRIGSET>CleanUp WHENDELETED
+
+	STAT>WaitForNearness
+ENDSTATE
+
+STATE WaitForNearness
+	IF (NearPlayer(activeDist))
+		STAT>Light
+	ENDIF
+ENDSTATE
+
+STATE Light
+	// Are we near the player?
+	IF (!NearPlayer(activeDist * 1.1))
+		RemoveLight (lightID)
+		lightID = -1
+		STAT>WaitForNearness
+	ENDIF
+
+	// Try and create the light if we haven't already:
+	IF (lightID = -1)
+		lightID = MakePointLight (red, green, blue, radius, multiplier, 0,0,0)
+	ENDIF
+
+	IF (flickerAmount)
+
+		MyVar = RandRange(-flickerAmount, flickerAmount)
+		IF (PAL)
+			MyVar = MyVar * 1.2
+		ENDIF
+		SetPointLightRadius (lightID, radius, multiplier + MyVar)
+	ENDIF
+ENDSTATE
+
+STATE CleanUp
+	// Hoorah - clean up the light
+	RemoveLight (lightID)
+ENDSTATE

@@ -1,0 +1,213 @@
+PARAMINT	FaceAway	0
+
+LOCALFLOAT	tempf
+LOCALFLOAT	origz
+LOCALFLOAT	MYcamx
+LOCALFLOAT	MYcamy
+LOCALFLOAT	MYcamz
+LOCALFLOAT	StartZ
+
+LOCALINT	tempi
+LOCALINT	si
+LOCALINT	nframes
+
+LOCALINT	LANDTIME
+LOCALINT	readyToGo
+LOCALINT	DOORTIME
+DEFINE		NTSC_DOORTIME 60
+DEFINE		PAL_DOORTIME 50
+DEFINE		NTSC_LANDTIME	200
+DEFINE		PAL_LANDTIME	166
+
+
+
+STATE Init
+	MyFlag = MyFlag | ENEMY | STRATCOLL 
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+	IF (PAL)
+		DOORTIME = PAL_DOORTIME
+	ELSE
+		DOORTIME = NTSC_DOORTIME
+	ENDIF
+	OBJECT> REDDOG\REDDOGDROPSHIP
+	readyToGo = 0
+	IF (!(MyFlag2 & OWNIPARAMS))
+		FaceAway = 0
+	ENDIF
+	IF (PAL)
+		LANDTIME = PAL_LANDTIME
+	ELSE
+		LANDTIME = NTSC_LANDTIME
+	ENDIF
+	trans = 0.03333
+	StartZ = z
+	origz = z + 101.0
+	z = origz
+	InitHDC()
+	CalculateStratPolyData(1)
+	MyVar = 2
+	AllocStratSoundBlock(3)
+	SetPitch(0, -0.4)
+	PLAYSOUND>DROPSHIP 0 0.9 0.0 0.0 0.0 CONTINUOUS
+	PLAYSOUND>HIGHWHINE 1 0.9 0.0 0.0 0.0 CONTINUOUS
+	IMMLOOP 4
+		CREATE SPAWN_RedDogDropship_Jet 0,0,0, 0,0,0, MyVar
+		MyVar = MyVar + 1
+	IMMENDLOOP
+	MyVar = 1
+	tempi = 0
+	IF (FaceAway)
+		PointToXY(DogX,DogY,0)
+	ENDIF
+
+	IF (PAL)
+		RelRotateZ(PI * 0.83333)
+	ELSE
+		RelRotateZ(PI)
+	ENDIF
+	
+	UnitiseMatrix()
+	TRIGSET>Visible EVERY 1
+	TRIGSET>Always EVERY 1
+	STAT>Land
+ENDSTATE
+
+LOCALFLOAT speed
+TRIGGER Always
+	CalculateStratPolyData(1)
+	speed = StratSpeed()
+	SetPitch(1, speed)
+	IF (speed > 0.4)
+		speed = 0.4
+	ENDIF
+	SetPitch(0, speed)
+	TRIGFIN
+ENDTRIGGER
+
+TRIGGER Visible
+	IF (trans < 1.0)
+		trans = trans + 0.033333
+	ELSE
+		trans = 1.0
+		MyFlag2 = MyFlag2 & LNOT(TRANSLUCENT)
+		TRIGSTOP
+	ENDIF
+	TRIGFIN
+ENDSTATE
+
+STATE Land
+	tempi = tempi + 1
+	tempf = SmoothFromToSum(100.0, tempi, LANDTIME)
+	z = origz - tempf
+	IF (PAL)
+		nframes = 83
+	ELSE
+		nframes = 100
+	ENDIF
+	IF (tempi > nframes)
+		tempf = SmoothFromTo(3.14159, tempi - nframes, nframes)
+		IF (PAL)
+			RelRotateZ(tempf * 0.83333)
+		ELSE
+			RelRotateZ(tempf)
+		ENDIF
+	ENDIF
+	IF (tempi = LANDTIME)
+		tempi = 0
+		si = 0
+		MyVar = 2
+		IMMLOOP 4
+			SetGlobalParamFloat(0, StartZ - 0.9)
+			CREATE SPAWN_RedDogDropshipThrustFloor 0,0,0, 0,0,0, MyVar
+			SetGlobalParamFloat(0, 0.0)
+			MyVar = MyVar + 1
+		IMMENDLOOP
+		MyVar = 1
+		PLAYSOUND>DOOR1_OPEN 2 1.0 0.0 0.0 0.0 0
+		STAT>OpenDoors
+	ENDIF
+ENDSTATE
+
+STATE OpenDoors
+	tempi = tempi + 1
+	tempf = SmoothFromToSum(2.7, tempi, DOORTIME)
+	SetObjectCrntRot(1, tempf, MODEX)
+	tempf = SmoothFromToSum(1.0, tempi, DOORTIME)
+	SetObjectCrntRot(7, -tempf, MODEX)
+	IF (tempi = DOORTIME)
+		tempi = 0
+		STAT>Wait
+	ENDIF
+	si = si + 1
+	tempf = Ssin(si * 0.1)
+	z = z + (tempf * 0.02)
+	IF (ObjectHitPlayer(1))
+		readyToGo = 1
+		tempi = 0
+		STAT>Wait
+	ENDIF
+ENDSTATE
+
+STATE Wait
+	tempi = tempi + 1
+	IF (ObjectHitPlayer(1) OR (readyToGo))
+		tempi = 0
+		//PlayerState = PS_ONPATH
+		PlayerFlag = PlayerFlag | NODISP
+		IF (MyParent)
+			MYcamx = parentx
+			MYcamy = parenty
+			MYcamz = parentz
+		ELSE
+			MyStratToWorld(3.0, 30.0, 15.0)
+			MYcamx = CheckX
+			MYcamy = CheckY
+			MYcamz = CheckZ
+		ENDIF
+		TRIGSET>HoldCamera	EVERY 1
+		PlayerFlag = PlayerFlag & LNOT(STRATCOLL)
+		PlayerFlag = PlayerFlag & LNOT(FLOORCOLL)
+		PLAYSOUND>DOOR1_OPEN 2 1.0 0.0 0.0 0.0 0
+		PlayerState = PS_INDROPSHIP
+		STAT>CloseDoors
+	ENDIF
+	si = si + 1
+	tempf = Ssin(si * 0.1)
+	z = z + (tempf * 0.02)
+ENDSTATE
+
+TRIGGER HoldCamera
+	CamX = MYcamx
+	CamY = MYcamy
+	CamZ = MYcamz
+	HoldPlayerPos(0, 0, 0, 0)
+	HoldPlayerRot(0, 0, 0, 0)
+	TRIGFIN
+ENDTRIGGER
+
+STATE CloseDoors
+	tempi = tempi + 1
+	tempf = SmoothFromToSum(2.7, tempi, DOORTIME)
+	SetObjectCrntRot(1, 2.7 - tempf, MODEX)
+	tempf = SmoothFromToSum(1.0, tempi, DOORTIME)
+	SetObjectCrntRot(7, tempf - 1.0, MODEX)
+	IF (tempi = DOORTIME)
+		tempi = 0
+		STAT>TakeOff
+	ENDIF
+	si = si + 1
+	tempf = Ssin(si * 0.1)
+	z = z + (tempf * 0.02)
+ENDSTATE
+
+STATE TakeOff
+	tempi = tempi + 1
+	tempf = SmoothFromTo(100.0, tempi, LANDTIME)
+	z = z + tempf
+	IF (tempi > LANDTIME)
+		PlayerFlag = PlayerFlag & LNOT(NODISP)
+		PlayerState = PS_NORMAL
+		PlayerFlag = PlayerFlag | STRATCOLL | FLOORCOLL
+		Delete()
+	ENDIF
+ENDSTATE

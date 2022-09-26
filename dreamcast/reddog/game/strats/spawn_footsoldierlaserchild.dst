@@ -1,0 +1,131 @@
+// Footsoldier's laser child
+// The actual bullet itself, along with a trail if ParentSemaphore != 0
+
+LOCALFLOAT stretch
+LOCALINT   frames
+
+STATE Init
+	OBJECT>Weapon\FootSoldierLaser
+ 	SetFriction(0.0,0.0,0.0)
+	damage = 6.0
+	MakeMeTheLast()
+	TRIGSET>DoTail EVERY 1
+	stretch = 1
+	SetObjectScale(1, 1, stretch, 1)
+	SetObjectShadowState(0)
+
+	ExplosionLight (0.05, 0.1, 0.05, 7.5, 1, 0)
+	AllocStratSoundBlock(1)
+
+	TRIGSET>HitStrat WHENHIT
+	TRIGSET>KillOff	ONFLOOR
+	TRIGSET>KillOff	EVERY 100
+
+	MyFlag = MyFlag  | STRATCOLL | ENEMY | NOTEXPLODE | BULLETTYPE | LOWCOLL | FLOORCOLL
+	MyFlag2 = MyFlag2 | BULLET_CF
+   	//MyFlag2 = MyFlag2 | NOHDC
+	RegisterCollision()
+
+	MyTarget = MyParentTarget
+	IF (MyTarget)
+		CheckX = TargetX
+		CheckY = TargetY
+		CheckZ = TargetZ
+	   	PointToTarget()
+   		TRIGSET>KillOff WHENTARGETDEAD
+   	ELSE
+		//IF THE PLAYER IS ON THE TRAIN TARGET A POINT AHEAD OF HIM
+		//BY SPEED
+
+		IF ((PlayerState = PS_ONTRAIN) OR (PlayerState = PS_WATERSLIDE))
+			health = PlayerActVelX * PlayerActVelX
+			MyVar = PlayerActVelY * PlayerActVelY
+			frame = PlayerActVelZ * PlayerActVelZ
+
+			frame = FSQRT(health + MyVar + frame)
+			health = PlayerActVelX / frame
+			MyVar = (PlayerActVelY / frame) * 3.0
+			frame = PlayerActVelZ / frame
+		  	SetCheckPosRelOffsetPlayerObject(0,health,MyVar, frame)
+		
+			PointToTarget()
+		ELSE
+			PointPlayer ()
+		ENDIF
+	ENDIF
+  	MoveY(0.1)
+
+	frames = 0
+	STAT>SetPos
+ENDSTATE
+
+STATE DoTail
+	frames = frames + 1
+	FaceAlongDir()
+	IF (frames > 9)
+		IF (stretch > 0.5)
+			stretch = stretch - 0.1
+		ENDIF
+	ELSE
+		IF (frames = 2)
+			UnhideObject(3)
+		ENDIF
+		stretch = stretch + 0.55
+	ENDIF
+	TRIGFIN
+	SetObjectScale(1, 1, stretch, 1)
+ENDSTATE
+
+LOCALFLOAT offSx
+LOCALFLOAT offSy
+
+STATE SetPos
+	IF (MyTarget)
+		PointToTarget()
+	ELSE
+		IF ((PlayerState = PS_ONTRAIN) OR (PlayerState = PS_WATERSLIDE))
+			offSx = 5.0 * RandRange(0.15,0.25)
+			offSy = 5.0 * RandRange(0.15,0.25)
+			SetCheckPosRelOffsetPlayerObject(0,offSx, offSy, 0)
+			PointToTarget()
+		ELSE
+			PointPlayer ()
+		ENDIF
+	ENDIF
+	MoveY(1.5)
+	STAT>Move
+ENDSTATE
+
+STATE Move
+	IF ((PlayerState = PS_ONTRAIN) OR (PlayerState = PS_WATERSLIDE))
+   	   	x = x + PlayerActVelX
+   	 	y = y + PlayerActVelY
+   	 	z = z + PlayerActVelZ
+   	   TowardPlayer(0.05,0.05)	
+	ENDIF
+ENDSTATE
+
+STATE KillOff
+	HideObject (2)
+	HideObject (3)
+	MyFlag2 = MyFlag2 | TRANSLUCENT 
+	MyFlag = MyFlag & LNOT(STRATCOLL)
+	trans = 1
+	WHILE (trans > 0.05)
+		trans = trans * 0.8
+	ENDWHILE
+	Delete()
+ENDSTATE
+
+TRIGGER HitStrat
+	IF (CollWith = PlayerShieldStrat(0))
+		PLAYSOUND>DAMAGE3 0 1.0  0.0 0.0 0.0  RANDOM
+		MyFlag = MyFlag | FRIENDLY
+		BounceOffShield(0)
+		TRIGFIN
+	ELSE
+		Delete()
+	//	TRIGSTOP
+	ENDIF
+ENDTRIGGER
+

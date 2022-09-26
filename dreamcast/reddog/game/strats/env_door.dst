@@ -1,0 +1,89 @@
+PARAMINT	act_0_friend		0
+PARAMINT	act_1_friend		1
+PARAMINT	open_close_frames	30
+PARAMFLOAT	open_close_dist		3.0
+LOCALINT	tempi
+LOCALINT	time
+LOCALFLOAT	tempf
+
+STATE Init
+	MyFlag = MyFlag | ENEMY | STRATCOLL 
+	IF (!(MyFlag & OWNFPARAMS))
+		open_close_dist = 3.0
+	ENDIF
+	IF (!(MyFlag2 & OWNIPARAMS))
+		act_0_friend = 0
+		act_1_friend = 1
+		open_close_frames = 30
+	ENDIF
+	InitHDC()
+	CalculateStratPolyData(1)
+	IF (MyParent)
+		WHILE (MyParentInvalid())
+			MyFlag = MyFlag
+		ENDWHILE
+		WHILE (MyParentFlag)
+			MyFlag = MyFlag
+		ENDWHILE
+	ENDIF
+	IF (HasActivation(0))
+		IF (act_0_friend)
+			WHILE(!PlayerNearActivationXY(0))
+				MyFlag = MyFlag
+			ENDWHILE
+		ELSE
+			WHILE(!EnemyInActivation(0, 2D))
+				MyFlag = MyFlag
+			ENDWHILE
+		ENDIF
+	ENDIF
+	AllocStratSoundBlock(1)
+	STAT>Open
+ENDSTATE
+
+STATE Open
+	time = 0
+
+	PLAYSOUND>ICE_BIG_DOOR_OPEN 0 1.0 0.0 0.0 0.0 0
+	WHILE (time < open_close_frames)
+		time = time + 1
+		tempf = SmoothFromToSum(open_close_dist, time, open_close_frames)
+		SetObjectCrntPos(1, -tempf, MODEX)
+		SetObjectCrntPos(2, tempf, MODEX)
+		CalculateStratPolyData(1)
+	ENDWHILE
+
+	IF (HasActivation(1))
+		IF (act_1_friend)
+			WHILE (!PlayerNearActivationXY(1))
+				MyFlag = MyFlag
+			ENDWHILE
+		ELSE
+			WHILE (!EnemyInActivation(1, 2D))
+				MyFlag = MyFlag
+			ENDWHILE
+		ENDIF
+	ELSE
+		STAT>Wait
+	ENDIF
+
+	STAT>Close
+ENDSTATE
+
+STATE Close
+	time = 0
+
+	PLAYSOUND>DOOR_OCT_CLOSE 0 1.0 0.0 0.0 0.0 0
+	WHILE (time < open_close_frames)
+		time = time + 1
+		tempf = SmoothFromToSum(open_close_dist, time, open_close_frames)
+		SetObjectCrntPos(1, -open_close_dist + tempf, MODEX)
+		SetObjectCrntPos(2, open_close_dist - tempf, MODEX)
+		CalculateStratPolyData(1)
+	ENDWHILE
+
+	STAT>Wait
+ENDSTATE
+
+STATE Wait
+ENDSTATE

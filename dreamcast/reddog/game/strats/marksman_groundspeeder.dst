@@ -1,0 +1,48 @@
+LOCALINT	FireTime
+
+STATE Init
+	MyFlag = MyFlag | STRATCOLL | ENEMY | LOWCOLL
+	RegisterCollision()
+   	TRIGSET>Explode WHENHIT 
+	TRIGSET>SpecularMadness EVERY 1
+	WHILE (!PlayerNearActivationXY(0))
+		MyFlag = MyFlag
+	ENDWHILE
+	FireTime = RandRange(0, 50)
+	STAT> Stop
+ENDSTATE 
+
+LOCALFLOAT SPECAMOUNT
+
+TRIGGER SpecularMadness
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+	IF ((MyFlag & HITSTRAT) AND (CollWithFlag & BULLETTYPE))
+		SPECAMOUNT = 1.0
+	ENDIF
+	IF (SPECAMOUNT > 0)
+  		MyFlag2 = MyFlag2 | SPECULAR
+		SetSpecularColour(0, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		SPECAMOUNT = SPECAMOUNT - 0.1
+	ELSE
+		SPECAMOUNT = 0
+ 		MyFlag2 = MyFlag2 & LNOT(SPECULAR)
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+STATE Stop
+	IF (NearPlayerXY(100.0))
+		FireTime = FireTime + 1
+		IF (FireTime > 100)
+			CREATE SPAWN_GSPEEDER_MISSILE 0.0, 0.0, 0.0, 0.2, 0, 0, 4
+			FireTime = 0
+		ENDIF
+	ENDIF
+ENDSTATE
+ 
+STATE Explode
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+//	adrelanin = adrelanin + 0.2
+	Delete()
+ //	TRIGSTOP
+ENDSTATE

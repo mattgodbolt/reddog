@@ -1,0 +1,23 @@
+//
+// Flag for keep-the-flag multiplayer game
+//
+
+STATE Init
+	Object>MISC\Flag
+	MyFlag = MyFlag | ENEMY | STRATCOLL
+	RegisterCollision()
+	TRIGSET>Hit WHENHIT
+	IAmFlag(1)
+	STAT>WaitPickup
+ENDSTATE
+
+STATE WaitPickup
+ENDSTATE
+
+STATE Hit
+	IF (MyFlag2 & PLAYERHIT)
+		GiveFlagToPlayer (MyFlag2 & 3)
+		IAmFlag(0)
+		Delete()
+	ENDIF
+ENDSTATE

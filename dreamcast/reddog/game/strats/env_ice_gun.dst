@@ -1,0 +1,105 @@
+LOCALFLOAT tempf
+LOCALFLOAT tempf2
+
+LOCALFLOAT time
+LOCALINT i
+
+STATE Init
+	time = 0.0
+	MyFlag = MyFlag | ENEMY | STRATCOLL
+	RegisterCollision()
+	health = 300.0
+	StratNoFade()
+	NoCollObject(1)
+	NoCollObject(2)
+	NoCollObject(3)
+	NoCollObject(4)
+	HideObject(5)
+	HideObject(6)
+	HideObject(7)
+	InitHDC()
+	CalculateStratPolyData(1)
+	AllocStratSoundBlock(2)
+	SetAudibleRange(0, 10, 400)
+	SetAudibleRange(1, 10, 400)
+
+	PLAYSOUND>GUN_TURN 1 0.7 0.0 0.0 0.0 CONTINUOUS
+	
+	TRIGSET>Always EVERY 1	
+	WHILE (!PlayerNearActivationXY(0))
+		tempf = Ssin(time * 0.3) * 0.3
+		SetObjectCrntRot(2, tempf, MODEZ)
+		SetObjectCrntRot(1, -0.2, MODEX)
+		CalculateStratPolyData(1)
+	ENDWHILE
+
+	WHILE (DogZ > 100)
+		HideObject(3)
+		IF (PlayerNearActivationXY(0))
+			i = i + 1
+		ENDIF
+		IF (i = 13)
+			CREATE SPAWN_ICE_GUN_LASER 0, 20, 0, 0, 0, 0, 4
+			i = 0
+		ENDIF
+		ObjectTowardPlayerXZVF(1, 0.005, 0.0, 0.0, 0.5, 40.0) 
+		ObjectTowardPlayerXZVF(4, 0.005, 0.0, 0.0, 0.5, 40.0) 
+		ObjectTowardPlayerXZVF(2, 0.0, 0.05, 1.6, 0.0, 40.0)
+		CrntRotToIdleRotZ(2, 0.05)
+		IF (DogY < y + 50)
+			STAT>ShutDown
+		ENDIF
+		CalculateStratPolyData(1)
+	ENDWHILE
+
+	STAT>ShutDown
+ENDSTATE
+
+TRIGGER Always
+	CrntRotToIdleRotX(1, 0.005)
+	CrntRotToIdleRotX(4, 0.005)
+	
+	time = time + 0.1
+	health = 300.0
+	IF ((health <= 0.0) OR (DogY < y + 50))
+		Score = Score + 2000
+		TRIGRESET
+		TRIGSTOP
+		STAT>ShutDown
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+STATE ShutDown
+	HideObject(3)
+	IF (health < 0.0)
+		i = 0
+		SetPitch(0, -0.3)
+		PLAYSOUND>EX_LARGE_BLAST1 0 1.0 0.0 0.0 0.0 0
+		LOOP (30)
+			i = i + 1
+			IF (i > 3)
+				i = 0
+				CheckX = RandRange(-5.0, 5.0)
+				CheckY = RandRange(-5.0, 5.0)
+				CheckZ = RandRange(-5.0, 5.0)
+				CREATE SPAWN_BLASTEXP CheckX, CheckY, CheckZ, 0, 0, 0, 0
+			ENDIF
+		ENDLOOP
+	ENDIF
+	i = 0
+	tempf = GetObjectCrntRot(4, MODEX)
+	WHILE (i < 60)
+		i = i + 1
+		tempf2 = SmoothFromToSum(1.3 + tempf, i, 60)
+		SetObjectCrntRot(4, tempf - tempf2, MODEX)
+		CalculateStratPolyData(1)
+		SetPitch(1, -(i/120.0))
+	ENDWHILE
+
+	StopSound(1,0.0)
+
+	WHILE (1)
+		MyFlag = MyFlag
+	ENDWHILE	
+ENDSTATE

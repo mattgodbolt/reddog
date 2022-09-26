@@ -1,0 +1,197 @@
+LOCALINT	time
+LOCALINT	accTime
+LOCALINT	i
+LOCALINT	type
+LOCALINT	sound
+LOCALFLOAT speed
+LOCALFLOAT tempf
+
+STATE Init
+	MyFlag = MyFlag | ENEMY
+	type = GetGlobalParamInt(2)
+	time = GetGlobalParamInt(0)
+	SetSem(1, 0)
+	IF (type = 0)
+		OBJECT>Scenery\Ice\Ice_Lift_Section_Door
+		SetGlobalParamInt(0, 0)
+		CREATE SPAWN_Ice_Lift_Door -0.27, 69.55, -8.971, 0, 0, 0, 0
+		SetGlobalParamInt(0, 1)
+		CREATE SPAWN_Ice_Lift_Door 0.27, -69.55, -8.971, 0, 0, 0, 0
+		SetGlobalParamInt(0, 0)
+		MyFlag  = MyFlag | ENEMY
+		//| STRATCOLL
+		//RegisterCollision()
+		//InitHDC()
+		//CalculateStratPolyData(1)		
+		AllocStratSoundBlock(1)
+		sound = 1
+	ELSE
+		OBJECT>Scenery\Ice\Ice_Lift_Section
+		sound = 0
+	ENDIF
+
+	accTime = GetGlobalParamInt(1)
+	speed = GetGlobalParamFloat(0)
+	
+	TRIGSET>Vis EVERY 1
+
+	WHILE (GetParentSem(0) = 0)
+		MyFlag = MyFlag
+	ENDWHILE
+	SetSem(1, 1)
+	TRIGSET>Always EVERY 1
+	STAT>Start
+ENDSTATE
+
+TRIGGER Vis
+	IF (PlayerNearParentActivationXY(2)) 
+		MyFlag = MyFlag & LNOT(NODISP)
+		IF (MyParentParent)
+			IF (!MyParentParentInvalid())
+				MyParentParentFlag = MyParentParentFlag & LNOT(NODISP)
+			ENDIF
+		ENDIF
+	ELSE
+		MyFlag = MyFlag | NODISP
+		IF (MyParentParent)
+			IF (!MyParentParentInvalid())
+				MyParentParentFlag = MyParentParentFlag | NODISP
+			ENDIF
+		ENDIF
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+TRIGGER Always
+
+	IF ((z <= parentz - 80.4) AND (GetParentSem(0) != 6))
+		z = z + 187.6
+		IF (type = 0)
+			type = 1
+			SetSem(0, 1)
+			OBJECT>Scenery\Ice\Ice_Lift_Section
+		ENDIF
+		IF (GetParentSem(0) = 3)
+			SetParentSem(0, 4)
+			z = z - 10
+			type = 2
+			MyFlag  = MyFlag | STRATCOLL
+			OBJECT>Scenery\Ice\Ice_Lift_Top
+			RegisterCollision()
+			NoCollObject(2)
+			HideObject(1)
+			InitHDC()
+			CalculateStratPolyData(1)
+
+		ENDIF
+		IF ((GetParentSem(0) = 2) OR ((GetParentSem(1) = 1) AND (GetParentSem(0) = 1)))
+			IF (GetParentSem(1) = 1)
+				SetParentSem(1, 2)
+			ENDIF
+			IF (GetParentSem(0) = 2)
+				SetParentSem(0, 3)
+			ENDIF
+			MyFlag  = MyFlag | STRATCOLL
+			OBJECT>Scenery\Ice\Ice_Lift_Section_Door
+			SetGlobalParamInt(0, 0)
+			CREATE SPAWN_Ice_Lift_Door -0.27, 69.55, -8.971, 0, 0, 0, 0
+			SetGlobalParamInt(0, 1)
+			CREATE SPAWN_Ice_Lift_Door -0.27, 69.55, -8.971, 0, 0, 0, 0
+			SetGlobalParamInt(0, 0)
+			//RegisterCollision()
+			//InitHDC()
+			//CalculateStratPolyData(1)
+			type = 0
+		ENDIF
+	ENDIF
+
+	
+	TRIGFIN
+ENDTRIGGER
+
+STATE Start
+	i = 0
+
+	IF (sound = 1) 
+		SetPitch(0, -0.5)
+		PLAYSOUND>LIFT_ICE 0 1.0 0.0 0.0 0.0 (CONTINUOUS | NOPOSITION)
+	ENDIF
+					
+	WHILE (i < accTime)
+		tempf = SmoothFromToSum(speed, i, accTime)
+		i = i + 1
+		z = z - tempf
+		IF (sound = 1)
+			SetPitch(0, -0.5 + (i / (accTime * 2.0)))
+		ENDIF
+		IF ((type = 2))
+		// OR (type = 0))
+			CalculateStratPolyData(0)
+		ENDIF
+	ENDWHILE
+	STAT>MoveDown
+ENDSTATE
+
+STATE MoveDown
+	WHILE ((GetParentSem(0) != 5) AND (GetParentSem(1) != 3))
+		z = z - speed
+		time = time - 1
+		IF ((type = 2))
+		// OR (type = 0))
+			CalculateStratPolyData(0)
+		ENDIF
+	ENDWHILE
+
+	IF ((GetParentSem(1) = 3) AND (GetParentSem(0) != 5))
+		i = 0
+		WHILE (i < (26.8 / speed))
+			i = i + 1
+			z = z - speed
+		ENDWHILE
+	ENDIF 
+
+	i = 0
+	WHILE (i < 82)
+		z = z - speed
+		i = i + 1
+		IF ((type = 2))
+		// OR (type = 0))
+			CalculateStratPolyData(0)
+		ENDIF
+	ENDWHILE
+
+	STAT>Stop
+ENDSTATE
+
+STATE Stop
+	i = 0
+
+	// The lift is slowing down
+	WHILE (i < accTime)
+		tempf = speed - SmoothFromToSum(speed, i, accTime)
+		i = i + 1
+		z = z - tempf
+		IF (sound = 1)	
+			SetPitch(0, -(i / (accTime * 2.0)))
+		ENDIF
+		IF ((type = 2))
+		// OR (type = 0))
+			CalculateStratPolyData(0)
+		ENDIF
+	ENDWHILE
+
+	SetParentSem(0, 6)
+	IF (z < parentz - 50.0)
+		SetSem(1, 4)
+	ENDIF
+
+	IF (sound = 1)
+		StopSound(0,0.0)
+	ENDIF
+
+	STAT>Finish
+ENDSTATE
+
+STATE Finish
+	
+ENDSTATE

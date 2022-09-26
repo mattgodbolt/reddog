@@ -1,0 +1,28 @@
+PARAMINT	Collision	0
+PARAMINT	visible		1
+
+STATE Init 
+	IF (!(MyFlag2 & OWNIPARAMS))
+		Collision = 0
+		visible = 1
+	ENDIF
+
+	IF (visible = 0)
+		MyFlag = MyFlag | NODISP
+	ENDIF
+
+	StrtNoFade()
+	IF (Collision)
+		WHILE (!PNode)
+			MyFlag = MyFlag
+		ENDWHILE
+		MyFlag = MyFlag | STRATCOLL
+		RegisterCollision()		
+		InitHDC()
+		CalculateStratPolyData(1)
+	ENDIF
+	STAT> DoNothing
+ENDSTATE
+
+STATE DoNothing
+ENDSTATE

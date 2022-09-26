@@ -1,0 +1,103 @@
+ LOCALFLOAT randFireX
+LOCALFLOAT randFireZ
+LOCALINT innerBand
+LOCALINT outerBand
+LOCALFLOAT co   
+LOCALFLOAT co2   
+LOCALFLOAT co3   
+
+
+
+STATE Init
+
+
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+ 	SetFriction(0.0,0.0,0.0)
+	damage = 15.0
+	OBJECT> WEAPON\REDDOGLASER
+	TRIGSET>KillOff	EVERY 30
+	trans = 0.2
+
+	// Hide object, and use the trails instead
+	MyFlag = MyFlag | NODISP
+
+	co = RandRange (0.3,0.9)
+	IF (ParentSemaphore = 1.0)
+		innerBand = CreateBand (2, 18, 1, 1, co, 0, 0, 0, 0, 0, co)
+	ELSE
+		innerBand = CreateBand (2, 12, 1, 1, 0, co,0 , 0, 0, 0, co)
+
+	ENDIF
+   
+   	TRIGSET>BandTrigger EVERY 1
+	col = MyParentRadius + 0.7
+	IF (ParentSemaphore = 1.0)
+		MoveY(-0.26)
+	ELSE
+		MoveY(0.18)
+	ENDIF
+	STAT>Move
+ENDSTATE
+ 
+LOCALFLOAT col
+
+
+
+STATE BandTrigger
+   //	AddBandSegment (innerBand, 1, 0, 0, 0.1)
+   //	AddBandSegment (outerBand, 0, 0, 0, 0.5)
+    AddBandSegment (innerBand, 0, 0, 0, col)
+   
+//  	col = col + 0.05
+	TRIGFIN
+ENDSTATE
+
+
+STATE Move
+ENDSTATE
+
+
+LOCALINT set
+
+//ON DYING TRIGGER CHANGE THE MAIN RUN ADDRESS TO DEATH
+STATE KillOff
+   //	KillMyVelocity()
+  //	VelX = -VelX / 1.02
+  //	VelY = -VelY / 1.02
+  //	VelZ = -VelZ / 1.02	
+
+
+	VelX = -VelX * 2.0
+	VelY = -VelY * 2.0
+	VelZ = -VelZ * 2.0
+	SetFriction(0.1,0.1,0.1)
+	co2 = col / 4.0
+
+	co3 = 0
+   	PauseTriggers(-1,FORGET)
+	LOOP (10)
+	  
+	  
+		SetBandColour (innerBand, 1, 0, co, 0, 0 , 0, 0, co)
+	  
+		 AddBandSegment (innerBand, 0, 0, 0, col )
+	  
+		col = col - 0.1 * (Ssin(co3)	* RandRange(2.5,5.0))
+
+		co3	= co3 + 0.1
+	  
+	   //	IF (col > co2)
+	   //		col = col - 0.1
+	   //	ENDIF
+		co = co	+ RandRange(0.1,0.2)
+
+
+	  // 	 col = col + 0.8
+	ENDLOOP
+	
+
+	DeleteBand (innerBand)
+	Delete()
+ENDSTATE
+
+

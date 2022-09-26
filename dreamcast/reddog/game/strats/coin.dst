@@ -1,0 +1,194 @@
+
+DEFINE NTSC_TWOMINS 3600.0
+DEFINE NTSC_ONESEC 30.0
+DEFINE PAL_TWOMINS 3000.0
+DEFINE PAL_ONESEC 25.0
+PARAMINT	type 0
+PARAMFLOAT ADDTIME 3.0
+
+LOCALFLOAT tempi
+LOCALFLOAT tempf
+LOCALINT Counter
+LOCALINT endReached
+
+STATE Timer
+   	MakeMeTheLast()
+	IF (MyParentParent)
+		SpecialStrat = MyParentParent
+
+		WHILE (MPStartupState != MP_IN_GAME)
+			MyFlag = MyFlag
+		ENDWHILE
+		
+	   //	IF (!GlobalVar2)
+			IF (PAL)
+				//ten secs
+				GlobalVar = 250.0
+			ELSE
+				//ten secs
+				GlobalVar = 300.0
+			ENDIF
+		 	Counter = TOINT(GlobalVar)
+			// Now start the timer off!
+		  	InitTimer (-1, Counter)
+	   //		GlobalVar2 = 1.0
+	   //	ENDIF
+   	ENDIF
+	
+  	
+	// Wait for the timer to expire
+	
+  	WHILE ((GlobalVar) AND (endReached = 0))
+		endReached = GetParentSem(0)
+		GlobalVar = GlobalVar - 1.0
+	ENDWHILE
+	WHILE (endReached = 2)
+		MyFlag = MyFlag
+	ENDWHILE
+	IF (endReached = 1)
+		Delete()
+	ELSE	
+		MyParent = SpecialStrat
+		MissionFailure = 1
+		HideTimer()
+		IF (MyParent)
+			DeleteMyParent()
+		ENDIF
+		Delete()
+	ENDIF
+ENDSTATE 
+
+
+
+STATE Init
+	endReached = 0
+
+	IF (!(MyFlag & OWNFPARAMS))
+		ADDTIME = 3.0
+	ENDIF
+
+	IF (!(MyFlag2 & OWNIPARAMS))
+		type = 0
+	ENDIF
+
+	IF (GetGlobalParamInt(0))
+		type = GetGlobalParamInt(1)
+		STAT>Timer
+	ELSE
+		IF (MyParent)
+			WHILE (MyParentInvalid())
+				MyFlag = MyFlag
+			ENDWHILE
+		ENDIF
+	ENDIF
+
+   	//set the timer
+	SetGlobalParamInt(0,1)
+	SetGlobalParamInt(1, type)
+	CREATE COIN 0, 0, 0, 0, 0, 0, 0
+	ClearGlobalParams()
+
+
+	IF (PAL)
+		ADDTIME = ADDTIME * 25.0
+	ELSE
+		ADDTIME = ADDTIME * 30.0
+	ENDIF
+ 
+   	//SPAWN THE STRAT THAT WILL BE USED AS OUR RADAR CONTROLLER
+
+	SetGlobalParamInt(0,1)
+	CREATE SPAWN_POINTTOTARGET 0, 0, 0, 0, 0, 0, 0
+
+	ClearGlobalParams()
+   	MyFlag = MyFlag | GRAVITYON | FLOORCOLL
+	MyFlag = MyFlag | ENEMY | STRATCOLL | LOWCOLL
+	MyFlag2 = MyFlag2 | PICKUP
+
+	IF (!PNode)
+		OBJECT>Pickups\SinglePlayer\Bomb
+		MODELANIM>Pickups\SinglePlayer\Bomb.RDO>play>REPEAT
+	ELSE
+		ThisModelAnimPlay(REPEAT)
+	ENDIF
+   	RegisterCollision()
+	TRIGSET>HitFloor ONFLOOR
+	SetGlobalParamInt(0, MissionFailure)
+	RadarUpdate(RADARREG)
+	SetGlobalParamInt(0, 0)
+
+
+	STAT>SingleStart
+ENDSTATE
+
+TRIGGER HitFloor
+	absspeedx = 0
+	absspeedy = 0
+	absspeedz = 0
+	MyFlag = MyFlag & LNOT(GRAVITYON | FLOORCOLL)
+	TRIGSTOP
+ENDTRIGGER
+
+
+STATE SingleStart
+	WHILE (!(MyFlag2 & PLAYERHIT))
+		IF ((ArrowStrat) AND (Camera))
+			SetGlobalParamInt(0, MissionFailure)
+			RadarUpdate(RADARDRAWDIRECT)
+			SetGlobalParamInt(0, 0)
+		ENDIF
+	ENDWHILE
+
+	//PLAY A PICKUP SOUND
+	AllocStratSoundBlock(1)
+	PLAYSOUND>PICKUPB5 0 1.0 0.0 0.0 0.0 NOPOSITION
+
+	IF (endReached = 1)
+		HideTimer()
+	ELSE
+		// Now start the timer off!
+		
+		GlobalVar = GlobalVar + ADDTIME
+	// 	GlobalVar = ADDTIME
+  	//  was
+	//  Counter = TOINT(GlobalVar)
+  	//	InitTimer (-1, Counter)
+		Counter = TOINT(ADDTIME)
+		AddTime(Counter)
+	ENDIF
+
+	IF (type = 1)
+		endReached = 1
+		SetSem(0, 2)
+	ELSE
+		SetSem(0, 1)
+	ENDIF
+	
+	LOOP (10)
+		tempi = tempi + 1
+		tempf = SmoothFromToSum(0.999, tempi, 10)
+		scalex = 1.0 - tempf
+		scaley = 1.0 - tempf
+		scalez = 1.0 - tempf
+	ENDLOOP
+
+	Score = Score - 1
+	//ENSURE I'M OFF THE RADAR
+	SetGlobalParamInt(0, MissionFailure)
+	RadarUpdate(RADARUNREG)
+	SetGlobalParamInt(0, 0)
+
+	
+  //	IF (endReached = 1)
+  //		HideTimer()
+  //	ELSE
+		// Now start the timer off!
+		
+  //		GlobalVar = GlobalVar + ADDTIME
+  //	  	Counter = TOINT(GlobalVar)
+  //		InitTimer (-1, Counter)
+  //	ENDIF
+
+	Delete()
+ENDSTATE
+

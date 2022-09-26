@@ -1,0 +1,43 @@
+PARAMINT	nGenerators
+LOCALINT	time
+LOCALINT	doneScript
+LOCALFLOAT	tempx
+LOCALFLOAT	tempy
+
+STATE Init
+	MyFlag = MyFlag | ENEMY | STRATCOLL
+	InitHDC()
+	MyVar = nGenerators
+	CalculateStratPolyData(1)
+	time = 0
+	doneScript = 0
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	time = time + 1
+	IF (MyVar <= 0)
+		HideObject(1)
+		NoCollObject(1)
+	ELSE
+		IF (MyFlag2 & PLAYERHIT)
+			IF(time > 3)
+				time = 0
+				MyFlag2 = MyFlag2 & LNOT(PLAYERHIT)
+				PlayerHealth = PlayerHealth - 1.0
+			ENDIF
+			tempx = RandRange(-0.1, 0.1)
+			tempy = RandRange(-0.1, 0.1)
+			PlayerRelRotateXYZ(tempx, tempy, 0.0)
+		ENDIF
+		IF (MyFlag & HITSTRAT)
+			doneScript = doneScript + 1
+		ENDIF
+		IF (doneScript = 10)
+			doneScript = 11
+			SetGlobalParamInt(0, 1)
+			CREATE SCRIPT 0, 0, 0, 0, 0, 0, 0
+			SetGlobalParamInt(0, 0)
+		ENDIF
+	ENDIF
+ENDSTATE

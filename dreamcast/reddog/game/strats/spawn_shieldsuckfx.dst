@@ -1,0 +1,19 @@
+
+LOCALINT Lightning
+
+STATE Init
+	MyFlag = MyFlag | FRIENDLY | NODISP
+	MyParent = Player
+	OBJECT> WEAPON\MISSILE06
+	
+	LOOP (30)
+		x = parentx
+		y = parenty
+		z = parentz
+	  	Lightning = DrawLightning (0, 0, 0, 0, Lightning,0)
+
+
+	ENDLOOP
+
+	Delete()
+ENDSTATE

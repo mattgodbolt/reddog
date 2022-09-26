@@ -1,0 +1,38 @@
+LOCALFLOAT time
+LOCALFLOAT	tempf
+DEFINE	MAX_ROTS 0.035
+DEFINE	ACC_ROTS 0.001
+
+STATE Init
+	MyFlag = MyFlag | ENEMY | STRATCOLL
+	OBJECT>MISC\CRANE\ARM
+	SetSem(0, 0)
+	CREATE ENV_TRAIN_CRANE_CABLE 0, 0, 0, 0, 0, 0, 0
+	InitHDC()
+	health = 100.0
+	time = 0.0
+	CalculateStratPolyData(1)
+	WHILE (!PlayerNearActivationXY(0))
+		MyFlag = MyFlag
+	ENDWHILE
+	LOOP (60)
+		MyFlag = MyFlag
+	ENDLOOP
+	SetSem(0, 1)
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	time = time + 1.0
+	IF (time <= 120.0)
+		tempf = SmoothFromToSum(3.14159, time, 120.0)
+		SetObjectCrntRot(1, tempf,MODEZ)
+		CalculateStratPolyData(0)
+	ENDIF
+	IF ((time > 240.0) AND (time < 360))
+		tempf = SmoothFromToSum(3.14159, time - 240, 120.0)
+		SetObjectCrntRot(1, 3.14159 - tempf,MODEZ)
+		CalculateStratPolyData(0)
+	ENDIF
+	MyFlag = MyFlag
+ENDSTATE

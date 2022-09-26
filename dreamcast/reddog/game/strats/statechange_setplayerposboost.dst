@@ -1,0 +1,48 @@
+PARAMINT	boostFrames	90
+LOCALINT i
+
+STATE Init
+	IF (!(MyFlag2 & OWNIPARAMS))
+		boostFrames = 90
+	ENDIF
+
+	IF (PAL)
+		boostFrames = boostFrames / 1.2
+	ENDIF
+
+	i = 0
+	PlayerState = PS_ONPATH
+	PlayerControlJoyX = 0
+	PlayerControlJoyY = 0
+	
+	DogX = x
+	DogY = y
+	DogZ = z
+	SetPlayerMatrix()
+	SetPlayerOCP()
+	PlayerAbsSpeedX = 0.0
+	PlayerAbsSpeedY = 0.0
+	PlayerAbsSpeedZ = 0.0
+	PlayerRotSpeed = 0.0
+	
+	SetPlayerBoostButtonCount(0, 2)
+	WHILE (boostFrames)
+		i = i + 1
+		IF (i < 30)
+			SetPlayerMatrix()
+		ENDIF
+		PlayerControlPlayerAcc = 1.0
+		SetPlayerBoostButtonCount(0, 2)
+		PlayerHeld = 0
+		PlayerState = PS_ONPATH
+		PlayerControlPadPress = PADSHOULDERR | PADFORWARD
+		boostFrames = boostFrames - 1
+	ENDWHILE
+	PlayerState = PS_NORMAL
+		
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	Delete()
+ENDSTATE

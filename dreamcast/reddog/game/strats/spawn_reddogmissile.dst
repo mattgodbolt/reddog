@@ -1,0 +1,200 @@
+LOCALINT targetNo
+LOCALINT trail
+LOCALINT MissileUpgraded
+LOCALFLOAT	xSpeed
+LOCALFLOAT	zSpeed
+
+LOCALINT	targetStrat
+LOCALINT	pn
+LOCALINT	oid
+LOCALINT	parentDead
+LOCALINT	dead
+
+STATE Init
+  	MyFlag = MyFlag | FLOORCOLL | STRATCOLL | FRIENDLY | NOTEXPLODE |  BULLETTYPE | PLANEMOVE | LOWCOLL
+	MyFlag2 = MyFlag2 | BULLET_CF
+	pn = GetGlobalParamInt(0)
+	MyVar = pn
+	MissileUpgraded = PlayerReward(pn, UPGRADE_MISSILE)
+	parentDead = 0
+	dead = 0
+	MakeMeTheLast()
+	IF (MissileUpgraded)
+		SetFriction(0.2,0.2,0.2)
+	ELSE
+		SetFriction(0.1,0.1,0.1)
+	ENDIF
+	OBJECT> WEAPON\MISSILE06
+	RegisterCollision()
+	SetObjectShadowState(1)
+	TRIGSET>KillOff	WHENHIT
+	TRIGSET>KillOffFloor	ONFLOOR
+	TRIGSET>KillOffFloor	EVERY 150
+	TRIGSET>Always	EVERY 1
+
+	IF (Multiplayer)
+		GetPlayerColour(pn)
+		IF (FiredByAssassin())
+			damage = 35.0 
+			trail = CreateBand (1, 16, 0, 1, 1, 1, 1, 1, 0, 0, 0)
+		ELSE
+			damage = 20.0 
+			trail = CreateBand (1, 16, 0, 1, CheckX, CheckY, CheckZ, 1, 0, 0, 0)
+		ENDIF
+	ELSE
+		IF (MissileUpgraded)
+			damage = 200.0
+		ELSE
+			damage = 101.0 
+		ENDIF
+
+		IF (MissileUpgraded)
+			trail = CreateBand (1, 16, 0, 1, 1, 1, 0, 1, 0, 0, 0)
+		ELSE
+			trail = CreateBand (1, 16, 0, 1, 0.3, 0.3, 0.3, 1, 0, 0, 0)
+		ENDIF
+	ENDIF
+	targetStrat = GetSecondaryTargetStrat(pn)
+	oid = GetSem(0)
+	SetSem(0, 0)
+	RemoveTargetStrat(pn, targetStrat, oid)
+	xSpeed = RandRange(-0.5, 0.5)
+	zSpeed = RandRange(0.0, 0.5)
+	GetGunDir(pn)
+	absspeedx = absspeedx + (CheckX * 1.0)
+	absspeedy = absspeedy + (CheckY * 1.0)
+	absspeedz = absspeedz + (CheckZ * 1.0)
+
+	SetBandRotXYZandScaling (trail, 0.0, 0, 0.2, 1.1, 1.1, 1.1)
+	AddBandSegment (trail, 0, 0, 0, 0.2)
+	AddBandSegment (trail, 0, 0, 0, 0.2)
+	TRIGSET>Trailer EVERY 1
+	TRIGSET>BandTrigger EVERY 2
+	
+	ExplosionLight(0.1, 0.08, 0.08, 15, 0.98, 3)
+
+	IF (targetNo = -1)
+		IF (dead = 0)
+			DeleteBand (trail)
+			IF ((!parentDead) AND (MyParentFlag))			
+				SubParentSem(0, 1)	
+			ENDIF
+			dead = 1
+			Delete()
+		ENDIF
+	ELSE
+		STAT>Start
+	ENDIF
+ENDSTATE 
+
+TRIGGER Always
+	IF (!MyParentFlag)
+		parentDead = 1
+		TRIGSTOP
+	ELSE
+		TRIGFIN
+	ENDIF
+ENDTRIGGER
+
+STATE BandTrigger
+	AddBandSegment (trail, 0, 0, 0, 0.2)
+	TRIGFIN
+ENDSTATE
+
+STATE Trailer
+	RubberBand (trail, 0, 0, 0, 0.1)
+	TRIGFIN
+ENDSTATE
+
+
+LOCALFLOAT SaveX
+LOCALFLOAT SaveY
+LOCALINT NOUPDATE
+
+STATE Start
+	IF (BossStrat)
+		IF (uId(BossStrat) = 20)
+			y = y + 2.0
+		ENDIF
+	ENDIF
+	IF (ValidTargetStrat(pn, targetStrat, oid))
+		//AM I STILL ALLOWED TO UPDATE MY POSITION ?
+ 		IF (!NOUPDATE)
+			GetTargetStratPos(pn, targetStrat, oid)
+		   	DrawTargetAt(CheckX, CheckY, CheckZ)
+		   	TargettingStrat(targetStrat, 1)
+			IF (frame)
+				//IF THE DISTANCE CHANGE IS TOO GREAT, SET THE MISSILE
+				//TO 'LOCK OFF'
+				IF ((FABS(CheckX - SaveX) > 25.0) OR (FABS(CheckY - SaveY) > 25.0))
+				  	CheckX = SaveX
+					CheckY = SaveY
+					NOUPDATE = 1
+				ENDIF
+				//ENDIF
+			ENDIF
+		ENDIF
+	ELSE
+		NOUPDATE = 1
+	   //	STAT>KillOff
+	ENDIF
+
+	MoveZ(zSpeed)
+	MoveX(xSpeed)
+	IF (MissileUpgraded)
+		MoveY(0.4)
+	ELSE
+		MoveY(0.2)
+	ENDIF
+
+	IF(xSpeed > 0.1)
+		xSpeed = xSpeed - 0.1
+	ELSE
+		IF (xSpeed < -0.1)
+			xSpeed = xSpeed + 0.1
+		ELSE
+			xSpeed = 0.0
+		ENDIF
+	ENDIF
+
+	IF(zSpeed > 0.1)
+		zSpeed = zSpeed - 0.1
+	ELSE
+		zSpeed = 0.0
+	ENDIF
+
+	IF (!NOUPDATE)
+		PointTo(CheckX, CheckY, CheckZ)
+		SaveX = CheckX
+		SaveY = CheckY
+	ENDIF
+	frame = 1.0
+ENDSTATE
+
+
+STATE KillOff
+	MyFlag = MyFlag | NODISP  
+	MyFlag = MyFlag & LNOT(STRATCOLL)
+	IF (dead = 0)
+		DeleteBand (trail)
+		CREATE SPAWN_BLASTEXP 0.0, 3.0, -2.0, 0.0, 0.0, 0.0, 0
+		IF ((!parentDead) AND (MyParentFlag))		
+			SubParentSem(0, 1)	
+		ENDIF
+		dead = 1
+		Delete()
+	ENDIF
+ENDSTATE
+
+
+STATE KillOffFloor
+	IF (dead = 0)
+		DeleteBand (trail)
+		CREATE SPAWN_BLASTEXP 0.0, 3.0, -2.0, 0.0, 0.0, 0.0, 0
+		IF ((!parentDead) AND (MyParentFlag))		
+			SubParentSem(0, 1)	
+		ENDIF
+		dead = 1
+		Delete()
+	ENDIF
+ENDSTATE

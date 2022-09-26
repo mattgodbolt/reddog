@@ -1,0 +1,103 @@
+
+LOCALINT	num
+LOCALINT	pn
+LOCALINT	tempi
+LOCALFLOAT globscalex
+LOCALFLOAT globscaley
+LOCALFLOAT globscalez
+LOCALFLOAT time
+LOCALFLOAT	OMV
+
+STATE Init
+	MakeMeTheLast()
+	MyFlag = MyFlag | BULLETTYPE | FRIENDLY | FLOORCOLL | STRATCOLL | RELVELCALC | REALGRAVITYON
+    MyFlag2 = MyFlag2 | BULLET_CF
+	pn = GetGlobalParamInt(0)
+    OBJECT> WEAPON\ARMAGEDDON DOCKLANDS
+	RegisterCollision()
+	SetObjectShadowState(1)
+   	SetFriction(0.0, 0.0, 0.0)
+	AllocStratSoundBlock(1)
+	IF (Multiplayer)
+		MyFlag = MyFlag & LNOT(LOWCOLL)
+	ENDIF
+	
+	TRIGSET>KillOff	WHENHIT
+	TRIGSET>KillOffFloor	ONFLOOR
+	TRIGSET>KillOff	EVERY 150
+   	MyVar = 1.0
+	PLAYSOUND>MISSTLOW 0 1.0 0.0 0.0 0.0 0
+	CREATE SPAWN_BLUETRAIL 0, 0, 0, 0, 0, 0, 0
+	
+	MyVar = GetParentPlayerNumber()
+	MoveY(1.5)
+	globscalex = 1.0
+	globscaley = 1.0
+	globscalez = 1.0
+	time = 0
+
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	FaceAlongDir()
+	IF (GetPlayerArmageddon(pn) = 2)
+		SetPlayerArmageddon(pn, 0)
+		STAT>KillOff	
+	ENDIF
+ENDSTATE
+
+STATE KillOff
+	StopSound(0,0)
+
+	SetPlayerArmageddon(pn, 0)
+	tempi = GetSecondaryWeaponAmount(pn)
+	SetSecondaryWeaponAmount(pn, tempi - 1)
+	MyFlag = MyFlag | NODISP  
+	MyFlag = MyFlag & LNOT(STRATCOLL)
+	
+	IF (Multiplayer)
+		CREATE SPAWN_Shockwave 0, 0, 0, 0, 0, 0, 0
+		Explosion(101.0, 20.0)
+	ELSE
+		// Boom!
+		ExplosionLight (0.8, 0.55, 0.6, 100, 0.9, 5)
+		OMV = MyVar
+		MyVar = 2.0
+		CREATE SPAWN_PolyExplosion 0, 0, 0, 0, 0, 0, 0
+		MyVar = OMV
+		Explosion(501.0, 50.0)
+	ENDIF
+	
+	Delete()
+//	TRIGSTOP
+ENDSTATE
+
+STATE KillOffFloor
+	SetPlayerArmageddon(pn, 0)
+	tempi = GetSecondaryWeaponAmount(pn)
+	SetSecondaryWeaponAmount(pn, tempi - 1)
+	MyFlag = MyFlag | NODISP  
+	MyFlag = MyFlag & LNOT(STRATCOLL)
+	
+	IF (Multiplayer)
+		CREATE SPAWN_Shockwave 0, 0, 0, 0, 0, 0, 0
+		Explosion(101.0, 20.0)
+	ELSE
+		// Boom!
+		ExplosionLight (0.8, 0.55, 0.6, 100, 0.9, 5)
+		OMV = MyVar
+		MyVar = 0.0
+		CREATE SPAWN_PolyExplosion 0, 0, 0, 0, 0, 0, 0
+		MyVar = OMV
+		Explosion(501.0, 50.0)
+	ENDIF
+	
+	Delete()
+  //	TRIGSTOP
+ENDSTATE
+
+STATE SpawnSmoke
+	CREATE SPAWN_MissileSmoke 0, -2, 0, 0, 0, 0, 0
+	CREATE SPAWN_MissileSmoke 0, -3, 0, 0, 0, 0, 0
+ENDSTATE

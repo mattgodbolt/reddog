@@ -1,0 +1,49 @@
+PARAMINT	repeating 0
+
+PARAMFLOAT	speed	0.3
+
+LOCALFLOAT	tempf
+
+STATE Init
+	MyFlag = MyFlag | ENEMY | STRATCOLL | LOWCOLL | TARGETABLE
+
+	IF (!(MyFlag2 & OWNIPARAMS))
+		repeating = 0
+	ENDIF
+
+
+	ThisModelAnimPlay(REPEAT)
+	RegisterCollision()
+	TRIGSET>Die WHENHIT
+
+	IF (!(MyFlag & OWNFPARAMS))
+		speed = 0.3
+	ENDIF
+
+	health = 1
+
+	InitPath()
+	InitSplineData()
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	IF (!repeating)
+		IF (LastSplineSection())
+			IF (distToLastWay() < 5.0)
+				STAT>Die
+			ENDIF
+		ENDIF
+	ENDIF
+
+	MoveAlongPath(speed)
+	FaceAlongPath(1)
+	TiltAlongPath(1.0)
+	SplineRelFlatten(1.0)	
+ENDSTATE
+
+
+STATE Die
+	Score = Score + 50
+	Delete()
+ENDSTATE

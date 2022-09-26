@@ -1,0 +1,52 @@
+// Red dog's exhaust strat
+
+//LOCALFLOAT temp
+
+STATE Init
+	MyFlag = MyFlag | SPRITE | NOTEXPLODE
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+	trans = RandRange (0.0, 0.2)
+
+	SetFriction(0.03,0.03,0.03)
+	
+	scalex = 0.2
+	scaley = 0.2
+
+	OBJECT> SFX\DARKPUFF
+	ANIM> DARKPUFF>Smoke
+	TRIGSET>KillOff WHENANIMOVER
+
+	MoveZ (0.002)
+	MyVar = RandRange(-0.33, -0.28) * 0.1
+	MoveY (MyVar)
+	MyVar = RandRange(-0.015, 0.015) * 0.5
+	MoveX (MyVar)
+
+	x = x + RandRange(-0.1, 0.1)
+	y = y + RandRange(-0.1, 0.1)
+
+	MyVar = RandRange(0, TWOPI)
+	Yaw(MyVar)
+
+//	RotateObjectXYZ(0, 0,0, temp)
+
+	LOOP 1
+		MyFlag = MyFlag
+	ENDLOOP
+
+	STAT>Wait
+ENDSTATE
+
+STATE Wait
+	MoveZ (0.002)
+	x = x + windX * 0.02 + PlayerVelX * 0.7
+	y = y + windY * 0.02 + PlayerVelY * 0.7
+	z = z + PlayerVelZ * 0.5
+ENDSTATE
+
+STATE KillOff
+	Delete()
+ //	TRIGFIN
+ENDSTATE
+
+

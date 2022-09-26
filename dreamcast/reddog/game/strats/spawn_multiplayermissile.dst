@@ -1,0 +1,110 @@
+LOCALINT trail
+LOCALFLOAT	xSpeed
+LOCALFLOAT	ySpeed
+LOCALFLOAT	zSpeed
+LOCALINT	targetStrat
+LOCALINT	pn
+LOCALINT	dead
+
+STATE Init 
+	dead = 0
+	MyFlag = MyFlag | FLOORCOLL | STRATCOLL | FRIENDLY | NOTEXPLODE |  BULLETTYPE | PLANEMOVE
+    MyFlag2 = MyFlag2 | BULLET_CF
+	RegisterCollision()
+	pn = GetGlobalParamInt(0)
+	SetFriction(0.5,0.5,0.5)
+	OBJECT> WEAPON\MISSILE06
+	TRIGSET>KillOff	WHENHIT
+	TRIGSET>KillOffFloor	ONFLOOR
+	TRIGSET>KillOffFloor	EVERY 300
+	damage = 101.0
+	targetStrat = GetSecondaryTargetStrat(pn)
+	RemoveTargetStrat(ParentPlayerNumber, targetStrat, 0)
+	xSpeed = RandRange(-0.5, 0.5)
+	ySpeed = RandRange(-0.0, 0.5)
+	zSpeed = RandRange(0.0, 0.5)
+	MyVar = pn
+	trail = CreateBand (1, 16, 0, 1, 1, 0, 0, 1, 0, 0, 0)
+	SetBandRotXYZandScaling (trail, 0.0, 0, 0.2, 1.1, 1.1, 1.1)
+	AddBandSegment (trail, 0, 0, 0, 0.2)
+	AddBandSegment (trail, 0, 0, 0, 0.2)
+	TRIGSET>Trailer EVERY 1
+	TRIGSET>BandTrigger EVERY 2
+	
+	STAT>Start
+ENDSTATE 
+
+STATE BandTrigger
+	AddBandSegment (trail, 0, 0, 0, 0.2)
+	TRIGFIN
+ENDSTATE
+
+STATE Trailer
+	RubberBand (trail, 0, 0, 0, 0.1)
+	TRIGFIN
+ENDSTATE
+
+STATE Start
+	IF (ValidTargetStrat(pn, targetStrat, 0))
+		GetTargetStratPos(pn, targetStrat, 0)
+		TargettingStrat(targetStrat, 3)
+	ELSE
+		STAT>Die
+	ENDIF
+	z = z + zSpeed
+	x = x + xSpeed
+	y = y + ySpeed
+	MoveY(2.0)
+	IF(xSpeed > 0.1)
+		xSpeed = xSpeed - 0.1
+	ELSE
+		IF (xSpeed < -0.1)
+			xSpeed = xSpeed + 0.1
+		ELSE
+			xSpeed = 0.0
+		ENDIF
+	ENDIF
+
+	IF(zSpeed > 0.1)
+		zSpeed = zSpeed - 0.1
+	ELSE
+		zSpeed = 0.0
+	ENDIF
+
+	PointTo(CheckX, CheckY, CheckZ)
+ENDSTATE
+
+STATE Die
+	IF (!dead)
+		RemoveTargetStrat(pn, targetStrat, 0)
+   		CREATE SPAWN_BLASTEXP 0.0, 3.0, -2.0, 0.0, 0.0, 0.0, 0
+		DeleteBand (trail)
+		dead = 1
+		Delete()
+	ENDIF
+ENDSTATE
+
+STATE KillOff
+	IF (!dead)
+		TargettingStrat(targetStrat, 2)
+		MyFlag = MyFlag | NODISP  
+		MyFlag = MyFlag & LNOT(STRATCOLL)
+		DeleteBand (trail)
+		CREATE SPAWN_BLASTEXP 0.0, 3.0, -2.0, 0.0, 0.0, 0.0, 0
+		dead = 1
+   		Delete()
+	ENDIF
+  //	TRIGSTOP
+ENDSTATE
+
+STATE KillOffFloor
+	IF (!dead)
+		dead = 1
+		TargettingStrat(targetStrat, 2)
+		//RemoveTargetStrat(ParentPlayerNumber, targetStrat)
+		DeleteBand (trail)
+		CREATE SPAWN_BLASTEXP 0.0, 3.0, -2.0, 0.0, 0.0, 0.0, 0
+		Delete()
+	ENDIF
+  //	TRIGSTOP
+ENDSTATE

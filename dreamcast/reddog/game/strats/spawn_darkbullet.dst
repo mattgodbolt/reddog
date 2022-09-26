@@ -1,0 +1,56 @@
+LOCALFLOAT	speed
+
+STATE Init
+	IF (GetGlobalParamInt(0) = 0)
+		MyFlag = MyFlag | ENEMY | STRATCOLL | FLOORCOLL | LOWCOLL | SPRITE | NODISP
+		OBJECT>Enemies\DarkBullet
+		RegisterCollision()
+		SetFriction(0.0, 0.0, 0.0)
+		speed = GetGlobalParamFloat(0)
+		TRIGSET>KillOffHit WHENHIT
+		TRIGSET>KillOffHit EVERY 200
+		TRIGSET>KillOffHit ONFLOOR
+		IF (speed = 0.0)
+			speed = 1.2
+		ENDIF
+		PointPlayer()
+		MoveY(speed)
+		TRIGSET>SPTrail EVERY 2
+	ELSE
+		MyFlag = MyFlag | ENEMY | SPRITE
+		OBJECT> EXPLOSIONS\DaveTExplode5
+		ANIM> DaveTExplode5>Explode
+		PointPlayer()
+
+		speed = GetGlobalParamFloat(0)
+		MoveY(speed)
+		SetFriction(0.1, 0.1, 0.1)
+	//	OBJECT>Enemies\DarkBullet
+//		ANIM>DarkBullet>Smoke
+		TRIGSET>KillOffFloor WHENANIMOVER
+	ENDIF
+	
+	STAT>Start
+ENDSTATE
+
+TRIGGER SPTrail
+	SetGlobalParamInt(0, 1)
+	SetGlobalParamFloat(0, speed)
+	CREATE SPAWN_DarkBullet 0, 0, 0, 0, 0, 0, 0
+	SetGlobalParamFloat(0, 0.0)
+	SetGlobalParamInt(0, 0)
+	TRIGFIN
+ENDTRIGGER
+
+TRIGGER KillOffFloor
+	Delete()
+  //	TRIGFIN
+ENDTRIGGER
+
+TRIGGER KillOffHit
+	Delete()
+  //	TRIGFIN
+ENDTRIGGER
+
+STATE Start
+ENDSTATE

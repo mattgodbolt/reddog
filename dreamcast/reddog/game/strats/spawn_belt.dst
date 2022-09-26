@@ -1,0 +1,39 @@
+LOCALFLOAT	speed
+
+STATE Init
+	MyFlag = MyFlag | STRATCOLL | ENEMY
+	MyFlag2 = MyFlag2 | HOLDPLAYER | COLLMOVE
+	RegisterCollision()
+	speed = GetGlobalParamFloat(0)
+//	speed = 1.0
+	SetFriction(0.1, 0.1, 0.1)
+	OBJECT> MISC\ENV_CONVEYER
+	RotationRestriction(0.0, 0.0, 0.0)
+	InheritMyParent()
+	InitPath()
+	IAmHoldPlayer()
+	InitHDC()
+	STAT> Start
+ENDSTATE
+
+
+STATE Die
+	Delete()
+ENDSTATE
+
+STATE Start
+//	PointTo(CheckX,CheckY,CheckZ)
+	WHILE (CheckPosDist() > 0.5)
+		CalculateStratPolyData(0)
+		MoveTowardCheckPos(speed * 0.005)
+		HoldPlayer()
+		//FlattenHoldPlayer(3.0)
+	ENDWHILE
+	IF (LastWay())
+		STAT>Die
+	ELSE
+		GetNextWay()
+	ENDIF
+	HoldPlayer()
+	CalculateStratPolyData(0)
+ENDSTATE

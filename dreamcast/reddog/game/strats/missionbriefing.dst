@@ -1,0 +1,436 @@
+// Initialise the strat
+PARAMINT	scriptNum	0
+PARAMINT	Debrief		0
+PARAMINT	StaticCamera	0
+PARAMINT	PauseAmount		0
+PARAMINT	SecondaryBriefing 0
+PARAMINT	HoldRD 1
+PARAMINT	MusicNumber 0
+PARAMINT	KeepFade 10
+
+
+LOCALFLOAT rotAmt
+LOCALFLOAT Dist
+LOCALFLOAT Height
+LOCALFLOAT Pitch
+LOCALFLOAT Roll
+LOCALFLOAT oAmt
+LOCALFLOAT oTar
+LOCALFLOAT DistAmt
+LOCALFLOAT ExtraSpin
+LOCALFLOAT i
+LOCALINT	Ending
+LOCALINT	MusicStarted
+LOCALINT	CameraAmount
+
+STATE DebriefMe
+	oAmt = oAmt + ((oTar - oAmt) * 0.075)
+	IF (DisplayBriefing (0, oAmt, 1))
+		BeingBriefed = 0
+		CompletedLevel()
+		STAT>DoNothing
+	ENDIF
+
+ENDSTATE
+
+STATE Delete
+	IF (SecondaryBriefing)
+		TimeFunction(0)
+	ENDIF
+	IF (KeepFade > 0)
+		SetGlobalParamInt(0, KeepFade)
+		CREATE ENV_SetScreenColour 0, 0, 0, 0, 0, 0, 0
+		SetGlobalParamInt(0, 0)
+	ENDIF
+	SoundFade(0.0,0)
+	Delete()
+ENDSTATE
+
+TRIGGER CleanCam
+	//HACK TO ENSURE WIDESCREEN IS OFF
+	ChangeCam(-1,-1)
+	IF (MyParent)
+		ParentCamIVar = CameraAmount
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+TRIGGER StateCheck
+	IF ((HoldRD = 1) AND (PlayerState = PS_NORMAL))
+		PlayerHeld = 1
+		PlayerState = PS_INDROPSHIP
+	ENDIF
+	IF (PlayerState = PS_ONPATH)
+		PlayerHeld = 0
+	ENDIF
+	TRIGFIN
+ENDTRIGGER 
+
+STATE Init
+
+	CameraAmount = 0
+
+	//DEBRIEFING MESSAGE IS NOW SPAWNED FROM THE DROPSHIP PICKUP STATECHANGE STRAT
+	IF (GetGlobalParamInt(0) = 99)
+		oAmt = -1
+		oTar = 1
+		
+		STAT>DebriefMe
+	ENDIF
+
+	IF (!(MyFlag2 & OWNIPARAMS))
+		scriptNum = 0
+		Debrief = 0
+		StaticCamera = 0
+		PauseAmount = 0
+		SecondaryBriefing = 0
+		HoldRD = 1
+		KeepFade = 10
+	ENDIF
+
+	IF (KeepFade < 10)
+		KeepFade = 10
+	ENDIF
+	// Badger mungery only do oncery
+	IF (!SecondaryBriefing)
+		IF (!Debrief && MissionBriefingDone)
+			STAT>Delete
+		ENDIF
+
+		MissionBriefingDone = 1
+	ENDIF
+
+	BeingBriefed = 1
+	MusicStarted = 0
+
+	IF (Debrief OR SecondaryBriefing)
+		// Ensure the timer is stopped
+		TimeFunction(2)
+	   	IF (SecondaryBriefing)
+			// Force the music intensity back to low
+			SetGlobalParamInt(0, 1)
+			CREATE ENV_MusicIntensity 0,0,0,0,0,0,0
+			ClearGlobalParams()
+			MusicStarted = 1
+		ELSE
+			IF (PauseAmount = 0)
+				SoundFade(1.0,0)
+				SoundReset()
+				// Play the level complete music
+				SetGlobalParamInt(0, 2)
+				CREATE ENV_MusicFade 0,0,0,0,0,0,0
+				ClearGlobalParams()
+				MusicStarted = 1
+			ENDIF
+		ENDIF
+	ENDIF
+
+	IF (Debrief)
+   //	IF (Debrief)
+   //		TRIGSET>CleanCam EVERY 1
+   //	ENDIF
+		FinaliseGameScore()
+	ENDIF
+
+	MakeMeTheLast()
+   	OBJECT> REDDOG\REDDOGDROPSHIP
+   
+	IF (!SecondaryBriefing)
+		AllocStratSoundBlock(3)
+		SetPitch(0, -0.4)
+		PLAYSOUND>DROPSHIP 0 0.9 0.0 0.0 0.0 CONTINUOUS
+		PLAYSOUND>HIGHWHINE 1 0.8 0.0 0.0 0.0 CONTINUOUS
+	ENDIF
+
+	IF (StaticCamera)
+		MyFlag = MyFlag | NODISP
+	ELSE
+		MyVar = 2
+		IMMLOOP 4
+			CREATE SPAWN_RedDogDropship_Jet 0,0,0, 0,0,0, MyVar
+			MyVar = MyVar + 1
+		IMMENDLOOP
+		MyVar = 1
+		PlayerFlag2 = PlayerFlag2 | NODAMAGE
+	ENDIF
+
+	TRIGSET>StateCheck EVERY 1
+
+	// Change the camera to our parent
+	WHILE ((!Camera))
+		MyFlag = MyFlag
+	ENDWHILE
+
+	WHILE (MyParentInvalid())
+		MyParent = MyParent
+	ENDWHILE
+
+	IF (StaticCamera)
+		STAT>StaticCameraAction
+	ENDIF
+	
+	MyTarget = MyParent
+	IF (MyParentParent)
+		MyParent = MyParentParent
+		WHILE (MyParentInvalid())
+		   	MyParent = MyTargetParent
+		ENDWHILE
+		MyParent = MyTarget
+	ENDIF
+		
+   	IF (Debrief)
+   		TRIGSET>CleanCam EVERY 1
+   	ENDIF
+	ChangeCamStrat()
+
+	// Set a trigger to keep us moving, after our parent is ready
+   	TRIGSET>KeepOnRunning EVERY 1
+   	TRIGSET>CloudItUp EVERY 10
+
+   
+	Pitch = 0
+	Roll = 0
+	RelRotateX (-0.2)
+
+	rotAmt = 0
+	DistAmt = 42
+
+	oAmt = -1
+	oTar = 1
+
+	Ending = 0
+
+	STAT>FlyInOrOut
+ENDSTATE
+
+STATE StaticCameraAction
+//	PlayerState = PS_ONPATH
+
+	// My parent is the camera, doing its own thing
+	ChangeCamStrat()
+
+  IF (Debrief || PauseAmount)
+  		TRIGSET>CleanCam EVERY 1
+  ENDIF
+ 	// Loop for a bit
+	IF (PauseAmount)
+		PauseAmount = PauseAmount - 25
+		WHILE (PauseAmount)
+			CameraAmount = -100
+			PauseAmount = PauseAmount - 1
+		ENDWHILE
+		WHILE (CameraAmount < 0)
+			CameraAmount = CameraAmount + 4
+		ENDWHILE
+		ParentCamIVar = 0
+	ENDIF
+
+	IF (Debrief && !MusicStarted)
+		SoundFade(1.0,0)
+		// Play the level complete music
+		SetGlobalParamInt(0, 2)
+		CREATE ENV_MusicFade 0,0,0,0,0,0,0
+		ClearGlobalParams()
+	ENDIF
+
+   	TRIGSET>KeepOnRunning EVERY 1
+
+	oAmt = -1
+	oTar = 1
+	Ending = 0
+
+	WHILE (!Ending)
+		MyFlag = MyFlag
+	ENDWHILE
+
+	// Check for ending action
+	oTar = 0
+	WHILE (oAmt > 0.04 AND (fadeN < fadeLength))
+		MyFlag = MyFlag
+	ENDWHILE
+	IF (!Debrief)
+		i = 0.0
+		WHILE (i < 15.0)
+			i = i + 1.0
+			SetScreenARGB(i * 0.0666667, 0.0, 0.0, 0.0)
+		ENDWHILE
+		SetScreenARGB(1.0, 0.0, 0.0, 0.0)
+	ENDIF
+
+		
+	BeingBriefed = 0
+
+	IF (Debrief)
+		CompletedLevel()
+		STAT>DoNothing
+	ELSE
+		IF (MyParent)
+			IF (SecondaryBriefing)
+				// Let the action handle the music switching
+				SetGlobalParamInt(0, 0)
+				CREATE ENV_MusicIntensity 0,0,0,0,0,0,0
+				ClearGlobalParams()
+			ELSE
+				SoundFade(0.0,0)
+				// Play the level Music
+				SetGlobalParamInt(0, MusicNumber)
+				CREATE ENV_MusicFade 0,0,0,0,0,0,0
+				ClearGlobalParams()
+			ENDIF
+		
+			DeleteMyParent()
+			ChangeCam(0,1)
+		ENDIF
+
+		PlayerHeld = 0
+		PlayerState = PS_NORMAL
+		// Start the game timer
+		TimeFunction (0)
+		IF (KeepFade > 0)
+			SetGlobalParamInt(0, KeepFade)
+			CREATE ENV_SetScreenColour 0, 0, 0, 0, 0, 0, 0
+			SetGlobalParamInt(0, 0)
+		ENDIF
+		SoundFade(0.0,0)
+		Delete()
+	ENDIF
+ENDSTATE
+
+LOCALFLOAT wAmt
+LOCALFLOAT speed
+
+// Keep the thing moving along
+STATE KeepOnRunning
+	IF (!StaticCamera)
+		Dist = DistAmt + 15 * Ssin(rotAmt * 0.1)
+		Height = 3 + 2 * Scos(rotAmt * 0.7)
+		// Special hack for the canyon level:
+		IF (LevelNum = 2)
+			Height = 0 - Height
+			Height = Height - 2
+		ENDIF
+		MyVar = 0.8 + 0.3 * Scos(rotAmt * 1.5)
+		IF (MyParent)
+			MyVar = (0.5 + (0.3 * Ssin(rotAmt*0.25))) + 0.1 + ExtraSpin
+			parentx = x + Dist * Ssin(MyVar)
+			parenty = y + Dist * Scos(MyVar)
+			parentz = z + Height
+			rotAmt = rotAmt + 0.01
+		ENDIF
+		HoldPlayerPos (1, 0.0, 0.0, 0.0)
+
+		roty = (0.02 * Ssin(rotAmt * 3.33)) - Pitch
+		rotx = (0.03 * Scos(rotAmt * 1.17)) - Roll
+		Pitch = Pitch + roty
+		Roll = Roll + rotx
+	ENDIF
+
+	oAmt = oAmt + ((oTar - oAmt) * 0.075)
+
+	speed = StratSpeed()
+	IF (!SecondaryBriefing)
+		SetPitch(1, speed)
+		IF (speed > 0.4)
+			speed = 0.4
+		ENDIF
+		SetPitch(0, speed)
+	ENDIF
+
+	//SET THE INDROPSHIP STATE SO AS TO ALLOW THE PAUSE TO BE IGNORED   
+	IF (HoldRD = 1)
+		IF (PlayerState = PS_NORMAL)
+			PlayerState = PS_INDROPSHIP
+		ENDIF
+	ENDIF
+   
+   
+  	//HACK TO ENSURE WIDESCREEN IS OFF
+	//	ChangeCam(-1,-1)
+ 	IF (DisplayBriefing (scriptNum, oAmt, Debrief))
+		IF (Ending != 1)
+			wAmt = 0
+			Ending = 1
+		ENDIF
+  	ENDIF
+
+
+  	TRIGFIN
+ENDSTATE
+
+LOCALFLOAT xx
+LOCALFLOAT dist
+LOCALFLOAT zz
+STATE FlyInOrOut
+	PlayerFlag = PlayerFlag | NODISP
+	PlayerState = PS_INDROPSHIP
+
+	IF Ending
+		oTar = 0
+		WHILE (wAmt < 1)
+			ExtraSpin = ExtraSpin + ((-1.5 - ExtraSpin) * 0.06)
+			DistAmt = DistAmt * 1.02
+			wAmt = wAmt + 0.01
+			SetWhiteOut (wAmt, wAmt, wAmt)
+		ENDWHILE
+		
+		IF (MyParent)
+			IF (SecondaryBriefing)
+				// Let the action handle the music switching
+				SetGlobalParamInt(0, 0)
+				CREATE ENV_MusicIntensity 0,0,0,0,0,0,0
+				ClearGlobalParams()
+			ELSE
+				IF (!Debrief)
+					SoundFade(0.0,0)
+					// Play the level Music
+					SetGlobalParamInt(0, MusicNumber)
+					CREATE ENV_MusicFade 0,0,0,0,0,0,0
+					ClearGlobalParams()
+				ENDIF
+			ENDIF
+
+			
+			DeleteMyParent()
+			ChangeCam(0,1)
+		ENDIF
+
+		BeingBriefed = 0
+
+		IF (Debrief)
+			CompletedLevel()
+			STAT>DoNothing
+		ELSE
+			IF (SecondaryBriefing)
+				TimeFunction(0)
+			ENDIF
+			IF (KeepFade > 0)
+				SetGlobalParamInt(0, KeepFade)
+				CREATE ENV_SetScreenColour 0, 0, 0, 0, 0, 0, 0
+				SetGlobalParamInt(0, 0)
+			ENDIF
+			SoundFade(0.0,0)
+			Delete()
+		ENDIF
+	ENDIF
+
+ENDSTATE
+
+STATE DoNothing
+	MyVar = MyVar
+ENDSTATE
+
+STATE CloudItUp
+	xx = RandRange (0, 1)
+	zz = RandRange (0, 1)
+	xx = (1 - (xx * xx)) * 200
+	zz = (1 - (zz * zz)) * 200
+	IF (RandRange(0,1) < 0.5)
+		xx = -xx
+	ENDIF
+	IF (RandRange(0,1) < 0.5)
+		zz = -zz
+	ENDIF
+	dist = RandRange (200, 250)
+	CREATE SPAWN_FLUFFYCLOUD xx, dist, zz, 0, 0, 0, 0
+	TRIGFIN
+ENDSTATE

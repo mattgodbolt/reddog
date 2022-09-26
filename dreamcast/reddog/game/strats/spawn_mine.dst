@@ -1,0 +1,372 @@
+//MINE STATES :-
+
+//		BEHAVIOUR HOLDING :- STRAT WILL BE DORMANT AND WILL WAIT FOR THE PLAYER TO PASS
+//							 OVER ITS ACTIVATION POINT
+//							 BEFORE MOVE MODE
+//							 IF IT HAS PATH WILL BE FOLLOWING IT
+//		*** STRAT NEEDS TO HAVE BEEN ASSIGNED AN ACTIVATION POINT IN MAX *********
+
+//		BEHAVIOUR AGGRESSIVE :- STRAT WILL IMMEDIATELY ENTER MOVE MODE
+//								
+
+//		BEHAVIOUR DEFENSIVE  :- STRAT WILL BE DORMANT AND WILL WAIT FOR THE PLAYER TO
+//								PASS OVER ACTIVATION POINT
+//								ONCE ACTIVE IT SHALL RAISE/LOWER TO A PREDEFINED WAYPOINT HEIGHT
+//								BEFORE ENTERING MOVE MODE
+
+
+
+
+ //		MOVE MODE : IF ON A PATH, MOVE TO END OF PATH BEFORE CHASE MODE, ELSE STRAIGHT TO CHASE
+//		******* IF PATHED, STRAT NEEDS TO HAVE BEEN ASSIGNED A PATH IN MAX ******
+ 
+
+//		CHASE MODE : HEAD TOWARD PLAYER AND EXPLODE WHEN NEAR
+
+ 
+
+   
+      
+	
+	 
+define FIVESECS 150			 
+
+
+define ENDCHASERANGE 60
+define CHARGERANGE 30
+define INNERSTOPRANGE 10
+define ACTIVERANGE 200
+define ACTIVATEPROXIMITY 40
+LOCALINT SameLevel
+LOCALINT SameLevelCount
+LOCALINT SameUp
+
+LOCALINT Countdown
+LOCALINT charged
+
+
+
+STATE Init
+	MyFlag = MyFlag | LOWCOLL | STRATCOLL | ENEMY | HOVERMOVE  | FLOORCOLL | NOTEXPLODE | TARGETABLE
+	RegisterCollision()
+	AllocStratSoundBlock(1)
+	RegisterDanger(30.0)
+  	IF (!PNode)
+		OBJECT> ENEMIES\A00AERIALMINE
+		MyFlag = MyFlag | AGGRESSIVE
+	ENDIF
+	SetObjectShadowState(1)
+	SetFriction(0.35,0.35,0.35)
+	health = 20.0
+	TRIGSET>Kill WHENDEAD 
+	IF (MyPath)
+		InitPath()
+    ENDIF
+
+//	AddOmniLight (0, 0, 10.0, 20, 30)
+//	SetLightColour (0, 0.0, 1.0, 0.0)
+	STAT>Patrol
+ENDSTATE
+ 
+STATE Patrol
+
+	IF ((MyFlag & HOLDING) OR (MyFlag & DEFENSIVE))
+
+		MyFlag = MyFlag | RELVELCALC
+		WHILE (!PlayerNearActivationXY(0))
+
+			IF ((MyPath) AND (!(MyFlag & DEFENSIVE)))
+				IF (NearCheckPosXY(1.0))
+					IF (LastWay())
+						ResetPath()
+					ELSE
+						GetNextWay()
+					ENDIF
+				ENDIF
+
+				TowardWay(0.05,0.05)
+				MoveY(0.25)
+
+			ENDIF
+
+		ENDWHILE
+		MyFlag = MyFlag & LNOT(RELVELCALC)
+	ENDIF
+	SameLevel = 0
+	charged = 0
+	Countdown = 0
+	trans = 0.5
+	IF (MyFlag & DEFENSIVE)
+		//GetNextWay()
+		STAT>LiftToWayHeight
+	ELSE
+		IF (MyFlag & AGGRESSIVE)
+			STAT>CheckPath
+		ENDIF
+		STAT>ChasePlayer
+	ENDIF
+ENDSTATE
+
+STATE CheckPath
+	IF (MyPath)
+
+		WHILE (1)
+			IF (NearCheckPosXY(1.0))
+				IF (LastWay())
+					STAT>ChasePlayer
+				ENDIF
+			   	GetNextWay()
+			ENDIF
+
+			TowardWay(0.05,0.05)
+			MoveY(0.25)
+		ENDWHILE
+
+	ENDIF
+		STAT>ChasePlayer
+ENDSTATE
+
+
+STATE LiftToWayHeight
+
+	WHILE (!NearCheckPosZ(1.0))
+
+		distz = FABS(z - CheckZ) / 10.0
+
+		IF (distz < 0.01)
+			distz = 0.01
+		ENDIF
+
+
+		IF (distz > 0.48)
+			distz = 0.48
+		ENDIF
+
+
+		IF (z < CheckZ)
+			absspeedz = absspeedz + distz
+		ELSE
+			absspeedz = absspeedz - distz
+		ENDIF
+	ENDWHILE
+
+	STAT>ChasePlayer
+
+ENDSTATE
+
+LOCALFLOAT dist
+LOCALFLOAT distx
+LOCALFLOAT disty
+LOCALFLOAT distz
+
+
+//CHASING THE PLAYER
+STATE ChasePlayer
+
+
+	IF (!(MyFlag & AGGRESSIVE))
+		IF (!NearPlayerXY(ACTIVERANGE))
+			STAT>TimeOut
+		ENDIF
+	ENDIF
+  
+  
+  	IF (NearPlayer(CHARGERANGE))
+//		MyFlag2 = MyFlag2 | TARGETTED
+//		MyFlag2 = MyFlag2 | SPECULAR | TRANSLUCENT
+   		charged = 1
+	ENDIF
+
+	  	AvoidStrats(3.0)
+		IF (charged)
+		   //	Yaw(0.028)
+			Yaw(0.088)
+		ELSE
+			Yaw(0.015)
+		ENDIF
+
+
+		distx = (DogX - x)  
+		disty = (DogY - y) 
+
+
+		dist = (distx * distx) + (disty * disty)
+		dist = FSQRT(dist)
+
+		 distx = distx / dist
+		 disty = disty / dist
+
+
+	   	IF (distx < 0)
+		 	IF (distx < -0.28)
+		  		distx = -0.28
+		  	ENDIF
+		ELSE
+
+		 	IF (distx > 0.28)
+				distx = 0.28
+			ENDIF
+	   	ENDIF
+
+
+		IF (disty < 0)
+		 	IF (disty < -0.28)
+		 		disty = -0.28
+		 	ENDIF
+		ELSE
+		 	IF (disty > 0.28)
+				disty = 0.28
+			ENDIF
+		ENDIF
+
+	  	absspeedx = absspeedx + distx
+		absspeedy = absspeedy + disty
+
+ 
+ 		distz = FABS(z - DogZ) 
+		IF (!SameLevel)
+
+			IF (distz < 2.0)
+				SameLevelCount = 0
+				SameLevel = 1
+				SameUp = 1
+			ELSE
+				SameLevel = 0
+			ENDIF
+
+			distz = distz / 50.0
+
+	 		IF (distz < 0.01)
+				distz = 0.01
+			ENDIF
+
+
+			IF (distz > 0.08)
+				distz = 0.08
+			ENDIF
+
+
+			IF (z < DogZ)
+				absspeedz = absspeedz + distz
+			ELSE
+				absspeedz = absspeedz - distz
+			ENDIF
+		ELSE
+			IF (distz > 12.0)
+				SameLevel = 0
+			ELSE
+
+				IF (SameUp)
+					distz = 0.04
+				ELSE
+					distz = -0.04
+				ENDIF
+
+				SameLevelCount = SameLevelCount + 1
+				IF (SameLevelCount > 15)
+				   SameUp = !SameUp
+				   SameLevelCount = 0
+				ENDIF
+				absspeedz = absspeedz + distz
+			ENDIF
+
+		ENDIF
+
+	IF (charged)
+		trans = trans + 0.08
+		IF (trans > 1.0)
+			trans = 0
+		ENDIF
+
+		IF ((Countdown > FIVESECS))
+			STAT>Kill
+		ELSE
+			IF  (NearPlayer(INNERSTOPRANGE))
+				STAT>Kill
+			ELSE
+				Countdown = Countdown + 1
+			ENDIF
+		ENDIF
+	ENDIF
+
+ENDSTATE
+
+STATE TimeOut
+	IF (MyFlag & AGGRESSIVE)
+		STAT> ChasePlayer
+	ENDIF
+
+
+	IF (NearPlayer(ACTIVATEPROXIMITY))
+		STAT>ChasePlayer
+	ENDIF
+
+
+
+ENDSTATE
+
+STATE Kill
+
+	Yaw(0.128)
+	distz = FABS(z - DogZ)
+	WHILE (FABS(distz) > 3.0)
+		distx = (DogX - x)  
+		disty = (DogY - y) 
+
+
+		dist = (distx * distx) + (disty * disty)
+		dist = FSQRT(dist)
+
+		 distx = distx / dist
+		 disty = disty / dist
+
+
+	   	IF (distx < 0)
+		 	IF (distx < -0.28)
+		  		distx = -0.28
+		  	ENDIF
+		ELSE
+
+		 	IF (distx > 0.28)
+				distx = 0.28
+			ENDIF
+	   	ENDIF
+
+
+		IF (disty < 0)
+		 	IF (disty < -0.28)
+		 		disty = -0.28
+		 	ENDIF
+		ELSE
+		 	IF (disty > 0.28)
+				disty = 0.28
+			ENDIF
+		ENDIF
+
+	  	absspeedx = absspeedx + distx
+		absspeedy = absspeedy + disty
+
+		distz = (z - DogZ)
+
+		IF (z < DogZ)
+			absspeedz = absspeedz + 0.11
+		ELSE
+			absspeedz = absspeedz - 0.11
+		ENDIF
+	ENDWHILE
+
+	trans = 0.9
+	MakeFrags (0.1, 24)
+
+	MyVar = 1.0
+	IF (RandRange(0, 1) = 0)
+		PLAYSOUND>EX_MINE1 0 1.0 0.0 0.0 0.0 0
+	ELSE
+		PLAYSOUND>EX_MINE2 0 1.0 0.0 0.0 0.0 0
+	ENDIF
+ 	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+	
+   	TRIGSTOP
+	DESTROYME SPAWN_EXPLODINGBITS
+ENDSTATE
+ 

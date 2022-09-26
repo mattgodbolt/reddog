@@ -1,0 +1,31 @@
+LOCALFLOAT	time
+LOCALINT	type
+
+STATE Init
+	MyFlag = MyFlag | ENEMY | STRATCOLL | FLOORCOLL | BULLETTYPE | LOWCOLL
+	MyFlag2 = MyFlag2 | NOHDC
+ 	RegisterCollision()
+	SetFriction(0.1, 0.1, 0.1)
+	OBJECT> WEAPON\MISSILE06 
+	
+	CREATE SPAWN_BLUETRAIL 0, 0, 0, 0, 0, 0, 0
+	damage = 10.0
+	TRIGSET>Kill	WHENHIT
+	TRIGSET>Kill	ONFLOOR
+	TRIGSET>Kill	EVERY 300
+	MoveY(1.0)
+	STAT>Start
+
+ENDSTATE
+
+STATE Start
+	TurnTowardPosXZ(DogX, DogY, DogZ, 0.05, 0.05)
+	MoveY(0.2)
+ENDSTATE
+
+STATE Kill
+	MyVar = 1.0
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+	Delete()
+	TRIGSTOP
+ENDSTATE

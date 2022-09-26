@@ -1,0 +1,76 @@
+PARAMINT	DelayFor	0
+PARAMINT	deleteAfter 90
+PARAMINT	waitBeforeDel 0
+PARAMFLOAT	speed		0.6
+
+LOCALFLOAT cspeed
+LOCALFLOAT vol
+
+TRIGGER IncSound
+	vol = vol + 0.016
+	IF (vol >= 0.7)
+		SetVolume (0, 0.7)
+		TRIGSTOP
+	ELSE
+		SetVolume (0, vol)
+		TRIGFIN
+	ENDIF
+ENDTRIGGER
+
+STATE Init
+	MyFlag = MyFlag | STRATCOLL | FLOORCOLL | FRIENDLY | REALGRAVITYON
+	AllocStratSoundBlock(1)
+
+	IF (!(MyFlag & OWNFPARAMS))
+		speed = 0.6
+	ENDIF
+
+	IF (!(MyFlag2 & OWNIPARAMS))
+		DelayFor = 0
+		deleteAfter = 90
+		waitBeforeDel = 0
+	ENDIF
+	
+	WHILE (DelayFor > 0)
+		DelayFor = DelayFor - 1
+	ENDWHILE
+	
+	vol = 0
+	PLAYSOUND>CAR 0 0.0 0.0 0.0 0.0 CONTINUOUS
+	TRIGSET>IncSound EVERY 1
+
+	InitHDC()
+	CalculateStratPolyData(0)
+	InitPath()
+	InitSplineData()
+	cspeed = 0
+	STAT>Start
+ENDSTATE
+
+STATE Start
+
+	IF (cspeed < speed)
+		cspeed = cspeed + 0.01
+	ENDIF
+	MoveAlongPathXY(cspeed)
+	FaceAlongDirXY(1)
+	deleteAfter = deleteAfter - 1
+	IF (deleteAfter <= 0)
+		IF (waitBeforeDel = -1)
+			STAT>DoNothing
+		ELSE
+			WHILE (waitBeforeDel > 0)
+				waitBeforeDel = waitBeforeDel - 1
+			ENDWHILE
+			IF (MyParent)
+				WHILE (MyParentFlag)
+					MyFlag = MyFlag
+				ENDWHILE
+			ENDIF
+			Delete()
+		ENDIF
+	ENDIF
+ENDSTATE
+		
+STATE DoNothing
+ENDSTATE

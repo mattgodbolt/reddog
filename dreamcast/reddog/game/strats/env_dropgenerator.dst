@@ -1,0 +1,21 @@
+PARAMFLOAT	seconds
+LOCALFLOAT	time
+
+STATE Init
+	MyFlag = MyFlag
+	time = seconds * 30.0
+	IF (seconds = 0.0)
+		seconds = RandRange(2.0, 5.0)
+	ENDIF
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	IF (NearPlayerXY(50.0))
+		time = time - 1.0
+		IF (time <= 0.0)	
+			CREATE ENV_DROP	0, 0, 0, 0, 0, 0, 0
+			time = seconds * 30.0
+		ENDIF
+	ENDIF
+ENDSTATE

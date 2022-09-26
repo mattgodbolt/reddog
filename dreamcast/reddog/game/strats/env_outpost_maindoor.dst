@@ -1,0 +1,29 @@
+LOCALFLOAT	temp
+
+STATE Init
+	MyFlag = MyFlag | STRATCOLL | ENEMY
+	RegisterCollision()
+  	MyFlag2 = MyFlag2 | COLLMOVE
+	InitHDC()
+	CalculateStratPolyData(1)
+	STAT> Start
+ENDSTATE
+
+STATE Start
+	CalculateStratPolyData(0)
+	IF (PlayerNearActivationXY(0))
+		temp = GetObjectCrntPos(1,MODEX)
+		IF (temp > -5.0)
+			SetObjectCrntPos(1, temp - 0.1,MODEX)
+			temp = GetObjectCrntPos(2,MODEX)
+			SetObjectCrntPos(2, temp + 0.1,MODEX)
+		ENDIF
+	ELSE
+		temp = GetObjectCrntPos(1,MODEX)
+		IF (temp < 0.1)
+			SetObjectCrntPos(1, temp + 0.1,MODEX)
+			temp = GetObjectCrntPos(2,MODEX)
+			SetObjectCrntPos(2, temp - 0.1,MODEX)
+		ENDIF
+	ENDIF
+ENDSTATE

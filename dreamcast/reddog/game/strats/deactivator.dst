@@ -1,0 +1,964 @@
+
+// BEHAVIOUR *** PATH ONLY FOLLOWS PLAYER ON PATH
+//				 IF ON A NETWORK WILL DO ITS TURNING AROUND ACTION WHEN RELEVANT
+
+//		******** I STILL NEED TO CATER FOR COLLISION CODE IN PATH ATTACK NETWORK MODE
+
+
+//				 HOLDING WILL ATTEMPT TO TRAVERSE THE NETWORK TO THE PLAYER AND,
+//				 WHEN IN RANGE, REVERSE BACK AND STRAFE				
+
+//				 AGGRESSIVE WILL ATTEMPT TO DIRECTLY ENGAGE THE PLAYER AND,
+//				 WHEN IN RANGE, WILL BACKOFF TO A SAFE DISTANCE
+
+
+
+
+define TURRET 13
+
+PARAMFLOAT STOPRANGE 30.0
+PARAMFLOAT AGGRESSIVELEAVERANGE 60.0
+PARAMFLOAT ENGAGERANGE 200.0
+PARAMFLOAT ENDCHASERANGE 120.0
+PARAMFLOAT RUNAWAYRANGE 100.0
+PARAMFLOAT ENGAGELONGRANGE 60.0
+PARAMFLOAT CLOSECOMBATRANGE 20.0
+
+define STRAFEMAX 2.5
+define STRAFETIME 300
+define STRAFEMIN -2.5
+define	DELAYMODE 60
+
+LOCALINT LimitReached
+LOCALINT fireCount
+LOCALINT endpatrol
+LOCALINT endreached
+LOCALINT timer
+LOCALINT Seen
+LOCALINT NetWorkMode
+LOCALFLOAT XPOS
+LOCALFLOAT YPOS
+LOCALFLOAT ZPOS
+LOCALFLOAT StrafePos
+LOCALINT RetPatrol
+LOCALINT TrigSet
+
+define HOLDATTACKRATE 0.1
+define HOLDATTACKTURNRATE 0.08
+define AGGRESSIVEATTACKRATE 0.05
+define PATHATTACKRATE 0.06
+define PATHATTACKTURNRATE 0.05
+
+define PATROLRATE 0.06
+define PATROLTURNRATE 0.06
+
+
+
+
+define PATROLTURNANG 0.023
+define STRAFETURNANG 0.04	//ANG THROUGH WHICH TO TURN WHEN CENTERING TO STRAFE POS
+define STRAFERATE 0.08		//LATERAL STRAFE SPEED
+define STRAFETURNRATE 0.04	 //SPEED WHEN TURNING TO STRAFE POS
+define BACKOFFTURN -0.06
+define ATTACKTURNANG 0.02
+define CHASEATTACKRATE 0.05
+define CHASETURNANG 0.02
+define REVERSEMAX -0.08
+define REVERSERATE 0.0019
+define MAXSPEED 1.12
+
+
+STATE Init
+	MyFlag = MyFlag | LOWCOLL | STRATCOLL | RELVELCALC  | ENEMY | HOVERMOVE  | FLOORCOLL | GRAVITYON | NOTEXPLODE | TARGETABLE | GRAVITYON
+//	MyFlag = MyFlag | RELVELCALC  | ENEMY | HOVERMOVE  | FLOORCOLL | GRAVITYON | NOTEXPLODE
+
+	RegisterCollision()
+	//SEE IF WE NEED TO USE THE DEFAULT PARAM VALUES
+
+	IF (!(MyFlag & OWNFPARAMS))
+		RUNAWAYRANGE = 100
+		AGGRESSIVELEAVERANGE = 60
+		ENGAGERANGE = 50
+		ENDCHASERANGE = 120
+		STOPRANGE = 30
+		ENGAGELONGRANGE = 60
+		CLOSECOMBATRANGE = 20
+	ENDIF
+
+
+  	SetFriction(1.0, 0.1, 0.1)
+	health = 120.0
+	RetPatrol = 0
+	IF (MyPath)
+		InitPath()
+		NetWorkMode = OnNet
+    ENDIF
+
+	TrigSet = 0
+	InsideCheck = 1
+	RotationRestriction(1.0, 1.0, 1.0)
+	fireCount = 40
+
+	//ACTIVATION DELAY IN PROGRESS PLEASE WAIT
+
+	WHILE (frame != 0.0)
+		frame = frame - 1.0
+	ENDWHILE
+
+	TRIGSET>Kill WHENDEAD 
+	TRIGSET>Hurt WHENHIT 
+
+	endpatrol = 0
+	MoveSp = 0
+	MoveMeAgain = 0
+
+	IF ((MyFlag & DEFENSIVE) | (MyFlag & AGGRESSIVE) | (MyFlag & HOLDING))
+		//ensure that if not on a net then path only is set
+		IF (!OnNet)
+			PathOnly = 1
+		ELSE	 
+	   		PathOnly = 0
+		ENDIF
+	ELSE
+		PathOnly = 1
+	ENDIF
+
+	STAT>Patrol
+ENDSTATE
+ 
+LOCALINT PathOnly
+ 
+LOCALFLOAT ang
+STATE Patrol
+	fireCount = fireCount + 1
+	RetPatrol = 0
+
+  	MyFlag2 = MyFlag2 | ONPATROL
+
+
+//REMOVE TO TEST NETWORK
+	IF (NearPlayer(RUNAWAYRANGE))
+		endreached = 0
+		IF (MyFlag & DEFENSIVE)
+			DefendMode = DEFENDFIRE
+		  	MyFlag2 = MyFlag2 & LNOT(ONPATROL)
+			STAT>Defend
+		ENDIF
+
+		IF (MyFlag & AGGRESSIVE)
+			IF (NetWorkMode)
+				LeaveFixedPath()
+			ENDIF
+		  	MyFlag2 = MyFlag2 & LNOT(ONPATROL)
+
+			STAT> AggressiveAttack
+		ENDIF
+
+		IF (MyFlag & HOLDING)
+			IF (NetWorkMode)
+				LeaveFixedPath()
+			ENDIF
+		  	MyFlag2 = MyFlag2 & LNOT(ONPATROL)
+
+		   	STAT>Attack
+	    ELSE
+			IF (NetWorkMode)
+				LeaveFixedPath()
+			ENDIF
+		  	MyFlag2 = MyFlag2 & LNOT(ONPATROL)
+
+		 	STAT>PathAttack
+		ENDIF
+	ENDIF
+
+    //CHECK FOR PATH AVAILABILITY
+
+    IF (MyPath)
+
+		
+		//PATROL UP TO THE END OF PATH AND THEN BACK DOWN AGAIN	
+
+		IF (NearCheckPosXY (0) OR MoveMeAgain)
+			IF (NetWorkMode)
+			//IN NETWORK MODE ALL PATHS ARE CLOSED SO WHEN WE REACH THE LAST POINT WE
+			//MOVE TO THE FIRST POINT
+
+				GetNextWay()
+			ELSE
+				IF (!endpatrol AND LastWay())
+					endpatrol = 1
+				ENDIF
+				IF (endpatrol AND FirstWay())
+					endpatrol = 0
+				ENDIF
+
+				IF (endpatrol)
+					GetPrevWay()
+				ELSE
+					GetNextWay()
+				ENDIF
+
+			ENDIF
+			MoveMeAgain = 0
+		ENDIF
+
+		//move forward only in network pathed mode
+
+
+		IF (PathOnly AND endpatrol AND !(NetWorkMode))
+			IF (AwaySeeWayZ(0.05))
+				MoveY (-PATROLRATE)
+			ELSE
+				MoveY (-PATROLTURNRATE)
+			ENDIF
+			AwayWayZ (PATROLTURNANG)
+		ELSE	
+			IF (SeeWayZ(0.05))
+				MoveY (PATROLRATE)
+			ELSE
+				MoveY (PATROLTURNRATE)
+			ENDIF
+
+			TowardWay (PATROLTURNANG,0.05)
+		ENDIF
+	ENDIF
+ENDSTATE
+
+
+//**** DEFEND VARS
+LOCALINT DefendMode
+define DEFENDFIRE 0
+define DEFENDWAIT 1
+define DEFENDMOVE 2
+
+LOCALINT InsideCheck
+LOCALINT Inside
+
+STATE InnerCheck
+	IF (InsideCheck)
+		Inside = InsideArea()
+   	   	IF (Inside <= 0)
+			TRIGRESET
+		  	TRIGFIN
+		 	STAT>Collide
+	   	ENDIF
+	ENDIF
+
+	TRIGFIN
+
+ENDSTATE
+
+STATE Collide
+	TRIGKILL>TurretFacePlayer EVERY 1
+	TRIGSET>TurretReset EVERY 1
+	ang = 0.99
+	Reset = 0
+	WHILE (!Reset)
+		counter = counter
+	ENDWHILE
+
+
+   counter = 0
+   InsideCheck = 1
+   RelVelX = 0
+   VelX = 0
+
+   RelVelY = 0
+   VelY = 0
+
+
+   RelVelZ = 0
+   VelZ = 0
+
+  	//CLEAR OUR BUSY FLAG IF ON NET
+	ClearBusy()
+
+
+
+
+	//WALK TO THE DEFLECTION POINT
+	//IF OUTSIDE OUTER CIRCLE
+   	IF (Inside < 0)
+  		InsideCheck = 0
+  	ENDIF
+
+
+   	WHILE (!(SeeWayZ(0.1)))
+   		TowardWay(HOLDATTACKTURNRATE,0.0)
+   	ENDWHILE
+  	InsideCheck = 1
+
+   	WHILE (!NearCheckPosXY(1.0) AND (counter < 60))
+   		TowardWay(HOLDATTACKTURNRATE,0.0)
+   	    MoveY(HOLDATTACKRATE)	   
+   		counter = counter + 1
+   	ENDWHILE
+
+   	//WALK TO THE NEAREST VISIBLE POINT ON THE NETWORK
+	//VISIBLE WITHIN A 22.5 DEG CONE
+
+
+	//TURN TO A SPOT ON THE NETWORK AND GO TO IT
+ 	GetNearestWayToMe()
+
+  	IF (!(NearCheckPosXY(1.0)))
+		WHILE (!(SeeWayZ(HOLDATTACKTURNRATE)) )
+			TowardWay(HOLDATTACKTURNRATE,0.05)
+		ENDWHILE
+
+		WHILE (!(NearCheckPosXY(1.0)) )
+			TowardWay(HOLDATTACKTURNRATE,0.05)
+		    MoveY(HOLDATTACKRATE)
+		ENDWHILE
+  	ENDIF
+						    
+	IF (!(RetPatrol))
+
+		//GO TO THE NEAREST WAYPOINT TO THE PLAYER
+
+	  	endreached = GetNearestWay(0.0)
+	   	WHILE (!endreached)
+		 	IF (NearCheckPosXY(1.0))
+		  		endreached = GetNearestWay(0.0)
+		  	ENDIF
+		  	TowardWay(HOLDATTACKTURNRATE,0.05)
+		    MoveY(HOLDATTACKRATE)
+	   	ENDWHILE
+	   	InsideCheck = 1
+	  // RETURN TO MAIN PROCESSING
+
+		TRIGSET>TurretFacePlayer EVERY 1
+
+		IF (MyFlag & HOLDING)
+			STAT>AttackMain
+		ENDIF
+		IF (MyFlag & AGGRESSIVE)
+			STAT>AggressiveAttack
+		ENDIF
+   	ELSE		
+		endreached = 0
+ 		GetNearestNetPatrolPoint(0.0)
+	   	WHILE (!(SeeWayZ(0.1)))
+	   		TowardWay(HOLDATTACKTURNRATE,0.05)
+	   	ENDWHILE
+		TRIGSET>TurretFacePlayer EVERY 1
+	   	STAT>ReturnToPatrol
+   	ENDIF
+ENDSTATE
+
+STATE ReturnToPatrol
+   RetPatrol = 1
+   STAT>ReturnToPatrolMain
+
+ENDSTATE
+
+STATE ReturnToPatrolMain
+
+	IF (NearCheckPosXY(1.0))
+		endreached = GetNearestNetPatrolPoint(0.0)
+	ENDIF
+
+	IF (endreached)
+		GetNextWay()
+	  	STAT>Patrol
+	ELSE
+		MoveY (PATROLRATE * 1.5 )
+		TowardWay (PATROLTURNANG,0.05)
+   	ENDIF
+	
+ENDSTATE
+
+
+
+
+STATE Defend
+
+	IF (DefendMode =  DEFENDFIRE)
+		CREATE SPAWN_ENEMYMISSILE 0.0, 1.0, 1.0, 0, 0, 0, TURRET
+		DefendMode = DEFENDWAIT
+	ENDIF
+
+
+	IF (DefendMode = DEFENDWAIT)
+		LOOP (2*30)
+			ObjectTowardPlayerXZ(TURRET , 0.05, 0.05, TWOPI, TWOPI)
+		ENDLOOP
+		DefendMode = DEFENDMOVE
+	ENDIF
+
+
+	//STRAFE SETTING 
+	IF (DefendMode = DEFENDMOVE)
+		STAT>DefendStrafe
+	ENDIF
+
+ENDSTATE
+
+LOCALINT NumStrafes
+
+STATE DefendStrafe
+
+	//SET STRAFE VARS
+
+	XPOS = x
+	YPOS = y
+	ZPOS = z
+	StrafePos = STRAFEMAX
+	SetStrafePos(StrafePos,XPOS,YPOS,ZPOS)
+	Seen = 0
+	LimitReached = 0
+	NumStrafes = 0
+	TRIGSET>TurretFacePlayer EVERY 1
+	TRIGSET>Fire EVERY 90
+
+	//STRAFE 3 TIMES
+
+	WHILE (NumStrafes < 3)
+
+		IF (NearCheckPosXY(0.5) or (InsideArea() < = 0))
+			IF (StrafePos = STRAFEMAX)
+				StrafePos = STRAFEMIN
+				LimitReached=1
+			ELSE
+				StrafePos = STRAFEMAX
+				LimitReached=0
+				NumStrafes = NumStrafes + 1
+			ENDIF
+			SetStrafePos(StrafePos,XPOS,YPOS,ZPOS)
+			Seen = 0
+		ENDIF
+
+		IF (!LimitReached)
+			IF (!(Seen))
+				IF (!(SeeWayZ(0.05)))
+					TowardWay (STRAFETURNANG,0.05)
+					MoveY (-STRAFETURNRATE)
+				ELSE
+					Seen=1
+					MoveSp = 0
+				ENDIF
+			ELSE
+				IF (MoveSp < STRAFERATE)
+					MoveSp = MoveSp + 0.021
+				ENDIF
+				MoveY(MoveSp)
+		//		MoveY (STRAFERATE)
+			ENDIF
+
+		ELSE
+			IF (!(Seen))
+				IF (!(AwaySeeWayZ(0.05)))
+					AwayWayZ (STRAFETURNANG)
+					MoveY (STRAFETURNRATE)
+				ELSE
+					Seen = 1
+					MoveSp=0
+				ENDIF
+			ELSE
+				IF (MoveSp > -STRAFERATE)
+					MoveSp = MoveSp - 0.021
+				ENDIF
+				MoveY(MoveSp)
+			//	MoveY (-STRAFERATE)
+			ENDIF
+
+		ENDIF
+	ENDWHILE
+
+	//NOW RETURN TO ORIGINAL POS
+	TRIGKILL>TurretFacePlayer EVERY 1
+	TRIGKILL>Fire EVERY 120
+
+
+	//AND WAIT FOR THE TURRET TO RESET ITSELF
+	ang = 0.99
+	Reset = 0
+	TRIGSET>TurretReset EVERY 1
+	WHILE (!Reset)
+		endpatrol = 1
+	ENDWHILE
+//	TRIGSET>TurretReset EVERY 1
+
+
+
+	StrafePos = 0
+	SetStrafePos(StrafePos,XPOS,YPOS,ZPOS)
+	Seen = 0
+	MoveSp = 0
+	STAT>Patrol
+
+
+ENDSTATE
+
+LOCALINT Reset
+
+STATE TurretReset
+//	IF (ObjectReturnToStart(TURRET,0.999))
+	IF (ang > 0.75)
+		ang = ang - 0.01
+	ENDIF
+
+	ObjectReturnToStart(TURRET)
+	WHILE(!CrntRotToIdleRotZ(TURRET, 0.03))
+	ENDWHILE
+	Reset = 1
+	TRIGSTOP
+ENDSTATE
+
+
+//TRIGGERS USED IN DEFEND STRAFE MODE
+
+STATE Fire
+	IF (LineSightPlayer())
+		CREATE SPAWN_ENEMYMISSILE 0.0, 1.0, 1.0, 0, 0, 0, TURRET
+	ENDIF
+	TRIGFIN
+ENDSTATE
+
+STATE TurretFacePlayer
+	ObjectTowardPlayerXZ(TURRET , 0.05, 0.05, TWOPI, TWOPI)
+ENDSTATE
+
+
+LOCALFLOAT MoveSp
+LOCALINT RevMode
+
+STATE AggressiveAttack
+	IF (!TrigSet)
+		TRIGSET>TurretFacePlayer EVERY 1
+		TRIGSET>Fire EVERY 90
+		TRIGSET>InnerCheck EVERY 1
+		TrigSet = 1
+	ENDIF
+	MoveSp = 0
+	STAT>AggressiveAttackMain
+ENDSTATE
+
+STATE AggressiveAttackMain
+	IF (!NearPlayer(RUNAWAYRANGE))
+		//TRIGKILL>TurretFacePlayer EVERY 1
+		//TRIGKILL>Fire EVERY 90
+
+		STAT>ReturnToPatrol
+	ENDIF
+
+	IF (NearPlayer(STOPRANGE))
+		STAT>AggressiveStop
+	ENDIF
+
+   	IF (MoveSp < AGGRESSIVEATTACKRATE)
+		MoveSp = MoveSp + 0.019
+		TowardPlayer(0.0002,0.05)
+   	ELSE
+		TowardPlayer(ATTACKTURNANG,0.05)
+   	ENDIF
+
+	MoveY(MoveSp)
+
+ENDSTATE
+
+
+STATE AggressiveStop
+	MoveSp = HOLDATTACKRATE - 0.05
+
+	WHILE (MoveSp > 0)
+		MoveY(MoveSp)
+		MoveSp = MoveSp - 0.003
+	ENDWHILE
+
+	WHILE (NearPlayer(STOPRANGE))
+		IF (NearPlayer(CLOSECOMBATRANGE))
+			MoveSp = 0
+		 //	STAT>AggressiveBackOff
+			STAT>BackOff
+		ENDIF
+	ENDWHILE
+	MoveSp = 0
+	STAT>AggressiveAttackMain
+ENDSTATE
+
+
+
+
+
+STATE PathAttack
+	TRIGSET>TurretFacePlayer EVERY 1 
+	TRIGSET>Fire EVERY 90
+//	RevMode = 0
+	MoveMeAgain = 1
+	Stat>PathAttackMain
+ENDSTATE
+
+LOCALINT wayprev
+LOCALINT waynext
+LOCALINT MoveMeAgain
+//LOCALINT Timer
+
+STATE PathAttackMain
+	IF (NearPlayer(STOPRANGE))
+		MoveSp = speedy
+		//IF (MoveSp < 0)
+
+			//WHILE (MoveSp < -0.001)
+			 //		MoveY(MoveSp)
+		   //		  	MoveSp = MoveSp * 0.3
+		 //	ENDWHILE
+	   //	ELSE
+		  //	WHILE (MoveSp > 0.001)
+		//			MoveY(MoveSp)
+	  //			   	MoveSp = MoveSp * 0.3
+	//		ENDWHILE
+  //		ENDIF
+
+
+//		MoveSp = PATHATTACKRATE - 0.12
+		MoveSp = 0
+	ENDIF
+
+
+
+	IF (NearCheckPosXY(1.5) OR MoveMeAgain)
+		wayprev = curway
+		endreached = GetNearestWay(0.0)
+		waynext = curway
+		MoveMeAgain = 0
+	   	IF (NetWorkMode)
+			//if away from me then 3-point action
+		  	IF (!(SeeWayZ(TWOPI/8.0)))
+  		  		STAT>TurnRound
+		  	ENDIF
+	  	ENDIF
+
+	ENDIF
+
+	IF ((!endreached) AND (wayprev != waynext))
+		IF (waynext < wayprev)
+			RevMode = 1
+		ELSE
+			RevMode = 0
+		ENDIF
+	ENDIF
+
+	IF (NetWorkMode)
+		//if away from me then 3-point action
+	  //	IF (!(SeeWayZ(TWOPI/2.0)))
+	  //		STAT>TurnRound
+	   //	ENDIF
+  		RevMode = 0
+   	ENDIF
+
+	IF ((!endreached) AND !(NearPlayerXY(STOPRANGE)))
+		IF (MoveSp < PATHATTACKRATE)
+				MoveSp = MoveSp + 0.0012
+
+		ENDIF
+		IF (RevMode)
+			IF (AwaySeeWayZ(0.5))
+				MoveY(-MoveSp)
+	  		ELSE
+				MoveY (-PATHATTACKTURNRATE)
+			ENDIF	
+				AwayWayZ (0.05)
+		ELSE
+			IF (SeeWayZ(0.5))
+				MoveY(MoveSp)
+		  	ELSE
+				MoveY (PATHATTACKTURNRATE)
+			ENDIF
+				TowardWay (PATROLTURNANG,0.05)
+		ENDIF
+	ELSE
+		MoveMeAgain = 1
+	ENDIF
+
+
+ENDSTATE
+
+LOCALINT counter
+
+STATE Attack
+	IF (!TrigSet)
+		TRIGSET>TurretFacePlayer EVERY 1
+		TRIGSET>Fire EVERY 90
+		TRIGSET>InnerCheck EVERY 1
+		TrigSet = 1
+	ENDIF
+	Stat>AttackMain
+ENDSTATE
+
+STATE AttackMain
+	//** Follow the player until close enough to attack *******//
+
+	//matt
+	IF (NearPlayer(STOPRANGE))
+		STAT>Stopped
+	ENDIF
+
+	IF (NearPlayer(ENGAGERANGE))
+		MoveSp = 0
+		ClearBusy()
+		STAT> Chase
+
+	ENDIF 
+	IF (!NearPlayer(RUNAWAYRANGE))
+		endreached = 0
+		GetNearestNetPatrolPoint(10.0)
+
+	   	WHILE (!(SeeWayZ(0.1)))
+			TowardWay(PATROLTURNANG,0.05)
+		ENDWHILE
+		STAT> ReturnToPatrol
+
+	ENDIF 
+
+   	IF (NearCheckPosXY(1.5))
+		endreached = GetNearestWay(0.0)
+   	ENDIF
+
+		IF (!endreached)
+			IF (SeeWayZ(0.5))
+				MoveY (HOLDATTACKRATE)
+			ELSE
+				MoveY (HOLDATTACKTURNRATE)
+			ENDIF
+			TowardWay (0.01,0.05)
+	   	ELSE
+			//POLL TO CHECK FOR PLAYER POS
+			endreached = GetNearestWay(0.0)
+		ENDIF
+// 	ENDIF
+
+
+ENDSTATE
+
+
+STATE Chase
+
+
+	IF (!NearPlayer(ENDCHASERANGE))
+		STAT>AttackMain
+	ENDIF
+
+	IF (NearPlayer(STOPRANGE))
+		STAT>Stopped
+	ENDIF
+
+	IF (MoveSp < CHASEATTACKRATE)
+		MoveSp = MoveSp + 0.0019
+		TowardPlayer(0.0002,0.05)
+	ELSE
+		TowardPlayer(CHASETURNANG,0.05)
+	ENDIF
+
+	MoveY(MoveSp)
+
+ENDSTATE
+
+
+STATE Stopped
+	MoveSp = HOLDATTACKRATE - 0.12
+
+	WHILE (MoveSp > 0)
+		MoveY(MoveSp)
+		MoveSp = MoveSp - 0.003
+	ENDWHILE
+
+	IF (NearPlayer(CLOSECOMBATRANGE))
+		ClearBusy()
+		STAT>BackOff
+	ELSE
+
+		IF (NearPlayer(ENGAGELONGRANGE))
+			XPOS = x
+			YPOS = y
+			ZPOS = z
+			StrafePos = STRAFEMAX
+			SetStrafePos(StrafePos,XPOS,YPOS,ZPOS)
+			LimitReached = 0
+			//Inside = 1
+			Seen = 0
+			timer = 0
+			ClearBusy()
+			STAT>StrafeMode
+		ELSE 
+
+			ang = 0.99
+			Reset = 0
+			TRIGSET>TurretReset EVERY 1
+			WHILE (!Reset)
+				endpatrol = endpatrol
+			ENDWHILE
+			ClearBusy()
+			STAT> Attack 
+		ENDIF
+	ENDIF
+
+ENDSTATE
+
+
+//perpendicular strafe 
+
+STATE StrafeMode
+
+	IF (timer > STRAFETIME)
+		STAT>Chase
+	ENDIF
+
+	timer = timer + 1
+
+
+
+	IF (NearPlayer(CLOSECOMBATRANGE))
+		WHILE ((!SeePlayerZ(0.2) ))			
+			TowardPlayer(0.08,0.08)
+			MoveY(BACKOFFTURN)
+		ENDWHILE
+		ClearBusy()
+		STAT>BackOff
+	ENDIF	
+
+
+	IF (NearCheckPosXY(1.5))
+		IF (StrafePos = STRAFEMAX)
+			StrafePos = STRAFEMIN
+			LimitReached=1
+		ELSE
+			StrafePos = STRAFEMAX
+			LimitReached=0
+		ENDIF
+		SetStrafePos(StrafePos,XPOS,YPOS,ZPOS)
+		Seen = 0
+	ENDIF
+
+	IF (!LimitReached)
+	   	IF (!(Seen))
+		 	IF (!(SeeWayZ(0.05)))
+				TowardWay (STRAFETURNANG,0.05)
+				IF (speedy < MAXSPEED)
+					MoveY (STRAFETURNRATE)
+				ENDIF
+		   	ELSE
+				Seen=1
+		   	ENDIF
+	   	ELSE
+			IF (speedy < MAXSPEED)
+		   	 	MoveY (STRAFERATE)
+			ENDIF
+	   	ENDIF
+
+
+	ELSE
+		IF (!(Seen))
+		  	IF (!(AwaySeeWayZ(0.05)))
+				AwayWayZ (STRAFETURNANG)
+				IF (speedy < MAXSPEED)
+					MoveY (STRAFETURNRATE)
+				ENDIF
+		   	ELSE
+		   		Seen = 1
+		   	ENDIF
+	   	ELSE
+			IF (speedy > -MAXSPEED)
+		   	 	MoveY (-STRAFERATE)
+			ENDIF
+	   
+	   	ENDIF
+
+	ENDIF
+
+ENDSTATE
+
+
+
+
+STATE BackOff
+
+	IF (MyFlag & HOLDING)
+		WHILE (NearPlayer(ENGAGELONGRANGE / 2.0))
+			MoveY (REVERSEMAX * 2.0)
+		ENDWHILE
+	ELSE
+		WHILE (NearPlayer(ENGAGELONGRANGE))
+			MoveY (REVERSEMAX)
+		ENDWHILE
+	ENDIF
+
+	MoveSp = 0
+	ClearBusy()
+	IF (MyFlag & HOLDING)
+		STAT>Chase
+	ELSE
+		STAT>AggressiveStop
+	ENDIF
+
+ENDSTATE
+
+STATE Kill
+
+	MakeFrags (0.1, 24)
+//	adrelanin = adrelanin + 0.2
+	Score = Score + 400
+   	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+	
+	TRIGSTOP
+	DESTROYME SPAWN_EXPLODINGBITS
+ENDSTATE
+ 
+STATE Hurt
+
+	MakeExpFrags (0.1, 48)
+
+	TRIGFIN
+
+ENDSTATE
+
+LOCALFLOAT storex
+LOCALFLOAT storey
+
+
+STATE TurnRound
+
+	storex = CheckX
+	storey = CheckY
+
+	SetCheckPosRel(10.0,10.0,0.0)
+	WHILE (!(NearCheckPosXY(2.0)))			
+		MoveY (PATHATTACKTURNRATE)
+		TowardWay (PATROLTURNANG,0.05)
+
+	ENDWHILE
+
+	IF (rand()&3 > 1)
+
+
+		//3-point turn real
+		SetCheckPosRel(-20.0,0.0,0.0)
+		WHILE (!(NearCheckPosXY(2.0)))			
+			MoveY (-PATHATTACKTURNRATE)
+			AwayWayZ (PATROLTURNANG)
+		ENDWHILE
+	ELSE
+   
+		SetCheckPosRel(-20.0,0.0,0.0)
+		WHILE (!(NearCheckPosXY(2.0)))			
+			MoveY (PATHATTACKTURNRATE)
+			TowardWay (PATROLTURNANG,0.05)
+
+		ENDWHILE
+	ENDIF
+
+	SetCheckPos(storex,storey,2.0)
+  	WHILE (!(NearCheckPosXY(5.0)))			
+		IF (MoveSp < PATHATTACKRATE)
+				MoveSp = MoveSp + 0.0019
+
+	  	ENDIF
+  		 	MoveY (PATHATTACKTURNRATE)
+	   		TowardWay (PATROLTURNANG,0.05)
+
+   	ENDWHILE
+
+	MoveMeAgain = 1
+ 	STAT>PathAttackMain
+
+ENDSTATE

@@ -1,0 +1,125 @@
+//PAL FRIENDLY
+//If this has a parent it will fall to the water level once Red Dog has passed its height
+//but only if it can see the player
+
+STATE Init
+	MyFlag = MyFlag | ENEMY | STRATCOLL | LOWCOLL | FLOORCOLL | TARGETABLE
+	health = 20.0
+	TRIGSET>Always EVERY 1
+	OBJECT>ENEMIES\WaterMine_Homing
+	MODELANIM>ENEMIES\WaterMine_Homing.RDO>Swim>REPEAT
+	RegisterCollision()
+	AllocStratSoundBlock(1)
+	RegisterDanger(30.0)
+	TRIGSET>SpecularMadness EVERY 1
+	IF (MyPath)
+		InitPath()
+		InitSplineData()
+	ENDIF
+	IF (MyParent)
+		WHILE (MyParentInvalid())
+			MyFlag = MyFlag
+		ENDWHILE	
+		IF (MyParentParent)
+			MyTarget = MyParent
+			MyParent = MyParentParent
+			WHILE (MyParentInvalid())
+				MyParent = MyTargetParent
+			ENDWHILE
+			MyParent = MyTarget
+			STAT>FallToWater
+		ENDIF
+	ENDIF
+	STAT>Start
+ENDSTATE
+
+LOCALFLOAT SPECAMOUNT
+
+TRIGGER SpecularMadness
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+	IF ((MyFlag & HITSTRAT) AND (CollWithFlag & BULLETTYPE))
+		SPECAMOUNT = 1.0
+	ENDIF
+	IF (SPECAMOUNT > 0)
+  		MyFlag2 = MyFlag2 | SPECULAR
+		SetSpecularColour(0, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		IF (PAL)
+			SPECAMOUNT = SPECAMOUNT - 0.12
+		ELSE
+			SPECAMOUNT = SPECAMOUNT - 0.1
+	  	ENDIF
+	ELSE
+		SPECAMOUNT = 0
+ 		MyFlag2 = MyFlag2 & LNOT(SPECULAR)
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+TRIGGER Always
+	AvoidStrats(2.0)
+
+	IF (MyFlag2 & PLAYERHIT)
+		PlayerHealth = PlayerHealth - 10.0
+		IF (RandRange(0, 1) = 0)
+			PLAYSOUND>EX_MINE1 0 1.0 0.0 0.0 0.0 0
+		ELSE
+			PLAYSOUND>EX_MINE2 0 1.0 0.0 0.0 0.0 0
+		ENDIF
+		MyVar = 1.0
+	ENDIF
+	IF (health <= 0.0)
+		IF (RandRange(0, 1) = 0)
+			PLAYSOUND>EX_MINE1 0 1.0 0.0 0.0 0.0 0
+		ELSE
+			PLAYSOUND>EX_MINE2 0 1.0 0.0 0.0 0.0 0
+		ENDIF
+		MyVar = 1.0
+	ENDIF
+
+	IF (MyVar)
+		MyVar = 0
+		CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+		Score = Score + 1000
+		Delete()
+   	ELSE
+		TRIGFIN
+	ENDIF
+ENDTRIGGER
+
+STATE Start
+	IF (!MoveAlongPathXY(1.0))
+		SetFriction(0.05, 0.05, 0.0)
+		MoveY(0.5)
+		STAT>HomeBaby
+	ENDIF
+	FaceAlongPath(1)
+	IF (PAL)
+		z = parentz	+ (0.5 * 1.2)
+	ELSE
+		z = parentz	+ 0.5
+	ENDIF
+	absspeedz = 0.0
+ENDSTATE
+
+STATE HomeBaby
+	IF MyParent
+		IF (PAL)
+			z = z + ((parentz - z + 0.5) * 0.05 * 1.2) 
+		ELSE
+			z = z + ((parentz - z + 0.5) * 0.05) 
+		ENDIF
+	  	absspeedz = 0.0
+	ENDIF
+	RelTurnTowardPlayerXY(0.1)
+	MoveY(0.025)
+ENDSTATE
+
+STATE FallToWater	
+	MyParent = MyParentParent
+	WHILE (z > parentz)
+		MyFlag = MyFlag | GRAVITYON
+	ENDWHILE
+	MyFlag = MyFlag & LNOT(GRAVITYON)
+	SetFriction(0.05, 0.05, 0.0)
+	STAT>HomeBaby
+ENDSTATE

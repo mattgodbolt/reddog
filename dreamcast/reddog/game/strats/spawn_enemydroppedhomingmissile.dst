@@ -1,0 +1,70 @@
+LOCALFLOAT	time
+LOCALINT	type
+
+STATE Init
+	MyFlag = MyFlag | ENEMY | STRATCOLL | FLOORCOLL | BULLETTYPE | LOWCOLL | REALGRAVITYON
+	MyFlag2 = MyFlag2 | NOHDC | BULLET_CF
+	type = GetGlobalParamInt(0)
+	SetFriction(0.0, 0.0, 0.0)
+	OBJECT> WEAPON\MISSILE06 
+ 	RegisterCollision()
+	absspeedx = (parentx - parentoldx) * 0.5
+	absspeedy = (parenty - parentoldy) * 0.5
+	absspeedz = (parentz - parentoldz) * 0.5
+	MyVar = 0.0
+	IF (type = 1)
+		CREATE SPAWN_BLUETRAIL 0, 0, 0, 0, 0, 0, 0
+		damage = 10.0
+	ENDIF
+	IF (type = 2)
+		CREATE SPAWN_GREENTRAIL 0, 0, 0, 0, 0, 0, 0
+		damage = 10.0
+	ENDIF
+	IF (type = 3)
+		CREATE SPAWN_REDTRAIL 0, 0, 0, 0, 0, 0, 0
+		damage = 10.0
+	ENDIF
+	
+	TRIGSET>Kill	WHENHIT
+	TRIGSET>Kill	ONFLOOR
+	TRIGSET>Kill	EVERY 300
+	IF (PlayerState = PS_ONTRAIN)
+		TRIGSET>Always	EVERY 1
+	ELSE
+		LOOP (25)
+			MyFlag = MyFlag 
+			TurnTowardPosXZ(DogX, DogY, DogZ, 0.05, 0.05)
+		ENDLOOP
+	ENDIF
+	MyFlag = MyFlag & LNOT(REALGRAVITYON)
+	time = 0.0
+	SetFriction(0.1, 0.1, 0.1)
+	STAT>Start
+ENDSTATE
+
+TRIGGER Always	
+	x = x + PlayerActVelX
+	y = y + PlayerActVelY
+	z = z + PlayerActVelZ
+	TRIGFIN
+ENDTRIGGER
+
+STATE Start
+	time = time + 1.0
+	IF (time < 45.0)
+		TurnTowardPosXZ(DogX, DogY, DogZ, 0.05, 0.05)
+	ENDIF
+	
+	MoveY(0.2)
+ENDSTATE
+
+STATE Kill
+	MyVar = 3.0
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+	LOOP (5)
+		DoSpark(30, 0.0, 0.0, 1.0, 1.0, 6.3, 20, 255, 255, 255)
+	ENDLOOP
+
+	Delete()
+  //	TRIGSTOP
+ENDSTATE

@@ -1,0 +1,43 @@
+LOCALINT i
+LOCALFLOAT tempf
+LOCALFLOAT xdist
+
+STATE Init
+	MyFlag = MyFlag | ENEMY | STRATCOLL
+	AllocStratSoundBlock(1)
+	RegisterCollision()
+	InitHDC()
+	CalculateStratPolyData(1)
+
+	WHILE (MyParentInvalid())
+		MyFlag = MyFlag
+	ENDWHILE
+
+	WHILE (MyParentFlag)
+		MyFlag = MyFlag
+	ENDWHILE
+
+	LOOP (15)
+		MyFlag = MyFlag
+	ENDLOOP
+
+	i = 0
+
+	// The open door sound:
+	PLAYSOUND>door_metal_sml_open 0 1 0.0 0.0 0.0 0
+
+	LOOP (60)
+		xdist = SmoothFromTo(2.5, i, 60)
+		tempf = GetObjectCrntPos(1, MODEX)
+		SetObjectCrntPos(1, tempf - xdist, MODEX)
+		tempf = GetObjectCrntPos(2, MODEX)
+		SetObjectCrntPos(2, tempf + xdist, MODEX)
+		i = i + 1
+		CalculateStratPolyData(0)
+	ENDLOOP
+
+	STAT>Start
+ENDSTATE
+
+STATE Start
+ENDSTATE

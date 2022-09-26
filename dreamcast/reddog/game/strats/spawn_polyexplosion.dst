@@ -1,0 +1,74 @@
+LOCALINT	time
+LOCALINT	fadeStart
+LOCALFLOAT	dist
+LOCALFLOAT	tempf
+LOCALFLOAT	rnd
+
+STATE Init
+	MyFlag = MyFlag | FRIENDLY
+	MyVar = ParentVar
+	trans = 1.0
+	time = 0
+  
+	AllocStratSoundBlock(1)
+	SetPitch(0, -0.3)
+	PLAYSOUND>EX_LARGE_BLAST1 0 1.0 0.0 0.0 0.0 RANDOM
+ 
+ 	IF (MyVar < 1.0)
+		OBJECT> Explosions\PolyExplosion_Explosion
+		MODELANIM>EXPLOSIONS\POLYEXPLOSION_EXPLOSION.RDO>EXPLODE>0
+		CREATE SPAWN_EXPLOSION_EGG 0, 0, 0, 0, 0, 0, 0
+		IMMLOOP (40)
+			CREATE SPAWN_EXPLOSION_DEBRIS 0, 0, 0, 0, 0, 0, 0
+		IMMENDLOOP
+		IMMLOOP (4)
+			CREATE SPAWN_EXPLOSION_DEBRIS_CAM 0, 0, 0, 0, 0, 0, 0
+		IMMENDLOOP
+		fadeStart = 30
+	ELSE
+		OBJECT> Explosions\PolyExplosion_AirBurst
+		MODELANIM>EXPLOSIONS\POLYEXPLOSION_AIRBURST.RDO>EXPLODE>0
+		fadeStart = 15
+	ENDIF
+
+	UnitiseMatrix()
+	CREAIND SPAWN_POLYEXPLOSION_SHOCKWAVE x, y, z, 0, 0, 0
+	
+	
+	STAT>Start
+ENDSTATE  
+
+
+
+STATE Start
+	dist = PlayerDistXY()
+	rnd = dist
+	rnd = 10.0 / rnd
+	dist = FSQRT(dist)
+	LOOP (74)
+		time = time + 1
+		IF (time > fadeStart)
+			MyFlag2 = MyFlag2 | TRANSLUCENT
+			IF (trans >= 0.1)
+				trans = trans - 0.1
+			ELSE
+				trans = 0.0
+			ENDIF
+		ENDIF
+		IF ((time / dist) > 4.0)
+			IF ((time / dist) < 7.0)
+				tempf = (1 - (((time / dist) - 4) / 3)) * 0.75
+				Vibrate (2, 1, tempf, 0)
+				tempf = RandRange(-rnd, rnd)
+				CamX = CamX + tempf
+				tempf = RandRange(-rnd, rnd)
+				CamY = CamY + tempf
+				tempf = RandRange(-rnd, rnd)
+				CamZ = CamZ + tempf
+			ENDIF
+		ENDIF
+		MyFlag = MyFlag 
+	ENDLOOP
+	Delete()
+ENDSTATE
+

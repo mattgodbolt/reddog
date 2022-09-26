@@ -1,0 +1,24 @@
+LOCALFLOAT	time
+
+STATE Init
+	MyFlag = MyFlag | ENEMY
+	AllocStratSoundBlock(1)
+	SetAudibleRange(0, 100, 400)
+	PLAYSOUND>EX_MEDIUM_BLAST1 0 1.0 0.0 0.0 0.0 0
+	OBJECT>SFX\ExplosionBall
+	MODELANIM>SFX\ExplosionBall.RDO>Play>0
+	time = 0.0
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	WHILE (MyAnimFlag & RUNNING)
+		time = time + 1.0	
+		IF (time >= 15.0)
+			MyFlag2 = MyFlag2 | TRANSLUCENT
+			trans = (20.0 - time) / 5.0
+		ENDIF
+	ENDWHILE
+	Delete()
+ENDSTATE
+

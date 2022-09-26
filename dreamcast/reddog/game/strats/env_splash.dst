@@ -1,0 +1,33 @@
+LOCALINT time
+
+STATE Init
+	MyFlag = MyFlag | ENEMY
+	time = 0
+	scalex = RandRange(3.0, 6.0)
+
+
+	time = RandRange(0.0, 10.0)
+	WHILE (time > 0)
+		MyFlag = MyFlag
+		time = time - 1
+	ENDWHILE
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	time = time + 1
+	IF (time > 5)
+		time = 0
+		CheckX = RandRange(-5.0, 5.0)
+		CheckZ = RandRange(-1.0, 1.0)
+		SetGlobalParamInt(0, 1)
+		SetGlobalParamInt(1, 15)
+		SetGlobalParamFloat(0, scalex)
+		CREATE SPAWN_Splash CheckX, 0, CheckZ, 0, 0, 0, 0
+		SetGlobalParamFloat(0, 0.0)
+		SetGlobalParamInt(1, 0)
+		SetGlobalParamInt(0, 0)
+	ENDIF
+ENDSTATE
+
+

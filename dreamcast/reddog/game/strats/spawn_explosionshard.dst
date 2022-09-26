@@ -1,0 +1,24 @@
+LOCALFLOAT	time
+
+STATE Init
+	MyFlag = MyFlag | ENEMY
+	time = 0.0
+	OBJECT>SFX\ExplosionShard
+	MODELANIM>SFX\ExplosionShard.RDO>Play>0
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	WHILE (MyAnimFlag & RUNNING)
+		x = parentx
+		y = parenty
+		z = parentz
+		time = time + 1.0
+		IF (time > 35.0)
+			MyFlag2 = MyFlag2 | TRANSLUCENT
+			trans = (44.0 - time) / 9.0
+		ENDIF
+		MyFlag = MyFlag
+	ENDWHILE
+	Delete()
+ENDSTATE

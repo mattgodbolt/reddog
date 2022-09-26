@@ -1,0 +1,293 @@
+//PARENTVAR 0.0 NORMAL SCALE
+//			0.5 NORMAL SCALE, NO SOUND
+//			1.0	SMALLER SCALE
+//			1.5 SMALLER SCALE, NO SOUND
+//			2.0 MASSIVE
+//			2.5 MASSIVE, NO SOUND
+//			3.0	MINUTE
+//			4.0	BLUENESS
+//			5.0 VERY SMALL BLUENESS, LINKED TO REDDOG LEFT GUN
+//			6.0 VERY SMALL BLUENESS, LINKED TO REDDOG RIGHT GUN
+//			7.0	MISSILE EXPLOSION
+//			8.0	WHITE SMOKE AND SPARK
+//			9.0	WHITE SMOKE, NO SPARK
+//			11.0 NO SMOKE, JUST SPARK
+//			12.0 BIG WHITE SMOKE AND SPARK
+//			99.0 EXPLOSIONS FROM SCORPIONS FOR SHARVEE
+
+LOCALINT lightID
+LOCALINT sound
+//LOCALINT se
+STATE CleanUp
+	// Hoorah - clean up the light
+	RemoveLight (lightID)
+ENDSTATE
+
+STATE Init
+	MyFlag = MyFlag | SPRITE | NOTEXPLODE | FRIENDLY 
+
+	
+	frame = 1.0
+	
+
+	IF (GetGlobalParamInt(0) = 99)
+		absspeedx = parentabsspeedx
+		absspeedy = parentabsspeedy
+		absspeedz = parentabsspeedz
+		SetFriction(0.2,0.2,0.2)
+	ENDIF
+
+
+	IF (GetGlobalParamFloat(0))
+		frame = GetGlobalParamFloat(0)
+	ENDIF
+ 
+	MyVar = ParentSemaphore
+
+	lightID = -1
+	sound = 0
+
+	//NORMAL EXPLOSION
+ 	IF ((!MyVar) || (MyVar = 0.5) || (MyVar = 0.6))
+		scalex = 13.0
+		CheckX = 25.0
+		lightID = MakePointLight (1.3, 1.2, 0.4, CheckX, CheckX/10, 0,0,0)
+		ExplosionLight (0.6, 0.6, 0.3, CheckX, 0.92, 1)
+		IF (!MyVar)
+			AllocStratSoundBlock(1)
+			SetAudibleRange(0, 150, 450)
+			PLAYSOUND>EX_LARGE_BLAST1 0 1.0 0.0 0.0 0.0 RANDOM
+			sound = 1
+		ENDIF
+		IF (MyVar = 0.6)
+			AllocStratSoundBlock(1)
+			SetAudibleRange(0, 150, 450)
+			PLAYSOUND>EX_SMALLBLAST2 0 1.0 0.0 0.0 0.0 RANDOM
+			sound = 1
+		ENDIF
+   	ENDIF
+
+
+	//SMALL EXPLOSION
+	IF (MyVar = 1.0 || MyVar = 1.5) 
+	   	scalex = 7.0
+		CheckX = 15.0
+		lightID = MakePointLight (1.3, 1.2, 0.4, CheckX, CheckX/10, 0,0,0)
+		IF (MyVar = 1.5)
+			IF (RandRange(0,100) > 75)
+				ExplosionLight (0.6, 0.4, 0.3, 10, 0.9, 1)
+			ENDIF
+		ELSE
+			AllocStratSoundBlock(1)
+			SetAudibleRange(0, 150, 450)
+			ExplosionLight (0.6, 0.6, 0.3, CheckX, 0.92, 1)
+			PLAYSOUND>EX_SMALLBLAST2 0 1.0 0.0 0.0 0.0 RANDOM
+			sound = 1
+		ENDIF
+		MyVar = 1.0
+	ENDIF
+
+	//Flame effect for flamethrower
+	IF (MyVar = 1.5) 
+	   	scalex = 7.0
+		CheckX = 15.0
+		lightID = MakePointLight (1.3, 1.2, 0.4, CheckX, CheckX/10, 0,0,0)
+	ENDIF
+
+	//MINUTE EXPLOSION
+	IF ((MyVar = 3.0) || (MyVar = 3.5))
+	   	scalex = 1.0
+		AllocStratSoundBlock(1)
+		SetAudibleRange(0, 150, 450)
+		IF (MyVar = 3.5)
+			PLAYSOUND>EX_SMALLBLAST2 0 1.0 0.0 0.0 0.0 RANDOM
+		ELSE
+			PLAYSOUND>EX_MEDIUM_BLAST1 0 1.0 0.0 0.0 0.0 RANDOM
+		ENDIF
+		sound = 1
+	ENDIF
+
+	IF ((MyVar = 99.0) OR (MyVar = 8.0) OR (MyVar = 9.0) OR (MyVar = 8.5)) 
+	   	scalex = 4.0
+		CheckX = 15.0
+		lightID = MakePointLight (1.2, 1.2, 1.2, CheckX, CheckX/10, 0,0,0)
+		IF ((MyVar = 8.0) || (MyVar = 99.0))
+			ExplosionLight (0.4, 0.4, 0.4, CheckX, 0.92, 1)
+		ENDIF
+		IF ((MyVar = 8.5) || (MyVar = 99.0))
+			AllocStratSoundBlock(1)
+			SetAudibleRange(0, 150, 450)
+			PLAYSOUND>EX_HEAVY_IMPACT2 0 1.0 0.0 0.0 0.0 RANDOM
+			sound = 1
+		ENDIF
+	ENDIF
+
+	IF ((MyVar = 10.0) OR (MyVar = 10.5))
+	   	scalex = 2.0
+		AllocStratSoundBlock(1)
+		SetAudibleRange(0, 150, 450)
+		PLAYSOUND>EX_MEDIUM_BLAST1 0 1.0 0.0 0.0 0.0 RANDOM
+		sound = 1
+		CheckX = 5.0
+		lightID = MakePointLight (1.2, 1.2, 1.2, CheckX, CheckX/10, 0,0,0)
+		ExplosionLight (0.4, 0.4, 0.4, CheckX, 0.92, 1)
+		IF (MyVar = 10.0)
+		ENDIF
+	ENDIF
+	
+	//BIG EXPLOSION
+	IF ((MyVar = 2.0) || (MyVar = 2.5))
+	   	scalex = 30.0
+		CheckX = 50.0
+		lightID = MakePointLight (1.3, 1.2, 0.4, CheckX, CheckX/10, 0,0,0)
+		ExplosionLight (0.6, 0.6, 0.3, CheckX, 0.92, 1)
+		IF (MyVar = 2.0)
+			AllocStratSoundBlock(1)
+			SetAudibleRange(0, 150, 450)
+			PLAYSOUND>EX_LARGE_BLAST1 0 1.0 0.0 0.0 0.0 RANDOM
+			sound = 1
+		ENDIF
+	ENDIF
+	
+	//BLUE EXPLOSION
+	IF ((MyVar = 4.0) || (MyVar = 4.5))
+	   	scalex = 5.0
+		CheckX = 20.0
+		lightID = MakePointLight (0.2, 0.4, 1.6, CheckX, CheckX/10, 0,0,0)
+		ExplosionLight (0.2, 0.2, 0.5, CheckX, 0.92, 1)
+		IF (MyVar = 4.0)
+			AllocStratSoundBlock(1)
+			SetAudibleRange(0, 150, 450)
+			PLAYSOUND>EX_LARGE_BLAST1 0 1.0 0.0 0.0 0.0 RANDOM
+			sound = 1
+		ENDIF
+	ENDIF
+
+	//BLUE EXPLOSION for bazooka effect
+	IF (MyVar = 4.5)
+	   	scalex = 5.0
+		CheckX = 20.0
+	ENDIF
+
+	//VERY SMALL BLUE REDDOG LEFT/RIGHT GUN FLASH
+	IF ((MyVar = 5.0) || (MyVar = 6.0))
+		//ENSURE I RUN AFTER MY PARENT..SO I CAN BE LINKED TO IT SUCCESSFULLY
+	   	MakeMeTheLast()
+ 		scalex = 0.5
+	ENDIF
+
+	//MISSILE EXPLOSION
+	IF (MyVar = 7.0)
+		scalex = 5.0
+	ENDIF
+    
+	scalez = RandRange(0, TWOPI)
+	RelRotateZ(scalez)
+  //	RotateObjectXYZ(0, 0,0, scalez)
+
+   
+	//DERIVE THE CORRECT MODEL AND ANIM TO USE
+	CheckY = 0
+	IF (MyVar = 5.1)
+		OBJECT> Weapon\rd_green_plasma
+		ANIM> rd_green_plasma>BLUEBURN
+		CheckY = 1.0
+	//	se = 1
+	ENDIF
+
+   	IF ((MyVar = 4.0) OR (MyVar = 4.5) OR (MyVar = 5.0) OR (MyVar = 6.0))
+		OBJECT> EXPLOSIONS\Explosion00
+		ANIM> Explosion00>BLUEBURN
+		CheckY = 1.0
+	  //	se = 1
+	ENDIF
+
+	IF (MyVar = 7.0)
+		OBJECT> Explosions\Explosion04
+		ANIM> Explosion04>MISSILEEXPLODE
+		CheckY = 1.0
+	 //	se = 1
+	ENDIF
+
+	IF ((MyVar = 99.0) OR (MyVar = 8.0) OR (MyVar = 9.0) OR (MyVar = 10.0) OR (MyVar = 11.0) OR (MyVar = 12.0))
+		OBJECT> EXPLOSIONS\DaveTExplode5
+		ANIM> DaveTExplode5>Explode
+		CheckY = 1.0
+	 //	se = 1
+		IF ((MyVar = 11.0) OR (MyVar = 12.0))
+			CheckX = 5.0
+			lightID = MakePointLight (1.0, 0.0, 0.0, CheckX, CheckX/10, 0,0,0)
+			scalex = 0.5
+			IF (MyVar = 12.0)
+				scalex = 5.0
+			ELSE
+			  	MyFlag = MyFlag | NODISP
+			ENDIF
+		ENDIF
+
+		IF ((MyVar = 11.0) OR (MyVar = 99.0) OR (MyVar = 8.0) OR (MyVar = 12.0) )
+			CheckY = 1.0
+	   //		se = 1
+			LOOP (5)
+				DoSpark(30, 0.0, 0.0, 1.0, 1.0, 6.3, 20, 255, 255, 255)
+			ENDLOOP
+		ENDIF
+	ENDIF
+
+	IF (CheckY <= 0.0)
+		OBJECT> EXPLOSIONS\EXPLOSION01
+		ANIM> EXPLOSION01>Explosion
+	ENDIF
+			
+
+	//SET THE SCALES UP TO X's 
+	scaley = scalex	* frame
+	scalez = scalex	* frame
+	scalex = scalex * frame
+	IF (lightID >= 0)
+		TRIGSET>CleanUp WHENDELETED
+		MyFlag = MyFlag | DELETECALLBACK
+	ENDIF
+
+	TRIGSET>KillOff WHENANIMOVER
+	STAT>SetPos
+ENDSTATE
+
+STATE SetPos
+	IF (lightID >= 0)
+		SetPointLightRadius (lightID, CheckX, CheckX/10)
+	ENDIF
+   	CheckX = CheckX * 0.92
+	IF (MyVar = 5.0)
+		IF (Multiplayer)
+			LinkToParentObject(5,0.0, 0.0, 0.0, -0.5, 0.0, 0.2)
+		ELSE
+			LinkToParentObject(5,0.0, 0.0, 0.0, -0.5, 1.0, 0.2)
+		ENDIF
+	ELSE
+		IF (MyVar =	6.0)
+			IF (Multiplayer)
+				LinkToParentObject(5,0.0, 0.0, 0.0, 0.5, 0.0, 0.2)
+			ELSE
+				LinkToParentObject(5,0.0, 0.0, 0.0, 0.5, 1.0, 0.2)
+			ENDIF
+		ENDIF
+	ENDIF
+	RelRotateY(-PI/22.0)
+//	Roll(-PI/22.0)
+ENDSTATE
+
+STATE KillOff
+	RemoveLight (lightID)
+	//DO NOT REMOVE THE LINE BELOW
+   	MyFlag = MyFlag & LNOT(DELETECALLBACK)
+	//ENSURE WE ARE STOPPED, VERY IMPORTANT
+	MyFlag2 = MyFlag2 | STOPPED
+
+	IF (sound)
+		WHILE (IsPlaying(0))
+			MyFlag = MyFlag
+		ENDWHILE
+	ENDIF
+	Delete()
+ENDSTATE

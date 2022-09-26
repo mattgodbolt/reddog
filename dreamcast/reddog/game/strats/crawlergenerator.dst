@@ -1,0 +1,45 @@
+LOCALINT time
+LOCALINT noSpiders
+
+STATE Init 
+	MyFlag = MyFlag + NODISP
+	time = 0
+	noSpiders = 0
+	MyVar = 0.0
+	STAT> Wait
+ENDSTATE
+
+STATE Wait
+	time = time + 1
+	IF (time > 0)
+		time = 0
+		STAT> Start
+	ENDIF
+ENDSTATE
+
+STATE Start
+	time = time + 1
+	IF (time = 100)
+		time = 0
+		noSpiders = noSpiders + 1
+		CREATE RAPIER_MINI 0, 0, 0, 0, 0, 0, 0 
+	ENDIF
+	IF (noSpiders = 6)
+		STAT> End
+	ENDIF
+ENDSTATE
+
+STATE End
+	IF ((MyVar > 0) && (noSpiders < 8))
+		MyVar = MyVar - 1
+		noSpiders = noSpiders + 1
+		IF (RandRange(0.0, 1.0) < 0.75)
+			CREATE RAPIER_MINI 21.0, -22.3, 0, 0, 0, 0, 0
+		ELSE
+			CREATE RAPIER_MINI 0, 0, 0, 0, 0, 0, 0
+		ENDIF
+	ENDIF
+	IF (noSpiders = 8)
+		Delete()
+	ENDIF
+ENDSTATE

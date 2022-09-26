@@ -1,0 +1,906 @@
+//require a network or spline to operate
+//if they are on a spline labelled 'entryspline'
+//they shall follow this to its end
+//If they have a parent, then after the entryspline
+//they'll inherit the parent's network data, and use that
+
+PARAMINT WaitAfterSpawn 0 //Amount of time before Aquabot starts to move
+PARAMFLOAT NearRange 30.0
+
+LOCALINT fireCount
+LOCALINT isGenerated
+
+//GAP BETWEEN EACH SALVO
+DEFINE DELAYTWEENFIRE  15
+
+//GAP BETWEEN EACH SET OF SALVOS
+DEFINE FIRERATE	120
+
+//USED TO SAY WHETHER TO GO AFTER TARGET OR PLAYER
+LOCALINT TARGETVALID
+
+DEFINE LEFTGUN 3
+DEFINE RIGHTGUN 6
+DEFINE CHEST 9
+
+  
+STATE Init
+	IF (!(MyFlag2 & OWNIPARAMS))
+		WaitAfterSpawn = 0
+	ENDIF
+  
+  	IF (!(MyFlag & OWNFPARAMS))
+		NearRange = 30.0
+	ENDIF
+
+	IF (NearRange < 10.0)
+		NearRange  = 10.0
+	ENDIF
+
+
+
+	MakeMeTheLast()
+	MyFlag = MyFlag | STRATCOLL | RELVELCALC | ENEMY | HOVERMOVE | TARGETABLE | LOWCOLL
+	MyFlag2 = MyFlag2 | COLLMOVE
+  
+   //	SetFriction(1.0,0.1,0.05)
+   	SetFriction(0.05,0.05,0.05)
+	damage = 1.0
+	health = 50.0
+	fireCount = 0
+	InitPath()
+	//make sure we have a path
+	
+	IF (!MyPath)
+		STAT>Kill
+	ENDIF
+
+	//30 DEGS VIS
+ 
+	SEEANG = (TWOPI/360.0) * 16.0
+ 
+ 	RotationRestriction(1.0, 1.0, 1.0)
+	AllocStratSoundBlock(1)
+	TRIGSET>Kill WHENDEAD
+	IF (GetGlobalParamFloat(0) = 1.0)
+		isGenerated = 1
+	ELSE
+		isGenerated = 0
+	ENDIF
+	MyFlag = MyFlag | NODISP
+	IF (MyParent)
+		WHILE (MyParentInvalid())
+			MyFlag = MyFlag
+		ENDWHILE
+	ENDIF
+
+   	OBJECT>ENEMIES\AQUABOT
+	RegisterCollision()
+	MyFlag = MyFlag & LNOT(NODISP)
+
+	TRIGSET>SpecularMadness EVERY 1
+
+	IF (isGenerated)
+		InheritMyParent()
+		InitPath()
+	ENDIF
+ 
+
+	SetObjectShadowState(1)
+
+	//IF JUST ON A SPLINE GO INTO SPLINE MODE
+	//ELSE NETWORK
+
+	IF (!(OnEntrySpline))
+		MyFlag = MyFlag | GRAVITYON | FLOORCOLL
+		TRIGSET>DirectMe EVERY 1
+		TRIGSET>FireCheck EVERY 1
+	ENDIF
+
+	//AM I JUST ON A SIMPLE WAY PATH ?
+ 
+	IF (WaitAfterSpawn > 0)
+		LOOP (WaitAfterSpawn)
+			MyFlag = MyFlag
+		ENDLOOP
+	ENDIF
+
+	IF ((MyPath) AND (!(OnNet)))
+		//HAVE I GOT AN ENTRY SPLINE ?
+		IF (!(OnEntrySpline))
+			//NO, THEN NORMAL WAYPATH BEHAVIOUR
+ 			STAT>Defend
+		ELSE
+			//ELSE, LET'S SET UP SOME SPLINE ACTION
+			InitSplineData()
+			//RUN THE 'COMING FROM WATER' CODE
+			MODELANIM>ENEMIES\AQUABOT.RDO>Emerge>0
+			STAT>FollowSpline	
+		ENDIF
+
+	ELSE
+		inrange = 0
+		TRIGSET>StopGoCheck EVERY 1
+   		IF (MyPath) AND (MyPatrol) 
+			STAT>StartTankNetwork
+		ELSE
+			IF (MyPath)
+				STAT>Network
+			ELSE
+	 			STAT>Wait
+			ENDIF
+		ENDIF
+   	ENDIF
+ENDSTATE
+
+
+DEFINE PATHSPEED 0.8
+
+//EMERGE
+STATE FollowSpline
+ 	MODELANIM>ENEMIES\AQUABOT.RDO>Emerge>0
+	MyFlag = MyFlag & LNOT(GRAVITYON + FLOORCOLL)
+	WHILE (MyAnimFlag & RUNNING)
+		MyFlag = MyFlag
+	ENDWHILE
+   	MODELANIM>ENEMIES\AQUABOT.RDO>Idle>REPEAT
+	STAT>FollowSplineMain	
+
+ENDSTATE
+
+
+
+
+STATE FollowSplineMain
+	FaceAlongPath(2)
+	TiltAlongPath(TWOPI/16.0)
+	MoveAlongPath(PATHSPEED / 1.5)
+	IF (LastWay())
+		MyFlag = MyFlag | FLOORCOLL | GRAVITYON
+  
+	   	STAT>Drop
+	ENDIF
+
+ENDSTATE
+
+
+
+
+STATE Drop
+	//see if we have been given a parent in MAX
+	IF (MyParent)
+		//INHERIT PATH DETAILS
+		InheritMyParent()
+		IF (MyPath)
+			SaveX = x
+			SaveY = y
+		  	SaveZ = z
+			SetGlobalParamInt(0,100)
+  			InitPath()
+			ClearGlobalParams()
+		   	z = SaveZ
+		    y = SaveY
+			z = SaveZ
+		   //	TRIGSET>Booster  EVERY 1
+		//	WHILE (!(IAmOnFloor))
+   		 //		TowardWay (0.01,0.01)
+   		 //		IF (absspeedz < -0.08)
+   		 //		  	 BREAK = 1
+		 //		ENDIF
+		 //		Flatten(3.0)
+		 //	ENDWHILE
+			TRIGSET>FireCheck EVERY 1
+			TRIGSET>DirectMe EVERY 1
+	  
+	  
+	  
+	  
+	  		//DELETE THE DUMMY PARENT
+			DeleteMyParent()
+			//PROCESS ACCORDING TO THE PARENT'S PATH TYPE
+			//AM I JUST ON A SIMPLE WAY PATH ?
+ 
+			IF ((MyPath) AND (!(OnNet)))
+					STAT>Defend
+			ELSE
+				inrange = 0
+				TRIGSET>StopGoCheck EVERY 1
+				IF (MyPath) AND (MyPatrol) 
+					STAT>StartTankNetwork
+				ELSE
+					IF (MyPath)
+						STAT>Network
+					ELSE
+			 			STAT>Wait
+					ENDIF
+				ENDIF
+			ENDIF
+	   ENDIF
+	ENDIF
+
+ENDSTATE
+
+
+
+LOCALFLOAT ang
+LOCALFLOAT TOANG
+LOCALINT BOOSTUP
+LOCALINT BREAK
+LOCALFLOAT TOPSPEED
+LOCALFLOAT velocity
+LOCALFLOAT height
+LOCALFLOAT dist
+LOCALINT firing
+
+
+//STATE Booster
+//	TOPSPEED = 0.1
+
+// 	IF (((BOOSTUP) OR (BREAK)) AND (FABS(absspeedz < TOPSPEED)))
+
+
+//		IF (BREAK)
+//			velocity = 0.045
+//			BREAK = 0
+//	   	ELSE
+//			velocity = 0.03
+//		ENDIF
+
+//   	MoveZ(velocity)
+
+//	ELSE
+//		velocity = velocity * 0.75
+//	ENDIF
+
+  
+//	TRIGFIN
+//ENDSTATE
+
+LOCALFLOAT hang
+
+
+TRIGGER DirectMe
+	//inrange set when we are not moving
+	Flatten(4.0)
+
+   	IF (absspeedz < -0.08)
+   	
+	  	 BREAK = 1
+   	ENDIF
+		
+	CheckZ = DogZ + 1.5
+   	height = RandRange(0.03,0.1) * 1.5 * Ssin(hang)
+
+
+  //	IF (!inrange)
+		IF (z < CheckZ)
+			dist =  FABS(z - CheckZ)
+			IF (dist > (height))
+				hang = hang + 0.1
+				BOOSTUP = 1
+		  	ENDIF
+		ELSE
+			IF (z > CheckZ)
+				dist =  FABS(z - CheckZ)
+	 		 
+	 			IF (dist > (height + 3.0))
+					hang = hang + 0.1
+					BOOSTUP = 0 
+					//CUT THE VELOCITY
+					velocity = 0
+				ENDIF
+			ENDIF
+		ENDIF
+	ELSE
+		IF (z > CheckZ)
+			dist =  FABS(z - CheckZ)
+	 
+	 
+	 		IF (dist > (height + 3.0))
+				hang = hang + 0.1
+				BOOSTUP = 0 
+				//CUT THE VELOCITY
+				velocity = 0
+			ENDIF
+		ENDIF
+
+   
+   	//ENDIF
+
+	TOPSPEED = 0.1
+
+ 	IF (((BOOSTUP) OR (BREAK)) AND (FABS(absspeedz < TOPSPEED)))
+
+
+		IF (BREAK)
+			velocity = 0.045
+			BREAK = 0
+	   	ELSE
+			velocity = 0.03
+		ENDIF
+
+   	MoveZ(velocity)
+
+	ELSE
+		velocity = velocity * 0.75
+	ENDIF
+
+  
+
+
+   	IF ((!inrange) AND (!Firing))
+
+   		SaveX = CheckX
+   		SaveY = CheckY
+   		SaveZ = CheckZ
+   		SetCheckPosMyRotate(0)
+
+   		IF (CheckX < 0 )
+   			TOANG = -TWOPI/720.0
+   		ELSE
+   			TOANG = TWOPI/720.0
+   		ENDIF
+
+   		ang = ang + ((TOANG - ang) * 0.03)
+		RelRotateY(ang)
+
+		CheckX = SaveX
+		CheckY = SaveY
+		CheckZ = SaveZ
+
+   	ENDIF
+  
+
+
+	TRIGFIN
+ENDTRIGGER
+
+
+LOCALFLOAT hitdist
+
+STATE Wait
+ENDSTATE
+
+LOCALINT	FIREAMOUNT
+LOCALINT	TARGETSEEN
+LOCALINT	Firing
+
+
+DEFINE NTSCFIREDELAY 18
+
+LOCALINT FIREDELAY
+
+LOCALFLOAT SEEANG
+
+
+STATE FireCheck
+
+	FIREDELAY = NTSCFIREDELAY
+
+	SetPlayerToTarget(TARGETVALID)
+	TARGETSEEN = NearPlayerXY(NearRange * 3.0)
+	SetPlayerBack()
+
+
+	IF (TARGETSEEN)
+		SetPlayerToTarget(TARGETVALID)
+		IF (PlayerDistXY() > 50.0)
+			FIREAMOUNT = 300
+		ELSE
+			FIREAMOUNT = FIRERATE
+		ENDIF
+
+
+ 
+	   	ObjectTowardPlayerXZ(CHEST , 0.05, 0.05, TWOPI/8.0, TWOPI/32.0)
+		SetPlayerBack()
+
+	   	CrntRotToIdleRotX(CHEST, 0.005)
+	   	CrntRotToIdleRotZ(CHEST, 0.02)
+
+		fireCount = fireCount + 1
+
+		//IF I'M NOT BEING HIT AND I'M READY TO FIRE, THEN FIRE
+		IF ((!HITSET) AND (fireCount > FIREAMOUNT))
+
+			Firing = 1
+
+			MyFlag2 = MyFlag2 | STOPPED
+			
+			SetPlayerToTarget(TARGETVALID)
+			TARGETSEEN = SeePlayerZ(TWOPI/8.0)
+			SetPlayerBack()
+
+			WHILE (!TARGETSEEN)
+				SetPlayerToTarget(TARGETVALID)
+			   
+	   	   		ObjectTowardPlayerXZ(CHEST , 0.05, 0.05, TWOPI/8.0, TWOPI/32.0)
+	   	  	  	CrntRotToIdleRotX(CHEST, 0.005)
+	   	  	  	CrntRotToIdleRotZ(CHEST, 0.02)
+
+   		  		RelTurnTowardPlayerXY(0.05)
+				TARGETSEEN = SeePlayerZ(SEEANG)
+		
+				SetPlayerBack()
+			ENDWHILE
+
+			
+
+   			MODELANIM>ENEMIES\AQUABOT.RDO>LEFTFIRE>0
+
+			WHILE (MyAnimFlag & TWEEN)
+				MyFlag = MyFlag
+			ENDWHILE
+
+			frame = 0
+
+			WHILE (frame < FIREDELAY)
+				frame = frame + 1
+			ENDWHILE
+
+
+			fireCount = 0
+			PLAYSOUND>BTANK_GUN4C 0 1.0 0.0 0.0 0.0 0
+	   	  
+			//CREATE A BLUE EXPLOSION AND THEN THE TRAIL
+		   	MyVar = 4.0
+			CREATE SPAWN_BLASTEXP 0, 4.0, 0, 0, 0, 0, LEFTGUN
+
+		  
+			SetGlobalParamInt(1,1)
+		  	//BULLET FROM HAND WAREZ
+			CREATE SPAWN_STARFIRE   0.0, 12.0, 0, 0, 0, 0, LEFTGUN
+			ClearGlobalParams()
+
+			LOOP (DELAYTWEENFIRE)
+				MyFlag = MyFlag
+			ENDLOOP
+		  
+   			MODELANIM>ENEMIES\AQUABOT.RDO>RIGHTFIRE>0
+
+			WHILE (MyAnimFlag & TWEEN)
+				MyFlag = MyFlag
+			ENDWHILE
+
+			frame = 0
+
+			WHILE (frame < FIREDELAY)
+				frame = frame + 1
+			ENDWHILE
+
+		   	MyVar = 4.0
+			CREATE SPAWN_BLASTEXP 0, 4.0, 0, 0, 0, 0, RIGHTGUN
+
+			SetGlobalParamInt(1,1)
+			CREATE SPAWN_STARFIRE   0.0, 12.0, 0, 0, 0, 0, RIGHTGUN
+		  	ClearGlobalParams()
+		  	MyFlag2 = MyFlag2 & LNOT(STOPPED)
+			MyFlag = MyFlag | GRAVITYON + FLOORCOLL
+			Firing = 0	   
+			MODELANIM>ENEMIES\AQUABOT.RDO>Idle>REPEAT
+	   
+	   	ENDIF
+	ELSE
+   		MyFlag2 = MyFlag2 & LNOT(STOPPED)
+
+	ENDIF
+  
+
+
+	TRIGFIN
+ENDSTATE 
+
+
+STATE Defend
+
+	SetPlayerToTarget(TARGETVALID)
+	lastdist = PlayerDistXY()
+
+	endreached = 0
+   	IF (!NearPlayerXY(NearRange / 2.0))
+		SetPlayerBack()
+
+   	  	STAT>Attack
+   	ELSE
+		SetPlayerBack()
+
+
+   		STAT>GetOut
+   	ENDIF
+ENDSTATE
+
+
+STATE GetOut
+
+	SetPlayerToTarget(TARGETVALID)
+	WHILE ((!endreached))
+	
+		SetPlayerToTarget(TARGETVALID)
+		endreached = GetFurthestWay(0)
+		
+		IF (!NearPlayerXY(NearRange + 5.0))
+   			endreached = 1
+   		ENDIF
+
+	 	IF (!NearCheckPosXY(0.0))
+			IF (AwaySeeWayZ(0.5))
+				MoveY (-0.02)
+			ENDIF
+			AwayWayZ(0.10)
+		ENDIF
+
+		SetPlayerBack()
+
+
+	 ENDWHILE
+	 SetPlayerBack()
+	 STAT>DefendWait
+ENDSTATE
+
+
+LOCALFLOAT distnow
+
+STATE DefendWait
+	SetPlayerToTarget(TARGETVALID)
+	lastdist = PlayerDistXY()
+	distnow = lastdist
+	inrange = 1
+
+	WHILE ((distnow < lastdist + 1.0) AND (distnow > lastdist - 1.0))
+		SetPlayerToTarget(TARGETVALID)
+		distnow = PlayerDistXY()
+   		SetPlayerBack()
+	ENDWHILE
+
+	inrange = 0
+
+   	SetPlayerBack()
+	STAT>Defend
+
+ENDSTATE
+
+
+STATE Attack
+	SetPlayerToTarget(TARGETVALID)
+	IF (NearPlayerXY (NearRange * 0.6) OR endreached)
+	 	SetPlayerBack()
+
+		STAT>DefendWait
+	ENDIF
+
+	endreached = GetNearestWaySpline(0.0)
+
+   	IF (!endreached)
+   		IF (SeeWayZ(0.5))
+   			MoveY (0.02)
+   		ENDIF
+   		TowardWay (0.05,0.05)
+   	ENDIF
+   	SetPlayerBack()
+
+ENDSTATE
+
+
+LOCALFLOAT lastdist
+
+//*** NETWORK CODE ***
+
+LOCALINT inrange
+
+DEFINE LEFT 0
+DEFINE RIGHT 1
+LOCALINT STRAFEMODE
+LOCALFLOAT SaveX
+LOCALFLOAT SaveY
+LOCALFLOAT SaveZ
+LOCALFLOAT LEFTX
+LOCALFLOAT LEFTY
+LOCALFLOAT LEFTZ
+LOCALFLOAT RIGHTX
+LOCALFLOAT RIGHTY
+LOCALFLOAT RIGHTZ
+LOCALFLOAT temp1
+LOCALFLOAT temp2
+LOCALFLOAT temp3
+LOCALFLOAT temp4
+LOCALFLOAT temp5
+LOCALFLOAT temp6
+LOCALFLOAT temp7
+LOCALFLOAT temp8
+LOCALFLOAT temp9
+
+
+
+
+LOCALINT TIME
+
+
+
+
+STATE StopGoCheck
+	  	ObjectTowardPlayerXZ(CHEST , 0.05, 0.05, TWOPI/8.0, TWOPI/32.0)
+	  	CrntRotToIdleRotX(CHEST, 0.005)
+	  	CrntRotToIdleRotZ(CHEST, 0.02)
+
+			SaveX = CheckX
+			SaveY = CheckY
+			SaveZ = CheckZ 
+
+	IF ((inrange) AND (!firing))
+
+
+		IF (STRAFEMODE = LEFT)
+			CheckX = LEFTX
+			CheckY = LEFTY
+			CheckZ = LEFTZ
+		ELSE
+			CheckX = RIGHTX
+			CheckY = RIGHTY
+			CheckZ = RIGHTZ
+		ENDIF
+
+		//STEPS SET BOOST VAL HIGH
+
+		IF (!TIME)
+			IF (mvelocity < 0.15)
+				mvelocity = mvelocity + 0.05
+	  		ENDIF
+		ENDIF
+
+		MoveTowardXY(CheckX, CheckY, 0.03)
+
+	 	mvelocity = mvelocity * 0.9
+		
+		IF (!TIME)
+			IF (NearCheckPosXY(0))
+				TIME = 1
+			ENDIF
+		ELSE
+
+			IF (mvelocity < 0.05) 
+				STRAFEMODE = !STRAFEMODE
+				TIME =0
+			ENDIF
+		ENDIF
+
+		SetPlayerToTarget(TARGETVALID)
+
+		RelTurnTowardPlayerXY(0.05)
+		IF (!NearPlayerXY(NearRange))
+			inrange = 0
+		ENDIF
+		SetPlayerBack()
+   	ELSE
+		IF (!firing)
+			SetPlayerToTarget(TARGETVALID)
+			TARGETSEEN = NearPlayerXY(NearRange * 0.6)
+			SetPlayerBack()
+			IF (TARGETSEEN)
+				inrange = 1
+				//save checkp
+
+				SaveX = CheckX
+				SaveY = CheckY
+				SaveZ = CheckZ 
+
+		   
+				//SAVE MATRIX ROTS
+				temp1 = StrM00
+				temp2 = StrM01
+				temp3 = StrM02
+				temp4 = StrM10
+				temp5 = StrM11
+				temp6 = StrM12
+				temp7 = StrM20
+				temp8 = StrM21
+				temp9 = StrM22
+
+
+				//TEMP FACE THE PLAYER DIRECTLY
+				SetPlayerToTarget(TARGETVALID)
+				RelTurnTowardPlayerXY(0.05)
+				SetPlayerBack()
+
+				//setup strafe position	left and right
+
+				SetCheckPosRel(0,-4.0,0,0)
+
+				LEFTX = CheckX
+				LEFTY = CheckY
+				LEFTZ = CheckZ
+
+				SetCheckPosRel(0,4.0,0,0)
+
+				RIGHTX = CheckX
+				RIGHTY = CheckY
+				RIGHTZ = CheckZ
+
+
+				//RESTORE MATRIX ROTS
+
+				StrM00 = temp1
+				StrM01 = temp2
+				StrM02 = temp3
+				StrM10 = temp4
+				StrM11 = temp5
+				StrM12 = temp6
+				StrM20 = temp7
+				StrM21 = temp8
+				StrM22 = temp9
+
+				//restore checkp
+
+
+			CheckX = SaveX
+			CheckY = SaveY
+			CheckZ = SaveZ
+
+			TIME = 0
+			STRAFEMODE = LEFT
+			ENDIF
+		ENDIF
+	ENDIF
+	CheckX = SaveX
+	CheckY = SaveY
+	CheckZ = SaveZ
+
+
+	TRIGFIN
+
+ENDSTATE
+
+
+
+
+LOCALINT endreached
+
+DEFINE MOVESPEED 0.05
+
+STATE StartTankNetwork
+	IF (NearCheckPosXY(0.0))
+		IF (LastWay())	
+			LeaveFixedPath()
+			endreached  = 0 
+			STAT> Network
+		ELSE
+			GetNextWay()
+		ENDIF
+	ENDIF
+   	IF (SeeWayZ(0.5))
+		MoveY (MOVESPEED)
+   	ELSE
+		MoveY (MOVESPEED/2.0)
+	ENDIF
+  	TowardWay (0.05,0.05)
+ENDSTATE
+
+
+STATE Network
+	endreached = GetNearestWay(0.0)
+	STAT>NetworkMain
+ENDSTATE
+
+
+LOCALFLOAT mvelocity
+STATE NetworkMain
+   	SetPlayerToTarget(TARGETVALID)
+  	IF (!inrange)
+
+	  	IF (NearCheckPosXY(0.0))
+			endreached = GetNearestWay(0.0)
+		
+	   	ELSE
+			IF (!endreached)
+				MoveTowardXY(CheckX, CheckY, 0.03)
+
+				SetPlayerToTarget(TARGETVALID)
+				RelTurnTowardPlayerXY(0.05)
+				IF (mvelocity < 0.2)
+					mvelocity = mvelocity + 0.05
+				ENDIF
+				SetPlayerBack()
+
+			ELSE
+				IF (!NearCheckPosXY(0.0))
+					MoveTowardXY(CheckX, CheckY, 0.03)
+
+					SetPlayerToTarget(TARGETVALID)
+				 	RelTurnTowardPlayerXY(0.05)
+					IF (mvelocity < 0.2)
+						mvelocity = mvelocity + 0.05
+					ENDIF
+					SetPlayerBack()
+				ENDIF
+								   
+			ENDIF				 
+	  	ENDIF
+	ENDIF
+	mvelocity = mvelocity * 0.75
+	SetPlayerBack()
+ENDSTATE
+
+
+STATE NetworkMain2
+	SetPlayerToTarget(TARGETVALID)
+   	IF (!inrange)
+
+	  	IF (NearCheckPosXY(0.0))
+			endreached = GetNearestWay(0.0)
+		
+	   	ELSE
+			IF (!endreached)
+				IF (SeeWayZ(0.05))
+					TowardWay (0.02,0.02)
+					MoveY(MOVESPEED)
+			  	ELSE
+					MoveY(MOVESPEED/1.5)
+					TowardWay (0.05,0.05)
+			   	ENDIF
+			ELSE
+				IF (!NearCheckPosXY(0.0))
+
+			   	IF (SeeWayZ(0.05))
+					TowardWay (0.02,0.02)
+					MoveY(MOVESPEED)
+			   	ELSE
+					MoveY(MOVESPEED/1.5)
+					TowardWay (0.05,0.05)
+			   	ENDIF
+			ENDIF
+
+			ENDIF
+	  	ENDIF
+	ENDIF
+	SetPlayerBack()
+ENDSTATE
+
+LOCALFLOAT SPECAMOUNT
+LOCALINT HITSET
+TRIGGER HitAnim
+ 	MODELANIM>ENEMIES\AQUABOT.RDO>GetHit>NOTWEEN
+
+	WHILE (MyAnimFlag & RUNNING)
+		MyFlag = MyFlag
+	ENDWHILE
+
+ 	MODELANIM>ENEMIES\AQUABOT.RDO>Idle>REPEAT
+
+	HITSET = 0
+	TRIGSTOP
+ENDTRIGGER
+
+
+TRIGGER SpecularMadness
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+	IF ((MyFlag & HITSTRAT) AND (CollWithFlag & BULLETTYPE))
+		IF ((!Firing) AND (!HITSET))
+			HITSET = 1
+			TRIGSET>HitAnim EVERY 1
+		ENDIF
+
+		SPECAMOUNT = 1.0
+	ENDIF
+	IF (SPECAMOUNT > 0)
+  		MyFlag2 = MyFlag2 | SPECULAR
+		SetSpecularColour(0, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		SPECAMOUNT = SPECAMOUNT - 0.1
+	ELSE
+		SPECAMOUNT = 0
+ 		MyFlag2 = MyFlag2 & LNOT(SPECULAR)
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+STATE Kill
+//	adrelanin = adrelanin + 0.2
+	Score = Score + 1000
+	MakeFrags (0.1, 24)
+	MyVar = 0.0
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+	IF (isGenerated)
+		ParentVar = ParentVar + 1.0
+	ENDIF
+	//TRIGSTOP
+	DESTROYME SPAWN_EXPLODINGBITS
+ENDSTATE
+ 

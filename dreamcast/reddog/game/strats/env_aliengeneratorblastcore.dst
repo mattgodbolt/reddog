@@ -1,0 +1,218 @@
+
+STATE Init
+
+	IF (GetGlobalParamInt(0) = 1)
+		STAT>Blast
+	ENDIF
+	
+	IF (GetGlobalParamInt(0) = 2)
+		STAT>Blast2
+	ENDIF
+	OBJECT>BOSSES\ALIENGENERATOR\COREBIT
+
+   //	MyFlag = MyFlag | STRATCOLL | LOWCOLL | ENEMY 
+	MyFlag = MyFlag | STRATCOLL | ENEMY
+	InitHDC()
+	RegisterCollision()
+	CalculateStratPolyData(1)
+	AllocStratSoundBlock(2)
+	SetAudibleRange(0,800,1000)
+	SetAudibleRange(1,800,1000)
+
+	MyVar = 0
+	STAT>GrahamPoll
+ENDSTATE
+
+LOCALFLOAT SPECAMOUNT
+LOCALFLOAT SPECAMOUNT2
+LOCALINT Near
+LOCALFLOAT XPRAD
+
+STATE GrahamPoll
+	//TURNS THE COLLISION OFF WHEN THE GENERATOR DIES
+	IF (GlobalVar = 99.0)
+		MyFlag = MyFlag & LNOT(STRATCOLL)
+	ENDIF
+
+
+	IF ((MyFlag & HITSTRAT) AND (!MyVar))
+	   
+		IF (SPECAMOUNT < 0.05)
+			SPECAMOUNT = 0.19
+			frame = 30.0
+		ELSE
+			IF (!IsPlaying(0))
+				PLAYSOUND>REDTILE 0 1.0 0.0 0.0 0.0 NODIRECTION
+			ENDIF
+			SPECAMOUNT = SPECAMOUNT * 1.26
+		ENDIF
+		IF (SPECAMOUNT > 0.95)
+	   
+   			
+			SPECAMOUNT = 1.0
+			SetSpecularColour(0,1.0,0,0)
+		   	MyVar = 1.0
+			SetGlobalParamInt(0,1)
+			CREATE ENV_ALIENGENERATORBLASTCORE 0, 0, 0, 0, 0, 0, 0
+		 	ClearGlobalParams()
+			SetGlobalParamInt(0,2)
+			CREATE ENV_ALIENGENERATORBLASTCORE 0, 0, 0, 0, 0, 0, 0
+		 	ClearGlobalParams()
+
+
+			IMMLOOP (10) 
+				CheckX = RandRange (0.0, 2.0)
+				CheckY = RandRange (0,TWOPI)
+   				CREATE SPAWN_EnemyDebris 0, 0, CheckX, 0, 0, CheckY, 0
+			IMMENDLOOP
+
+			PLAYSOUND>COREBLAST 1 1.0 0.0 0.0 0.0 NODIRECTION
+			MyVar = 0.5
+			CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+			LOOP (30)
+				ExplosionLight (SPECAMOUNT ,0.0,SPECAMOUNT2, 20.0, 0.92,  20.0 * 0.92)
+				MyFlag = MyFlag
+			ENDLOOP
+
+
+
+			//2 SECONDWAIT
+			IF (PAL)
+				frame = 125.0
+				frame = 50.0
+			ELSE
+				frame = 150.0
+				frame = 60.0
+			ENDIF
+
+
+			Near = 0
+			SPECAMOUNT2 = 0.19
+			XPRAD = 20.0
+
+
+			WHILE (Near OR (frame > 0))
+				frame = frame - 1.0
+				IF ((BossStrat))
+					CheckX = BossX - x
+					CheckY = BossY - y
+					CheckX = CheckX * CheckX
+					CheckY = CheckY * CheckY
+					CheckZ = FSQRT(CheckX + CheckY)
+					IF (CheckZ < (BossRadius))
+						Near = 1
+					ELSE
+						Near = 0
+					ENDIF
+	   			ENDIF
+
+				
+				IF (frame > 0)
+				ExplosionLight (SPECAMOUNT ,0.0,SPECAMOUNT2, XPRAD, 0.92,  XPRAD * 0.92)
+				ENDIF
+
+				IF (XPRAD > 0.1)
+					XPRAD = XPRAD * 0.9
+				ENDIF
+				MyFlag2 = MyFlag2 | SPECULAR
+				SetSpecularColour(0,SPECAMOUNT,0,SPECAMOUNT2)
+				IF (SPECAMOUNT > 0.1)
+					SPECAMOUNT = SPECAMOUNT * 0.98
+				ENDIF
+
+				IF (SPECAMOUNT2 < 1.0)
+					SPECAMOUNT2 = SPECAMOUNT2 * 1.26
+				ELSE
+					SPECAMOUNT2 = 1.0
+				ENDIF
+
+			ENDWHILE
+
+			WHILE ((SPECAMOUNT > 0.1) OR (SPECAMOUNT2 > 0.1))
+				IF (SPECAMOUNT > 0.1)
+					SPECAMOUNT = SPECAMOUNT * 0.68
+				ENDIF
+				IF (SPECAMOUNT2 > 0.1)
+					SPECAMOUNT2 = SPECAMOUNT2 * 0.68
+				ENDIF
+				SetSpecularColour(0,SPECAMOUNT,0,SPECAMOUNT2)
+
+
+
+
+			ENDWHILE
+
+			SPECAMOUNT = SPECAMOUNT2 = 0
+
+
+
+		ENDIF
+
+
+	ENDIF
+   
+		IF (SPECAMOUNT > 0.1)
+			MyFlag2 = MyFlag2 | SPECULAR
+			SetSpecularColour(0,SPECAMOUNT, 0, 0)
+		ELSE
+			SPECAMOUNT = 0
+			MyFlag2 = MyFlag2 & LNOT(SPECULAR)
+		ENDIF
+
+	IF (frame < 0)
+	 	SPECAMOUNT = SPECAMOUNT * 0.98
+	ELSE
+		frame = frame - 1.0
+	ENDIF
+
+ENDSTATE
+
+DEFINE DOME 11
+DEFINE DOME2 13
+
+STATE Blast2
+	OBJECT>BOSSES\ALIENGENERATOR\SHRAPNEL
+	MODELANIM>BOSSES\ALIENGENERATOR\SHRAPNEL.RDO>Explode2>0
+	HideObject(DOME)
+	HideObject(DOME2)
+  	AllocStratSoundBlock(1)
+
+	// Explosions can be heard louder from further away
+	SetAudibleRange(0, 150, 450)
+ 
+   	PLAYSOUND>EX_LARGE_BLAST1 0 1.0 0.0 0.0 0.0 RANDOM
+
+   	WHILE (MyAnimFlag & RUNNING)
+		MyFlag = MyFlag
+	ENDWHILE
+	Delete()
+
+ENDSTATE
+
+STATE Blast
+	OBJECT>BOSSES\ALIENGENERATOR\BLASTCORE
+	MODELANIM>BOSSES\ALIENGENERATOR\BLASTCORE.RDO>Explode>0
+	frame = 0
+  	WHILE ((MyAnimFlag & RUNNING))
+	
+		IF ((BossStrat) AND (!frame))
+			CheckX = BossX - x
+			CheckY = BossY - y
+			CheckX = CheckX * CheckX
+			CheckY = CheckY * CheckY
+			CheckZ = FSQRT(CheckX + CheckY)
+			IF (CheckZ < (BossRadius * 1.2))
+				frame = 1.0
+			  	BossFrame = 100.0
+			ENDIF
+		ENDIF
+
+
+		MyFlag = MyFlag
+	ENDWHILE
+
+	ParentSemaphore = 0
+	Delete()
+
+
+ENDSTATE

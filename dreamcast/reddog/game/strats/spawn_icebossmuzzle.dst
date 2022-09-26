@@ -1,0 +1,22 @@
+// LASER FOR SWAMPBOSS
+LOCALINT mod
+STATE Init
+	scalex = scaley = scalez = 0.25
+	CheckY = GetGlobalParamFloat(0)
+	mod = GetGlobalParamInt(0)
+	MakeMeTheLast()
+  	OBJECT> BOSSES\SWAMPBOSSWEAPONS\LaserMuzzleFlash
+   	MODELANIM>BOSSES\SWAMPBOSSWEAPONS\LaserMuzzleFlash.rdo>Flash>REPEAT
+
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+	LOOP (2)
+		LinkToParentObject(mod,0,0,0,0,CheckY,0)
+   //		MyFlag = MyFlag
+	ENDLOOP
+
+
+	Delete()
+
+
+ENDSTATE
+

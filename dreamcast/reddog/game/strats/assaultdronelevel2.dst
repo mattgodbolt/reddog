@@ -1,0 +1,787 @@
+//NO TARGET	PARENT ALLOWED
+//ON ENTRY SPLINE
+//SET THE PARENT IN MAX TO BE A DUMMY CONNECTED TO THE NETWORK
+//SET THE MAX PATH TO BE THE ENTRYSPLINE****
+//ONCE AT THE END OF THE SPLINE IT WILL INHERIT THE ABOVE PARENT'S DETAILS
+//AND MOVE ALONG THAT PATH
+
+
+PARAMINT WaitAfterSpawn 0 //Amount of time before Battletank starts to move
+PARAMFLOAT NearRange 30.0
+PARAMFLOAT	BobAmount 0.008
+
+LOCALINT fireCount
+LOCALINT isGenerated
+
+//USED TO SAY WHETHER TO GO AFTER TARGET OR PLAYER
+LOCALINT TARGETVALID
+
+
+DEFINE TURRET 1
+DEFINE GUN 2  
+DEFINE BODY 3
+STATE Init
+	bobVal = RandRange(0.8, 1.7)
+	IF (!(MyFlag2 & OWNIPARAMS))
+		WaitAfterSpawn = 0
+	ENDIF
+
+	IF (!(MyFlag & OWNFPARAMS))
+		NearRange = 30.0
+		BobAmount = 0.008
+	ENDIF
+
+	IF (NearRange < 10.0)
+		NearRange = 10.0
+	ENDIF
+
+   //	MakeMeTheLast()
+	MyFlag = MyFlag | STRATCOLL | FLOORCOLL | RELVELCALC | ENEMY | HOVERMOVE | GRAVITYON | TARGETABLE | LOWCOLL
+	MyFlag2 = MyFlag2 | COLLMOVE
+
+	//MyFlag = MyFlag & LNOT(FLOORCOLL)  
+  	SetFriction(0.9,0.1,0.05)
+	damage = 1.0
+	health = 180.0
+	fireCount = 0
+	IF (MyPath)
+		InitPath()
+	ENDIF
+	RotationRestriction(1.0, 1.0, 1.0)
+	AllocStratSoundBlock(3)
+	RegisterDanger(50.0)
+	PLAYSOUND>ASSAULTDRONE_ENG 0 0.77 0.0 0.0 0.0 CONTINUOUS
+	TRIGSET>Kill WHENDEAD
+	IF (GetGlobalParamFloat(0) = 1.0)
+		isGenerated = 1
+	ELSE
+		isGenerated = 0
+	ENDIF
+	MyFlag = MyFlag | NODISP
+   
+
+   	OBJECT>ENEMIES\ASSAULTDRONE2
+	RegisterCollision()
+	TRIGSET>SpecularMadness EVERY 1
+	//put back in THURS
+   //	TRIGSET>Bob EVERY 1
+	MyFlag = MyFlag & LNOT(NODISP)
+
+   	IF (isGenerated)
+   		InheritMyParent()
+   		InitPath()
+   	ELSE
+		WHILE (MyParentInvalid())
+			MyFlag = MyFlag
+		ENDWHILE
+
+   	ENDIF
+ 
+
+	SetObjectShadowState(1)
+
+
+
+
+	//IF JUST ON A SPLINE GO INTO SPLINE MODE
+	//ELSE NETWORK
+
+	IF (MyPath)
+ 		IF (!(OnEntrySpline))
+   		   //	TRIGSET>Bob EVERY 1
+	   		TRIGSET>DirectMe EVERY 1
+	   		TRIGSET>FireCheck EVERY 1
+			TRIGSET>Calculate EVERY 1
+		ENDIF
+	ENDIF
+
+	//AM I JUST ON A SIMPLE WAY PATH ?
+ 
+	IF (WaitAfterSpawn > 0)
+		LOOP (WaitAfterSpawn)
+			MyFlag = MyFlag
+		ENDLOOP
+	ENDIF
+
+	IF ((MyPath) AND (!(OnNet)))
+		//HAVE I GOT AN ENTRY SPLINE ?
+		IF (!(OnEntrySpline))
+			//NO, THEN NORMAL WAYPATH BEHAVIOUR
+ 			STAT>Defend
+   		ELSE
+			//ELSE, LET'S SET UP SOME SPLINE ACTION
+	 		InitSplineData()
+	  		STAT>FollowSpline	
+		ENDIF
+
+	ELSE
+		inrange = 0
+		TRIGSET>StopGoCheck EVERY 1
+   		IF (MyPath) AND (MyPatrol) 
+			STAT>StartTankNetwork
+		ELSE
+			IF (MyPath)
+				STAT>Network
+			ELSE
+	 			STAT>Wait
+			ENDIF
+		ENDIF
+   	ENDIF
+ENDSTATE
+
+LOCALFLOAT	bobTime
+LOCALFLOAT	tempf
+
+//TRIGGER Bob
+//	Flatten(4.0)
+//	tempf = GetObjectCrntPos(3, MODEZ)
+//	bobTime = bobTime + 0.05
+   //	tempf = tempf + Ssin(bobTime) * 0.05
+//	tempf = Ssin(bobTime) * 0.05
+//	z = z + (tempf)
+
+   //	SetObjectCrntPos(3, tempf, MODEZ)
+   //	IF (PAL)
+   //		z = z - 0.1 * 1.2
+   //	ELSE
+   //		z = z - 0.1
+	//ENDIF
+//tempf = Ssin(bobTime * 1.2) * 0.01
+//	RelRotateY(tempf)
+//	TRIGFIN
+//ENDTRIGGER
+
+LOCALFLOAT SPECAMOUNT
+
+TRIGGER SpecularMadness
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+	IF ((MyFlag & HITSTRAT) AND (CollWithFlag & BULLETTYPE))
+		SPECAMOUNT = 1.0
+		PLAYSOUND>ENEMY_HIT 2 1.0 0.0 0.0 0.0 RANDOM
+	ENDIF
+	IF (SPECAMOUNT > 0)
+  		MyFlag2 = MyFlag2 | SPECULAR
+		SetSpecularColour(0, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		IF (PAL)
+			SPECAMOUNT = SPECAMOUNT - 0.12
+		ELSE
+			SPECAMOUNT = SPECAMOUNT - 0.1
+		ENDIF
+	ELSE
+		SPECAMOUNT = 0
+ 		MyFlag2 = MyFlag2 & LNOT(SPECULAR)
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+
+DEFINE PATHSPEED 0.8
+
+STATE FollowSpline
+	FaceAlongPath(2)
+	TiltAlongPath(TWOPI/16.0)
+	MoveAlongPath(PATHSPEED)
+	IF (LastWay())
+		STAT>Drop
+	ENDIF
+ENDSTATE
+
+
+STATE Drop
+	//see if we have been given a parent in MAX
+	IF (MyParent)
+		WHILE (MyParentInvalid())
+			MyFlag = MyFlag
+		ENDWHILE
+	
+	
+		//INHERIT PATH DETAILS
+		InheritMyParent()
+		IF (MyPath)
+			SaveX = x
+			SaveY = y
+		  	SaveZ = z
+			SetGlobalParamInt(0,100)
+  			InitPath()
+			ClearGlobalParams()
+		   	z = SaveZ
+		    y = SaveY
+			z = SaveZ
+		   	//TRIGSET>Booster  EVERY 1
+			WHILE (!(IAmOnFloor))
+  				TowardWay (0.01,0.01)
+   				IF (absspeedz < -0.08)
+   				  	 BREAK = 1
+				ENDIF
+				Flatten(3.0)
+			ENDWHILE
+			TRIGSET>FireCheck EVERY 1
+			TRIGSET>DirectMe EVERY 1
+			TRIGSET>Calculate EVERY 1
+	  
+	  
+	  
+	  
+	  		//DELETE THE DUMMY PARENT
+			DeleteMyParent()
+			//PROCESS ACCORDING TO THE PARENT'S PATH TYPE
+			//AM I JUST ON A SIMPLE WAY PATH ?
+ 
+			IF ((MyPath) AND (!(OnNet)))
+				STAT>Defend
+			ELSE
+				inrange = 0
+				TRIGSET>StopGoCheck EVERY 1
+				IF (MyPath) AND (MyPatrol) 
+					STAT>StartTankNetwork
+				ELSE
+					IF (MyPath)
+						STAT>Network
+					ELSE
+			 			STAT>Wait
+					ENDIF
+				ENDIF
+			ENDIF
+	   ENDIF
+	ENDIF
+
+ENDSTATE
+
+
+LOCALFLOAT OX
+LOCALFLOAT OY
+LOCALFLOAT OZ
+
+
+LOCALFLOAT spawnang
+
+
+
+LOCALFLOAT SaveX
+LOCALFLOAT SaveY
+LOCALFLOAT SaveZ
+LOCALFLOAT ang
+LOCALFLOAT TOANG
+LOCALINT BOOSTUP
+LOCALINT BREAK
+LOCALFLOAT TOPSPEED
+LOCALFLOAT velocity
+LOCALFLOAT height
+LOCALFLOAT dist
+
+//STATE Booster
+//	TOPSPEED = 0.1
+
+// 	IF (((BOOSTUP) OR (BREAK)) AND (FABS(absspeedz < TOPSPEED)))
+
+
+//		IF (BREAK)
+//			velocity = 0.045
+//			BREAK = 0
+//	   	ELSE
+//			velocity = 0.03
+//		ENDIF
+
+//	   	MoveZ(velocity)
+
+//	ELSE
+//		velocity = velocity * 0.75
+//	ENDIF
+
+  
+//	TRIGFIN
+//ENDSTATE
+
+LOCALFLOAT hang
+LOCALFLOAT destZ
+LOCALFLOAT LASTZ
+LOCALFLOAT TOPHEIGHT
+LOCALFLOAT LOWHEIGHT
+LOCALINT TOTOPMODE
+LOCALINT FLOOROFF
+LOCALFLOAT dodgoff
+
+TRIGGER DirectMe2
+
+   	Flatten(4.0)
+
+	IF (MyFlag & HITFLOOR)
+		TOPHEIGHT = z + 0.75
+		LOWHEIGHT = z + 0.5
+	   
+	  // 	IF ((z - 7.0) < LOWHEIGHT)
+			FLOOROFF = 1
+		   	TOTOPMODE = 1
+			BREAK = 0
+			dodgoff = -2.0
+	  //	ENDIF
+
+	
+	
+	ELSE
+		IF (!FLOOROFF)
+		dodgoff = -6.5
+		TOPHEIGHT = DogZ + 0.75
+		LOWHEIGHT = DogZ + 0.5
+		ENDIF
+   	ENDIF
+
+ 
+ 	IF (TOTOPMODE)
+		BREAK = 0
+	  	IF ((z + dodgoff) < TOPHEIGHT)
+			BOOSTUP = 1
+	  	ELSE
+			IF (FLOOROFF)
+				FLOOROFF = 0
+			ENDIF
+			TOTOPMODE = 0
+		ENDIF	 
+	ELSE
+		BOOSTUP = 0
+	   	//GOING TO LOW SO ACTIVATE BREAKS
+	  	IF (absspeedz < -0.23)
+   		  	 LASTZ = z
+			 BREAK = 3
+   		ENDIF
+
+		IF ((z - 7.0) < LOWHEIGHT)
+		  	velocity = 0
+	 		TOTOPMODE = 1
+		ENDIF
+
+
+	ENDIF
+
+	TOPSPEED = 0.1
+
+ 	IF ((BOOSTUP) OR (BREAK) AND (FABS(absspeedz < TOPSPEED)))
+
+
+		IF (BREAK)
+		  	velocity = velocity + FABS(absspeedz) / 12.5
+		  	IF ((z > LASTZ) AND (absspeedz > 0.09))
+		  //	IF ( (absspeedz > 0.09))
+				BREAK = 0
+			ENDIF
+
+	   	ELSE
+			IF (velocity < 0.2)
+				velocity = velocity + 0.003
+			ENDIF
+		ENDIF
+
+		IF (velocity > 0.25)
+			velocity = 0.25
+		ENDIF
+
+	   	MoveZ(velocity)
+	ENDIF
+	velocity = velocity * 0.96
+	bobTime = bobTime + 0.05
+	tempf = Ssin(bobTime * 1.2) * 0.01
+	RelRotateY(tempf)
+	TRIGFIN
+
+
+ENDTRIGGER
+
+
+LOCALFLOAT myTime
+LOCALFLOAT bobVal
+//LOCALFLOAT tempf
+TRIGGER DirectMe
+
+	MyFlag = MyFlag & LNOT(GRAVITYON)
+
+   	Flatten(4.0)
+
+	myTime = myTime + 0.1
+	tempf = Ssin(myTime * bobVal) + 1.0
+	tempf = tempf + CheckZ
+	absspeedz = absspeedz + (tempf - z) * BobAmount
+	
+	
+	bobTime = bobTime + 0.05
+	tempf = Ssin(bobTime * 1.2) * 0.01
+	RelRotateY(tempf)
+	TRIGFIN
+
+
+ENDTRIGGER
+
+
+
+LOCALFLOAT hitdist
+
+STATE Wait
+ENDSTATE
+
+LOCALINT	FIREAMOUNT
+LOCALINT	TARGETSEEN
+LOCALINT	Firing
+
+TRIGGER Calculate
+
+	SetPlayerToTarget(TARGETVALID)
+	ObjectTowardPlayerXZ(BODY , 0.05, 0.05, TWOPI, (TWOPI/360.0) * 25.0)
+	IF (NearPlayerXY(NearRange * 3.0))
+   		ObjectTowardPlayerXZ(TURRET , 0.0, 0.05, (TWOPI/360.0) * 22.5, 0.0)
+   		ObjectTowardPlayerXZ(GUN , 0.05, 0, 0.0, (TWOPI/360.0) * 50.0)
+   	ELSE
+	  //	ObjectReturnToStart(BODY)
+		ObjectReturnToStart(TURRET)
+		ObjectReturnToStart(GUN)
+
+	ENDIF
+   	CrntRotToIdleRotX(BODY, 0.05)
+   	CrntRotToIdleRotZ(BODY, 0.05)
+   	CrntRotToIdleRotZ(TURRET, 0.05)
+  	CrntRotToIdleRotX(GUN, 0.05)
+
+
+	SetPlayerBack()
+	TRIGFIN
+
+ENDTRIGGER
+
+
+STATE FireCheck
+	SetPlayerToTarget(TARGETVALID)
+	TARGETSEEN = NearPlayerXY(NearRange * 3.0)
+
+	SetPlayerBack()
+
+
+	IF (TARGETSEEN)
+		SetPlayerToTarget(TARGETVALID)
+		IF (PlayerDistXY() > 50.0)
+			FIREAMOUNT = 300
+		ELSE
+			FIREAMOUNT = 120
+		ENDIF
+
+
+ 
+		SetPlayerBack()
+
+
+		fireCount = fireCount + 1
+		IF (fireCount > FIREAMOUNT)
+
+			Firing = 1
+
+		   //	MyFlag2 = MyFlag2 | STOPPED
+			
+			SetPlayerToTarget(TARGETVALID)
+		  //	TARGETSEEN = SeePlayerZ(TWOPI/16.0)
+				TARGETSEEN = ObjectSeePlayerZ(TWOPI/64.0, BODY, 0,0,0)
+			SetPlayerBack()
+
+			WHILE (!TARGETSEEN)
+				SetPlayerToTarget(TARGETVALID)
+			   
+
+   		  	   //	RelTurnTowardPlayerXY(0.05)
+			   //	TARGETSEEN = SeePlayerZ(TWOPI/16.0)
+				TARGETSEEN = ObjectSeePlayerZ(TWOPI/64.0, BODY, 0,0,0)
+				SetPlayerBack()
+			ENDWHILE
+
+			fireCount = 0
+	   	  
+			//CREATE A BLUE EXPLOSION AND THEN THE TRAIL
+		   	MyVar = 4.0
+			CREATE SPAWN_BLASTEXP 0, 4.0, 0, 0, 0, 0, GUN
+
+			SetPitch(1, -0.2)
+			PLAYSOUND>ROCKETL 1 1.0 0.0 0.0 0.0 0
+
+			//TWO BULLETS
+			SetGlobalParamInt(0, 1)
+			CREATE SPAWN_AssaultDroneShot   -0.5, 2.0, 0.0, 0, 0, 0, GUN
+			SetGlobalParamInt(0, 1)
+			CREATE SPAWN_AssaultDroneShot   0.5, 2.0, 0.0, 0, 0, 0, GUN
+			SetGlobalParamInt(0, 0)
+			//IF (!(NearPlayerXY(NearRange * 3.0)))
+
+			 //	MyFlag2 = MyFlag2 & LNOT(STOPPED)
+			   //	MyFlag = MyFlag | GRAVITYON + FLOORCOLL
+			//ENDIF
+			Firing = 0	   
+	   
+	   	ENDIF
+  //	ELSE
+  // 		MyFlag2 = MyFlag2 & LNOT(STOPPED)
+
+	ENDIF
+  
+
+
+	TRIGFIN
+ENDSTATE 
+
+
+STATE Defend
+
+	SetPlayerToTarget(TARGETVALID)
+	lastdist = PlayerDistXY()
+
+	endreached = 0
+   	IF (!NearPlayerXY(NearRange / 2.0))
+		SetPlayerBack()
+
+   	  	STAT>Attack
+   	ELSE
+		SetPlayerBack()
+
+
+   		STAT>GetOut
+   	ENDIF
+ENDSTATE
+
+
+STATE GetOut
+
+	SetPlayerToTarget(TARGETVALID)
+	WHILE ((!endreached))
+	
+		SetPlayerToTarget(TARGETVALID)
+		endreached = GetFurthestWay(0)
+		
+		IF (!NearPlayerXY(NearRange + 5.0))
+   			endreached = 1
+   		ENDIF
+
+	 	IF (!NearCheckPosXY(0.0))
+			IF (AwaySeeWayZ(0.5))
+				MoveY (-0.02)
+			ENDIF
+			AwayWayZ(0.10)
+		ENDIF
+
+		SetPlayerBack()
+
+
+	 ENDWHILE
+	 SetPlayerBack()
+	 STAT>DefendWait
+ENDSTATE
+
+
+LOCALFLOAT distnow
+
+STATE DefendWait
+	SetPlayerToTarget(TARGETVALID)
+	lastdist = PlayerDistXY()
+	distnow = lastdist
+	inrange = 1
+
+	WHILE ((distnow < lastdist + 1.0) AND (distnow > lastdist - 1.0))
+		SetPlayerToTarget(TARGETVALID)
+		distnow = PlayerDistXY()
+   		SetPlayerBack()
+	ENDWHILE
+
+	inrange = 0
+
+   	SetPlayerBack()
+	STAT>Defend
+
+ENDSTATE
+
+
+STATE Attack
+	SetPlayerToTarget(TARGETVALID)
+	IF (NearPlayerXY (NearRange) OR endreached)
+	 	SetPlayerBack()
+
+		STAT>DefendWait
+	ENDIF
+
+	endreached = GetNearestWaySpline(0.0)
+
+   	IF (!endreached)
+   		IF (SeeWayZ(0.5))
+   			MoveY (0.02)
+   		ENDIF
+   		TowardWay (0.05,0.05)
+   	ENDIF
+   	SetPlayerBack()
+
+ENDSTATE
+
+
+LOCALFLOAT lastdist
+
+//*** NETWORK CODE ***
+
+LOCALINT inrange
+LOCALINT escape
+STATE StopGoCheck
+  	SetPlayerToTarget(TARGETVALID)
+	IF (inrange)
+	  	ObjectTowardPlayerXZ(TURRET , 0.05, 0.05, TWOPI/8.0, TWOPI/32.0)
+	  	CrntRotToIdleRotX(TURRET, 0.05)
+	  	CrntRotToIdleRotZ(TURRET, 0.05)
+
+		IF (!NearPlayerXY(NearRange) AND !escape)
+			escape = 0
+			inrange = 0
+		ELSE
+			IF (escape)
+			IF (!NearPlayerXY(NearRange * 1.5))
+				escape = 0
+				inrange = 0
+			ENDIF
+			ENDIF
+		ENDIF
+		
+		IF (!escape)
+		IF (NearPlayerXY(NearRange * 0.5))
+			inrange = 0
+			escape = 1
+		ELSE
+			RelTurnTowardPlayerXY(0.05)
+		  //	escape = 0
+		ENDIF
+		ENDIF
+	ELSE
+		IF ((NearPlayerXY(NearRange * 0.6)))
+			inrange = 1
+		ENDIF
+	ENDIF
+
+   	SetPlayerBack()
+	TRIGFIN
+
+ENDSTATE
+
+
+
+LOCALINT endreached
+
+DEFINE MOVESPEED 0.05
+
+STATE StartTankNetwork
+	IF (NearCheckPosXY(0.0))
+		IF (LastWay())	
+			LeaveFixedPath()
+			endreached  = 0 
+			STAT> Network
+		ELSE
+			GetNextWay()
+		ENDIF
+	ENDIF
+   	IF (SeeWayZ(0.5))
+		MoveY (MOVESPEED)
+   	ELSE
+	  	IF (SeeWayZ(TWOPI/8.0))
+	  		MoveY(MOVESPEED/2.5)
+	  	ENDIF
+	  //	MoveY (MOVESPEED/2.0)
+	ENDIF
+  	TowardWay (0.05,0.05)
+ENDSTATE
+
+
+STATE Network
+	endreached = GetNearestWay(0.0)
+	STAT>NetworkMain
+ENDSTATE
+
+LOCALINT NEAR
+
+
+STATE NetworkMain
+	SetPlayerToTarget(TARGETVALID)
+   	IF ((!inrange) AND (!escape))
+
+	  	IF (NearCheckPosXY(0.0))
+			endreached = GetNearestWay(0.0)
+		
+	   	ELSE
+			IF (!endreached)
+				IF (SeeWayZ(0.05))
+					TowardWay (0.02,0.02)
+					MoveY(MOVESPEED)
+			  	ELSE
+					IF (SeeWayZ(TWOPI/8.0))
+						MoveY(MOVESPEED/2.5)
+					ENDIF
+					TowardWay (0.05,0.05)
+			   	ENDIF
+			ELSE
+				NEAR = NearCheckPosXY(0.0)
+				IF ((!NEAR) AND (SeeWayZ(0.05)))
+
+					TowardWay (0.02,0.02)
+					MoveY(MOVESPEED)
+				ELSE
+					IF (!NEAR) AND (SeeWayZ(TWOPI/8.0))
+						MoveY(MOVESPEED/2.5)
+					ELSE
+						TowardWay (0.05,0.05)
+					ENDIF
+
+			   	ENDIF
+			ENDIF
+			
+	  	ENDIF
+	ENDIF
+
+	IF (escape)
+	  	IF (NearCheckPosXY(0.0))
+			endreached = GetFurthestWay(0.0)
+		
+	   	ELSE
+			IF (!endreached)
+				IF (AwaySeeWayZ(0.05))
+					AwayWayZ (0.02)
+					MoveY(MOVESPEED)
+			  	ELSE
+					IF (AwaySeeWayZ(TWOPI/8.0))
+						MoveY(MOVESPEED/2.5)
+					ENDIF
+					AwayWayZ (0.05)
+			   	ENDIF
+			ELSE
+				NEAR = NearCheckPosXY(0.0)
+				IF ((!NEAR) AND (AwaySeeWayZ(0.05)))
+
+					AwayWayZ (0.02)
+					MoveY(MOVESPEED)
+				ELSE
+					IF (!NEAR) AND (AwaySeeWayZ(TWOPI/8.0))
+						MoveY(MOVESPEED/2.5)
+					ELSE
+						AwayWayZ (0.05)
+					ENDIF
+
+			   	ENDIF
+			ENDIF
+			
+	  	ENDIF
+
+	ENDIF
+	
+	SetPlayerBack()
+ENDSTATE
+
+
+
+STATE Kill
+   	OBJECT>ENEMIES\ASSAULTDRONEBREAK
+//	adrelanin = adrelanin + 0.2
+	Score = Score + 4000
+	MakeFrags (0.1, 24)
+	MyVar = 0.0
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+	StopSound(0,0)
+	IF (isGenerated)
+		ParentVar = ParentVar + 1.0
+	ENDIF
+	TRIGSTOP
+	DESTROYME SPAWN_EXPLODINGBITS
+ENDSTATE
+ 

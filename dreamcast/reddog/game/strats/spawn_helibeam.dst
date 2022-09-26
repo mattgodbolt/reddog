@@ -1,0 +1,49 @@
+LOCALFLOAT	time
+
+STATE Init
+	MyFlag = MyFlag
+	OBJECT> MISC\HELIBEAM
+	scalex = 0.1
+	scaley = 0.1
+	scalez = 0.1
+	time = 0.0
+	IF (ParentVar = 1.0)
+		STAT> Kill
+	ENDIF
+	TRIGSET> CreateColl EVERY 10
+	STAT> Start
+ENDSTATE
+
+STATE Start
+	IF (ParentVar = 1.0)
+		STAT> Kill
+	ENDIF
+	IF (scalex < 1.0)
+		IF (time < 3.4)
+			scalex = scalex + 0.05
+			scaley = scaley + 0.05
+			scalez = scalez + 0.05
+		ENDIF
+	ENDIF
+	time = time + 0.0166667
+	StickToParent(0, 0.0, 5.0, -6.0, 1)
+	IF (time > 2.0)
+		IF (scalex > 0.1)
+			scalex = scalex - 0.05
+			scaley = scaley - 0.05
+			scalez = scalez - 0.05
+		ELSE
+			STAT> Kill
+		ENDIF
+	ENDIF
+
+ENDSTATE
+
+STATE CreateColl
+	CREATE SPAWN_COLLFACE 0, 0, 0, -0.7, 0, 0, 0
+	TRIGFIN
+ENDSTATE
+
+STATE Kill
+	Delete()
+ENDSTATE

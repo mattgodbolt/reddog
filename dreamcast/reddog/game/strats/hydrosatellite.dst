@@ -1,0 +1,462 @@
+// Hydro Boss Bobby				   
+
+STATE Fire
+	MakeMeTheLast()
+	MyFlag = MyFlag | ENEMY
+	OBJECT>BOSSES\HYDROBOSS\HydroSatelliteBeam
+	STAT>LaserMain
+
+ENDSTATE
+
+STATE Linker
+	MakeMeTheLast()
+	MyFlag = MyFlag | ENEMY
+	OBJECT>BOSSES\HYDROBOSS\HydroSatelliteBeam
+	STAT>LinkerMain
+
+ENDSTATE
+
+
+LOCALFLOAT ang
+LOCALFLOAT startz
+LOCALINT time
+
+STATE LinkerMain
+	x = parentx
+	y = parenty
+	z = parentz
+	   
+	PointTo(BossX,BossY,BossZ)
+
+	LOOP (ONESEC)
+		IF (ValidToBeam(0, 24.5,	0, 0))
+			IF (PAL)
+				scaley = scaley + (0.25 * 1.2)
+			ELSE
+				scaley = scaley + 0.25
+	   		ENDIF
+		ENDIF
+	ENDLOOP
+	Delete()
+
+ENDSTATE
+
+
+STATE LaserMain
+	frame = (TWOPI/360.0) * 5.0
+	CheckX = DogX
+	CheckY = DogY
+	CheckZ = DogZ
+
+
+
+	WHILE ((!ParentSemaphore) AND (time < ONESECTWOTHIRD))
+   		KillMyVelocity()
+	   	x = parentx
+	   	y = parenty
+	   	z = parentz
+
+
+	   	PointTo(CheckX,CheckY,CheckZ)
+	   
+	   	//PointTo(DogX,DogY,DogZ)
+	   	IF (BeamHit(24.5,3.0,DogX,DogY,DogZ))
+	   	 	//HURT REDDOG
+	   	 	PlayerHealth = PlayerHealth - 0.5
+	   	ENDIF
+		IF (ValidToBeam(0, 24.5,	0, 0))
+			IF (PAL)
+				scaley = scaley + 0.25 * 1.2
+			ELSE
+				scaley = scaley + 0.25
+	   		ENDIF
+		ELSE
+	   		MyFlag = MyFlag 
+		ENDIF
+		time = time + 1
+	ENDWHILE
+
+	time  = 0
+
+	WHILE ((MyParentFlag) AND (scaley > 1.0))
+		//x = DogX
+		//y = DogY
+		//z = DogZ
+	   	x = CheckX
+		y = CheckY
+		z = CheckZ
+		
+		
+		PointTo(parentx,parenty,parentz)
+		IF (scaley > 1.0)
+			IF (PAL)
+				scaley = scaley - (0.25 * 1.2)
+			ELSE
+				scaley = scaley - 0.25
+			ENDIF
+		ENDIF
+		time = time + 1
+
+	ENDWHILE
+
+	IF (BossStrat)
+		BossStratFrame = 0
+	ENDIF
+	IF (MyParentFlag)
+	  	MyParentTarget	 = 0
+	ENDIF
+	Delete()
+ENDSTATE
+
+LOCALFLOAT COMMITAMOUNT
+
+LOCALINT CHARGETIME
+
+STATE Turn
+
+	fireCount = fireCount + 1
+	IF (fireCount > FIREAMOUNT)
+
+		//ARE ANY OTHERS FIRING ?
+		//AM I FIRING ?
+		//AM I NEAR THE PLAYER ?
+		//ALL YEP? THEN FIRE
+		IF ((BossStrat) AND (!BossStratFrame) AND (!MyTarget) AND (!NearPlayerXY(60.0)))
+		
+			//USE THE BOSS STRAT FRAME AS A GLOBAL SEMAPHORE BETWEEN ALL
+			//SATELLITES INFORMING WHETHER ANY ARE FIRING
+			BossStratFrame = 1.0
+		   	COMMITAMOUNT = 1.0 / CHARGETIME
+			LOOP (CHARGETIME)
+  				MyFlag2 = MyFlag2 | SPECULAR
+				SetSpecularColour(0, COMMITAMOUNT, COMMITAMOUNT / 2.0, COMMITAMOUNT / 3.0)
+				COMMITAMOUNT = COMMITAMOUNT + (1.0 / CHARGETIME)
+			ENDLOOP
+	 		COMMITAMOUNT = 0
+			MyFlag2 = MyFlag2 & LNOT(SPECULAR)
+
+
+		  	MyTarget = Me
+		   //	frame = 1.0
+			//CREATE THE LASERS
+			SetGlobalParamInt(0,3)
+			CREATE HYDROSATELLITE 0,0,0,0,0,0,0
+			ClearGlobalParams()
+		  	fireCount = 0
+	  	ENDIF
+
+	ENDIF
+
+ENDSTATE
+
+
+
+
+//TO UPDATE THE PARENT SATELLITE WHILST IT IS FALLING, AND ATTEMPT TO MAINTAIN THE
+//CORRECT X,Y POSITION IN THE RING
+STATE Monitor
+	MakeMeTheLast()
+	CheckX = parentcheckX
+	CheckY = parentcheckY
+	CheckZ = parentcheckZ
+
+	WHILE (ParentFrame)
+  		KillMyVelocity()
+		PointToXY(CheckX, CheckY, CheckZ)
+		MoveX(0.2)
+	ENDWHILE
+
+	parentx = x
+	parenty = y
+
+	Delete()
+
+
+
+
+ENDSTATE
+
+LOCALINT ONESECONETHIRD
+LOCALINT ONESECTWOTHIRD
+LOCALINT ONESEC
+
+DEFINE PAL_ONESECHALF 37
+DEFINE NTSC_ONESECHALF 45
+
+
+
+STATE Init
+	IF (PAL)
+		ONESEC = 25
+		ONESECONETHIRD = 33
+		ONESECTWOTHIRD = 41
+		CHARGETIME = PAL_ONESECHALF
+	ELSE
+		ONESEC = 30
+		ONESECONETHIRD = 40
+		ONESECTWOTHIRD = 50
+		CHARGETIME = NTSC_ONESECHALF
+	ENDIF
+
+	//IF (GetGlobalParamInt(0) = 1)
+   //		STAT>Trail
+	//ENDIF
+	
+	IF (GetGlobalParamInt(0) = 2)
+		STAT>Monitor
+	ENDIF
+	
+	IF (GetGlobalParamInt(0) = 3)
+		STAT>Fire
+	ENDIF
+	
+	IF (GetGlobalParamInt(0) = 4)
+		STAT>Linker
+	ENDIF
+	
+	
+	frame = 0	
+	OBJECT>BOSSES\HYDROBOSS\HydroSatellite
+	RegisterCollision()
+	AllocStratSoundBlock(3)
+	SetAudibleRange(0, 50, 400)
+	SetAudibleRange(1, 100, 500)
+	SetAudibleRange(2, 50, 400)
+
+	IF (!MyPath)
+		STAT>Idle
+	ENDIF
+
+	IF (!(HasActivation(0)))
+		STAT>Idle
+	ENDIF
+	
+	InitPath()
+	startz = z
+	TRIGSET>TurnMe EVERY 1
+	STAT>PollForParent
+ENDSTATE
+
+STATE PollForParent
+
+	MyVar = 0
+	health = 100.0
+
+	MyFlag = MyFlag | NODISP
+  	MyFlag = MyFlag & LNOT(STRATCOLL | LOWCOLL | ENEMY | TARGETABLE)	
+	WHILE (GlobalVar != 4.0)
+		MyFlag = MyFlag
+	ENDWHILE
+ 
+ 	MyFlag = MyFlag & LNOT(NODISP)
+	//SET COLLISION ACTIVE
+	MyTarget = 0
+	z = startz
+
+	PLAYSOUND>LAUNCH3 1 1.0 0.0 0.0 0.0 0
+
+	// Launch the satellite
+	SetGlobalParamInt(0,1)
+	CREATE HYDROSATELLITE 0,0,0,0,0,0,0
+	ClearGlobalParams()
+
+	PLAYSOUND>SPIN1 0 0.9 0.0 0.0 0.0 CONTINUOUS
+
+	//create the to parent linker
+	SetGlobalParamInt(0,4)
+	CREATE HYDROSATELLITE 0,0,0,0,0,0,0
+	ClearGlobalParams()
+
+	trans = 0.1
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+
+	LOOP (ONESECONETHIRD)
+		IF (trans < 1.0)
+			trans = trans + 0.05
+		ENDIF
+		IF (PAL)
+			z = z + (0.75 * 1.2)
+		ELSE
+			z = z + 0.75
+		ENDIF
+	ENDLOOP
+
+
+	MyFlag2 = MyFlag2 & LNOT(TRANSLUCENT)
+
+	MyFlag = MyFlag | STRATCOLL | ENEMY	| LOWCOLL | TARGETABLE
+	TRIGSET>DeadCheck EVERY 1
+	GetActivationPos(0)
+
+	LOOP (ONESECONETHIRD)
+		MyFlag = MyFlag
+	ENDLOOP
+
+	STAT>Turn
+ENDSTATE
+
+
+LOCALFLOAT SPECAMOUNT
+
+TRIGGER DeadCheck
+	IF ((MyFlag & HITSTRAT))
+		SPECAMOUNT = 1.0
+		PLAYSOUND>ENEMY_HIT 2 1.0 0.0 0.0 0.0 RANDOM
+	ENDIF
+	IF (SPECAMOUNT > 0)
+  		MyFlag2 = MyFlag2 | SPECULAR
+		SetSpecularColour(0, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		IF (PAL)
+			SPECAMOUNT = SPECAMOUNT - 0.12
+		ELSE
+			SPECAMOUNT = SPECAMOUNT - 0.1
+		ENDIF
+	ELSE
+		IF (!COMMITAMOUNT)
+			SPECAMOUNT = 0
+ 			MyFlag2 = MyFlag2 & LNOT(SPECULAR)
+		ENDIF
+  	ENDIF
+
+	//GLOBALVAR SET TO >900.0 WHEN BOSS DIES
+
+ 	IF ((GlobalVar > 900.0) OR (!BossStrat) OR (health <=0))
+ 		//SEE IF WE NEED TO DIE FOR REAL, OR RESPAWN
+		IF (!BossStrat)
+			KILL = 1
+		ENDIF
+	
+		SPECAMOUNT = 0
+ 		MyFlag2 = MyFlag2 & LNOT(SPECULAR)
+ 		MoveZ(-0.3)
+ 	 	TRIGRESET
+		TRIGSTOP
+ 	   		//SEMAPHORE TO SWITCH BEAM CHILDREN OFF
+		MyVar = 1.0
+ 		STAT>Die
+ 	ENDIF
+
+	TRIGFIN
+ENDTRIGGER
+
+LOCALINT DEAD
+LOCALINT KILL
+
+STATE Die
+	MyFlag = MyFlag | REALGRAVITYON | FLOORCOLL
+	DEAD = 1
+
+	frame = 1.0
+
+	SetGlobalParamInt(0,2)
+	CREATE HYDROSATELLITE 0,0,0,0,0,0,0
+	ClearGlobalParams()
+
+
+	TRIGSET>Flames EVERY 1
+	WHILE ((!(IAmOnFloor)) AND (z > DogZ))
+		MyFlag = MyFlag
+	ENDWHILE
+
+	StopSound(0,0.0)
+
+	IF (FLAMESON)
+		TRIGKILL>Flames EVERY 1
+	ENDIF
+
+	MyVar = 8.0
+	SetGlobalParamFloat(0,5.0)
+
+	PLAYSOUND>EX_LARGE_BLAST1 0 1.0 0.0 0.0 0.0 0
+	CREATE SPAWN_BLASTEXP 0,0,0,0,0,0,0
+	ClearGlobalParams()
+
+	MyFlag = MyFlag & LNOT(REALGRAVITYON + FLOORCOLL)
+
+   	KillMyVelocity()
+	frame = 0
+	DEAD = 0
+
+	IF (KILL)
+		Delete()
+	ELSE
+		GlobalVar = GlobalVar - 1.0
+		STAT>PollForParent
+	ENDIF
+
+ENDSTATE
+
+
+DEFINE WAITCOUNT 175
+LOCALINT WaitFrame
+LOCALINT FireState
+LOCALINT FLAMESON
+
+TRIGGER Flames
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+	MyVar = 2.0
+
+	FLAMESON = 1
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+	FireState = 2
+  	WaitFrame = WAITCOUNT
+  	WHILE ((WaitFrame) AND (FireState))
+		IF (FireState = 2)
+			MyVar = 2.0
+		ELSE
+			MyVar = 0.0
+		ENDIF
+	    SetGlobalParamInt(0,0)
+		SetGlobalParamFloat(0,0)
+		SetGlobalParamFloat(1,0)
+		//SET THE SCALE
+		SetGlobalParamFloat(2,5.0)
+
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, 0
+	  	IF (FireState = 2)
+	  		MyVar = 3.0
+	  	ELSE
+	  		MyVar = 1.0
+	  	ENDIF
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, 0
+		ClearGlobalParams()
+	  	WaitFrame = WaitFrame - 1 
+	  	IF ((!(WaitFrame)) AND (FireState))
+			WaitFrame = WAITCOUNT
+			FireState = FireState - 1
+		ENDIF
+				   
+
+  	ENDWHILE
+
+	FLAMESON = 0
+
+	TRIGSTOP
+ENDTRIGGER
+
+
+DEFINE MIDDLE 1
+
+TRIGGER TurnMe
+	IF (!DEAD)
+
+		RotateObjectXYZ(MIDDLE,0,0,TWOPI/180.0)
+
+  		KillMyVelocity()
+		PointToXY(CheckX, CheckY, CheckZ)
+		MoveX(0.2)
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+
+LOCALINT fireCount
+DEFINE FIREAMOUNT 210
+
+
+
+STATE Idle
+	Delete()
+
+ENDSTATE
+

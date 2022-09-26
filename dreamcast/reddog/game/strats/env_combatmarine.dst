@@ -1,0 +1,183 @@
+DEFINE RUNSPEED	0.028
+PARAMINT FIRETYPE 0
+
+
+STATE Init
+  	MyFlag = MyFlag | HOVERMOVE | FLOORCOLL | GRAVITYON
+
+  //	MyFlag = MyFlag | HOVERMOVE
+	OBJECT> ENVANIMS\COMBATMARINE
+	MODELANIM>ENVANIMS\COMBATMARINE.RDO>Run>REPEAT
+
+   	SetObjectShadowState(1)
+	RotationRestriction(0.0, 0.0, 1.0)
+   	SetFriction(1.0,0.1,0.0)
+	
+	IF (MyPath)
+		InitPath()
+	ENDIF
+   
+   	MyFlag = MyFlag | NODISP
+   	WHILE (!(MyFlag & HITFLOOR))
+   		MyFlag = MyFlag
+   	ENDWHILE
+
+	KillMyVelocity()
+	MyFlag = MyFlag & LNOT(NODISP)
+
+ //	FIRETYPE = 1
+
+
+	IF (MyPath)
+	  //	InitPath()
+		STAT>StartMove
+	ENDIF
+	STAT>Wait
+ENDSTATE
+
+STATE StartMove
+	//IF (SeeWayZ(0.1))
+			IF (!(MyAnimFlag & TWEEN))
+  				MoveY(RUNSPEED)
+			ENDIF
+	//ENDIF
+	RelTurnTowardCheckPosXY(0.05)
+	IF(NearCheckPosXY(2.0))
+		IF(LastWay())
+			STAT> Wait
+		ENDIF
+		GetNextWay()
+	ENDIF
+ENDSTATE
+
+STATE Wait
+  	MyFlag = MyFlag & LNOT(GRAVITYON)
+  	MyFlag = MyFlag & LNOT(FLOORCOLL)
+  	SetFriction(1.0,0.4,1.0)
+   	KillMyVelocity()
+	frame = RandRange(80,100)
+	IF (FIRETYPE)
+		TRIGSET>ChangeAnimCrouchFire	EVERY 1
+	ELSE
+		TRIGSET>ChangeAnimStandWave	EVERY 1
+	ENDIF
+	STAT>WaitMain
+ENDSTATE
+
+//TOGGLE TWEEN CROUCH FIRING AND STANDING
+TRIGGER ChangeAnimCrouchFire
+   //	IF (frame < 0)
+		WHILE (MyAnimFlag & RUNNING)
+			MyFlag = MyFlag
+		ENDWHILE
+	 
+	 //	frame = RandRange(80,100)
+		IF (!MyVar)
+			IF (RandRange(0,50) < 25)
+				MyVar = 2.0
+			ELSE
+				MyVar = 1.0
+			ENDIF
+		ELSE
+			MyVar = 0
+		ENDIF
+	//ENDIF
+
+	IF (!MyVar)
+		MODELANIM>ENVANIMS\COMBATMARINE.RDO>StartFire>0
+		WHILE (MyAnimFlag & RUNNING)
+			MyFlag = MyFlag
+		ENDWHILE
+		MODELANIM>ENVANIMS\COMBATMARINE.RDO>FireMain>REPEAT
+		WHILE (MyAnimFlag & RUNNING)
+			MyFlag = MyFlag
+		ENDWHILE
+
+		CheckX = RandRange(30.0,60.0)
+
+		WHILE (CheckX > 0)
+			CheckX = CheckX - 1.0
+		ENDWHILE
+		WHILE (MyAnimFlag & RUNNING)
+			MyFlag = MyFlag
+		ENDWHILE
+		MODELANIM>ENVANIMS\COMBATMARINE.RDO>EndFire>0
+		WHILE (MyAnimFlag & RUNNING)
+			MyFlag = MyFlag
+		ENDWHILE
+
+		IF (RandRange(0,50) > 25.0)
+			MODELANIM>ENVANIMS\COMBATMARINE.RDO>Reload>0
+			WHILE (MyAnimFlag & RUNNING)
+				MyFlag = MyFlag
+			ENDWHILE
+	   	ENDIF
+
+	ELSE
+		IF (MyVar = 1.0)
+			MODELANIM>ENVANIMS\COMBATMARINE.RDO>Stand1>REPEAT
+		ELSE
+			MODELANIM>ENVANIMS\COMBATMARINE.RDO>Stand2>REPEAT
+   		ENDIF
+		CheckX = RandRange(30.0,60.0)
+
+		WHILE (CheckX > 0)
+			CheckX = CheckX - 1.0
+		ENDWHILE
+	 	WHILE (MyAnimFlag & RUNNING)
+	 		MyFlag = MyFlag
+	 	ENDWHILE
+	ENDIF
+
+	frame = frame - 1.0
+
+
+	TRIGFIN
+ENDTRIGGER
+
+
+//TOGGLE TWEEN WAVE AND STANDING
+TRIGGER ChangeAnimStandWave
+	IF (frame < 0)
+		WHILE (MyAnimFlag & RUNNING)
+			MyFlag = MyFlag
+		ENDWHILE
+	 
+	 	frame = RandRange(80,100)
+		IF (!MyVar)
+			IF (RandRange(0,50) < 25)
+				MyVar = 2.0
+			ELSE
+				MyVar = 1.0
+			ENDIF
+		ELSE
+			MyVar = 0
+		ENDIF
+	ENDIF
+
+	IF (!MyVar)
+		MODELANIM>ENVANIMS\COMBATMARINE.RDO>Wave>0
+	ELSE
+		IF (MyVar = 1.0)
+			MODELANIM>ENVANIMS\COMBATMARINE.RDO>Stand1>0
+		ELSE
+			MODELANIM>ENVANIMS\COMBATMARINE.RDO>Stand2>0
+   		ENDIF
+	ENDIF
+
+	frame = frame - 1.0
+
+
+	TRIGFIN
+ENDTRIGGER
+
+
+
+
+
+STATE WaitMain
+ENDSTATE
+
+
+
+

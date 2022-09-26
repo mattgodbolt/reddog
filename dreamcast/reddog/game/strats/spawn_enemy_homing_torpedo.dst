@@ -1,0 +1,141 @@
+LOCALFLOAT xvel
+
+STATE Init
+	MakeMeTheLast()
+	RotationRestriction(1.0, 1.0, 1.0)
+  	MyFlag = MyFlag | ENEMY | NOTEXPLODE | HOVERMOVE | TARGETABLE 
+	UnitiseMatrix()
+	SetFriction(0.0,0.0,0.0)
+	OBJECT> BOSSES\SWAMPBOSSWEAPONS\SWAMPTORPEDO
+	DontFogMeOut()
+	RegisterCollision()
+
+	MyFlag2 = MyFlag2 | NOHDC
+
+	MyVar = GetGlobalParamFloat(0)
+
+    TOPSPEED = 15.0
+	WHILE (ParentFrame != 100.0)
+		IF (!MyVar)
+			//LEFT INNER
+		  	LinkToParentObject(0,0,0,0,-10.0,0.0,-8.4)
+	   	ENDIF
+		IF (MyVar = 2.0)
+			//LEFT OUTER
+		  	LinkToParentObject(0,0,0,0,-12.0,0.0,-9.0)
+			xvel = -0.29
+	   	ENDIF
+		IF (MyVar = 4.0)
+			//LEFT INNER INNER
+		  	LinkToParentObject(0,0,0,0,-8.0,0.0,-8.2)
+			xvel = 0.12
+			frame = 5.0
+			TOPSPEED = 13.0
+		ENDIF
+
+
+
+
+		IF (MyVar = 1.0 )
+			//RIGHT	INNER
+		  	LinkToParentObject(0,0,0,0,10.0,0.0,-8.4)
+	 	ENDIF
+		IF (MyVar = 3.0 )
+			//RIGHT	OUTER
+		  	LinkToParentObject(0,0,0,0,12.0,0.0,-9.0)
+			xvel = 0.29
+	   	ENDIF
+		IF (MyVar = 5.0 )
+			//RIGHT	INNER INNER
+		  	LinkToParentObject(0,0,0,0,8.0,0.0,-8.2)
+			xvel = -0.12
+			frame = 5.0
+			TOPSPEED = 13.0
+		ENDIF
+	 
+	 
+	 	IF (MyVar = 6.0 )
+			//CENTRE
+		  	LinkToParentObject(0,0,0,0,0.0,8.0,-8.2)
+			TOPSPEED = 19.5
+		ENDIF
+
+
+
+
+	ENDWHILE
+
+	MyFlag = MyFlag | GRAVITYON | FLOORCOLL
+
+
+
+	WHILE (frame)
+		frame = frame - 1.0
+		speedx = x + parentx - parentoldx
+		speedy = y + parenty - parentoldy
+	ENDWHILE
+	STAT>Go
+ENDSTATE
+
+STATE Go
+ 	WHILE (!(MyFlag & HITFLOOR))
+ //	WHILE (!(UnderWater))
+	  //	SetCheckPosRelOffsetPlayerObject(0, 0, 8.0, 0)
+	   //	x = x + parentx - parentoldx
+	   //	y = y + parenty - parentoldy
+		Flatten(1.0)
+   		IF (MyVar = 6.0)
+			z = z - 0.05
+		ENDIF
+	   
+	ENDWHILE
+
+//	dx = parentx - parentoldx
+//	dy = parenty - parentoldy
+	MyFlag = MyFlag | TARGETABLE
+	damage = 15.0
+
+   
+	MyFlag = MyFlag | STRATCOLL | LOWCOLL 
+	KillMyVelocity()
+
+   	TRIGSET>KillOff	WHENHIT
+	TRIGSET>KillOffFloor	EVERY 300
+	MyFlag = MyFlag & LNOT(GRAVITYON | FLOORCOLL)
+	CREATE SPAWN_WATERWAKE 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0
+
+	MyVar = 0
+	SetFriction(1.0,0.8,1.0)
+	STAT>Whoosh
+ENDSTATE 	   
+
+LOCALFLOAT acc
+LOCALFLOAT TOPSPEED 20.0
+
+STATE Whoosh
+	Flatten(100.0)
+
+  	acc = acc + ((TOPSPEED - acc) * 0.3)
+
+  	MoveY(acc)
+	x = x + xvel
+
+
+ENDSTATE
+
+
+STATE KillOff
+	MyFlag = MyFlag | NODISP  
+	MyFlag = MyFlag & LNOT(STRATCOLL)
+	MyVar = 7.0
+	CREATE SPAWN_BLASTEXP 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0
+	Delete()
+  //	TRIGSTOP
+ENDSTATE
+
+STATE KillOffFloor
+	MyVar = 7.0
+	CREATE SPAWN_BLASTEXP 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0
+	Delete()
+  //	TRIGSTOP
+ENDSTATE

@@ -1,0 +1,26 @@
+// Implements Hanna-Barbera style repeating landscape
+// When near within 'proximity' metres, moves all strats except this one back 'distance' metres
+
+PARAMFLOAT	proximity
+PARAMFLOAT	distance
+
+STATE Init
+  //	IF (NearPlayerXY(proximity))
+  //	IF (PlayerDistXY() < proximity)
+	IF (ScoobyDoo)
+		Delete()
+	ELSE
+		ScoobyDoo = Me
+		STAT>Start
+		
+	ENDIF
+ENDSTATE
+
+STATE Start
+	IF (FABS(y - DogY) < proximity)
+		MoveAllStratsBack(distance)
+	 //	IF (PlayerState = PS_WATERSLIDE)
+	 //		LWaterSlide(distance)
+	 //	ENDIF
+	ENDIF
+ENDSTATE

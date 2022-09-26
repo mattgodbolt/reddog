@@ -1,0 +1,154 @@
+LOCALINT trail
+LOCALFLOAT	xOffset
+LOCALFLOAT	yOffset
+LOCALFLOAT dx
+LOCALFLOAT dy
+LOCALFLOAT dz
+LOCALFLOAT rx
+LOCALFLOAT ry
+LOCALFLOAT rz
+LOCALFLOAT tempf
+
+
+
+DEFINE SWAMPBOSS 1
+LOCALINT TYPE
+LOCALINT	myAimTime
+
+
+TRIGGER CleanUp
+	DeleteBand (trail)
+ENDTRIGGER
+
+STATE Init
+	absspeedx = parentabsspeedx
+	absspeedy = parentabsspeedy
+	absspeedz = parentabsspeedz
+ 
+	MakeMeTheLast()
+	myAimTime = 30
+	//SEE IF WE ARE SWAMP BOSS SPAWN
+	IF (GetGlobalParamInt(0))
+		TYPE = SWAMPBOSS
+	ENDIF
+
+	rx = DogX
+	ry = DogY
+	rz = DogZ
+	ExplosionLight (0.3, 0.2, 0.1, 30, 1, 0)
+
+	MyFlag = MyFlag | DELETECALLBACK | FLOORCOLL | STRATCOLL | ENEMY | NOTEXPLODE | PLANEMOVE | LOWCOLL | NODISP
+   	SetFriction(0.1,0.1,0.1)
+
+	AllocStratSoundBlock(2)
+	PLAYSOUND>MULTI_MISSILE 0 1.0  0.0 0.0 0.0  RANDOM
+
+	OBJECT> WEAPON\MISSILE06
+	RegisterCollision()
+	TRIGSET>KillOff	WHENHIT
+	TRIGSET>KillOffFloor	ONFLOOR
+	damage = 5.0
+	trail = CreateBand (1, 16, 0, 1, 1, 0.5, 0, 1, 0, 0, 0)
+	SetBandRotXYZandScaling (trail, 0.0, 0, 0, 1.02, 1.02, 1.02)
+	AddBandSegment (trail, 0, 0, 0, 0.2)
+	AddBandSegment (trail, 0, 0, 0, 0.2)
+	TRIGSET>Trailer EVERY 1
+	TRIGSET>BandTrigger EVERY 2
+	TRIGSET>CleanUp WHENDELETED
+	xOffset = RandRange(-1, 1)
+	yOffset = RandRange(-1, 1)
+	
+	STAT>Go
+ENDSTATE
+
+STATE Go
+	CREATE SPAWN_FACE_ALONG_DIR 0, 0, 0, 0, 0, 0, 0
+
+	LOOP (20)
+//		CheckX = PlayerActVelX
+//		CheckY = PlayerActVelY
+//		CheckZ = PlayerActVelZ
+
+//		MyVar = FSQRT((CheckX * CheckX) + (CheckY * CheckY) + (CheckZ * CheckZ))
+
+		//ENSURE AN "ON-RAILS" PLAYER IS TARGETTED A LITTLE FASTER
+		IF (PlayerState != PS_NORMAL)
+		 	SetCheckPosRelOffsetPlayerObject(0, 0, 0.0, 0)
+		   	PointTo(CheckX, CheckY, CheckZ)
+		ELSE
+			MoveY(0.15 + MyVar/3.0)
+		ENDIF
+	ENDLOOP
+   	TRIGSET>KillOffFloor	EVERY 600
+	STAT>Start
+ENDSTATE 
+
+STATE BandTrigger
+	tempf = RandRange(0.3, 0.7)
+	AddBandSegment (trail, 0, 0, 0, tempf)
+	TRIGFIN
+ENDSTATE
+
+STATE Trailer
+	tempf = RandRange(0.7, 1.5)
+	RubberBand (trail, 0, 0, 0, tempf)
+	TRIGFIN
+ENDSTATE
+
+LOCALFLOAT TEMP
+LOCALFLOAT dist
+
+STATE Start
+	IF (!MyVar)
+	  	IF (((absspeedx * absspeedx) + (absspeedy * absspeedy) + (absspeedz * absspeedz)) < 0.1)
+			STAT>KillOff
+		ENDIF
+	ENDIF
+
+	IF (TYPE = SWAMPBOSS)
+	   	SparkSuck(0,SPARKCOLWHIRL, 10, 0, 0) 
+		y = y + PlayerActVelY
+		x = x + PlayerActVelX / 5.0
+		MoveY(0.11 + PlayerActVelY)
+	
+	ELSE
+		MoveY(0.11)
+	ENDIF
+ 	//CheckX = PlayerActVelX
+	//CheckY = PlayerActVelY
+	//CheckZ = PlayerActVelZ
+
+	//MyVar = FSQRT((CheckX * CheckX) + (CheckY * CheckY) + (CheckZ * CheckZ))
+	
+	IF  (myAimTime > 0)
+		myAimTime = myAimTime - 1
+		PointTo(DogX + xOffset, DogY + yOffset, DogZ)
+	ENDIF
+ENDSTATE
+
+STATE KillOff
+	IF (CollWith = PlayerShieldStrat(0))
+		MyFlag = MyFlag | NODISP  
+		MyFlag = MyFlag & LNOT(STRATCOLL)
+		MyVar = 8.0
+		CREATE SPAWN_BLASTEXP 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0
+		CREATE SPAWN_SHIELDDAMAGESOUND 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0
+	ELSE
+		MyFlag = MyFlag | NODISP  
+		MyFlag = MyFlag & LNOT(STRATCOLL)
+//		DeleteBand (trail)
+		MyVar = 8.5
+		CREATE SPAWN_BLASTEXP 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0
+	ENDIF
+	Delete()
+//	TRIGSTOP
+ENDSTATE
+
+STATE KillOffFloor
+//	DeleteBand (trail)
+	MyVar = 10.0
+	MyVar = 8.5
+	CREATE SPAWN_BLASTEXP 0.0, 3.0, -2.0, 0.0, 0.0, 0.0, 0
+	Delete()
+//	TRIGSTOP
+ENDSTATE

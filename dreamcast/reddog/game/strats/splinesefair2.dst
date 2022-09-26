@@ -1,0 +1,120 @@
+//PAL FRIENDLY
+//type 0 : slow
+//	   1 : fast
+
+PARAMINT	type  0
+LOCALINT	time
+LOCALINT	fireLeft
+LOCALINT	trail1
+LOCALINT	fireCount
+LOCALFLOAT	bandScale
+LOCALFLOAT	speed
+LOCALINT	isGenerated
+
+TRIGGER CleanUp
+	DeleteBand(trail1)
+ENDTRIGGER
+
+STATE Init
+	MyFlag = MyFlag | ENEMY | DELETECALLBACK | STRATCOLL | TARGETABLE | LOWCOLL
+   	IF (GetGlobalParamFloat(0) = 1.0)
+		isGenerated = 1
+	ELSE
+		isGenerated = 0
+	ENDIF
+	TRIGSET>Explode WHENDEAD
+	fireLeft = 0
+	time = 0
+	WHILE (MyParentInvalid())
+		MyFlag = MyFlag
+	ENDWHILE
+	
+	IF (isGenerated)
+		OBJECT>ENEMIES\SEFAIR2
+		InheritMyParent()
+	ELSE
+  		MyTarget = MyParent
+	ENDIF
+	InitPath()
+	InitSplineData()
+	health = 20.0
+	speed = 1.5
+	IF (type = 0)
+		speed = 1.5
+	ELSE
+		IF (type = 1)
+			speed = 3.0
+		ENDIF
+	ENDIF
+  	RegisterCollision()
+	fireCount = 0
+	AllocStratSoundBlock(2)
+	RegisterDanger(50.0)
+	SetAudibleRange(0, 30, 300)
+	PLAYSOUND>SEFAIR2 0 1.0 0.0 0.0 0.0 CONTINUOUS
+	trail1 = CreateBand (1, 6, 0, 1, 2.0, 0, 0.0, 0, 1, 1, 1)
+	TRIGSET>Trail EVERY 1  
+	TRIGSET>BandTrigger EVERY 2
+	TRIGSET>CleanUp WHENDELETED
+	STAT>Start
+ENDSTATE
+ 
+STATE BandTrigger
+	bandScale = RandRange(0.1, 0.3)
+	AddBandSegment (trail1, 0.0, -3.5, -0.2, bandScale)
+	TRIGFIN
+ENDSTATE
+
+STATE Trail
+	bandScale = RandRange(0.5, 1.0)
+	RubberBand (trail1, 0.0, -3.5, -0.2, bandScale)
+	TRIGFIN
+ENDSTATE
+
+STATE Start
+	IF (LastWay())
+		IF (isGenerated = 1)
+			ParentVar = 2.0
+		ENDIF
+	 //	DeleteBand(trail1)
+		Delete()
+	ELSE
+	MoveAlongPath(speed)
+	FaceAlongPath(1)
+	TiltAlongPath(1.0)
+	SplineRelFlatten(1.0)
+	IF (SeePlayerZ(0.7))	
+		IF (NearPlayer(45))
+			IF (!NearPlayer(40))
+				IF (time = 0)
+					PLAYSOUND>SEFAIR2_FIRE 1 1.0 0.0 0.0 0.0 0
+					SetGlobalParamInt(0, 2)
+					CREATE SPAWN_ENEMYDROPPEDHOMINGMISSILE -1.46, 0, -1.764, 0, 0, 0, 0
+					CREATE SPAWN_ENEMYDROPPEDHOMINGMISSILE  1.46, 0, -1.764, 0, 0, 0, 0
+					SetGlobalParamInt(0, 0)
+					time = time + 1
+				ENDIF
+			ENDIF
+		ENDIF
+	ENDIF
+	ENDIF
+ENDSTATE
+
+STATE Explode
+	MyFlag = MyFlag | NODISP | FRIENDLY 
+	MyFlag = MyFlag & LNOT(STRATCOLL)
+//	adrelanin = adrelanin + 0.2
+	Score = Score + 500
+//	DeleteBand(trail1)
+	StopSound(0,0.0)
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+
+	IF (isGenerated = 1)
+		ParentVar = 1.0
+	ENDIF
+	CREATE SPAWN_DEATH_Sefair2 0, 0, 0, 0, 0, 0, 0
+	Score = Score + 1000
+	Delete()
+//	TRIGSTOP
+	
+ENDSTATE

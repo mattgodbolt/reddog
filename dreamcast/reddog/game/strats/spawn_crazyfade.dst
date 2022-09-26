@@ -1,0 +1,47 @@
+LOCALFLOAT	delay
+LOCALFLOAT	time
+LOCALFLOAT	alpha
+LOCALFLOAT	FadeFrames
+LOCALFLOAT	HoldTime
+
+STATE Init
+	IF (PAL)
+		delay = 0.0
+		FadeFrames = 8.0
+		HoldTime = 8.0
+	ELSE
+		delay = 0.0
+		FadeFrames = 10.0
+		HoldTime = 10.0
+	ENDIF
+
+	MyParent = 0
+	time = 0.0
+	WHILE (delay > 0.0)
+		delay = delay - 1.0
+	ENDWHILE
+
+	WHILE (time < FadeFrames)
+		time = time + 1.0
+		alpha = time / FadeFrames
+		SetScreenARGB(alpha, 0.0, 0.0, 0.0)
+	ENDWHILE
+
+	time = 0.0
+	WHILE (time < HoldTime)
+		SetScreenARGB(1.0, 0.0, 0.0, 0.0)
+		time = time + 1.0
+	ENDWHILE
+
+	time = 0.0
+	WHILE (time < FadeFrames)
+		time = time + 1.0
+		alpha = 1.0 - (time / FadeFrames)
+		SetScreenARGB(alpha, 0.0, 0.0, 0.0)
+	ENDWHILE
+	Delete()
+ENDSTATE
+
+
+	
+	

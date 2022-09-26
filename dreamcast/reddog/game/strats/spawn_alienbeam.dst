@@ -1,0 +1,313 @@
+
+//the beam laser of the ALIEN
+
+DEFINE HEAD 5
+DEFINE SCALEFAC 3.0
+
+STATE Init
+
+	MakeMeTheLast()
+	//SEE IF WE'RE A CHILD OF THE KILLING RAY
+	IF (GetGlobalParamInt(1) = 1)
+	   		STAT>ChildOfBeam
+	ENDIF
+	
+	//..ELSE, WE COULD BE THE BLAST FROM THE BEAM
+	IF (GetGlobalParamInt(1) = 2)
+		AllocStratSoundBlock(1)
+		PLAYSOUND>ICEB_STATIC 0 1.0 0.0 0.0 0.0 CONTINUOUS
+
+		STAT>ExplodeOfBeam
+	ENDIF
+
+   	//we are the main beam
+	AllocStratSoundBlock(1)
+	SetAudibleRange(0,0,800.0)
+   //	PLAYSOUND>ICEB_LASER_BEAM_CUT 0 1.0 0.0 0.0 0.0 CONTINUOUS
+  	
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+   	OBJECT> BOSSES\ICEBOSS\ICEBOSSBEAM
+	
+	frame = 0
+	STAT>Link
+
+
+ENDSTATE
+
+DEFINE INNER 1
+DEFINE TIP 2
+
+STATE ChildOfBeam
+	OBJECT>BOSSES\ALIENBOSS\ALIENBeamy
+	HideObject(TIP)
+    DontFogMeOut()
+	scalex = MyParentScaleX
+	scaley = MyParentScaleY
+	dist = Ssin(ParentFrame) * 0.25
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+   //	SetSpecularColour(0, 0.9, 0.0, 0.0)
+	trans = 1.0
+	LOOP (2)
+	scaley = MyParentScaleY
+	//	MyFlag = MyFlag
+	ENDLOOP
+
+	HideObject(INNER)
+
+	MoveX(dist)
+	LOOP (4)
+	scaley = MyParentScaleY
+		trans = trans - 0.25
+
+	 //	MyFlag = MyFlag
+	ENDLOOP
+
+	Delete()
+
+ENDSTATE
+
+
+TRIGGER Child
+	frame =  frame + ((TWOPI / 360.0) * 6.0)
+	SetGlobalParamInt(1,1)
+	CREATE SPAWN_ALIENBEAM 0, 0, 0, 0, 0, 0, 0
+	ClearGlobalParams()
+	TRIGFIN
+ENDTRIGGER
+
+
+//CREATE A BLAST AT THE TIP OF THE BEAM
+TRIGGER Blast
+	SetGlobalParamInt(1,2)
+	CREATE SPAWN_ALIENBEAM 0, 0, 0, 0, 0, 0, TIP
+	ClearGlobalParams()
+	TRIGFIN
+
+ENDTRIGGER
+
+
+
+STATE Die
+	WHILE (scalex > 0.1)
+		scalex = scalex - 0.1
+		scalez = scalex
+	ENDWHILE
+
+	Delete()
+
+ENDSTATE
+
+STATE ExplodeOfBeam
+  	MakeMeTheLast()
+  //	CheckY = MyParentScaleY
+  //	MyVar = 11.0
+
+	//WHILST THE PARENT BEAM IS NOT SHRINKING, MAKE SOME FIRE WAREZ
+   //	WHILE (CheckY <= MyParentScaleY)
+  //	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+	//ENDWHILE
+
+	   //				LOOP (5)
+	  DoSpark(30, 0.0, 0.0, 1.0, 1.0, 6.3, 20, 255, 255, 255)
+	   //				ENDLOOP
+	Delete()
+
+ENDSTATE
+
+
+LOCALINT ONESECONETHIRD
+LOCALINT ONESECTWOTHIRD
+LOCALINT ONESEC
+
+DEFINE PAL_ONESECHALF 37
+DEFINE NTSC_ONESECHALF 45
+LOCALINT time
+
+LOCALFLOAT SaveX
+LOCALFLOAT SaveY
+LOCALFLOAT SaveZ
+LOCALFLOAT disttogo
+LOCALINT valid
+LOCALFLOAT dist
+
+//WAS PLAYER HAS BEEN HIT, WE'LL MAINTAIN THE BEAM HERE FOR ABOUT 1.5 SECS
+LOCALINT SET
+
+LOCALINT Lightning
+
+TRIGGER TESTING
+	disttogo = PlayerDistXY()
+  //	OX = DogX - SX
+  //	OY = DogY - SY
+
+	TRIGFIN
+ENDTRIGGER
+
+DEFINE LIGHTRAD 6.0
+
+TRIGGER LIGHTFLICK
+	frame = RandRange(-3.4, 3.4)
+	IF (PAL)
+		frame = frame * 1.2
+	ENDIF
+	SetPointLightRadius (lightID, LIGHTRAD, 10.0 + frame)
+	TRIGFIN
+ENDTRIGGER
+
+LOCALINT lightID
+STATE Link
+	SpecialStrat = 0
+	IF (PAL)
+		ONESEC = 25
+		ONESECONETHIRD = 33
+		ONESECTWOTHIRD = 41
+	//	CHARGETIME = PAL_ONESECHALF
+	ELSE
+		ONESEC = 30
+		ONESECONETHIRD = 40
+		ONESECTWOTHIRD = 50
+  //		CHARGETIME = NTSC_ONESECHALF
+	ENDIF
+
+	MyFlag = MyFlag | ENEMY	| NODISP
+	OBJECT>BOSSES\ALIENBOSS\ALIENBeamy
+	HideObject(TIP)
+    DontFogMeOut()
+	CheckZ = DogZ
+	//ensure we are linked to the boss
+	MyParent = BossStrat
+ 	LinkToParentObject(HEAD, 0, 0, 0, 0, 0, 0)
+	
+
+
+	disttogo = PlayerDistXY()
+	TRIGSET>TESTING EVERY 5
+	TRIGSET>LIGHTFLICK EVERY 1
+
+
+
+	valid = 1
+	trans = 1.0
+	MyFlag2 = MyFlag2 & LNOT(TRANSLUCENT)
+
+	scalex = 0.1
+	MyVar = 0
+	lightID = MakePointLight(0.9, 0.0, 0.0, LIGHTRAD, 10, 0,0,0)
+	WHILE ((valid) AND (MyParentFlag))
+
+   		//dist = 10.0
+
+ 
+   //	  Lightning = DrawLightning (0, 0, 1.4, -0.25, Lightning,2)
+	IF (scalex < 48.0)
+			scalex = scalex + 3.0
+		ENDIF
+
+   		KillMyVelocity()
+
+		LinkToParentObject(HEAD, 0, 0, 0, 0, 0, 0)
+	   	//dist = PlayerDistXY()
+		dist = dist + ((disttogo - dist) * 0.04)
+	  	//these lines put in to negate any bounce factor from the anim
+	   	SetCheckPosRel(0, 0, dist / scaley, 0)
+	   	PointTo(CheckX,CheckY,DogZ)
+
+	 //	CheckX = CheckX + (OX / 10.0)
+	 //	CheckY = CheckY + (OY / 10.0)
+
+
+
+	   	IF (BeamHit(1.0,1.0,DogX,DogY,DogZ))
+
+			SaveX = x - DogX
+			SaveY = y - DogY
+			SaveZ = z - DogZ
+			SaveX = SaveX * SaveX
+			SaveY = SaveY * SaveY
+			SaveZ = SaveZ * SaveZ
+
+			scaley = FSQRT(SaveX + SaveY + SaveZ)
+
+			  		IF (!SET)
+						SET = 1
+	   			    	TRIGSET>Child EVERY 2
+	   	   			  	TRIGSET>Blast EVERY 1
+						PLAYSOUND>ICEB_LASER_BEAM_CUT 0 1.0 0.0 0.0 0.0 CONTINUOUS
+					ENDIF
+
+
+		  	MyFlag = MyFlag & LNOT(NODISP)
+		 	//HURT REDDOG
+	   	   	PlayerHealth = PlayerHealth - MyVar
+			IF (MyVar < 0.75)
+		 	  	MyVar = MyVar + 0.12
+			ENDIF
+	   //	ENDIF
+	   	ELSE
+				IF (ValidToBeam(0, 1.0,	0, 1))
+					scaley = scaley + dist / (ONESEC / 5)
+				ELSE
+			  		IF (!SET)
+						SET = 1
+	   			    	TRIGSET>Child EVERY 2
+	   	   			  	TRIGSET>Blast EVERY 1
+						PLAYSOUND>ICEB_LASER_BEAM_CUT 0 1.0 0.0 0.0 0.0 CONTINUOUS
+					ENDIF
+	 	   			MyFlag = MyFlag & LNOT(NODISP)
+				ENDIF
+	   	ENDIF
+
+
+		IF (SpecialStrat)
+			valid = 0
+		ELSE
+			valid = 1
+		ENDIF
+
+		MyVar = MyVar * 0.99
+
+		time = time + 1
+	ENDWHILE
+
+
+		SaveX = x
+		SaveY = y
+		SaveZ = z
+
+	time  = 0
+
+	WHILE ((scaley > 1.0))
+	   	x = CheckX
+		y = CheckY
+		z = CheckZ
+		
+		//LinkToParentObject(HEAD, 0, 0, 0, 0, 0, 0)
+	   	IF (BeamHit(1.0,3.0,DogX,DogY,DogZ))
+		 	//HURT REDDOG
+	   	 	PlayerHealth = PlayerHealth - 1.5
+	   	ENDIF
+
+		
+		PointTo(SaveX,SaveY,SaveZ)
+		IF (scaley > 1.0)
+			scaley = scaley - dist / (ONESEC / 4)
+		ENDIF
+		time = time + 1
+
+	ENDWHILE
+
+
+   //	GlobalVar2 = 0
+  	RemoveLight (lightID)
+	Delete()
+
+ENDSTATE
+
+
+
+
+//FOCAL BEAM CODE
+//PARENT SEMAPHORE OF 99 WILL KILL ME
+
+DEFINE BEAMTURRETLENGTH 15.0
+

@@ -1,0 +1,61 @@
+// Spawn point
+PARAMINT	SpawnID 255
+LOCALINT	typeID
+LOCALINT	spawnNum
+
+DEFINE NEAREST_DIST	15
+
+STATE Init
+	IF (!(MyFlag2 & OWNIPARAMS))
+		SpawnID = 255
+	ENDIF
+	spawnNum = RegisterSpawnPoint(SpawnID)
+
+	// Just to be paranoid
+	SetSpawnActivity (spawnNum, 0)
+	MyVar = 0.0
+
+	STAT>WaitForActive
+ENDSTATE
+
+STATE WaitForActive
+	// We're not yet ready
+	SetSpawnActivity (spawnNum, 0)
+	MyVar = 0.0
+	
+	// Wait until everyone's moved around a bit
+	WHILE (NearAnyPlayer (NEAREST_DIST))
+		MyVar = MyVar
+	ENDWHILE
+
+	STAT>WaitForSignal
+ENDSTATE
+
+STATE WaitForSignal
+
+	// We're now ready to spawn
+	SetSpawnActivity (spawnNum, 1)
+
+	// Hang around waiting for a signal
+	WHILE (MyVar = 0.0)
+		// Has someone crept near us?
+		IF (NearAnyPlayer(NEAREST_DIST))
+			STAT>WaitForActive
+		ENDIF
+	ENDWHILE
+
+	// Work out whether we apply to this spawning
+	// It's possible that two players die in the same frame
+	// from different teams, so we may get called in error
+	typeID = TOINT(MyVar)
+	IF (typeID & SpawnID)
+		CREATE	SPAWN_MainplayerMP 0,0,0, 0,0,0, 0
+	ENDIF
+
+	// Wait around a bit to prevent too much spawning
+	LOOP 30
+		MyVar = 0
+	ENDLOOP
+
+	STAT>WaitForActive
+ENDSTATE

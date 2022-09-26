@@ -1,0 +1,52 @@
+//
+// ENV_Environment.dst
+// Changes environment parms
+//
+
+PARAMINT		DomeOn		-1
+PARAMFLOAT		FogRed		-1.0
+PARAMFLOAT		FogGreen	-1.0
+PARAMFLOAT		FogBlue		-1.0
+PARAMFLOAT		FogFar		-1.0
+PARAMFLOAT		FogNear		-1.0
+PARAMFLOAT		CameraFar	-1.0
+
+STATE Init
+	// Set up defaults
+	IF (!(MyFlag & OWNFPARAMS)) 
+		FogRed = -1
+		FogGreen = -1
+		FogBlue = -1
+		FogFar = -1
+		FogNear = -1
+		CameraFar = -1
+	ENDIF
+	IF (!(MyFlag2 & OWNIPARAMS))
+		DomeOn = -1
+	ENDIF
+
+	// Check we have an activation
+	IF (!HasActivation(0))
+		SetEnvironmentParms (FogNear, FogFar, CameraFar, DomeOn, FogRed, FogGreen, FogBlue)
+		Delete()
+	ELSE
+
+	// Go into sleep mode
+	STAT>WaitForActivation
+	ENDIF
+ENDSTATE
+
+// Wait for the player to enter the activation zone
+STATE WaitForActivation
+	IF ( PlayerNearActivationXY(0) OR PlayerNearActivationXY(1) )
+		SetEnvironmentParms (FogNear, FogFar, CameraFar, DomeOn, FogRed, FogGreen, FogBlue)
+		STAT>WaitForLeaveActivation
+	ENDIF
+ENDSTATE
+
+// Wait for the player to leave the activation zone
+STATE WaitForLeaveActivation
+	IF (!( PlayerNearActivationXY(0) OR PlayerNearActivationXY(1) ))
+		STAT>WaitForActivation
+	ENDIF
+ENDSTATE

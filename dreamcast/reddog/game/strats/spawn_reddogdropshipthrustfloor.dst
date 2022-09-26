@@ -1,0 +1,37 @@
+LOCALINT id
+
+STATE Init
+	scalex = 0.01
+	scaley = 0.01
+	scalez = 0.01
+	MakeMeTheLast()
+	OBJECT>REDDOG\RedDogDropshipThrustFloor
+	z = GetGlobalParamFloat(0)
+	MyVar = RandRange(0, 10)
+	LOOP (MyVar)
+		MyFlag = MyFlag
+	ENDLOOP
+	MODELANIM>REDDOG\RedDogDropshipThrustFloor.rdo>thrust>REPEAT
+	STAT>Run
+ENDSTATE
+
+STATE Run
+	IF (scalex < 1.0)
+		scalex = scalex + 0.0333
+		scaley = scaley + 0.0333
+		scalez = scalez + 0.0333
+	ELSE
+		STAT>Continue
+	ENDIF
+ENDSTATE
+
+STATE Continue
+	IF (parentz > z + 3.0)
+		scalex = scalex - 0.033333
+		scaley = scaley - 0.033333
+		scalez = scalez - 0.033333
+	ENDIF
+	IF (scalex <= 0.0)
+		Delete()
+	ENDIF
+ENDSTATE

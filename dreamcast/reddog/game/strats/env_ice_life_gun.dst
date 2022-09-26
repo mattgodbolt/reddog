@@ -1,0 +1,225 @@
+PARAMINT type 0
+PARAMINT gunHits 100
+PARAMFLOAT	rotation 0.01
+
+LOCALINT tempi
+LOCALFLOAT tempf
+LOCALFLOAT zturn
+LOCALFLOAT sh
+LOCALFLOAT objectcolour
+LOCALFLOAT time
+LOCALFLOAT pitch
+
+STATE Init
+	SetSem(2, 0)
+	IF (GetGlobalParamInt(0) = 1)
+		STAT>ExplodeBack
+	ENDIF
+	IceLiftGun = Me
+	MyFlag = MyFlag | ENEMY | STRATCOLL
+	
+	MyFlag2 = MyFlag2 | SPECULAR
+	SetSem(0, 0)
+	SetSem(1, 0)
+	IF (!(MyFlag2 & OWNIPARAMS))
+		type = 0
+		gunHits = 100
+	ENDIF
+
+	sh = gunHits
+	IF (!(MyFlag & OWNFPARAMS))
+		rotation = 0.01
+	ENDIF
+	RegisterCollision()
+	time = 0.0
+	zturn = 0
+	HideObject(2)
+	HideObject(7)
+	NoCollObject(1)
+	NoCollObject(8)
+	InitHDC()
+	IF (type = 0)
+		HideObject(6)
+		NoCollObject(6)
+	ELSE
+		NoCollObject(3)
+		NoCollObject(4)
+		NoCollObject(5)
+	ENDIF
+	
+	CalculateStratPolyData(1)
+
+	IF (HasActivation(1))
+		TRIGSET>VisTrig EVERY 1
+	ENDIF
+	WHILE (!PlayerNearActivationXY(0))
+		MyFlag = MyFlag
+	ENDWHILE
+	
+	AllocStratSoundBlock(3)
+	pitch = -0.75
+	SetPitch(2, pitch)
+	PLAYSOUND>GUN_TURN2 2 0.75  0.0 0.0 0.0  CONTINUOUS
+
+	TRIGSET>Always EVERY 1
+	TRIGSET>Always WHENPAUSED
+	TRIGSET>Turn EVERY 1
+	STAT>Start
+ENDSTATE
+
+LOCALFLOATSPECAMOUNT
+
+TRIGGER Turn
+	IF (type = 2)
+		IF (GetSem(0) = 0)
+			ObjectTowardPlayerXZ(1, 0.0, rotation, 10000.0, 0.0)
+			ObjectTowardPlayerXZ(2, 0.0, rotation, 10000.0, 0.0)
+			CrntRotToIdleRotZ(1, 0.05)
+			CrntRotToIdleRotZ(2, 0.05)
+			CrntRotToIdleRotX(1, 0.05)
+			CrntRotToIdleRotX(2, 0.05)
+		ENDIF
+	ELSE
+		tempf = GetObjectCrntRot(1, MODEZ)
+		SetObjectCrntRot(1, tempf + zturn, MODEZ)
+		tempf = GetObjectCrntRot(2, MODEZ)
+		SetObjectCrntRot(2, tempf + zturn, MODEZ)
+	ENDIF
+	// Pitch up the gun turning over 5 secs
+	IF (pitch < 0.0)
+		pitch = pitch + 0.005
+		SetPitch(2, pitch)
+	ENDIF
+	CalculateStratPolyData(0)
+	IF (SPECAMOUNT > 0.1)
+		SPECAMOUNT = SPECAMOUNT - 0.1
+	ELSE
+		SPECAMOUNT = 0
+	ENDIF
+	SetSpecularColour(0, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+	TRIGFIN
+ENDTRIGGER
+
+TRIGGER VisTrig
+	IF (PlayerNearActivationXY(1))
+		MyFlag = MyFlag & LNOT(NODISP)
+	ELSE
+		MyFlag = MyFlag | NODISP
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+TRIGGER Always
+	
+	IF (sh > 0.0)
+		IF (GetSem(2) = 0)
+			DrawStratBar(1, sh / gunHits, 0, 1)
+		ENDIF
+	ENDIF
+	IF (ObjectHitStrat(3) OR ObjectHitStrat(4) OR ObjectHitStrat(5))
+		PLAYSOUND>ENEMY_HIT 0 1.0 0.0 0.0 0.0 RANDOM
+		SPECAMOUNT = 0.8
+		sh = sh - 1.0
+	ENDIF
+	
+	IF (sh <= 0.0)
+		TRIGRESET
+		TRIGSTOP
+		STAT>Dead
+	ENDIF
+
+	IF (GetSem(1) = 4)
+		ActivateObjectCollision(3)
+		ActivateObjectCollision(4)
+		ActivateObjectCollision(5)
+		HideObject(6)
+		NoCollObject(6)
+		SetSem(1, 5)
+	ENDIF
+
+		
+
+	objectcolour = (Ssin(time) + 1.0) * 0.5
+	SetSpecularColour(3, objectcolour, objectcolour * 0.1, objectcolour * 0.1)
+	SetSpecularColour(4, objectcolour, objectcolour * 0.1, objectcolour * 0.1)
+	SetSpecularColour(5, objectcolour, objectcolour * 0.1, objectcolour * 0.1)
+	time = time + 0.15
+
+	TRIGFIN
+ENDTRIGGER
+
+STATE Start
+	IF (zturn < rotation)
+		zturn = zturn + 0.0005
+	ENDIF
+	
+ENDSTATE
+
+STATE Dead
+	SetSem(0, 1)
+	SetGlobalParamInt(0, 1)
+	CREATE Env_Ice_Life_Gun 0, 0, 0, 0, 0, 0, 8
+	SetGlobalParamInt(0, 0)
+
+	SetAudibleRange(0, 100, 300)
+	SetAudibleRange(1, 100, 300)
+	
+	PLAYSOUND>EX_LARGE_BLAST1 1 1.0  0.0 0.0 0.0  RANDOM
+	CREATE ENV_SPAWN_GENERIC_EXPLOSION 0, 0, 0, 0, 0, 0, 4
+	CREATE ENV_SPAWN_GENERIC_EXPLOSION 0, 0, 0, 0, 0, 0, 8
+	
+	NoCollObject(7)
+	HideObject(8)
+	HideObject(3)
+	HideObject(4)
+	HideObject(5)
+	NoCollObject(3)
+	NoCollObject(4)
+	NoCollObject(5)
+	Score = Score + 5000
+	WHILE (zturn > 0.0)
+		zturn = zturn - 0.0005
+		CalculateStratPolyData(0)
+		IF (pitch > -0.75)
+			pitch = pitch - 0.005
+			SetPitch(2, pitch)
+		ENDIF
+	ENDWHILE
+	StopSound(2, 0.0)
+	zturn = 0.0
+	CREATE ENV_Factory_Smoke_generator 3, 0, -1.0, 0, 0, 0, 4
+	CalculateStratPolyData(1)
+	PLAYSOUND>EX_LARGE6 0 1.0  0.0 0.0 0.0  RANDOM
+	CREATE ENV_SPAWN_GENERIC_EXPLOSION 0, 0, 0, 0, 0, 0, 1
+	tempi = 0
+	LOOP (60)
+		IF (tempi = 20)
+			CREATE ENV_SPAWN_GENERIC_EXPLOSION 0, 10, 15, 0, 0, 0, 1
+		ENDIF
+		IF (tempi = 40)
+			PLAYSOUND>EX_LARGE_BLAST1 1 1.0  0.0 0.0 0.0  RANDOM
+			CREATE ENV_SPAWN_GENERIC_EXPLOSION 0, 15, 10, 0, 0, 0, 1
+		ENDIF
+		IF (tempi = 50)
+			CREATE ENV_SPAWN_GENERIC_EXPLOSION 0, 10, 10, 0, 0, 0, 1
+		ENDIF
+		IF (tempi = 55)
+			PLAYSOUND>EX_LARGE_BLAST1 0 1.0  0.0 0.0 0.0  RANDOM
+			CREATE ENV_SPAWN_GENERIC_EXPLOSION 0, -5, 0, 0, 0, 0, 1
+		ENDIF
+	ENDLOOP
+	IF (MyParent)
+		DeleteMyParent()
+	ENDIF
+	zturn = 0.0
+	
+	STAT>DoNothing
+ENDSTATE
+
+STATE DoNothing
+ENDSTATE
+
+STATE ExplodeBack
+	OBJECT>Explodables\ice_gun_weak_point
+	DESTROYME SPAWN_EXPLODINGBITS
+ENDSTATE

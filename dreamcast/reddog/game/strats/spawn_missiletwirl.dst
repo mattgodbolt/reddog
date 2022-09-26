@@ -1,0 +1,61 @@
+LOCALINT trail
+DEFINE size 0.2
+DEFINE TRAIL_OFFSET 0.4
+
+TRIGGER CleanUp
+	DeleteBand (trail)
+ENDTRIGGER
+
+STATE Init
+	MyFlag = MyFlag | FLOORCOLL | DELETECALLBACK | STRATCOLL | ENEMY | NOTEXPLODE |  BULLETTYPE | LOWCOLL
+    MyFlag2 = MyFlag2 | BULLET_CF
+    SetFriction(0.0,0.0,0.0)
+	OBJECT> WEAPON\MISSILE08
+  	RegisterCollision()
+	TRIGSET>KillOff	WHENHIT
+	TRIGSET>KillOffFloor	ONFLOOR
+	TRIGSET>KillOffFloor	EVERY 100
+	TRIGSET>CleanUp WHENDELETED
+	damage = 100.0
+	trail = CreateBand (1, 16, 0, 1, 0, 0, 1, 1, 0, 0, 0)
+	SetBandRotXYZandScaling (trail, 0, 0, 0, 1.0, 1.0, 1.0)
+	AddBandSegment (trail, TRAIL_OFFSET, 0, 0, size)
+	AddBandSegment (trail, TRAIL_OFFSET, 0, 0, size)
+	TRIGSET>Trailer EVERY 1
+	TRIGSET>BandTrigger EVERY 1
+	MoveY(2.0)
+	//PointTo(DogX, DogY, DogZ)
+	STAT>Start
+ENDSTATE 
+
+STATE BandTrigger
+	AddBandSegment (trail, TRAIL_OFFSET, 0, 0, size)
+	TRIGFIN
+ENDSTATE
+
+STATE Trailer
+	RubberBand (trail, TRAIL_OFFSET, 0, 0, size)
+	TRIGFIN
+ENDSTATE
+
+STATE Start
+	RelRotateY(0.5)
+ENDSTATE
+
+STATE KillOff
+	MyFlag = MyFlag | NODISP  
+	MyFlag = MyFlag & LNOT(STRATCOLL)
+//	DeleteBand (trail)
+	MyVar = 7.0
+	CREATE SPAWN_BLASTEXP 0.0, 3.0, -2.0, 0.0, 0.0, 0.0, 0
+	Delete()
+//	TRIGSTOP
+ENDSTATE
+
+STATE KillOffFloor
+//	DeleteBand (trail)
+	MyVar = 7.0
+	CREATE SPAWN_BLASTEXP 0.0, 3.0, -2.0, 0.0, 0.0, 0.0, 0
+	Delete()
+//	TRIGSTOP
+ENDSTATE

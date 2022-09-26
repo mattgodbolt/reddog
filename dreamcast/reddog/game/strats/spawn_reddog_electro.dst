@@ -1,0 +1,186 @@
+LOCALFLOAT	time
+LOCALFLOAT	px
+LOCALFLOAT	py
+LOCALFLOAT	pz
+LOCALFLOAT	ax
+LOCALFLOAT	ay
+LOCALFLOAT	az
+LOCALFLOAT	tempf
+LOCALINT	padPush
+LOCALINT	padPress
+LOCALINT	ft
+LOCALINT	pos
+LOCALINT	tempi
+
+DEFINE		ELECTRO					11
+
+STATE Init
+  	MyFlag = MyFlag | FRIENDLY | FLOORCOLL
+	MyFlag2 = MyFlag2 | PLAYER_CF
+	OBJECT>REDDOG\WELECTRO DOCKLANDS
+	SetObjectShadowState(1)
+	SetFriction(0.5, 0.5, 0.5)
+	time = 0.0
+	damage = 1.0
+	IF (LeftGunPickUp = 1)
+		IF (RightGunPickUp = 1)
+			pos = 3
+		ELSE
+			pos = 2
+		ENDIF
+	ELSE
+		pos = 1
+	ENDIF
+	TRIGSET>Always EVERY 1
+	x = DogX
+	y = DogY
+	z = DogZ + 0.5
+	ft = 100
+	AllocStratSoundBlock(1)
+	STAT>Start
+ENDSTATE
+
+TRIGGER Always
+	ft = ft + 1
+	FacePlayerAim(ParentPlayerNumber)
+	time = time + 1.0
+	tempf = time * 0.05
+	IF (pos = 1)
+		px = parentLeftGunX + Ssin(tempf * 2.0) * 0.2
+		py = parentLeftGunY + Scos(tempf) * 0.2
+		pz = parentLeftGunZ + 1.5 + Ssin(tempf * 2.3) * 0.1
+	ENDIF
+	IF (pos = 2)
+		px = parentRightGunX + Ssin(tempf * 2.0) * 0.2
+		py = parentRightGunY + Scos(tempf) * 0.2
+		pz = parentRightGunZ + 1.5 + Ssin(tempf * 2.3) * 0.1
+	ENDIF
+	IF (pos = 3)
+		px = parentTopGunX + Ssin(tempf * 2.0) * 0.2
+		py = parentTopGunY + Scos(tempf) * 0.2
+		pz = parentTopGunZ + 1.5 + Ssin(tempf * 2.3) * 0.1
+	ENDIF
+	ax = (px - x) * 15.0 
+	ay = (py - y) * 15.0
+	az = (pz - z) * 15.0
+	IF (ScoobyDoo)
+		HoldPlayerVY = 4.0
+	ENDIF
+	x = x + HoldPlayerVX * 0.5
+	y = y + HoldPlayerVY * 0.5
+	z = z + HoldPlayerVZ * 0.5
+	ApplyAbsForce(ax, ay, az, 0, 0, 0, 1.0)
+	
+	IF (MyParentFlag & NODISP)
+		MyFlag = MyFlag | NODISP
+	ELSE
+		MyFlag = MyFlag & LNOT(NODISP)
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+LOCALINT VALID
+
+
+STATE Start
+	
+	IF (MyParentHealth <= 0.0)
+		SetSecondaryWeaponType(0, 0)
+		STAT>DIE
+	ENDIF 
+	
+
+	VALID = !((PlayerState & PS_SCRIPTHELD) | (PlayerState & PS_INDROPSHIP))
+	IF (VALID)
+		padPush = GetPadPush(0)
+	ELSE
+		padPush = 0
+	ENDIF
+
+   //	padPush = 	GetPadPush(0)
+	padPress = 	GetPadPress(0)
+	
+	IF (padPush & PADB)
+		ft = 0
+	ENDIF
+
+	IF (padPress & PADB)
+		ft = 0
+		//UnhideObject(1)
+		IF (!IsPlaying(0))
+			PLAYSOUND>ELECLOOP 0 0.9 0.0 0.0 0.0 CONTINUOUS
+		ENDIF
+	ELSE
+		IF (IsPlaying(0))
+			StopSound(0,0)
+		ENDIF
+		//HideObject(1)
+	ENDIF
+	
+	IF (ft = 0)
+		MyStratToWorld(0.0, 1.5, 0.0)
+		ax = CheckX
+		ay = CheckY
+		az = CheckZ
+		MyStratToWorld(0.5, 0.0, 0.0)
+		DrawShock2(ax, ay, az, CheckX, CheckY, CheckZ, 0.1, 1.0, 1.0, 2)
+		MyStratToWorld(-0.5, 0.0, 0.0)
+		DrawShock2(ax, ay, az, CheckX, CheckY, CheckZ, 0.1, 1.0, 1.0, 2)
+		MyStratToWorld(0.5, 0.0, 0.5)
+		DrawShock2(ax, ay, az, CheckX, CheckY, CheckZ, 0.1, 1.0, 1.0, 2)
+		MyStratToWorld(0.5, 0.0, -0.5)
+		DrawShock2(ax, ay, az, CheckX, CheckY, CheckZ, 0.1, 1.0, 1.0, 2)
+		MyStratToWorld(-0.5, 0.0, 0.5)
+		DrawShock2(ax, ay, az, CheckX, CheckY, CheckZ, 0.1, 1.0, 1.0, 2)
+		MyStratToWorld(-0.5, 0.0, -0.5)
+		DrawShock2(ax, ay, az, CheckX, CheckY, CheckZ, 0.1, 1.0, 1.0, 2)
+		RedDogElectroShock()	
+	ENDIF
+
+	tempi = GetSecondaryWeaponAmount(0)
+
+	IF (tempi <= 0)
+		MyFlag2 = MyFlag2 | TRANSLUCENT
+		trans = 1.0
+		LOOP (30)
+			trans = trans - 0.03333
+		ENDLOOP
+		SetSecondaryWeaponType(0, 0)
+		STAT>DIE
+	ENDIF
+
+	tempi = GetSecondaryWeaponType(0)
+
+	IF (tempi != ELECTRO)
+		MyFlag2 = MyFlag2 | TRANSLUCENT
+		trans = 1.0
+		LOOP (30)
+			trans = trans - 0.03333
+		ENDLOOP
+		STAT>DIE
+	ENDIF
+	
+	IF (PlayerDistXY() > 20.0)
+		StopSound(0,0)
+		STAT>Restart
+	ENDIF
+ENDSTATE
+
+STATE DIE
+	Delete()
+ENDSTATE
+
+
+STATE Restart
+	MyFlag = MyFlag & LNOT(FLOORCOLL)
+	LOOP (30)
+		MyFlag = MyFlag
+	ENDLOOP
+	x = DogX
+	y = DogY
+	z = DogZ + 0.5
+	LOOP(2)
+		MyFlag = MyFlag
+	ENDLOOP
+	MyFlag = MyFlag | FLOORCOLL
+	STAT>Start
+ENDSTATE

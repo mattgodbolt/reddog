@@ -1,0 +1,79 @@
+LOCALINT id
+LOCALINT flareOn
+LOCALFLOAT amount
+
+LOCALFLOAT	ax
+LOCALFLOAT	ay
+LOCALFLOAT	az
+
+STATE Init
+	MyFlag = MyFlag | NODISP
+	MakeMeTheLast()
+
+	ax = GetGlobalParamFloat(0)
+	ay = GetGlobalParamFloat(1)
+	az = GetGlobalParamFloat(2)
+
+	TRIGSET>CheckParent EVERY 1
+	TRIGSET>Linking EVERY 1
+
+	id = GetUniqueID() & 3
+	flareOn = 0
+	TRIGSET>FlareDraw WHENPAUSED
+	TRIGSET>FlareDraw EVERY 1
+	STAT>OffScreen
+ENDSTATE
+
+STATE OffScreen
+	IF ((GetCurrentFrame() & 3) = id)
+		IF (OnScreen())
+			IF (!Obscured())
+				flareOn = 1
+				STAT>OnScreen
+			ENDIF
+		ENDIF
+	ENDIF
+ENDSTATE
+
+TRIGGER Linking
+	IF (MyParentFlag AND (MyParentHealth > 0))
+		LinkToParentObject (0, 0, 0, 0, ax, ay, az)
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+STATE OnScreen
+	WHILE ((GetCurrentFrame() & 3) != id)
+		MyFlag = MyFlag
+	ENDWHILE
+	IF (!OnScreen() || Obscured())
+		flareOn = 0
+		STAT>OffScreen
+	ENDIF
+ENDSTATE
+
+TRIGGER FlareDraw
+	IF (flareOn)
+		amount = amount + 0.1
+		IF (amount > 1)
+			amount = 1
+		ENDIF
+	ELSE
+		amount = amount - 0.1
+		IF (amount < 0)
+			amount = 0
+		ENDIF
+	ENDIF
+	IF (amount)
+		DrawFlare(amount)
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+STATE CheckParent
+	IF (!MyParentFlag || MyParentHealth <= 0)
+		Delete()
+	ELSE
+		TRIGFIN
+	ENDIF
+ENDSTATE

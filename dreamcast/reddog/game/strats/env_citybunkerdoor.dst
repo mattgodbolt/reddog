@@ -1,0 +1,44 @@
+LOCALINT	i
+LOCALFLOAT tempf
+
+STATE Init
+	MyFlag = MyFlag | ENEMY | STRATCOLL
+	InitHDC()
+	CalculateStratPolyData(1)
+	IF (MyParent)
+		WHILE (MyParentInvalid())
+			MyFlag = MyFlag
+		ENDWHILE
+	ELSE
+		Delete()
+	ENDIF
+	WHILE (ParentDistXY() > 40)
+		MyFlag = MyFlag
+	ENDWHILE
+	i = 0
+	LOOP (40)
+		i = i + 1
+		tempf = SmoothFromTo(5, i, 40)
+		MoveZRel(tempf)
+		CalculateStratPolyData(0)
+	ENDLOOP
+
+	LOOP (120)
+		MyFlag = MyFlag
+	ENDLOOP
+
+	i = 0
+	LOOP (40)
+		i = i + 1
+		tempf = SmoothFromTo(5, i, 40)
+		MoveZRel(-tempf)
+		CalculateStratPolyData(0)
+	ENDLOOP
+	STAT>DoNothing
+ENDSTATE
+
+STATE DoNothing
+ENDSTATE
+
+
+

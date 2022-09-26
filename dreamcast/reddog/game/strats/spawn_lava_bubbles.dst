@@ -1,0 +1,19 @@
+
+
+STATE Init
+	MyFlag = MyFlag | ENEMY
+	OBJECT>SCENERY\Lava\Bubble1
+	scalex = RandRange(1.0, 4.0)
+	scaley = scalex
+	scalez = scalex
+
+	MODELANIM>Scenery\Lava\Bubble1.RDO>Play>0
+	WHILE (MyAnimFlag & RUNNING)
+		MyFlag = MyFlag
+	ENDWHILE
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	Delete()
+ENDSTATE

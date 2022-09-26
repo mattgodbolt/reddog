@@ -1,0 +1,71 @@
+PARAMFLOAT Damage
+PARAMFLOAT Health
+PARAMFLOAT seconds
+LOCALFLOAT time
+
+STATE Init2
+
+ENDSTATE
+
+
+STATE Init
+	MyFlag = MyFlag | STRATCOLL | ENEMY | RESPAWN 
+	RegisterCollision()
+	MyFlag2 = MyFlag2 | COLLMOVE | TRANSLUCENT
+	damage = Damage
+	trans = 1.0
+	IF (seconds != 0.0)
+		MyFlag2 = MyFlag2 | RESPAWN
+	ENDIF
+
+	IF (Health = 0.0)
+		health = 1.0
+	ELSE
+		health = Health
+	ENDIF
+
+	IF (HasActivation(0))
+		WHILE (!PlayerNearActivationXY(0))
+			 MyFlag = MyFlag
+		ENDWHILE
+		health = Health
+  	ENDIF
+	InitHDC()
+	CalculateStratPolyData(1)
+
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	MyFlag = MyFlag
+	IF (health < 0.0)
+		IF (MyFlag2 & RESPAWN)
+			health = Health
+			CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+			Score = Score + 50
+			DESTROYME SPAWN_EXPLODINGBITS
+			time = seconds * 30.0
+			WHILE (time > 0.0)
+				time = time - 1.0
+			ENDWHILE
+			IF HasActivation(0)
+				WHILE MPPlayerNearActivation (0)
+					MyFlag = MyFlag
+				ENDWHILE
+			ENDIF
+			MyFlag = MyFlag | STRATCOLL
+			MyFlag = MyFlag & LNOT(NODISP)
+			time = 50
+			trans = 0.0
+			WHILE (time > 0.0)
+				trans = trans + 0.02	
+				time = time - 1.0
+			ENDWHILE
+			trans = 1.0
+		ELSE
+			CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+			SetParentSem (0,1)
+			DESTROYME SPAWN_EXPLODINGBITS
+		ENDIF
+	ENDIF
+ENDSTATE 

@@ -1,0 +1,44 @@
+
+STATE Init
+	MyFlag = MyFlag | SPRITE | GRAVITYON 
+	trans =0.9
+
+	SetFriction(0.03,0.03,0.03)
+	
+//	scalex = 3.0
+//	scaley = 3.0
+	scalex = 2.0
+	scaley = 2.0
+
+	IF (GetGlobalParamFloat(0) != 0.0)
+		scalex = scaley = GetGlobalParamFloat(0)
+	ENDIF
+
+	absspeedx = parentabsspeedx
+	absspeedy = parentabsspeedy
+	absspeedz = parentabsspeedz
+//	MoveY(-0.5)
+
+
+
+	OBJECT> SFX\DARKPUFF
+	ANIM> DARKPUFF>Smoke
+	STAT>KillOff
+ENDSTATE
+
+
+STATE KillOff
+   	WHILE (scalex > 0.11)
+	  	IF (trans > 0.0)
+	  		trans = trans - 0.5
+	  	ELSE
+			trans = 0.01
+		ENDIF
+	 	scalex = scalex - 0.06
+	 	scaley = scalex
+	ENDWHILE
+	
+	Delete()
+ENDSTATE
+
+

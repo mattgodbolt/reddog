@@ -1,0 +1,26 @@
+// Sewer flickering light
+
+STATE Init
+	MyFlag = MyFlag & LNOT(ENEMY)
+	MyFlag = MyFlag | NODISP | SPRITE
+	OBJECT> SCENERY\LIGHTS\SEWERLIGHT
+	ANIM>SEWERLIGHT>FLICKER
+	MyAnimFlag = MyAnimFlag | REPEAT
+	MyVar = RandRange (30, 45)
+	SetAnimSpeedPercent(MyVar)
+	STAT>WaitNear
+ENDSTATE
+
+STATE WaitNear
+	IF NearPlayer(550)
+		MyFlag = MyFlag & LNOT(NODISP)
+		STAT>Blink
+	ENDIF
+ENDSTATE
+
+STATE Blink
+	IF (!NearPlayer(550))
+		MyFlag = MyFlag | NODISP
+		STAT>WaitNear
+	ENDIF
+ENDSTATE

@@ -1,0 +1,96 @@
+LOCALFLOAT randFireX
+LOCALFLOAT randFireZ
+LOCALINT innerBand
+LOCALINT outerBand
+
+STATE Init
+
+
+	MyFlag = MyFlag | FLOORCOLL | STRATCOLL | FRIENDLY | NOTEXPLODE | BULLETTYPE | LOWCOLL
+	RegisterCollision()
+   	MyFlag2 = MyFlag2 | TRANSLUCENT	| BULLET_CF
+ 	SetFriction(0.0,0.0,0.0)
+	damage = 15.0
+	OBJECT> WEAPON\REDDOGLASER
+	TRIGSET>KillOff	WHENHIT
+	TRIGSET>KillOff	ONFLOOR
+	TRIGSET>KillOff	EVERY 100
+	trans = 0.2
+	MoveY(3.0)
+
+	// Hide object, and use the trails instead
+	MyFlag = MyFlag | NODISP
+
+	col = RandRange (0.1,0.7)
+   //	innerBand = CreateBand (0, 4, 1, 1, 0.8, 1, 1, 0, 0, col, col)
+   //	outerBand = CreateBand (0, 4, 1, 1, 0, col, col, 0, 0, 0, 0)
+	innerBand = CreateBand (2, 4, 1, 1, col, col, 0, 0, 0, col, col)
+	outerBand = CreateBand (2, 4, 1, 1, 0, col, col, 0, col, col, 0)
+	col = 0.1
+   	AddBandSegment (innerBand, 0, 0, 0, col)
+	AddBandSegment (outerBand, 0, 0, 0, col + 0.4)
+	TRIGSET>BandTrigger EVERY 1
+
+	MyTarget = MyParentTarget
+
+	IF (MyTarget)
+		CheckX = TargetX
+		CheckY = TargetY
+		CheckZ = TargetZ
+	   	PointToTarget()
+	  //	PointPlayer ()
+   //		TRIGSET>KillOff WHENTARGETDEAD
+   //	ELSE
+   //		PointPlayer ()
+	ENDIF
+	//RelRotateX (randFireX)
+	//RelRotateZ (randFireZ)
+	STAT>SetPos
+ENDSTATE
+ 
+LOCALFLOAT col
+LOCALFLOAT diff
+
+LOCALFLOAT diff2
+
+
+STATE BandTrigger
+  //	diff = Ssin(col) * 25.0
+   //	AddBandSegment (innerBand, 0, 0, 0, (col))
+   //	AddBandSegment (outerBand, 0, 0, 0, (col + 0.4))
+   //	diff2 = Ssin(col + 0.4)
+	AddBandSegment (innerBand, 0, 0, 0, col)
+	AddBandSegment (outerBand, 0, 0, 0, col + 0.4)
+	col = col + 0.2
+	TRIGFIN
+ENDSTATE
+
+STATE SetPos
+
+
+//  	Pitch(TWOPI/32.0)
+ENDSTATE
+
+//ON DYING TRIGGER CHANGE THE MAIN RUN ADDRESS TO DEATH
+STATE KillOff
+   Explosion(20, 5.0)
+
+	IF (RandRange(0, 20.0) > 10.0)
+  //		CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+  //	ELSE
+		MyVar = 1.0
+	ENDIF
+	
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+
+	PauseTriggers(-1,FORGET)
+	MyFlag = MyFlag | NODISP  
+	MyFlag = MyFlag & LNOT(STRATCOLL)
+	DeleteBand (innerBand)
+	DeleteBand (outerBand)
+	Delete()
+ENDSTATE
+
+
+
+

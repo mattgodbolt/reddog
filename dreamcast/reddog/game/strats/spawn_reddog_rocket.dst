@@ -1,0 +1,190 @@
+LOCALFLOAT	time
+LOCALFLOAT	px
+LOCALFLOAT	py
+LOCALFLOAT	pz
+LOCALFLOAT	ax
+LOCALFLOAT	ay
+LOCALFLOAT	az
+LOCALFLOAT	tempf
+LOCALINT	padPush
+LOCALINT	padPress
+LOCALINT	noTargets 
+LOCALINT	tempi
+LOCALINT	tempj
+LOCALINT	ft
+LOCALINT	pos
+
+DEFINE		MISSILES_ACTIVE	0
+DEFINE	ROCKET	6
+
+STATE Init
+  	MyFlag = MyFlag | FRIENDLY | FLOORCOLL
+	MyFlag2 = MyFlag2 | PLAYER_CF
+	OBJECT>REDDOG\WROCKET DOCKLANDS
+	SetObjectShadowState(1)
+	SetFriction(0.5, 0.5, 0.5)
+	time = 0.0
+	IF (LeftGunPickUp = 1)
+		IF (RightGunPickUp = 1)
+			pos = 3
+		ELSE
+			pos = 2
+		ENDIF
+	ELSE
+		pos = 1
+	ENDIF
+	ft = 40
+	TRIGSET>Always EVERY 1
+	x = DogX
+	y = DogY
+	z = DogZ + 0.5
+	AllocStratSoundBlock(1)
+	tempi = GetGlobalParamInt(0)
+	SetSecondaryWeaponAmount(0, tempi)
+	SetSem(MISSILES_ACTIVE, 0)
+	STAT>Start
+ENDSTATE
+
+TRIGGER Always
+	FacePlayerAim(ParentPlayerNumber)
+	time = time + 1.0
+	tempf = time * 0.05
+	IF (pos = 1)
+		px = parentLeftGunX + Ssin(tempf * 2.0) * 0.2
+		py = parentLeftGunY + Scos(tempf) * 0.2
+		pz = parentLeftGunZ + 1.5 + Ssin(tempf * 2.3) * 0.1
+	ENDIF
+	IF (pos = 2)
+		px = parentRightGunX + Ssin(tempf * 2.0) * 0.2
+		py = parentRightGunY + Scos(tempf) * 0.2
+		pz = parentRightGunZ + 1.5 + Ssin(tempf * 2.3) * 0.1
+	ENDIF
+	IF (pos = 3)
+		px = parentTopGunX + Ssin(tempf * 2.0) * 0.2
+		py = parentTopGunY + Scos(tempf) * 0.2
+		pz = parentTopGunZ + 1.5 + Ssin(tempf * 2.3) * 0.1
+	ENDIF
+	ax = (px - x) * 15.0 
+	ay = (py - y) * 15.0
+	az = (pz - z) * 15.0
+	IF (ScoobyDoo)
+		HoldPlayerVY = 4.0
+	ENDIF
+	x = x + HoldPlayerVX * 0.5
+	y = y + HoldPlayerVY * 0.5
+	z = z + HoldPlayerVZ * 0.5
+	ApplyAbsForce(ax, ay, az, 0, 0, 0, 1.0)
+	
+	IF (MyParentFlag & NODISP)
+		MyFlag = MyFlag | NODISP
+	ELSE
+		MyFlag = MyFlag & LNOT(NODISP)
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+LOCALINT VALID
+
+
+STATE Start
+	
+
+	IF (GetSecondaryWeaponAmount(0) <= 0)
+		IF (GetSem(MISSILES_ACTIVE) = 0)
+			ClearPlayerTargetArray(0)
+			SetSecondaryWeaponType(0, 0)
+			ClearTargetArray(0)
+			STAT>Die			
+		ENDIF
+	ENDIF
+
+	IF (MyParentHealth <= 0.0)
+		SetSecondaryWeaponType(0, 0)
+		STAT>Die
+	   //	Delete()
+	ENDIF 
+	
+	VALID = !((PlayerState & PS_SCRIPTHELD) | (PlayerState & PS_INDROPSHIP))
+	IF (VALID)
+		padPush = GetPadPush(0)
+	ELSE
+		padPush = 0
+	ENDIF
+
+ //	padPush = 	GetPadPush(0)
+	padPress = 	GetPadPress(0)
+	
+	
+	ft = ft + 1
+	
+	IF (ft > 31)
+		IF (padPush & PADB)
+			ft = 0
+		ENDIF
+	ENDIF
+
+	IF (ft = 0)
+		AddScreenToTargetArray(0)
+		noTargets = GetTargetCount(0)
+		IF (noTargets)
+			PLAYSOUND>RD_WEAPON_MISSILE_1 0 1.0 0.0 0.0 0.0 0
+		ENDIF
+		tempi = 0
+		IMMLOOP (noTargets)
+			tempi = tempi + 1
+			SetGlobalParamInt(0, 0)
+			
+			tempj = GetSecondaryWeaponAmount(0)
+			IF (tempj > 0)
+				IF (tempi % 2)
+					AddSem(MISSILES_ACTIVE, 1)
+					CREATE SPAWN_REDDOGRocket -0.5, 0.5, 0.0, 0, 0, 0, 0
+				ELSE
+					AddSem(MISSILES_ACTIVE, 1)
+					CREATE SPAWN_REDDOGRocket 0.5, 0.5, 0.0, 0, 0, 0, 0
+				ENDIF
+				SetSecondaryWeaponAmount(0, tempj - 1)
+			ENDIF
+		IMMENDLOOP
+		ClearTargetArray(0)
+		ft = 0
+	ENDIF
+   
+   	tempi = GetSecondaryWeaponType(0)
+	IF (tempi != ROCKET)
+		STAT>Die
+	   //	MyFlag2 = MyFlag2 | TRANSLUCENT
+	   //	trans = 1.0
+	   //	LOOP (30)
+	   //		trans = trans - 0.03333
+	   //	ENDLOOP
+	   //	Delete()
+	ENDIF
+
+	IF (PlayerDistXY() > 20.0)
+		STAT>Restart
+	ENDIF
+ENDSTATE
+
+STATE Restart
+	MyFlag = MyFlag & LNOT(FLOORCOLL)
+	LOOP (30)
+		MyFlag = MyFlag
+	ENDLOOP
+	x = DogX
+	y = DogY
+	z = DogZ + 0.5
+	LOOP(2)
+		MyFlag = MyFlag
+	ENDLOOP
+	MyFlag = MyFlag | FLOORCOLL
+	STAT>Start
+ENDSTATE
+
+STATE Die
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+	trans = 1.0
+	LOOP (30)
+		trans = trans - 0.0333
+	ENDLOOP
+	Delete()
+ENDSTATE

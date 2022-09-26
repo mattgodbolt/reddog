@@ -1,0 +1,30 @@
+PARAMINT	Intensity	0
+
+//
+// Intensity Levels are:
+// 0 - let danger values calculate level
+// 1 - low 
+// 2 - medium
+// 3 - high
+//
+
+// Fades current music track and starts new track
+STATE Init
+	MyFlag = MyFlag
+
+	//IF JUST DROPPED IN MAX
+	IF (!MyParent)
+		//SET THE CORRECT DEFAULTS IF NEEDED
+	   	IF (!(MyFlag2 & OWNIPARAMS))
+		   Intensity = 0
+		ENDIF
+	ELSE
+		//SPAWNED FROM ANOTHER STRAT
+		Intensity = GetGlobalParamInt(0)
+	ENDIF
+	
+	MusicSetIntensity(Intensity)
+		
+	Delete()	
+ENDSTATE
+

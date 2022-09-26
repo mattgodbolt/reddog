@@ -1,0 +1,38 @@
+LOCALFLOAT	speed
+
+STATE Init
+	MyFlag = MyFlag & LNOT(ENEMY)
+	MyFlag = MyFlag | FRIENDLY
+	WHILE (!PlayerNearActivationXY(0))
+		MyFlag = MyFlag
+	ENDWHILE
+	WHILE (PlayerHeld)
+		MyFlag = MyFlag
+	ENDWHILE
+	PlayerState = PS_ONPATH
+	speed = 0.0
+	STAT> Start
+ENDSTATE
+
+STATE Start
+	LOOP (160)
+		MyFlag = MyFlag
+	ENDLOOP
+	LOOP (10)
+		PlayerControlPadPress = PADSHOULDERR | PADFORWARD
+		PlayerControlPlayerAcc = 1.0
+	ENDLOOP
+	PlayerControlPadPress = 0
+	PlayerControlPlayerAcc = 0.0
+	LOOP (230)
+		MyFlag = MyFlag
+	ENDLOOP
+	LOOP (20)
+		PlayerControlPadPress = PADSHOULDERR | PADFORWARD
+		PlayerControlPlayerAcc = 1.0
+	ENDLOOP
+	PlayerControlPadPress = 0
+	PlayerControlPlayerAcc = 0.0
+	PlayerState = PS_NORMAL
+	Delete()
+ENDSTATE

@@ -1,0 +1,734 @@
+//PAL FRIENDLY
+
+PARAMINT WaitBeforeFire 0
+PARAMFLOAT NearRange 40.0
+PARAMFLOAT FireRange 0.0
+LOCALFLOAT FireChance
+LOCALINT	isGenerated
+
+DEFINE GUNARM 7
+DEFINE ARMLENGTH 1.0
+DEFINE HEAD 8
+DEFINE RUNSPEED	0.05
+
+
+
+DEFINE CLOSERANGEFIRE 1
+
+
+LOCALINT FIRED
+LOCALINT TARGETVALID
+LOCALINT STATUS
+
+
+DEFINE PAL_FIREDELAY 4
+DEFINE NTSC_FIREDELAY 4
+LOCALINT FIREDELAY
+
+
+
+STATE Init 
+	IF (GetGlobalParamInt(0) = 1)
+		STAT>Bazooka
+	ENDIF
+
+	IF (GetGlobalParamInt(0) = 2)
+		STAT>BazookaObject
+	ENDIF
+
+	AllocStratSoundBlock(3)
+	RegisterDanger(100.0)
+
+	IF (!(MyFlag & OWNFPARAMS))
+		NearRange = 40.0
+		FireRange = 0.0
+	ENDIF
+	IF (!(MyFlag2 & OWNIPARAMS))
+		WaitBeforeFire = 0
+	ENDIF
+	//ENSURE THE NEAR RANGE IS A DECENT VALUE
+//	IF (NearRange < 10.0)
+//		NearRange = 10.0
+//	ENDIF
+
+
+	STATUS = 0
+	FIREDELAY = NTSC_FIREDELAY
+	SetFriction(1.0,0.1,0.0)
+	RotationRestriction(0.0, 0.0, 1.0)
+	health = 40.0
+	FIRED = 0
+	isGenerated = 0
+	InitPath()
+   	MyFlag = MyFlag | IMPACT | STRATCOLL | ENEMY | LOWCOLL | HOVERMOVE | GRAVITYON | FLOORCOLL | TARGETABLE
+	MyFlag2 = MyFlag2 | COLLMOVE
+	OBJECT> ENEMIES\bazookaboy
+   
+   	//EL DODGO HACK FOR SOFT COLLISION
+	mass = 4001.0
+
+	RegisterCollision()
+	InActivateObjectCollision(GUNARM)
+	InActivateObjectCollision(HEAD)
+	MODELANIM>ENEMIES\bazookaboy.RDO>Walk>REPEAT
+	TRIGSET>SpecularMadness EVERY 1
+
+	WHILE (WaitBeforeFire > 0)
+		WaitBeforeFire = WaitBeforeFire - 1
+	ENDWHILE
+
+	TARGETVALID = 0
+	SetObjectShadowState(1)
+	
+	IF (GetGlobalParamFloat(0) = 1.0)
+		isGenerated = 1
+		InheritMyParent()
+	ELSE
+		isGenerated = 0
+		IF (MyParent)
+			WHILE (MyParentInvalid())
+				MyFlag = MyFlag
+			ENDWHILE
+			MyTarget = MyParent
+
+			TARGETVALID = 1
+			hitdist = 0 
+			TRIGSET>TargetCheck EVERY 1
+			TRIGSET>DeleteTarg  PARENTDEAD
+			TRIGSET>ChangeTarg  WHENHIT
+		ENDIF
+	ENDIF
+
+	IF (MyPath)
+		TRIGSET>KillCheck EVERY 1 
+
+		STAT>Move
+	ELSE
+		STAT>DropToFloor
+	ENDIF
+ENDSTATE
+
+LOCALFLOAT playdist
+LOCALFLOAT targetdist
+
+
+STATE TargetCheck
+
+	IF (!hitdist)
+		SetPlayerToTarget(TARGETVALID)
+		targetdist = PlayerDistXY()
+  		SetPlayerBack()
+		playdist = PlayerDistXY()
+		
+		IF (playdist < targetdist)
+		  	TARGETVALID = 0
+			WHILE ((playdist < targetdist))
+				SetPlayerToTarget(1)
+				targetdist = PlayerDistXY()
+  				SetPlayerBack()
+				playdist = PlayerDistXY()
+			ENDWHILE
+		ENDIF
+	ENDIF
+
+	TARGETVALID = 1
+	TRIGFIN
+
+
+ENDSTATE
+
+LOCALFLOAT hitdist
+
+//ENSURES TARGET IS IGNORED WHEN TANK IS SHOT BY PLAYER
+STATE ChangeTarg
+	hitdist = PlayerDistXY()
+
+	WHILE (NearPlayerXY(NearRange * (1 / 3.5)))
+		TARGETVALID = 0
+
+	ENDWHILE
+
+
+	TARGETVALID = 1
+
+	hitdist = 0
+	TRIGFIN
+
+
+ENDSTATE
+
+//ENSURES THE STRAT'S TARGET IS THE PLAYER ONCE THE ORIGINAL IS DEAD
+STATE DeleteTarg
+	TRIGKILL>TargetCheck EVERY 1
+	TRIGKILL>ChangeTarg WHENHIT
+	TARGETVALID = 0
+	MyTarget = Player
+	TRIGSTOP
+ENDSTATE
+
+
+LOCALINT thisFrame
+
+STATE Move
+	SetPlayerToTarget(TARGETVALID)
+
+	thisFrame = MyAnimFrame
+	IF (thisFrame = 11)
+		PLAYSOUND>BAZOOKA_STEPL 0 0.8 0.0 0.0 0.0 RANDOM
+	ENDIF
+	IF (thisFrame = 23)
+		PLAYSOUND>BAZOOKA_STEPR 0 0.8 0.0 0.0 0.0 RANDOM
+	ENDIF 
+
+	IF( (!MyPath) OR ((!TARGETVALID) && NearPlayerXY(NearRange)))
+   		MyFlag = MyFlag & LNOT(GRAVITYON)
+		MyFlag = MyFlag & LNOT(FLOORCOLL)
+		SetFriction(1.0,0.4,1.0)
+   		SetPlayerBack()
+		MODELANIM>ENEMIES\bazookaboy.RDO>Stand>0
+		KillMyVelocity()
+	  	STAT>Wait
+	ENDIF 
+
+	IF (SeeWayZ(0.1))
+			IF (!(MyAnimFlag & TWEEN))
+  				MoveY(RUNSPEED/2.0)
+			ENDIF
+		   	IF (!(MyAnimFlag & RUNNING))
+				MODELANIM>ENEMIES\bazookaboy.RDO>Walk>REPEAT
+		   	ENDIF
+	ENDIF
+	RelTurnTowardCheckPosXY(0.05)
+	IF(NearCheckPosXY(2.0))
+		IF(LastWay())
+			MyFlag = MyFlag & LNOT(GRAVITYON)
+			MyFlag = MyFlag & LNOT(FLOORCOLL)
+			SetFriction(1.0,0.4,1.0)
+		  	KillMyVelocity()
+			MODELANIM>ENEMIES\bazookaboy.RDO>Stand>0
+		 	SetPlayerBack()
+
+			STAT> Wait
+		ENDIF
+		GetNextWay()
+	ENDIF
+   	SetPlayerBack()
+
+ENDSTATE
+
+STATE DropToFloor
+	
+	WHILE (!(MyFlag & HITFLOOR))
+	   	TowardPlayer(0.1,0.0)
+  //		MyFlag = MyFlag
+	ENDWHILE
+   	TRIGSET>KillCheck EVERY 1 
+   	MyFlag = MyFlag & LNOT(GRAVITYON)
+   	MyFlag = MyFlag & LNOT(FLOORCOLL)
+   	SetFriction(1.0,0.4,1.0)
+   	KillMyVelocity()
+
+	
+   //	SetFriction(1.0,0.4,1.0)
+	MODELANIM>ENEMIES\bazookaboy.RDO>Stand>0
+	STAT> Wait
+ENDSTATE
+
+LOCALINT Seen
+STATE Wait
+	SetPlayerToTarget(TARGETVALID)
+
+  	RelTurnTowardPlayerXY(0.05)	
+	IF (FireRange = 0.0)
+		FireRange = NearRange + 20.0
+	ENDIF
+	Seen = NearPlayerXY(FireRange)
+	SetPlayerBack()
+
+
+	IF (Seen)
+		FireChance = RandRange (0, 100)
+
+		//FUNCTION OF DISTANCE TO PLAYER CLOSER MORE FIRING 
+
+		IF (FireChance < 3.0)
+				SetPlayerToTarget(TARGETVALID)
+
+			   	Seen = SeePlayerZ(0.05)	AND	FireSightPlayer()
+
+			  	WHILE (!Seen)
+					SetPlayerToTarget(TARGETVALID)
+					TowardPlayer(0.1,0.0)
+					Seen = SeePlayerZ(0.05)	AND FireSightPlayer()
+					SetPlayerBack()
+				ENDWHILE
+			   
+			   
+				SetPlayerToTarget(TARGETVALID)
+			  	Seen = NearPlayerXY(NearRange) AND FireSightPlayer()
+			   	SetPlayerBack()
+				IF (!Seen)
+
+				  	IF (FIRED)
+						MODELANIM>ENEMIES\bazookaboy.RDO>ExitFire>0
+					  	WHILE  (MyAnimFlag & RUNNING)
+							SetPlayerToTarget(TARGETVALID)
+							TowardPlayer(0.1,0.0)
+							SetPlayerBack()
+						ENDWHILE
+
+				   	ENDIF
+				
+				    STATUS = STATUS & LNOT(CLOSERANGEFIRE)
+				   	MODELANIM>ENEMIES\bazookaboy.RDO>FireMain>0
+				
+				 //WE AWAIT THE TWEEN TO STOP
+					WHILE (MyAnimFlag & TWEEN)
+						SetPlayerToTarget(TARGETVALID)
+						TowardPlayer(0.1,0.0)
+						SetPlayerBack()
+				   	ENDWHILE
+
+
+		 			LOOP (FIREDELAY)
+						SetPlayerToTarget(TARGETVALID)
+						TowardPlayer(0.1,0.0)
+						SetPlayerBack()
+					ENDLOOP					
+
+ 					PLAYSOUND>GCAN32 1 0.8 0.0 0.0 0.0 0
+
+					SetGlobalParamInt(0,1)
+					SetGlobalParamInt(1,TARGETVALID)
+					CREATE BAZOOKABOY 0,0,0,0,0,0, GUNARM
+					ClearGlobalParams()
+				 
+
+					WHILE  (MyAnimFlag & RUNNING)
+						MyFlag = MyFlag
+					ENDWHILE
+			   
+			   		
+			   
+					MODELANIM>ENEMIES\bazookaboy.RDO>Crouch>REPEAT
+			   
+
+					FIRED = 0
+				ELSE
+
+					STATUS = STATUS | CLOSERANGEFIRE
+					IF (!FIRED)
+		 				MODELANIM>ENEMIES\bazookaboy.RDO>EnterFire>0
+
+						WHILE (MyAnimFlag & RUNNING)
+							MyFlag = MyFlag
+						ENDWHILE
+						FIRED = 1
+					ENDIF
+
+
+					MODELANIM>ENEMIES\bazookaboy.RDO>FireMain>0
+				 //WE AWAIT THE TWEEN TO STOP
+					WHILE (MyAnimFlag & TWEEN)
+						SetPlayerToTarget(TARGETVALID)
+						TowardPlayer(0.1,0.0)
+						SetPlayerBack()
+			   		ENDWHILE
+
+
+		 			LOOP (FIREDELAY)
+						SetPlayerToTarget(TARGETVALID)
+						TowardPlayer(0.1,0.0)
+						SetPlayerBack()
+					ENDLOOP					
+
+ 					PLAYSOUND>GCAN32 1 1.0 0.0 0.0 0.0 0
+
+					SetGlobalParamInt(0,1)
+					SetGlobalParamInt(1,TARGETVALID)
+					CREATE BAZOOKABOY 0,0,0,0,0,0, GUNARM
+					ClearGlobalParams()
+				  
+
+					WHILE  (MyAnimFlag & RUNNING)
+						SetPlayerToTarget(TARGETVALID)
+						TowardPlayer(0.1,0.0)
+						SetPlayerBack()
+					ENDWHILE
+			   
+			   		
+			   
+				 	MODELANIM>ENEMIES\bazookaboy.RDO>ExitFire>0
+			   
+
+				ENDIF
+			
+			
+			
+
+		ENDIF 
+	ENDIF
+
+ENDSTATE
+
+
+LOCALFLOAT deathvel
+LOCALFLOAT SPECAMOUNT
+
+TRIGGER SpecularMadness
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+	IF ((MyFlag & HITSTRAT) AND (health > 0.0))
+		SPECAMOUNT = 1.0
+		PLAYSOUND>ENEMY_HIT 2 1.0 0.0 0.0 0.0 RANDOM
+	ENDIF
+	IF (SPECAMOUNT > 0)
+  		MyFlag2 = MyFlag2 | SPECULAR
+		SetSpecularColour(0, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		IF (PAL)
+		   	SPECAMOUNT = SPECAMOUNT - (0.1 * 1.2)
+		ELSE
+		   	SPECAMOUNT = SPECAMOUNT - 0.1
+		ENDIF
+	ELSE
+		SPECAMOUNT = 0
+ 		MyFlag2 = MyFlag2 & LNOT(SPECULAR)
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+   
+STATE KillCheck
+
+    //ensure that this trigger can never be paused	
+
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+
+  	IF (!FireSightPlayer())
+		MyFlag = MyFlag | NODISP
+	ELSE
+		MyFlag = MyFlag & LNOT(NODISP)
+	ENDIF
+
+	IF ((MyFlag2 & BIGDAMAGE) || (MyFlag2 & PLAYERHIT) || (health <= 0.0))
+
+		PauseTriggers(-1,FORGET)
+		 MyFlag = MyFlag & LNOT(NODISP)
+  		//ONE HIT DEAL SO ENSURE THE HEALTH IS ZERO'D
+		health = 0.0
+
+		IF (MyFlag2 & PLAYERHIT)
+			PLAYSOUND>ENEMY_HIT3 2 1.0 0.0 0.0 0.0 RANDOM
+			//ENSURE CORRECT FRICTION
+				SetFriction(0.4,0.1,0.5)
+			   	deathvel = FABS(PlayerRelVelY) * 1.2
+			  	MoveY(-deathvel)
+		ELSE
+			IF (MyFlag2 & BIGDAMAGE)
+			  	SetFriction(0.4,0.1,0.5)
+			   //	SetFriction(0.4,0.1,0.0)
+		  		MoveY(-0.35) 
+			ENDIF
+		ENDIF
+
+		MyFlag = MyFlag & LNOT(STRATCOLL)
+
+		TRIGRESET
+		TRIGSTOP
+		Score = Score + 1500
+		STAT>WaitForDeath
+	ELSE
+		IF (MyFlag & HITSTRAT)
+			
+			OLDHEALTH = health
+	   //		MODELANIM>ENEMIES\bazookaboy.RDO>GetHit>NOTWEEN
+	   //		MyFlag2 = MyFlag2 | STOPPED
+	   //		WHILE (MyAnimFlag & RUNNING)
+	   //			MyFlag = MyFlag
+	   //		ENDWHILE
+	   //		MyFlag2 = MyFlag2 & LNOT(STOPPED)
+			health = OLDHEALTH
+		ENDIF
+
+	ENDIF
+	TRIGFIN
+ENDSTATE
+
+LOCALINT DEAD
+LOCALFLOAT OLDHEALTH
+
+LOCALINT time
+LOCALINT DEATHTIME
+
+TRIGGER BazHide
+	//hide the bazooka
+  	HideObject(GUNARM)
+	SetGlobalParamInt(0,2)
+   	CREATE BAZOOKABOY 0,0,0,0,0,0, GUNARM
+   	ClearGlobalParams()
+	TRIGSTOP
+ENDTRIGGER
+
+STATE WaitForDeath
+//	IF (MyFlag2 & BIGDAMAGE)
+//		MODELANIM>ENEMIES\bazookaboy.RDO>BigDeath>NOTWEEN 
+//	ELSE
+//	  	IF (MyFlag2 & PLAYERHIT)
+//	  		MODELANIM>ENEMIES\bazookaboy.RDO>BigDeath>NOTWEEN 
+//	  	ELSE
+//			MODELANIM>ENEMIES\bazookaboy.RDO>Die>NOTWEEN 
+//	  	ENDIF
+//	ENDIF
+
+	//hide the bazooka
+  	//HideObject(GUNARM)
+	//create the object
+	TRIGSET>BazHide EVERY 2
+	  //				SetGlobalParamInt(0,2)
+		//			CREATE BAZOOKABOY 0,0,0,0,0,0, GUNARM
+		  //			ClearGlobalParams()
+	IF ((MyFlag2 & BIGDAMAGE) OR (MyFlag2 & PLAYERHIT))
+	  	MODELANIM>ENEMIES\bazookaboy.RDO>BigDeath>NOTWEEN 
+		MyFlag = MyFlag | REALGRAVITYON | FLOORCOLL
+	 	InActivateObjectCollision(0)
+	   	ActivateObjectCollision(GUNARM)
+		time = 0
+		IF (PAL)
+			DEATHTIME = 14
+	   	ELSE
+			DEATHTIME = 15
+		ENDIF
+	
+		IF (PAL)
+			DEATHTIME = 12
+	   	ELSE
+			DEATHTIME = 13
+		ENDIF
+		//WHILE WE'RE DYING AND NOT HITTING, CONTINUE
+		WHILE ((time < DEATHTIME ) AND (!ObjectHitFloor(GUNARM))) 
+			time = time + 1
+		ENDWHILE
+
+	 	SetFriction(0.4,0.1,0.0)
+	
+		//HOLD THE FALL POSE HERE, UNTIL THE FLOOR IS HIT
+		MyAnimFlag = MyAnimFlag | PAUSED
+
+	   	WHILE (!ObjectHitFloor(GUNARM))
+ 	   	    z = z - 0.3
+	   	ENDWHILE
+
+		PLAYSOUND>BAZOOKA_FALL2 0 1.0 0.0 0.0 0.0 0
+
+		MyAnimFlag = MyAnimFlag & LNOT(PAUSED)
+		InActivateObjectCollision(GUNARM)
+	  	ActivateObjectCollision(HEAD)
+
+		MakeFrags (1.2, 10)
+	   	MODELANIM>ENEMIES\bazookaboy.RDO>Splat>NOTWEEN 
+	   
+	   	WHILE (MyAnimFlag & RUNNING)
+			MyFlag = MyFlag
+	   	ENDWHILE
+
+	   
+	  	SetFriction(0.1,0.1,0.0)
+
+
+	ELSE
+
+
+	   	MODELANIM>ENEMIES\bazookaboy.RDO>Die>NOTWEEN 
+
+		WHILE (MyAnimFlag & RUNNING)
+			MyFlag = MyFlag
+			thisFrame = MyAnimFrame
+			IF ((thisFrame = 170) OR (thisFrame = 211))
+				PLAYSOUND>BAZOOKA_FALL2 0 1.0 0.0 0.0 0.0 RANDOM
+			ENDIF
+		ENDWHILE
+	ENDIF
+	//FADE OUT THE FUCKWIT
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+	WHILE (trans > 0.02)
+		trans = trans - 0.02
+	ENDWHILE
+	IF (isGenerated)
+		ParentVar = ParentVar + 1.0
+	ENDIF
+	Delete ()
+ENDSTATE
+
+LOCALFLOAT stretch
+LOCALINT   frames
+
+
+//the piece that falls from bazooka boy on dying
+STATE BazookaObject
+
+	MyFlag = MyFlag | GRAVITYON | FLOORCOLL
+	OBJECT> ENEMIES\bazooka
+
+	AllocStratSoundBlock(1)
+
+  // 	MoveY(-0.4)
+	absspeedx = parentabsspeedx
+	absspeedy = parentabsspeedy
+	absspeedz = parentabsspeedz
+
+	MoveY(-0.2)
+	MoveZ(0.2)
+
+
+	WHILE (!(MyFlag & HITFLOOR))
+		RelRotate(0, TWOPI/360.0, 0)
+	   //	Yaw(TWOPI / 360.0)
+	  	MyFlag = MyFlag
+	ENDWHILE
+
+	PLAYSOUND>BAZOOKA_FALL 0 1.0 0.0 0.0 0.0 RANDOM
+
+	absspeedz = - absspeedz
+
+	SetFriction(0.9,0.9,0.0)
+	LOOP (10)
+		MyFlag = MyFlag
+	ENDLOOP
+	MyVar = 1.0
+	CREATE SPAWN_BLASTEXP 0,0,0,0,0,0,0
+
+	Delete()
+
+ENDSTATE
+
+
+
+STATE Bazooka
+	IF (GetGlobalParamInt(1))
+		TARGETVALID = 1
+	ENDIF
+
+	AllocStratSoundBlock(2)
+
+	OBJECT>Weapon\FootSoldierLaser
+ 	SetFriction(0.0,0.0,0.0)
+	damage = 6.0
+	MakeMeTheLast()
+	TRIGSET>DoTail EVERY 1
+
+	TRIGSET>HitStrat WHENHIT
+	TRIGSET>KillOff	ONFLOOR
+	//ALLOW LITTLE OVER 3 SECS TO BE ALIVE
+	IF (PAL)
+		TRIGSET>KillOff	EVERY 80
+	ELSE
+		TRIGSET>KillOff	EVERY 100
+	ENDIF
+
+	ExplosionLight (0.5, 0.45, 0.3, 10, 1, 0)
+
+	MyFlag = MyFlag  | STRATCOLL | NODISP | ENEMY | NOTEXPLODE | BULLETTYPE | LOWCOLL | FLOORCOLL
+	MyFlag2 = MyFlag2 | BULLET_CF
+   	//MyFlag2 = MyFlag2 | NOHDC
+	RegisterCollision()
+
+	MyTarget = MyParentTarget
+	IF ((MyTarget) AND (TARGETVALID))
+		CheckX = TargetX
+		CheckY = TargetY
+		CheckZ = TargetZ
+	   	PointToTarget()
+   		TRIGSET>KillOff WHENTARGETDEAD
+   	ELSE
+		//IF THE PLAYER IS ON THE TRAIN TARGET A POINT AHEAD OF HIM
+		//BY SPEED
+
+		IF ((PlayerState = PS_ONTRAIN) OR (PlayerState = PS_WATERSLIDE))
+			health = PlayerActVelX * PlayerActVelX
+			MyVar = PlayerActVelY * PlayerActVelY
+			frame = PlayerActVelZ * PlayerActVelZ
+
+			frame = FSQRT(health + MyVar + frame)
+			health = PlayerActVelX / frame
+			MyVar = (PlayerActVelY / frame) * 3.0
+			frame = PlayerActVelZ / frame
+		  	SetCheckPosRelOffsetPlayerObject(0,health,MyVar, frame)
+		
+			PointToTarget()
+		ELSE
+			PointPlayer ()
+		ENDIF
+	ENDIF
+  	MoveY(0.1)
+
+	frames = 0
+	STAT>SetPos
+ENDSTATE
+
+STATE DoTail
+	FaceAlongDir()
+	TRIGFIN
+ENDSTATE
+
+LOCALFLOAT offSx
+LOCALFLOAT offSy
+
+STATE SetPos
+	IF ((MyTarget) AND TARGETVALID)
+		PointToTarget()
+	ELSE
+		IF ((PlayerState = PS_ONTRAIN) OR (PlayerState = PS_WATERSLIDE))
+			offSx = 5.0 * RandRange(0.15,0.25)
+			offSy = 5.0 * RandRange(0.15,0.25)
+			SetCheckPosRelOffsetPlayerObject(0,offSx, offSy, 0)
+			PointToTarget()
+		ELSE
+			PointPlayer ()
+		ENDIF
+	ENDIF
+	MoveY(1.5)
+	PLAYSOUND>WALKER_FIREBALL 0 0.9 0.0 0.0 0.0 CONTINUOUS
+	TRIGSET>JonnyBazooka EVERY 2
+	STAT>MoveMe
+ENDSTATE
+
+STATE MoveMe
+	IF ((PlayerState = PS_ONTRAIN) OR (PlayerState = PS_WATERSLIDE))
+   	   	x = x + PlayerActVelX
+   	 	y = y + PlayerActVelY
+   	 	z = z + PlayerActVelZ
+   	   TowardPlayer(0.05,0.05)	
+	ENDIF
+ENDSTATE
+
+STATE KillOff
+	KillMyVelocity()
+	MyVar = 1.0
+   	CREATE SPAWN_BLASTEXP 0,0,0,0,0,0,0
+
+	Delete()
+ENDSTATE
+
+TRIGGER HitStrat
+	IF (CollWith = PlayerShieldStrat(0))
+		PLAYSOUND>DAMAGE3 1 1.0  0.0 0.0 0.0  RANDOM
+		MyFlag = MyFlag | FRIENDLY
+		BounceOffShield(0)
+		TRIGFIN
+	ELSE
+		Delete()
+		//TRIGSTOP
+	ENDIF
+ENDTRIGGER
+
+
+TRIGGER JonnyBazooka
+	MyVar = 9.0
+	SetGlobalParamInt(0,99)
+	SetGlobalParamFloat(0,0.3)
+	CREATE SPAWN_BLASTEXP 0,0,0,0,0,0,0
+	ClearGlobalParams()
+
+
+	TRIGFIN
+ENDTRIGGER
+

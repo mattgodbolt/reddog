@@ -1,0 +1,49 @@
+PARAMINT	MainGunType	0
+PARAMINT	noBots		0
+PARAMFLOAT	gravity		0.0109
+PARAMFLOAT	maxHealth	100.0
+
+
+STATE Init
+	IF (!(MyFlag2 & OWNIPARAMS))
+		MainGunType = 0
+		noBots = 0
+	ENDIF
+
+	IF (!(MyFlag & OWNFPARAMS))
+		gravity = 0.0109
+		maxHealth = 100.0
+	ENDIF
+
+	LOOP (2)
+		MyFlag = MyFlag
+	ENDLOOP
+	
+	ThonGravity(0, gravity)
+	ThonGravity(1, gravity)
+	ThonGravity(2, gravity)
+	ThonGravity(3, gravity)
+	//PlayerWeaponType = MainGunType
+	//SetPlayerMaxHealth(0, maxHealth)
+	//SetHealthOfPlayer(0, maxHealth)
+	IF (noBots = 1)
+		SetSecondaryWeaponType(0, 8)
+	ENDIF
+	IF (noBots = 2)
+		SetSecondaryWeaponType(0, 8)
+		LOOP(1)
+			MyFlag = MyFlag
+		ENDLOOP
+		SetSecondaryWeaponType(0, 0)
+		LOOP(1)
+			MyFlag = MyFlag
+		ENDLOOP
+		SetSecondaryWeaponType(0, 8)
+	ENDIF
+
+	STAT>Start
+ENDSTATE 
+
+STATE Start
+	Delete()
+ENDSTATE

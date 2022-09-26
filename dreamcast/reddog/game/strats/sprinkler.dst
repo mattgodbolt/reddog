@@ -1,0 +1,47 @@
+// Sprinkler strat
+// Activated by: Proximity to player
+// Deactivated by: No longer near player
+// While active: Generate a sprinkler stream
+
+// Parameter - number of frags per second
+PARAMINT	Strength	4
+// Parameter - maximum velocity in metres per frame
+PARAMFLOAT	Velocity	0.15
+
+
+// Local float - cos(angle of cone)
+LOCALFLOAT	cosAngle
+
+// Initialise the strat
+STATE Init
+	// Set up default vars
+	IF (!(MyFlag2 & OWNIPARAMS))
+		Strength = 4
+		Velocity = 1.0
+	ENDIF
+
+	// Get our angle based on the strat matrix
+	cosAngle = GetConeAmount()
+
+	// Hide the object
+	MyFlag = MyFlag | NODISP
+
+	STAT>WaitNear
+ENDSTATE
+
+// Wait for nearness to player
+STATE WaitNear
+	IF (NearPlayer(55))
+		STAT>Sprinkle
+	ENDIF
+ENDSTATE
+
+// Sprinkle until player sods off
+STATE Sprinkle
+	IF (!NearPlayer(65))
+		STAT>WaitNear
+	ELSE
+		MakeConeFrags (cosAngle, Velocity, Strength)
+	ENDIF
+ENDSTATE
+

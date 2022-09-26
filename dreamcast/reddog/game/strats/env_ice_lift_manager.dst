@@ -1,0 +1,138 @@
+PARAMINT	time 2000
+PARAMFLOAT	speed 1.0
+LOCALINT	accTime
+LOCALINT	i
+LOCALINT	ct
+LOCALFLOAT tempf
+LOCALFLOAT oz
+
+STATE Init
+	MyFlag = MyFlag | ENEMY | NODISP | STRATCOLL
+	accTime = 100
+	IF (!(MyFlag & OWNFPARAMS))
+		speed = 1.0
+	ENDIF
+
+	IF (!(MyFlag2 & OWNIPARAMS))
+		time = 2000
+	ENDIF
+
+	IF (PAL)
+		time = time * 0.83333	
+	ENDIF
+
+	IF (MyParent)
+		WHILE (MyParentInvalid())
+			MyFlag = MyFlag
+		ENDWHILE
+	ENDIF
+	RegisterCollision()
+	InitHDC()
+	
+
+	SetGlobalParamFloat(0, speed)
+	SetGlobalParamInt(0, time)
+	SetGlobalParamInt(1, accTime)
+	SetSem(0, 0)
+
+	SetGlobalParamInt(2, 0)
+	CREATE SPAWN_ICE_LIFT_SECTION 0, 0, -53.6, 0, 0, 0, 0
+	SetGlobalParamInt(2, 1)
+	SetGlobalParamInt(0, time)
+	CREATE SPAWN_ICE_LIFT_SECTION 0, 0, -26.8, 0, 0, 0, 0
+	SetGlobalParamInt(0, time)
+	CREATE SPAWN_ICE_LIFT_SECTION 0, 0, 0	 , 0, 0, 0, 0
+	SetGlobalParamInt(0, time)
+	CREATE SPAWN_ICE_LIFT_SECTION 0, 0, 26.8 , 0, 0, 0, 0
+	SetGlobalParamInt(0, time)
+	CREATE SPAWN_ICE_LIFT_SECTION 0, 0, 53.6 , 0, 0, 0, 0
+	SetGlobalParamInt(0, time)
+	CREATE SPAWN_ICE_LIFT_SECTION 0, 0, 80.4 , 0, 0, 0, 0
+	SetGlobalParamInt(0, time)
+	CREATE SPAWN_ICE_LIFT_SECTION 0, 0, 107.2 , 0, 0, 0, 0
+	z = z + 26.7
+	CalculateStratPolyData(1)
+	TRIGSET>Always EVERY 1
+	TRIGSET>DoIt EVERY 1
+		
+	SetGlobalParamInt(1, 0)
+	SetGlobalParamInt(0, 0)
+	SetGlobalParamFloat(0, 0.0)
+	STAT>Start
+ENDSTATE
+
+TRIGGER Always
+	IF (GetParentSem(0) = 1)
+		SetSem(1, 1)
+		TRIGSTOP
+	ELSE
+		TRIGFIN
+	ENDIF
+ENDTRIGGER
+
+TRIGGER DoIt
+	IF (GetSem(1) = 2)
+		SetSem(1, 3)
+	ENDIF
+	IF (GetSem(0) = 4)
+		SetSem(0, 5)
+	ENDIF
+	IF (GetSem(0) = 6)
+		z = z + 26.8
+		CalculateStratPolyData(1)
+		TRIGRESET
+		TRIGSTOP
+		STAT>Finish
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+STATE Start
+	NoCollObject(1)
+	WHILE (!PlayerNearActivationXY(0))
+		MyFlag = MyFlag
+	ENDWHILE
+	ActivateObjectCollision(1)
+
+	SetSem(0, 1)
+	i = 0
+	oz = z
+	WHILE (z >= oz - 26.8)
+		tempf = SmoothFromToSum(speed, i, accTime)
+		i = i + 1
+		z = z - tempf
+		CalculateStratPolyData(0)
+	ENDWHILE
+	ct = i
+	STAT>Check
+ENDSTATE
+
+STATE Check
+	i = 0
+	WHILE (i < (time - accTime - ct))
+		i = i + 1
+	ENDWHILE
+	SetSem(0, 2)
+	STAT>Wait
+ENDSTATE
+
+STATE Wait
+ENDSTATE
+
+STATE Finish
+	IF (GetParentSem(0) = 0)
+		STAT>PlayShootAnim
+	ELSE
+		NoCollObject(1)
+		STAT>Wait
+	ENDIF
+ENDSTATE
+
+STATE PlayShootAnim
+ //	CREATE SPAWN_ENV_SHOOT_SAT 0, 0, 0, 0, 0, 0, 0
+ 	CREAIND SPAWN_ENV_SHOOT_SAT 0, 0, 0, 0, 0, 0 
+	STAT>Wait
+ENDSTATE
+
+
+

@@ -1,0 +1,14 @@
+// Waits for player to enter activation zone.
+// Deletes when he/she leaves it
+
+
+STATE Init
+	WHILE (PlayerNearActivationXY(0))
+		MyFlag = MyFlag
+	ENDWHILE
+
+	WHILE (!PlayerNearActivationXY(0))
+		Delete()
+	ENDWHILE
+ENDSTATE
+

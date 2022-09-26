@@ -1,0 +1,16 @@
+// Falling rock
+STATE Init
+	OBJECT>SCENERY\ROCKS\VOLCANOROCKS
+	SetFriction(0.2,0.2,0.0)
+	MyVar = RandRange(-1, 1)
+	MoveY(MyVar * 0.2) 
+	MyVar = RandRange(-1, 1)
+	MoveX(MyVar * 0.2)
+	scalex = RandRange(0.8, 1)
+	scaley = RandRange(0.8, 1)
+	scalez = RandRange(0.8, 1)
+	LOOP 120
+		absspeedz = absspeedz - (0.0109*4)
+	ENDLOOP
+	Delete()
+ENDSTATE

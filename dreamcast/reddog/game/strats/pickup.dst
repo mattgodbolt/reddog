@@ -1,0 +1,411 @@
+PARAMINT	type 0
+
+LOCALINT	spawned
+LOCALINT	time
+LOCALINT	pzoom
+LOCALINT	tempi
+LOCALINT	amount
+LOCALINT	respawn
+LOCALFLOAT	i
+LOCALFLOAT	tempf
+
+DEFINE		NONE					0
+DEFINE		BOMB					1
+DEFINE		VULCAN					2
+DEFINE		HOMING_BULLET			3
+DEFINE		ALL_ROUND_SHOCKWAVE		4
+DEFINE		ARMOUR					5
+DEFINE		ROCKET					6
+DEFINE		MINE					7
+DEFINE		HOVERON					8
+DEFINE		SWARM					9
+DEFINE		LASER					10
+DEFINE		ELECTRO					11
+DEFINE		CLOAKING				12
+DEFINE		STORMING_SHIELD			13
+DEFINE		FLAMER					14
+DEFINE		RDHM					15
+DEFINE		ENERGY					16
+   
+STATE Init
+	IF (Multiplayer)
+		STAT>MultiInit
+	ELSE
+		STAT>SingleInit
+	ENDIF
+ENDSTATE
+
+STATE SingleInit
+	IF (MyParent)
+		WHILE (MyParentInvalid())
+			MyFlag = MyFlag
+		ENDWHILE
+		WHILE ((MyParentFlag) AND (MyParentHealth > 0.0))
+			MyFlag = MyFlag
+		ENDWHILE
+		x = parentx
+		y = parenty
+		z = parentz
+		MyFlag = MyFlag | REALGRAVITYON | FLOORCOLL
+	ENDIF
+	MyFlag = MyFlag | ENEMY | STRATCOLL | LOWCOLL
+	MyFlag = MyFlag & LNOT(ENEMY)
+
+	MyFlag2 = MyFlag2 | PICKUP | PLAYER_CF
+	IF (type = BOMB)
+		OBJECT>Pickups\SinglePlayer\Bomb
+		MODELANIM>Pickups\SinglePlayer\Bomb.RDO>play>REPEAT
+		amount = 3
+	ENDIF
+	IF (type = VULCAN)
+		OBJECT>Pickups\SinglePlayer\VULCAN
+		MODELANIM>Pickups\SinglePlayer\VULCAN.RDO>play>REPEAT
+		amount = 200
+	ENDIF
+	IF (type = ELECTRO)
+		OBJECT>Pickups\SinglePlayer\Electro
+		MODELANIM>Pickups\SinglePlayer\Electro.RDO>play>REPEAT
+		amount = 200
+	ENDIF
+	IF (type = LASER)
+		OBJECT>Pickups\SinglePlayer\PowerLaser
+		MODELANIM>Pickups\SinglePlayer\PowerLaser.RDO>play>REPEAT
+		amount = 200
+	ENDIF
+	IF (type = SWARM)
+		OBJECT>Pickups\SinglePlayer\Swarm
+		MODELANIM>Pickups\SinglePlayer\Swarm.RDO>play>REPEAT
+		amount = 200
+	ENDIF
+	IF (type = HOMING_BULLET)
+		OBJECT>Pickups\SinglePlayer\Homing
+		MODELANIM>Pickups\SinglePlayer\Homing.RDO>play>REPEAT
+		amount = 100
+	ENDIF
+	IF (type = ROCKET)
+		OBJECT>Pickups\SinglePlayer\Rocket
+		MODELANIM>Pickups\SinglePlayer\Rocket.RDO>play>REPEAT
+		amount = 10
+	ENDIF
+	IF (type = ENERGY)
+		OBJECT>Pickups\SinglePlayer\Energy
+		MODELANIM>Pickups\SinglePlayer\Energy.RDO>play>REPEAT
+		amount = 1
+	ENDIF
+	IF (type = ALL_ROUND_SHOCKWAVE)
+		OBJECT>Pickups\SinglePlayer\allRoundShockWave
+		MODELANIM>Pickups\SinglePlayer\allRoundShockWave.RDO>play>REPEAT
+		amount = 1
+	ENDIF
+	IF (type = ARMOUR)
+		OBJECT>Pickups\SinglePlayer\ARMOUR
+		amount = 20
+	ENDIF
+
+	//ENSURE INVALIDS ARE DELETED
+	IF ((type = NONE) OR (!amount))
+		STAT>Delete
+	ENDIF
+
+	RegisterCollision()
+	TRIGSET>HitFloor ONFLOOR
+	//MyFlag = MyFlag & LNOT(REALGRAVITYON | FLOORCOLL)
+
+	STAT>SingleStart
+ENDSTATE
+
+TRIGGER HitFloor
+	absspeedx = 0
+	absspeedy = 0
+	absspeedz = 0
+	MyFlag = MyFlag & LNOT(REALGRAVITYON | FLOORCOLL)
+	TRIGSET>ReFloorCheck EVERY 30
+	TRIGSTOP
+ENDTRIGGER
+
+TRIGGER ReFloorCheck
+	MyFlag = MyFlag | REALGRAVITYON | FLOORCOLL
+	TRIGSET>HitFloor ONFLOOR
+	TRIGSTOP
+ENDTRIGGER
+
+STATE SingleStart
+	WHILE ((!(MyFlag2 & PLAYERHIT)) OR (!CanPickup(0, type, amount)))
+		MyFlag = MyFlag
+	ENDWHILE
+	tempi = 0
+	PickMeUp(type, amount)
+	LOOP (10)
+		tempi = tempi + 1
+		tempf = SmoothFromToSum(0.999, tempi, 10)
+		scalex = 1.0 - tempf
+		scaley = 1.0 - tempf
+		scalez = 1.0 - tempf
+	ENDLOOP
+	Delete()
+ENDSTATE
+
+STATE MultiInit
+
+	MyFlag = MyFlag | ENEMY | STRATCOLL | LOWCOLL
+	MyFlag2 = MyFlag2 | PICKUP
+	scalex = 0.1
+	scaley = 0.1
+	scalez = 0.1
+	AllocStratSoundBlock(1)
+	spawned = 0
+	time = 0
+	// Default sound is weapon pickup
+	IF (MyParent)
+		IF (ParentPlayer)
+			amount = 0
+			type = TOINT(ParentVar)
+			spawned = 1
+			UnitiseMatrix() 
+		ENDIF
+	ENDIF
+	IF (!PickupAllowed(type))
+		MyFlag = MyFlag | NODISP
+		STAT>Delete
+	ENDIF
+   	IF (type = BOMB)
+		amount = 2
+		respawn = 60
+		OBJECT>PICKUPS\XPLOSIVE DOCKLANDS
+	ENDIF
+	IF (type = ALL_ROUND_SHOCKWAVE)
+		amount = 3
+		respawn = 60
+		OBJECT>PICKUPS\W-POWERBALL DOCKLANDS
+	ENDIF
+	IF (type = VULCAN)
+		amount = 100
+		respawn = 30
+		OBJECT>PICKUPS\VULCAN DOCKLANDS
+	ENDIF
+	IF (type = HOMING_BULLET)
+		amount = 100
+		respawn = 30
+		OBJECT>PICKUPS\HOMING DOCKLANDS
+	ENDIF
+	IF (type = ROCKET)
+		amount = 3
+		respawn = 30
+		OBJECT>PICKUPS\LOCKON DOCKLANDS
+	ENDIF
+	IF (type = MINE)
+		amount = 5
+		respawn = 60
+		OBJECT>PICKUPS\MINES DOCKLANDS
+	ENDIF
+	IF (type = ARMOUR)
+		amount = 20
+		respawn = 10
+		OBJECT>PICKUPS\ARMOUR DOCKLANDS
+	ENDIF
+	IF (type = SWARM)
+		amount = 1
+		OBJECT>PICKUPS\S-POWERBALL DOCKLANDS
+	ENDIF
+	IF (type = LASER)
+		amount = 50
+		respawn = 30
+		OBJECT>PICKUPS\POWERLASER DOCKLANDS
+	ENDIF
+	IF (type = ELECTRO)
+		amount = 200
+		respawn = 30
+		OBJECT>PICKUPS\ELECTRO DOCKLANDS
+	ENDIF
+	IF (type = CLOAKING)
+		amount = 900
+		respawn = 60
+		OBJECT>PICKUPS\CLOAK DOCKLANDS
+	ENDIF
+	IF (type = STORMING_SHIELD)
+		amount = 900
+		respawn = 60
+		OBJECT>PICKUPS\INVUL DOCKLANDS
+	ENDIF
+	HideObject(2)
+	HideObject(3)
+	HideObject(4)
+	HideObject(5)
+	HideObject(6)
+	HideObject(7)
+	tempi = 0
+	RegisterCollision()
+	LOOP (10)
+		tempi = tempi + 1
+		tempf = SmoothFromToSum(1.0, tempi, 10)
+		scalex = tempf
+		scaley = tempf
+		scalez = tempf
+	ENDLOOP
+	respawn = respawn * 30
+	STAT>MultiStart
+ENDSTATE
+
+STATE MultiStart
+	RelRotateZ (0.15)
+	
+	IF (spawned)
+		time = time + 1
+		IF (time > 450)
+			STAT>Delete
+		ELSE
+			IF (time = 440)
+				pzoom = 0
+			ENDIF
+			IF (time >= 440)
+				pzoom = pzoom + 1
+				tempf = SmoothFromToSum(0.999, pzoom, 10)
+				scalex = 1.0 - tempf
+				scaley = 1.0 - tempf
+				scalez = 1.0 - tempf
+			ENDIF
+		ENDIF
+	ENDIF
+
+	IF ((GetSecondaryWeaponType(HitPlayerNumber) != STORMING_SHIELD) AND (MyFlag2 & PLAYERHIT))		 
+		IF (type = ARMOUR)
+			IF (HealthOfPlayer(HitPlayerNumber) < MaxHealthOfPlayer(HitPlayerNumber))
+				PickMeUp(type, amount)
+				tempi = 0
+				LOOP (10)
+					tempi = tempi + 1
+					tempf = SmoothFromToSum(0.999, tempi, 10)
+					scalex = 1.0 - tempf
+					scaley = 1.0 - tempf
+					scalez = 1.0 - tempf
+				ENDLOOP
+
+				IF (spawned)
+					STAT>Delete
+				ELSE
+					MyFlag = MyFlag | NODISP
+					MyFlag = MyFlag & LNOT ( STRATCOLL)
+					MyVar = 0.0
+					STAT>Wait
+				ENDIF
+			ENDIF
+		ELSE
+			tempi = CanPickup(HitPlayerNumber, type, amount)
+			IF (!PlayerIsAssassin(HitPlayerNumber) AND (tempi = 1))
+				
+				PickMeUp(type, amount)
+				IF (Multiplayer)
+					IF (type = VULCAN)
+						PLAYSOUND>POWERUP1 0 1.0 0.0 0.0 0.0 0
+					ENDIF
+					IF (type = HOMING_BULLET)
+						PLAYSOUND>POWERUP7 0 1.0 0.0 0.0 0.0 0
+					ENDIF
+					IF (type = LASER)
+						PLAYSOUND>POWERUP3 0 1.0 0.0 0.0 0.0 0
+					ENDIF
+					IF (type = ELECTRO)
+						PLAYSOUND>POWERUP4 0 1.0 0.0 0.0 0.0 0
+					ENDIF
+					IF (type = STORMING_SHIELD)
+						PLAYSOUND>POWERUP5 0 1.0 0.0 0.0 0.0 0
+					ENDIF
+					IF (type = MINE)
+						PLAYSOUND>POWERUP6 0 1.0 0.0 0.0 0.0 0
+					ENDIF
+				ENDIF
+
+				LOOP (10)
+					tempi = tempi + 1
+					tempf = SmoothFromToSum(0.999, tempi, 10)
+					scalex = 1.0 - tempf
+					scaley = 1.0 - tempf
+					scalez = 1.0 - tempf
+				ENDLOOP
+				
+				IF (spawned)
+					STAT>Delete
+				ELSE
+					MyFlag = MyFlag | NODISP
+					MyFlag = MyFlag & LNOT (STRATCOLL)
+					MyVar = 0.0
+					STAT>Wait
+				ENDIF
+			ENDIF
+		ENDIF
+	ELSE
+		MyFlag2 = MyFlag2 & LNOT(PLAYERHIT)
+	ENDIF
+ENDSTATE
+
+STATE Wait
+	//UnhideObject(2)
+	//UnhideObject(3)
+	//UnhideObject(4)
+	//UnhideObject(5)
+	//UnhideObject(6)
+	//UnhideObject(7)
+	//HideObject(1)
+	
+	//ThisModelAnimPlay(0)
+	//i = 0.0
+	//WHILE (MyAnimFlag & RUNNING)
+		//MyFlag = MyFlag
+		//IF (i > 15.0)
+			//MyFlag2 = MyFlag2 | TRANSLUCENT
+			//trans = 1.0 - ((i - 15.0) / 10.0)
+		//ENDIF
+		//i = i + 1.0
+	//ENDWHILE
+
+
+
+
+	//MyFlag = MyFlag | NODISP
+	//MyFlag2 = MyFlag2 & LNOT(TRANSLUCENT)
+	//trans = 1.0
+	//HideObject(2)
+	//HideObject(3)
+	//HideObject(4)
+	//HideObject(5)
+	//HideObject(6)
+	//HideObject(7)
+	//UnhideObject(1)
+	WHILE (MyVar < respawn)
+		MyVar = MyVar + 1.0
+	ENDWHILE
+	MyFlag = MyFlag & LNOT (NODISP)
+	MyFlag = MyFlag | STRATCOLL			
+	MyFlag2 = MyFlag2 & LNOT (PLAYERHIT)
+	tempi = 0
+	LOOP (10)
+		tempi = tempi + 1
+		tempf = SmoothFromToSum(1.0, tempi, 10)
+		scalex = tempf
+		scaley = tempf
+		scalez = tempf
+	ENDLOOP
+	STAT>MultiStart
+ENDSTATE
+
+STATE Delete
+	//UnhideObject(2)
+	//UnhideObject(3)
+	//UnhideObject(4)
+	//UnhideObject(5)
+	//UnhideObject(6)
+	//UnhideObject(7)
+	//HideObject(1)
+	//ThisModelAnimPlay(0)
+	//i = 0.0
+	//WHILE (MyAnimFlag & RUNNING)
+		//MyFlag = MyFlag
+		//IF (i > 15.0)
+			//MyFlag2 = MyFlag2 | TRANSLUCENT
+			//trans = 1.0 - ((i - 15.0) / 10.0)
+		//ENDIF
+		//i = i + 1.0
+	//ENDWHILE
+	//MyFlag = MyFlag | NODISP
+	Delete()
+ENDSTATE

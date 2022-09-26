@@ -1,0 +1,33 @@
+LOCALINT id
+
+STATE Init
+	MakeMeTheLast()
+	id = TOINT(ParentVar)
+	OBJECT>REDDOG\RedDogDropshipThrust
+	MyVar = RandRange(0, 10)
+	LOOP MyVar
+		MyVar = MyVar
+	ENDLOOP
+	MODELANIM>REDDOG\RedDogDropshipThrust.rdo>thrust>REPEAT
+	STAT>Run
+ENDSTATE
+
+STATE Stick
+	LinkToParentObject (id, 0, 0, 0, 0, 0, -2)
+	TRIGFIN
+ENDSTATE
+
+STATE Run
+	IF (ParentVar = 1000.0)
+		ParentVar = 1.0
+		OBJECT>REDDOG\RedDogDropshipThrust
+		MODELANIM>REDDOG\RedDogDropshipThrust.rdo>thrust>REPEAT
+	ENDIF
+	IF (MyParentFlag)
+		SetObjectScale (id, ParentVar, ParentVar, ParentVar)
+		RotateObjectXYZ (id, 0, 0, 0.01)
+		LinkToParentObject (id, 0, 0, 0, 0, 0, -2)
+	ELSE
+		Delete()
+	ENDIF
+ENDSTATE

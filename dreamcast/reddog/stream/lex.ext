@@ -1,0 +1,20 @@
+#define MAX_LINE 512
+// external procedures
+
+extern int StratConv(char *strat);
+extern void ResetVars();
+extern void CleanMe();
+extern void ReadLogErrors();
+extern void ReadGenericSounds();
+
+
+extern int NumMods;
+extern int NumAnims;
+extern int DefinedStrats;
+extern int NotSpecifiedMap;
+extern int FullRec;
+extern int TIMESTAMPFAIL;
+extern int SINGLEMAP;
+extern int WADRERUN;
+extern char		CurrentLevel[MAX_LINE];
+extern char *suppname;

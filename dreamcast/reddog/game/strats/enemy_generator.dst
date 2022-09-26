@@ -1,0 +1,110 @@
+PARAMINT	Max			10
+PARAMINT	Active		2
+PARAMINT	delay		10
+PARAMINT	WaveDelay	0
+PARAMFLOAT	inputHealth	100.0
+/* ENDPARAMS */
+
+LOCALINT Temp
+
+DEFINE	GenTime			0
+DEFINE	MaxAtAnyTime	1
+DEFINE	Total			2
+DEFINE	Current			3
+DEFINE	Created			4
+DEFINE	Flag			5
+
+LOCALINT	tempi
+
+STATE Init
+	MyFlag = MyFlag | ENEMY
+	IF (PNode)
+		MyFlag = MyFlag | STRATCOLL | LOWCOLL
+		RegisterCollision()
+	ENDIF
+	IF (!(MyFlag2 & OWNIPARAMS))
+		Max = 10
+		Active = 2
+		delay = 10
+		WaveDelay = 0
+	ENDIF
+	IF (inputHealth = 0)	
+		inputHealth = 100.0
+	ENDIF
+	health = inputHealth
+	SetSem(GenTime, delay)
+	SetSem(Total, Max)
+	SetSem(MaxAtAnyTime, Active)
+	SetSem(Flag, 0)
+	SetSem(Current, 0)
+	SetSem(Created, 0)
+	
+	STAT>Start
+ENDSTATE
+
+LOCALINT DELMEO
+
+STATE Start
+	IF (Max < 63)
+		IF (GetSem(Created) = Max)
+			IF (GetSem(Current) = 0)
+				LOOP (2)
+					SetSem(Flag, 1)
+				ENDLOOP
+		  		DELMEO = 1
+			ENDIF
+		ENDIF
+	ELSE
+		SetSem(Created, 0)		
+	ENDIF
+
+	IF (!DELMEO)
+
+	LOOP (150)
+		MyFlag = MyFlag
+	ENDLOOP
+
+	WHILE (WaveDelay > 0)
+		SetSem(Flag, 2)
+		WaveDelay = WaveDelay - 1
+	ENDWHILE
+	//InitLightning()
+	//ProcessLightning()
+	SetSem(Flag, 0)
+
+	Temp = GetSem(Current)
+				
+	IF (GetParentSem (0) = 1)
+		SetSem (Total, Temp)
+	ENDIF
+
+	IF (health <= 0.0)
+		LOOP (2)
+			SetSem(Flag, 1)
+		ENDLOOP
+		STAT>Die
+	ENDIF
+	ELSE
+		Delete()
+	ENDIF
+
+	//tempi = GetSem(Current)
+	//PNum(1,10,tempi)
+	//tempi = GetSem(Created)
+	//PNum(1,11,tempi)
+
+ENDSTATE
+
+STATE Die	
+	IF (PNode)
+		MyFlag = MyFlag | NODISP | FRIENDLY 
+		MyFlag = MyFlag & LNOT(STRATCOLL)
+//		adrelanin = adrelanin + 0.2
+		Score = Score + 500
+		CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+		DESTROYME SPAWN_EXPLODINGBITS
+	ELSE
+		Delete()
+	ENDIF
+ENDSTATE
+

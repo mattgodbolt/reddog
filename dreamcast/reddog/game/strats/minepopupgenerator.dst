@@ -1,0 +1,89 @@
+LOCALFLOAT RandomCreation
+
+STATE Init
+//	InitHDC()
+//	CalculateStratPolyData()
+	MyFlag = MyFlag | STRATCOLL
+	OBJECT> MISC\POPUPMINEHOLE
+	IF (HasActivation(0))
+		STAT>WaitToCreateAll
+	ENDIF
+	AllocStratSoundBlock(2)
+	SetAudibleRange(0,0,800.0)
+	SetAudibleRange(1,0,800.0)
+	STAT> RandomCheck
+
+ENDSTATE
+
+STATE RandomCheck
+
+	RandomCreation = RandRange(0.0, 1.0)
+	IF (RandomCreation > 0.8)
+		STAT>DoNothing		
+	ENDIF
+	RandomCreation = RandRange(20.0, 25.0)
+
+	STAT>WaitToCreate
+
+ENDSTATE
+
+STATE WaitToCreate
+
+	IF NearPlayerXY(RandomCreation)
+		PlayerCheckX = x
+		PlayerCheckY = y
+		PlayerCheckZ = z
+		IF(PlayerSeePlayerCheckPosXY(0.4))
+			STAT>CreateMine
+		ENDIF
+	ENDIF
+
+ENDSTATE
+
+STATE WaitToCreateAll
+
+	IF PlayerNearActivationXY(0)
+		PlayerCheckX = x
+		PlayerCheckY = y
+		PlayerCheckZ = z
+		STAT>CreateMine
+	ENDIF
+
+ENDSTATE
+
+STATE CreateMine
+	CREATE Mine_PopUp 0, 0, 0, 0, 0, 0, 0
+	STAT>OpenHole
+ENDSTATE
+
+STATE OpenHole
+	Loop (12)
+		RotateObjectXYZ (7, -0.214, 0.0, 0.0)
+		RotateObjectXYZ (1, -0.214, 0.0, 0.0)
+		RotateObjectXYZ (2, -0.214, 0.0, 0.0)
+		RotateObjectXYZ (3, -0.214, 0.0, 0.0)
+		RotateObjectXYZ (4, -0.214, 0.0, 0.0)
+		RotateObjectXYZ (5, -0.214, 0.0, 0.0)
+	EndLoop
+	PLAYSOUND>Mine_door_open 1 0.8 0.0 0.0 0.0 0
+	PLAYSOUND>MineAppear 0 0.7 0.0 0.0 0.0 0
+
+	STAT>CloseHole
+ENDSTATE
+
+STATE CloseHole
+	Loop (12)
+		RotateObjectXYZ (7, 0.214, 0.0, 0.0)
+		RotateObjectXYZ (1, 0.214, 0.0, 0.0)
+		RotateObjectXYZ (2, 0.214, 0.0, 0.0)
+		RotateObjectXYZ (3, 0.214, 0.0, 0.0)
+		RotateObjectXYZ (4, 0.214, 0.0, 0.0)
+		RotateObjectXYZ (5, 0.214, 0.0, 0.0)
+	EndLoop
+	PLAYSOUND>Mine_door_close 1 0.7 0.0 0.0 0.0 0
+ 	STAT>DoNothing
+ENDSTATE
+
+STATE DoNothing
+ENDSTATE
+

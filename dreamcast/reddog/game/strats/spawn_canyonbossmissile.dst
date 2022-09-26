@@ -1,0 +1,39 @@
+//LOCALFLOAT	ox
+//LOCALFLOAT	oz
+//LOCALFLOAT	ax
+//LOCALFLOAT	az
+
+STATE Init
+	MyFlag = MyFlag | BULLETTYPE | ENEMY | LOWCOLL | TARGETABLE | FLOORCOLL | STRATCOLL
+
+	damage = 5.0
+	health = 1.0
+	TRIGSET>Destroy EVERY 100
+	TRIGSET>Destroy	ONFLOOR
+	TRIGSET>Destroy	WHENHIT
+	OBJECT> WEAPON\FOOTLASER
+	RegisterCollision()
+	CREATE Spawn_BlueTrail 0, 0, 0, 0, 0, 0, 0
+	PointTo(DogX, DogY + 100.0, DogZ)
+	MoveY(3.5)
+	IF (GetGlobalParamInt(0) = -1)
+		AllocStratSoundBlock(1)
+		PLAYSOUND>CANYONB_MISSILE1 0 0.63 0.0 0.0 0.0 CONTINUOUS | RANDOM
+	ENDIF
+	STAT>Start
+ENDSTATE
+
+STATE Start
+
+ENDSTATE
+
+TRIGGER Destroy
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+	Delete()
+  //	TRIGSTOP
+ENDSTATE
+	
+
+
+
+

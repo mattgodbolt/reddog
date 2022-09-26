@@ -1,0 +1,84 @@
+// ENV_LightFlare.dst - a nice flarey light kind of thing
+
+LOCALINT id
+LOCALINT flareOn
+
+STATE Init
+	MyFlag = MyFlag & LNOT(ENEMY)
+   	MyFlag = MyFlag | NODISP
+
+	IF (MyParent)
+		WHILE (MyParentInvalid())
+			MyFlag = MyFlag
+		ENDWHILE
+		TRIGSET>CheckParent EVERY 1
+	ENDIF
+
+	// Get a globally unique ID
+	id = GetUniqueID() & 15
+	// Flare off
+	flareOn = 0
+
+	//THE AMOUNT VALUE
+	frame = 0
+	// Trigger action
+	TRIGSET>FlareDraw WHENPAUSED
+	TRIGSET>FlareDraw EVERY 1
+	STAT>OffScreen
+ENDSTATE
+
+// Wait here until 
+//   (a) currentFrame & 3 = id
+//   (b) we are on screen
+//   (c) !scape obscured
+STATE OffScreen
+	IF ((GetCurrentFrame() & 15) = id)
+		IF (OnScreen())
+			IF (!Obscured())
+				flareOn = 1
+				STAT>OnScreen
+			ENDIF
+		ENDIF
+	ENDIF
+ENDSTATE
+
+// Sit here waiting until 
+//   (a) currentFrame & 3 = id
+//   (b) we are off screen
+// OR
+//   (c) scape obscured
+STATE OnScreen
+	WHILE ((GetCurrentFrame() & 15) != id)
+		MyFlag = MyFlag
+	ENDWHILE
+	IF (!OnScreen() || Obscured())
+		flareOn = 0
+		STAT>OffScreen
+	ENDIF
+ENDSTATE
+
+TRIGGER FlareDraw
+	IF (flareOn)
+		frame = frame + 0.2
+		IF (frame > 1)
+			frame = 1
+		ENDIF
+	ELSE
+		frame = frame - 0.2
+		IF (frame < 0)
+			frame = 0
+		ENDIF
+	ENDIF
+	IF (frame)
+		DrawFlare(frame)
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+STATE CheckParent
+	IF (!MyParentFlag || MyParentHealth <= 0)
+		Delete()
+	ELSE
+		TRIGFIN
+	ENDIF
+ENDSTATE

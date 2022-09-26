@@ -1,0 +1,63 @@
+LOCALINT	i
+LOCALFLOAT	tempf
+LOCALFLOAT	rz
+
+STATE Init
+	MyFlag = MyFlag | ENEMY | STRATCOLL
+	RegisterCollision()
+	z = z - 10
+	rz = z
+	InitHDC()
+	CalculateStratPolyData(1)
+	SetSem(0, 0)
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	WHILE (!EnemyInActivation(0, 3D))
+		MyFlag = MyFlag
+	ENDWHILE
+
+	LOOP (60)
+		MyFlag = MyFlag
+	ENDLOOP
+
+	SetSem(0, 1)
+	
+	i = 0
+
+	WHILE (i < 60)
+		tempf = SmoothFromTo(10.0, i, 60)
+		z = z + tempf
+		CalculateStratPolyData(1)
+		i = i + 1
+	ENDWHILE
+
+
+	WHILE (CollWith)
+		CollWith = 0
+		MyFlag = MyFlag
+	ENDWHILE
+
+	i = 0
+
+	WHILE (i < 60)
+		tempf = SmoothFromTo(10.0, i, 60)
+		IF (i = 20)
+			SetSem(0, 2)
+		ENDIF
+		z = z - tempf
+		CalculateStratPolyData(1)
+		i = i + 1
+	ENDWHILE
+
+	z = rz
+	ResetOCP()
+	CalculateStratPolyData(1)
+	SetSem(0, 0)
+ENDSTATE
+
+
+
+
+

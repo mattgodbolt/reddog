@@ -1,0 +1,53 @@
+LOCALINT	i
+LOCALFLOAT tempf
+
+STATE Init
+	MyFlag = MyFlag | ENEMY | STRATCOLL
+	RegisterCollision()
+	InitHDC()
+	RelRotateX(3.14159 * 0.3)
+	CalculateStratPolyData(1)
+	AllocStratSoundBlock(1)
+	SetAudibleRange(0, 60, 500)
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	WHILE (!EscortTankerInActivationXY(0))
+		MyFlag = MyFlag
+	ENDWHILE
+	
+	PLAYSOUND>DRAWBRIDGE 0 1.0 0.0 0.0 0.0 CONTINUOUS
+
+	i = 0
+	LOOP (200)
+		tempf = SmoothFromTo(3.14159 * 0.3, i, 200)
+		RelRotateX(-tempf)
+		CalculateStratPolyData(1)
+		i = i + 1
+	ENDLOOP
+
+	StopSound(0,0.0)
+
+	WHILE (!PlayerNearActivationXY(1))
+		MyFlag = MyFlag
+	ENDWHILE
+
+	PLAYSOUND>DRAWBRIDGE 0 1.0 0.0 0.0 0.0 CONTINUOUS
+
+	i = 0
+	LOOP (200)
+		tempf = SmoothFromTo(3.14159 * 0.3, i, 90)
+		RelRotateX(tempf)
+		CalculateStratPolyData(1)
+		i = i + 1
+	ENDLOOP
+
+	StopSound(0,0.0)
+
+	STAT>DoNothing
+ENDSTATE
+
+STATE DoNothing
+ENDSTATE
+

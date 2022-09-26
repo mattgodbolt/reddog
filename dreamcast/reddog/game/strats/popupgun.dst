@@ -1,0 +1,187 @@
+// Camo Sentry - the popup gun thingy
+
+LOCALINT	AimState
+LOCALINT	WaitFrame
+
+DEFINE GUNTURRET 3
+DEFINE LEFTGUN 2
+DEFINE RIGHTGUN 1
+DEFINE GUNBASE 4
+
+DEFINE DORMANT		0
+DEFINE POPPINGUP	1
+DEFINE AIMING		2
+DEFINE POPPINGDOWN	3
+
+STATE Init
+    //CONTROLLER FOR FIRING EXPLOSION
+   	MyVar = 4.0 
+  	MyFlag = MyFlag | TARGETABLE | STRATCOLL
+	//turn off damage until popup state is activated
+	MyFlag2 = MyFlag2 | NODAMAGE
+ 	OBJECT>ENEMIES\POPUPGUN
+	RegisterCollision()
+
+ 	// Initialise the strat's state
+   	MyFlag = MyFlag | ENEMY
+	health = 80
+
+	AimState = DORMANT
+
+	// Keep a trigger aiming the gun
+   	TRIGSET>KeepOnAiming EVERY 1
+
+	// One sound at a time
+	AllocStratSoundBlock(1)
+
+	// OnDead handler
+	TRIGSET>Die WHENDEAD
+
+	// Sit and wait
+	STAT>Wait
+ENDSTATE
+
+// Wait for the player to come into range
+STATE Wait
+	AimState = DORMANT
+  //	MyFlag = MyFlag & LNOT(TARGETABLE | STRATCOLL)
+	IF (HasActivation(0))
+		// Has activation and is near it..
+		IF (PlayerNearActivationXY(0))
+			STAT>Popup
+		ENDIF
+	ELSE
+		IF (NearPlayer(40))
+			// Popup when within range of the player
+			STAT>Popup
+		ENDIF
+	ENDIF
+ENDSTATE
+
+// Pop up and get ready to aim at the player
+STATE Popup
+	WaitFrame = RandRange(0,10)
+	LOOP WaitFrame
+		MyFlag = MyFlag
+	ENDLOOP
+	AimState = POPPINGUP
+	MODELANIM>ENEMIES\POPUPGUN.RDO>POPUP>0
+
+	WHILE (MyAnimFlag & RUNNING)
+		MyFlag = MyFlag
+	ENDWHILE
+
+	MODELANIM>ENEMIES\POPUPGUN.RDO>FIRING>REPEAT
+  //ENSURE WE ARE DAMAGEABLE
+	MyFlag2 = MyFlag2 & LNOT(NODAMAGE)
+
+	STAT>Aim
+ENDSTATE
+
+// Pop back down
+STATE Popdown
+	AimState = POPPINGDOWN
+   	MODELANIM>ENEMIES\POPUPGUN.RDO>POPDOWN>0
+	WHILE (MyAnimFlag & RUNNING)
+		MyFlag = MyFlag
+	ENDWHILE
+	
+  	//MAKE NO DAMAGEABLE
+	MyFlag2 = MyFlag2 | NODAMAGE
+   
+	STAT>Wait
+ENDSTATE
+
+// Do the aiming and firing
+STATE Aim
+	IF (!NearPlayer(80.0))
+		STAT>Popdown
+	ENDIF
+	AimState = AIMING
+	LOOP (80)
+		MyFlag = MyFlag
+	ENDLOOP
+
+	IF (ObjectSeePlayerZ(TWOPI/8.0,GUNTURRET,0,0,0))
+	LOOP (3 * 6)
+		PLAYSOUND>SQUAR009PMIX2 0 1.0 0.0 0.0 0.0 0
+		CREATE SPAWN_ENEMYMISSILE 0.0, 0.0, 0.0, 0, 0, 0, LEFTGUN
+		CREATE SPAWN_BLASTEXP 0.0, 0.0, 0.0, 0, 0, 0, LEFTGUN
+		LOOP 3
+			MyFlag = MyFlag
+		ENDLOOP
+		PLAYSOUND>SQUAR009PMIX2 0 1.0 0.0 0.0 0.0 0
+		CREATE SPAWN_ENEMYMISSILE 0.0, 0.0, 0.0, 0, 0, 0, RIGHTGUN
+		CREATE SPAWN_BLASTEXP 0.0, 0.0, 0.0, 0, 0, 0, RIGHTGUN
+		LOOP 3
+			MyFlag = MyFlag
+		ENDLOOP
+
+	ENDLOOP
+	ENDIF
+ENDSTATE
+
+STATE KeepOnAiming
+   
+   	IF (AimState = AIMING)
+		ObjectTowardPlayerXZ (GUNBASE, 0.0, 0.025, TWOPI, TWOPI)
+		ObjectTowardPlayerXZ (GUNTURRET, 0.05, 0.0, 0.0, (TWOPI/360.0) * 22.5)
+		CrntRotToIdleRotZ(GUNBASE, 0.025)
+		CrntRotToIdleRotX(GUNTURRET, 0.05)
+	ENDIF
+  
+	TRIGFIN
+ENDSTATE
+
+STATE Die
+	TRIGKILL>KeepOnAiming EVERY
+	HideObject(GUNTURRET)
+	HideObject(LEFTGUN)
+	HideObject(RIGHTGUN)
+
+
+	MyFlag = MyFlag & LNOT(ENEMY | TARGETABLE | STRATCOLL)
+	// Resurrect the object to live on as a dead sentry
+   	MyFlag = MyFlag | ALIVE
+	MyVar = 2.0
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, GUNBASE
+//	adrelanin = adrelanin + 0.2
+	TRIGRESET
+   	TRIGSTOP
+   	STAT>Dead
+ENDSTATE
+
+STATE Dead
+	AimState = 2
+	WHILE (AimState)
+		WaitFrame = 150
+		WHILE (WaitFrame)
+			IF (AimState = 2)
+				MyVar = 2.0
+			ELSE
+				MyVar = 0.0
+			ENDIF
+			CREATE SPAWN_ScapeSmoke 0,0,0, 0,0,0, GUNTURRET
+			CREATE SPAWN_ScapeSmoke 0,0,0, 0,0,0, GUNTURRET
+			IF (AimState = 2)
+				MyVar = 3.0
+			ELSE
+				MyVar = 1.0
+			ENDIF
+			CREATE SPAWN_ScapeSmoke 0,0,0, 0,0,0, GUNTURRET
+			WaitFrame = WaitFrame - 1 
+		ENDWHILE
+		AimState = AimState - 1
+	ENDWHILE
+	STAT>Idle
+ENDSTATE
+
+STATE Idle
+	IF (NearPlayer(40.0))
+		MyVar = 0.0
+		CREATE SPAWN_ScapeSmoke 0,0,0, 0,0,0, GUNTURRET
+		CREATE SPAWN_ScapeSmoke 0,0,0, 0,0,0, GUNTURRET
+		MyVar = 1.0
+		CREATE SPAWN_ScapeSmoke 0,0,0, 0,0,0, GUNTURRET
+	ENDIF
+ENDSTATE

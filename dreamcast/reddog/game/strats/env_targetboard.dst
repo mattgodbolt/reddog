@@ -1,0 +1,233 @@
+//movetype 0 - Loop till shot
+//movetype 1 - Play once only
+//movetype 2 - PingPong
+//movetype 3 - Loop the loop till shot
+
+PARAMINT TYPE 1
+PARAMINT MOVE_TYPE 0
+PARAMFLOAT speed 0.05
+PARAMFLOAT RTIME 0.0
+PARAMFLOAT pongTime 1.0
+PARAMFLOAT delay 0.0
+
+DEFINE TARGET1HOT 1
+DEFINE TARGET2HOTA 1
+DEFINE TARGET2HOTB 4
+DEFINE TARGET3HOTA 1
+DEFINE TARGET3HOTB 3
+DEFINE TARGET3HOTC 5
+DEFINE TARGET4HOTA 1
+DEFINE TARGET4HOTB 2
+DEFINE TARGET4HOTC 3
+DEFINE TARGET4HOTD 4
+
+LOCALINT DEAD
+LOCALINT i
+LOCALFLOAT SPECAMOUNT
+
+STATE Init
+	MyFlag = MyFlag | TARGETABLE | STRATCOLL
+	IF (!(MyFlag2 & OWNIPARAMS))
+		TYPE = 1
+		MOVE_TYPE = 0
+	ENDIF
+
+	IF (!(MyFlag & OWNFPARAMS))
+		speed = 0.05
+		//DEFAULT SETTING OF NO TIME LIMIT
+		RTIME  = 0.0
+		pongTime = 1.0
+		delay = 0.0
+	ENDIF
+
+	delay = delay * 30.0
+	WHILE (delay > 0.0)
+		delay = delay - 1.0
+	ENDWHILE
+
+	IF (TYPE = 1)
+		OBJECT> EXPLODABLES\TARGETFLOATBLUEEXP
+	ENDIF
+
+	IF (TYPE = 2)
+		OBJECT> EXPLODABLES\TARGETFLOATGREENEXP
+	ENDIF
+
+	IF (TYPE = 3)
+		OBJECT> EXPLODABLES\TARGETFLOATORANGEXP
+	ENDIF
+
+	IF (TYPE = 4)
+		OBJECT> EXPLODABLES\TARGETFLOATPURPEXP
+	ENDIF
+
+	IF (TYPE = 5)
+		OBJECT> EXPLODABLES\TARGETFLOATREDEXP
+	ENDIF
+
+	IF (TYPE = 6)
+		OBJECT> EXPLODABLES\TARGETSIDEBLUEEXP
+	ENDIF
+
+	IF (TYPE = 7)
+		OBJECT> EXPLODABLES\TARGETSIDEGREENEXP
+	ENDIF
+
+	IF (TYPE = 8)
+		OBJECT> EXPLODABLES\TARGETSIDEORANGEXP
+	ENDIF
+
+	IF (TYPE = 9)
+		OBJECT> EXPLODABLES\TARGETSIDEPURPEXP
+	ENDIF
+
+	IF (TYPE = 10)
+		OBJECT> EXPLODABLES\TARGETSIDEREDEXP
+	ENDIF
+
+	MyFlag = MyFlag | ENEMY | STRATCOLL | LOWCOLL | TARGETABLE
+	RegisterCollision()
+
+	//InitHDC()
+	//CalculateStratPolyData(1)
+
+  	IF (RTIME)
+	  //convert to frames
+		IF (PAL)
+			RTIME = RTIME * 25.0 
+			pongTime = pongTime * 25.0
+		ELSE
+			RTIME = RTIME * 30.0
+			pongTime = pongTime * 30.0
+		ENDIF
+		TRIGSET>RTIMEOUT EVERY 1
+	ENDIF
+  
+  	IF (MyPath)
+		//ENSURE OWN ROTATION IS USED
+		MyFlag2 = MyFlag2 | USEMYOWNROTATION
+		InitPath()
+		TRIGSET>CollisionWarez EVERY 1
+		IF (MOVE_TYPE = 3)
+			STAT>LoopTheLoop
+		ENDIF
+		InitSplineData()
+		STAT>MovePath
+	ELSE
+		WHILE (MyAnimFlag & RUNNING)
+			MyFlag = MyFlag
+			//CalculateStratPolyData(1)
+		ENDWHILE
+	ENDIF
+
+	TRIGSET>CollisionWarez EVERY 1
+	WHILE (1)
+		MyFlag = MyFlag
+	ENDWHILE
+ENDSTATE
+
+TRIGGER RTIMEOUT
+	WHILE (RTIME > 0)
+		RTIME = RTIME - 1.0
+	ENDWHILE
+
+	TRIGSTOP
+	STAT>ENDME
+ENDTRIGGER
+
+STATE MovePath
+	IF (MOVE_TYPE = 0)
+   		IF (!LastWay())
+   			MoveAlongPath(speed)
+			//CalculateStratPolyData(1)
+ 		ELSE
+			MyFlag2 = MyFlag2 | TRANSLUCENT
+			trans = 1.0
+			i = 0
+			WHILE (i < 10)
+				trans = trans - 0.1
+				i = i + 1
+			ENDWHILE
+			ResetPath()
+			InitSplineData()
+			MyFlag2 = MyFlag2 & LNOT(TRANSLUCENT)
+			//CalculateStratPolyData(1)
+ 		ENDIF
+	ENDIF
+
+	IF (MOVE_TYPE = 1)
+   		IF (!LastWay())
+   			MoveAlongPath(speed)
+			//CalculateStratPolyData(1)
+ 		ELSE
+			WHILE (1)
+				MyFlag = MyFlag
+			ENDWHILE
+ 		ENDIF
+	ENDIF
+
+	IF (MOVE_TYPE = 2)
+		IF (speed > 0.0)
+   			IF (!LastWay())
+   				MoveAlongPath(speed)
+				//CalculateStratPolyData(1)
+ 			ELSE
+				speed = speed * -1.0
+				i = 0
+				WHILE (i < pongTime)
+					i = i + 1
+				ENDWHILE
+ 			ENDIF
+		ELSE
+			IF (!FirstWay())
+   				MoveAlongPath(speed)
+				//CalculateStratPolyData(1)
+ 			ELSE
+				speed = speed * -1.0
+				i = 0
+				WHILE (i < pongTime)
+					i = i + 1
+				ENDWHILE
+ 			ENDIF
+		ENDIF
+	ENDIF
+ENDSTATE
+
+TRIGGER CollisionWarez
+	IF (MyFlag & HITSTRAT)
+		CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, TARGET1HOT 
+		IMMLOOP (10) 
+   			CREATE SPAWN_EnemyDebris 0, 0, 5, 0, 0, 0, TARGET1HOT
+		IMMENDLOOP
+ 		TRIGRESET
+		TRIGSTOP
+	   	STAT>BOOMSHAKALA
+	ENDIF
+	TRIGFIN
+ENDTRIGGER 
+
+STATE BOOMSHAKALA
+	Score = Score - 1
+	IF (MyParent)
+		SetParentSem(2, 1)
+	ENDIF
+	Delete()
+ENDSTATE
+
+STATE ENDME
+	IF (MyParent)
+		SetParentSem(2, 1)
+	ENDIF
+	Delete()
+ENDSTATE
+
+STATE LoopTheLoop
+	WHILE (!NearCheckPos(1.0))
+		MoveTowardCheckPosNow(speed)
+	ENDWHILE
+	IF (LastWay())
+		GetFirstWay()
+	ELSE
+		GetNextWay()
+	ENDIF
+ENDSTATE

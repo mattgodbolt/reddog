@@ -1,0 +1,71 @@
+LOCALFLOAT	speed
+
+STATE Init
+	MyFlag = MyFlag & LNOT(ENEMY)
+	MyFlag = MyFlag | FRIENDLY
+	InitPath()
+	speed = 0.0
+	STAT> Start
+ENDSTATE
+
+STATE Start
+	IF (PlayerNearActivationXY(0))
+		SetPlayerBoostButtonCount(0, 0)
+		CameraState = THIRD_PERSON_CLOSE
+		PlayerState = PS_ONPATH
+		GetPrevWay()
+		PlayerCheckX = CheckX
+		PlayerCheckY = CheckY
+		PlayerCheckZ = CheckZ
+		STAT> FollowPath
+	ENDIF
+ENDSTATE
+
+STATE FollowPath
+	PlayerTurnTowardPlayerCheckPosXY()
+	PlayerControlPadPress = PADSHOULDERR | PADFORWARD
+	IF (LastWay())
+		speed = PlayerDistPlayerCheckXY() * 0.1
+		IF (speed > 1.0)
+			speed = 1.0
+		ENDIF
+	ELSE
+		speed = 1.0
+	ENDIF
+	PlayerControlPlayerAcc = speed
+	
+	IF (LastWay())
+		IF (PlayerNearPlayerCheckPosXY(1.0))
+			//LOOP (10)
+				//PlayerControlPadPress = PADSHOULDERR | PADFORWARD
+				//PlayerControlPlayerAcc = 1.0
+			//ENDLOOP
+			PlayerControlPadPress = 0
+			PlayerControlPlayerAcc = 0.0
+			LOOP (245)
+				MyFlag = MyFlag
+			ENDLOOP
+
+			STAT>MoveForward
+		ENDIF
+	ELSE
+		IF (PlayerNearPlayerCheckPosXY(5.0))
+			GetNextWay()
+			PlayerCheckX = CheckX
+			PlayerCheckY = CheckY
+			PlayerCheckZ = CheckZ
+		ENDIF
+	ENDIF
+ENDSTATE
+
+STATE MoveForward
+	LOOP (20)
+		PlayerControlPadPress = PADSHOULDERR | PADFORWARD
+		PlayerControlPlayerAcc = 1.0
+	ENDLOOP
+	PlayerControlPlayerAcc = 0.0
+	PlayerControlPadPress = 0
+	PlayerState = PS_NORMAL
+	Delete()
+ENDSTATE
+

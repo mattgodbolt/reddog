@@ -1,0 +1,135 @@
+// ScapeFire created smoke and fire trail
+// PARENTVAR 0.0 FLAME SMALL
+//			 1.0 SMOKE SMALL
+//			 2.0 FLAME BIG
+//			 3.0 SMOKE BIG
+
+//LOCALFLOAT temp
+//health overloaded with objid if needed
+//damage overloaded with y offset
+//frame overloaded with z offset
+//CheckZ overloaded with fire rate
+STATE Init
+	MakeMeTheLast()
+	MyFlag = MyFlag | SPRITE | NOTEXPLODE
+ 	MyFlag2 = MyFlag2 | TRANSLUCENT
+	IF (GetGlobalParamInt(0))
+		health = GetGlobalParamInt(0)
+		damage = GetGlobalParamFloat(0)
+		frame = GetGlobalParamFloat(1)
+	ELSE
+		health = 0
+	
+	ENDIF		
+
+	CheckZ = GetGlobalParamFloat(3)
+	IF (!CheckZ)
+		CheckZ = 0.1
+	ENDIF
+
+
+	SetFriction(0.03,0.03,0.03)
+	MyVar = ParentSemaphore	
+
+	IF ((ParentSemaphore = 1.0) || (ParentSemaphore = 3.0))
+		OBJECT> SFX\DARKPUFF
+		ANIM> DARKPUFF>Smoke
+		trans = RandRange (0.4, 0.8)
+		scalex = RandRange(0.2, 0.3)
+		scaley = RandRange(0.2, 0.3)
+	ELSE
+		OBJECT> SFX\BURNPUFF
+		ANIM> BURNPUFF>Smoke
+		trans = RandRange (0.6, 1)
+		scalex = RandRange(0.15, 0.25)
+		scaley = RandRange(0.15, 0.25)
+	 //	scaley = RandRange(scalex, scalex + 0.55)
+	ENDIF
+  
+	IF (ParentSemaphore = 2.0)
+		scalex = RandRange(0.45,0.75)
+		scaley = RandRange(0.45,0.75)
+	ENDIF
+	IF (ParentSemaphore = 3.0)
+		scalex = RandRange(0.55,0.95)
+		scaley = RandRange(0.55,0.95)
+	ENDIF
+
+
+	IF (GetGlobalParamFloat(2))
+		scalex = scalex * GetGlobalParamFloat(2)
+		scaley = scaley * GetGlobalParamFloat(2)
+  	 ENDIF
+  
+  
+  
+  	//TRIGSET>KillOff WHENANIMOVER
+  	TRIGSET>KillOff EVERY 10
+
+
+	SetAnimSpeedPercent(50)
+
+	IF (!health)
+	
+	MoveZ (0.003)
+	MyVar = RandRange(-0.33, -0.28) * 0.1
+	MoveY (MyVar)
+	MyVar = RandRange(-0.015, 0.015) * 0.5
+	MoveX (MyVar)
+
+	x = x + RandRange(-0.1, 0.1)
+	y = y + RandRange(-0.1, 0.1)
+
+	MyVar = RandRange(0, TWOPI)
+	RelRotateZ(MyVar)
+
+	STAT>Wait
+	ELSE
+	zoff = 0.003
+	MyVar = RandRange(-0.33, -0.28) * 0.1
+	yoff =  MyVar
+	MyVar = RandRange(-0.015, 0.015) * 0.5
+	xoff =  MyVar
+	MyVar = RandRange(0, TWOPI)
+	RelRotateZ(MyVar)
+   
+   	CheckX = RandRange(-0.1, 0.1)
+	CheckY = RandRange(-0.1, 0.1)
+
+
+
+	STAT>Link
+
+	ENDIF
+ENDSTATE
+
+STATE Link
+	LinkToParentObject(health,0,0,0,0,damage,frame)
+	RelRotateZ(MyVar)
+	x = x + CheckX + xoff
+	y = y + CheckY + yoff
+	z = z + zoff
+	zoff = zoff + CheckZ * scalex
+	yoff = yoff * 0.03 
+	xoff = xoff * 0.03 
+	x = x + windX * 0.02
+	y = y + windY * 0.02
+
+ENDSTATE
+
+LOCALFLOAT xoff
+LOCALFLOAT yoff
+LOCALFLOAT zoff
+
+STATE Wait
+	RelRotateZ(MyVar)
+
+	MoveZ (0.003)
+	x = x + windX * 0.02
+	y = y + windY * 0.02
+ENDSTATE
+
+STATE KillOff
+	Delete()
+ //	TRIGFIN
+ENDSTATE

@@ -1,0 +1,62 @@
+/* Camera follows player */
+
+//LOCALINT res
+//LOCALFLOAT	ydist
+
+STATE Init
+	//ENSURE I RUN AFTER MY PLAYER
+	MakeMeTheLast()
+
+	//MY PARENT WILL BE NULLED SOON SO LET'S SAVE IT
+	MyTarget = MyParent
+
+	MyFlag = MyFlag | NODISP | FRIENDLY
+
+	MyFlag2 = MyFlag2 | COLLMOVE | CAMERA_CF
+	//TRIGSET>KillOff PARENTDEAD
+	OBJECT> MISC\CAMERA
+	SetFriction(0.25,0.25,0.25)
+	IF (MyParent)
+		WHILE (MyParentInvalid())
+			MyFlag = MyFlag
+		ENDWHILE
+	ENDIF
+
+   	MyTarget = MyParent
+   	SetCamera()
+	STAT>MoveForward
+ENDSTATE
+   
+
+STATE MoveForward	
+	//DIE WHEN SAVED PARENT(THE PLAYER) GOES
+	IF (LevelReset = 1)
+		IF (Multiplayer || Lives)
+			Delete()
+		ENDIF
+	ELSE
+		IF (!MyTargetFlag)
+
+			IF (!Multiplayer)
+		   		IF (Lives > 0)
+					Lives = Lives - 1
+					LevelReset = 1
+				 ELSE
+					GameOver()
+		  		ENDIF
+			ENDIF
+			
+
+			Delete()
+		ENDIF
+	ENDIF
+
+	//CheckX = DogX
+	//CheckY = DogY
+	//CheckZ = DogZ
+	//IF (CheckPosDist() > 15.0)
+		//MyFlag = MyFlag & LNOT(FLOORCOLL)
+	//ELSE
+		//MyFlag = MyFlag | FLOORCOLL
+	//ENDIF
+ENDSTATE 

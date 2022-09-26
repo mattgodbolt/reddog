@@ -1,0 +1,12 @@
+STATE Init
+	MyFlag = MyFlag | STRATCOLL | ENEMY
+	RegisterCollision()
+	OBJECT>ENEMIES\BATTLETANK
+	ObjectTargetable(1)
+	SetObjectHealth(1, 100.0)
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	MyFlag = MyFlag
+ENDSTATE

@@ -1,0 +1,55 @@
+//THE LINK FOR OUR END OF BEAM PRONG LASER
+DEFINE COLLDUMMY 1
+
+LOCALINT innerBand
+LOCALINT outerBand
+//0 for left, 1 for right
+LOCALINT mode
+LOCALFLOAT Model
+
+STATE Init
+	MakeMeTheLast()
+	MyFlag = MyFlag | FLOORCOLL	| ENEMY
+	MyFlag2 = MyFlag2 | NOHDC
+	OBJECT> BOSSES\SWAMPBOSSWEAPONS\BEAMLASER
+	damage = 50.0
+	mode = GetGlobalParamInt(0)
+	SetGlobalParamInt(0,mode)
+	Model = GetGlobalParamFloat(0)
+
+	SetGlobalParamFloat(0,1)
+	SetGlobalParamFloat(1,0)
+	SetGlobalParamFloat(2,0)
+   	CREATE SPAWN_SWAMPPRONGBEAM 0.0, 0, 0.0, 0, 0, 0, 0
+	ClearGlobalParams()
+	HideObject(COLLDUMMY)
+	InActivateObjectCollision(COLLDUMMY)
+	InitHDC()
+	TRIGSET>Update EVERY 1
+	STAT>Link
+ENDSTATE
+
+TRIGGER Update
+  	CalculateStratPolyData(0)
+
+
+	TRIGFIN
+ENDTRIGGER
+
+
+STATE Link
+	WHILE (MyParentHealth != 1.0)
+		LinkToParentObject(Model, 0, 0, 0, 0, 0, 0)
+		IF (MyParentHealth = 2.0)
+			IF (scaley > 0.0)
+				scaley = scaley - 1.0
+			ENDIF
+		ELSE
+			IF (!(MyFlag & HITFLOOR))
+				scaley = scaley + 2.5
+			ENDIF
+		ENDIF
+	ENDWHILE
+	
+	Delete()
+ENDSTATE

@@ -1,0 +1,219 @@
+; M_TriA.src
+; NonTextured non-clipped triangle renderer
+				.CPU			SH4
+				.OUTPUT			DBG=DWARF
+				.SECTION		RASTERISERS, CODE, ALIGN=4
+				.INCLUDE		"..\RedDog.pre"
+
+				.EXPORT			_nontexturedModelRasteriserASM
+; Prototype: PKMDWORD nontexturedModelRasteriserASM (ModelContext *context, Uint32 num, PKMDWORD pkm);
+vNum:			.REG	R0
+uv:				.REG	R1
+v:				.REG	R2
+strip:			.REG	R3
+context:		.REG	R4
+numTri:			.REG	R5
+pkm:			.REG	R6
+paramWord:		.REG	R7
+vNum2:			.REG	R8
+
+A:				.FREG	FR0
+R:				.FREG	FR1
+G:				.FREG	FR2
+B:				.FREG	FR3
+AA:				.FREG	FR4
+RR:				.FREG	FR5
+GG:				.FREG	FR6
+BB:				.FREG	FR7
+
+; Quick setup time is essential
+_nontexturedModelRasteriserASM:
+				MOV		@context, v				; Get vertex array
+
+				MOV		@(8, context), uv		; Get the UV array
+				ADD		#16, v					; Make 'v' point at the position info of each PrepVtx
+
+				PUSH	R8						; Preserve a register
+
+				MOV		@(12, context), strip	; Get the strip list
+
+				MOV		context, vNum
+				ADD		#32, vNum				; Point at material colour
+
+				FMOV.S	@vNum+, AA
+
+				FMOV.S	@vNum+, RR
+
+				FMOV.S	@vNum+, GG
+
+				FMOV.S	@vNum, BB				; Get material colour
+
+				; And off we go!
+?mainLoop		MOV.W	@strip+, vNum			; Get the vertex number for the first point
+				ADD		#16, pkm				; point pkm at the position information
+				
+				SHLL2	vNum					; vNum = vNum * 4
+				MOV.L	#H'e0000000, paramWord	; Get the vertex param word sorted
+
+				SHLL2	vNum					; ..vNum = vNum * 16
+				MOV.W	@strip+, vNum2			; Get the next vertex's number
+				
+				SHLL2	vNum					; ....vNum = vNum * 64
+
+				ADD		v, vNum					; vNum now points at the position info of the PrepVtx
+
+				SHLL2	vNum2					; vNum2 *= 4
+
+				FMOV.S	@vNum+, A				; A is x
+				SHLL2	vNum2					; vNum2 *= 16
+
+				SHLL2	vNum2					; vNum2 *= 64
+
+				FMOV.S	@vNum+, R				; R is y
+				ADD		v, vNum2				; vNum2 now points at the position info of the PrepVtx
+
+				FMOV.S	@vNum+, G				; GG is 1 / w
+
+				FMOV.S	G, @-pkm				; Store 1/w
+
+				FMOV.S	R, @-pkm				; Store y
+				ADD		#4, vNum
+
+				FMOV.S	A, @-pkm				; Store x
+
+				MOV.L	paramWord, @-pkm		; Store in the Param Word
+
+				FMOV.S	@vNum+, A				; Get diffuse colour....alpha
+
+				ADD		#32, pkm				; Move to the end of the colour info
+
+				FMOV.S	@vNum+, R				; ..red..
+				FMUL	AA, A					; Change alpha colour
+
+				FMOV.S	@vNum+, G				; ..green..
+				FMUL	RR, R					; Change red colour
+
+				FMOV.S	@vNum+, B				; ..blue..
+				FMUL	GG, G					; Change green colour
+
+				MOV.W	@strip+, vNum			; Get last vertex's number
+				FMUL	BB, B					; Change blue colour
+
+				FMOV.S	B, @-pkm				; store diffuse blue
+				SHLL2	vNum					; vNum*=4
+
+				FMOV.S	G, @-pkm				; store diffuse green
+				SHLL2	vNum					; vNum*=16
+
+				FMOV.S	R, @-pkm				; store diffuse red
+				SHLL2	vNum					; vNum*=64
+
+				FMOV.S	A, @-pkm				; store diffuse alpha
+				ADD		v, vNum					; vNum now points at the last vertex
+
+				PREF	@pkm					; SQ blast it across
+				ADD		#32, pkm				; Get ready for the next vertex
+
+				; Vertex 2
+
+				FMOV.S	@vNum2+, A				; A is x
+
+				FMOV.S	@vNum2+, R				; R is y
+
+				FMOV.S	@vNum2+, G				; G is 1 / w
+
+				FMOV.S	G, @-pkm				; Store 1/w
+
+				FMOV.S	R, @-pkm				; Store y
+				ADD		#4, vNum2
+
+				FMOV.S	A, @-pkm				; Store x
+
+				MOV.L	paramWord, @-pkm		; Store in the Param Word
+
+				FMOV.S	@vNum2+, A				; Get diffuse colour....alpha
+
+				ADD		#32, pkm				; Move to the end of the colour info
+
+				FMOV.S	@vNum2+, R				; ..red..
+				FMUL	AA, A					; Change alpha colour
+
+				FMOV.S	@vNum2+, G				; ..green..
+				FMUL	RR, R					; Change red colour
+
+				FMOV.S	@vNum2+, B				; ..blue..
+				FMUL	GG, G					; Change green colour
+
+				FMUL	BB, B					; Change blue colour
+
+				FMOV.S	B, @-pkm				; store diffuse blue
+
+				FMOV.S	G, @-pkm				; store diffuse green
+
+				FMOV.S	R, @-pkm				; store diffuse red
+
+				FMOV.S	A, @-pkm				; store diffuse alpha
+
+				PREF	@pkm					; SQ blast it across
+				ADD		#32, pkm				; Get ready for the next vertex
+
+				; Vertex 3
+
+				MOV.L	#H'F0000000, paramWord	; Get the vertex param word sorted
+
+				FMOV.S	@vNum+, A				; A is x
+
+				FMOV.S	@vNum+, R				; R is y
+
+				FMOV.S	@vNum+, G				; G is 1 / w
+
+				FMOV.S	G, @-pkm				; Store 1/w
+
+				FMOV.S	R, @-pkm				; Store y
+				ADD		#4, vNum
+
+				FMOV.S	A, @-pkm				; Store x
+
+				MOV.L	paramWord, @-pkm		; Store in the Param Word
+
+				FMOV.S	@vNum+, A				; Get diffuse colour....alpha
+
+				ADD		#32, pkm				; Move to the end of the colour info
+
+				FMOV.S	@vNum+, R				; ..red..
+				FMUL	AA, A					; Change alpha colour
+
+				FMOV.S	@vNum+, G				; ..green..
+				FMUL	RR, R					; Change red colour
+
+				FMOV.S	@vNum+, B				; ..blue..
+				FMUL	GG, G					; Change green colour
+
+				FMUL	BB, B					; Change blue colour
+
+				FMOV.S	B, @-pkm				; store diffuse blue
+
+				FMOV.S	G, @-pkm				; store diffuse green
+
+				FMOV.S	R, @-pkm				; store diffuse red
+
+				FMOV.S	A, @-pkm				; store diffuse alpha
+				ADD		#3*2*4, uv				; Move uvs on
+
+				DT		numTri
+				PREF	@pkm					; SQ blast it across
+
+				BF/S	?mainLoop
+				ADD		#16, pkm				; Get ready for the next vertex
+
+				; We now need to store back uv and strip
+				MOV		uv, @(8, context)
+
+				MOV		strip, @(12, context)	; Get the strip list
+				MOV		pkm, R0					; return SQ
+
+				RTS
+				POP		R8						; pop-a-lop
+
+				.END
+

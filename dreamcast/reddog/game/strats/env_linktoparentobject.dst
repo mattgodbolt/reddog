@@ -1,0 +1,19 @@
+PARAMINT	objId	0
+
+STATE Init
+	IF (!(MyFlag2 & OWNIPARAMS))
+		objId = 0
+	ENDIF
+	WHILE (MyParentInvalid())
+		MyFlag = MyFlag
+	ENDWHILE
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	IF (!MyParentInvalid())
+		LinkToParentObject(objId, 0, 0, 0, 0, 0, 0)
+	ELSE
+		Delete()
+	ENDIF
+ENDSTATE

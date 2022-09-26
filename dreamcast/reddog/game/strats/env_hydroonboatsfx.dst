@@ -1,0 +1,89 @@
+PARAMINT TYPE 0
+
+
+TRIGGER SPLASH
+
+   	PLAYSOUND>splash1 3 0.9 0.0 0.0 0.0 NOPOSITION
+
+	
+	WHILE (IsPlaying(3))
+		MyFlag = MyFlag
+	ENDWHILE
+
+
+   	PLAYSOUND>splash2 3 1.0 0.0 0.0 0.0 NOPOSITION
+
+
+
+	TRIGFIN
+ENDTRIGGER
+
+
+STATE Init
+
+	IF (TYPE)
+	AllocStratSoundBlock(4)
+	   	PLAYSOUND>rd_raft 2 0.7 0.0 0.0 0.0 CONTINUOUS | NOPOSITION
+		TRIGSET>SPLASH EVERY 5
+
+
+	LOOP (35)
+		MyFlag = MyFlag
+	ENDLOOP
+	TRIGKILL>SPLASH EVERY 5
+
+	PLAYSOUND>HYDROBOLT 1 1.0 0.0 0.0 0.0 NOPOSITION
+	PLAYSOUND>RD-DEEPM  0 1.0 0.0 0.0 0.0 CONTINUOUS | NOPOSITION
+	LOOP (60)
+		MyFlag = MyFlag
+	ENDLOOP
+	STAT>Die
+	ENDIF
+
+
+
+
+	IF (!MyParent)
+		STAT>Die
+	ENDIF
+
+	WHILE (MyParentInvalid())
+		MyFlag = MyFlag
+	ENDWHILE
+
+	WHILE (!PlayerNearActivationXY(0))
+		MyFlag = MyFlag
+	ENDWHILE
+
+
+
+	AllocStratSoundBlock(4)
+	PLAYSOUND>RD-DEEPM  0 0.8 0.0 0.0 0.0 NOPOSITION | CONTINUOUS
+
+	LOOP (35)
+		MyFlag = MyFlag
+	ENDLOOP
+	
+	PLAYSOUND>HYDROBOLT 1 1.0 0.0 0.0 0.0 NOPOSITION
+	
+	LOOP (20)
+		MyFlag = MyFlag
+	ENDLOOP
+
+	TRIGSET>SPLASH EVERY 5
+
+   	PLAYSOUND>rd_raft 2 0.7 0.0 0.0 0.0 CONTINUOUS | NOPOSITION
+
+  
+  	WHILE (MyParentFlag)
+		MyFlag = MyFlag
+	ENDWHILE
+
+	STAT>Die
+ENDSTATE
+
+
+
+STATE Die
+	Delete()
+ENDSTATE

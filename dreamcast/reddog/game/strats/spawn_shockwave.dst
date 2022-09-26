@@ -1,0 +1,87 @@
+// Explosion shockwave
+
+// XXX atm replacement for RDArmageddon - needs changing
+
+LOCALFLOAT ShockSize
+LOCALFLOAT ExplodeSize
+LOCALFLOAT ExpInc
+LOCALFLOAT Scale
+LOCALFLOAT ShockTrans
+LOCALFLOAT ExplodeTrans
+
+DEFINE GroundWave	1
+DEFINE Sphere		2
+DEFINE CameraWave	3
+
+STATE Init
+	MyFlag = MyFlag | NOTEXPLODE | FRIENDLY
+	RegisterCollision()
+	OBJECT>Sfx\ShockwaveBlue DOCKLANDS
+
+	UnitiseMatrix()
+
+	damage = 10.0
+
+	ExplodeSize = 0.05
+	ExpInc = 0.2
+	ShockSize = 0.0001
+	Scale = 0.15
+
+	AllocStratSoundBlock(1)
+	PLAYSOUND>EX_LARGE_BLAST1 0 1.0 0.0 0.0 0.0 0
+
+	ExplodeTrans = 1
+	ShockTrans = 1
+
+	SetObjectScale (GroundWave, 0.02, 0.02, 0.02)
+	SetObjectScale (CameraWave, 0.02, 0.02, 0.02)
+	SetObjectScale (Sphere, 0.02, 0.02, 0.02)
+	HideObject (GroundWave)
+	HideObject (CameraWave)
+	NoCollObject(1)
+	NoCollObject(2)
+
+	TRIGSET>GrowShockwave EVERY 1
+	STAT>ExplodeGrow
+ENDSTATE
+
+STATE GrowShockwave
+	ShockSize = ShockSize + 0.07
+	ExplodeSize = ExplodeSize + ExpInc
+	IF ExplodeSize < 0.01
+		ExplodeSize = 0.01
+	ENDIF
+	SetObjectScale (GroundWave, ShockSize * Scale, ShockSize * Scale, 1.0)
+	SetObjectScale (CameraWave, ShockSize * Scale, ShockSize * Scale, 1.0)
+	SetObjectScale (Sphere, ExplodeSize * Scale, ExplodeSize * Scale, ExplodeSize * Scale)
+	SetObjectTrans (GroundWave, ShockTrans)
+	SetObjectTrans (CameraWave, ShockTrans)
+	SetObjectTrans (Sphere, ExplodeTrans)
+	RotateObjectXYZ (Sphere, -0.01, 0.08, 0.1)
+	TRIGFIN
+ENDSTATE
+
+STATE ExplodeGrow
+
+	LOOP 10
+		ExpInc = ExpInc * 0.8
+	ENDLOOP
+
+	ShockSize = ExplodeSize * 0.4
+	SetObjectScale (GroundWave, 0.02, 0.02, 0.02)
+	SetObjectScale (CameraWave, 0.02, 0.02, 0.02)
+	UnhideObject (GroundWave)
+	UnhideObject (CameraWave)
+
+	// Fade out at end
+	LOOP 10
+		ExpInc = ExpInc * 0.8
+		ExplodeTrans = ExplodeTrans - 0.1
+	ENDLOOP
+	HideObject (Sphere)
+	LOOP 50
+		ShockTrans = ShockTrans - 0.03
+	ENDLOOP
+
+	Delete()
+ENDSTATE

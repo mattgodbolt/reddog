@@ -1,0 +1,1733 @@
+//ACTIVATION 0, POINT WHERE PLAYER IS IN CENTRE AND THE BOSS NEEDS TO PICK A POINT
+//ACTIVATION 1, POINT WHERE PLAYER MUST GO TO IN ORDER TO ACTIVATE BOSS
+//				FIXES THE BUG WHERE PLAYER COULD STAY INSIDE THE DOOR AND CANE THE FUCK
+
+//PAL FRIENDLY, 'CEPT ANIMS ON BOSS, SCORPION SHARD AND BOSS DEATH
+// Hydro Boss
+// A submarine which is only vulnerable after coming to the surface,
+// which it does periodically.  After a predetermined time or damage
+// the boss resubmerges and then pops up somewhere else
+// While vulnearble, the boss has three attacks, possibly in combination
+// * Airborne attack: loads of independant fighter craft are launched
+// * Ground attack: concentric ring of enemies emitted
+// * Beam attack: Eight beams are lowered down to water level
+//activation 0, the centre of the arena, needed to handle player staying in middle 
+//of ring
+
+//HARD LEVELS OF HEALTH
+DEFINE HSTAGE_ONE_HEALTH	  	100			// Amount of health lost before progressing to level two
+DEFINE HSTAGE_TWO_HEALTH	  	4000			// Amount of health lost before progressing to level three
+DEFINE HSTAGE_THREE_HEALTH		8000			// Amount of health lost before progressing to level three
+
+//EASY LEVELS OF HEALTH
+DEFINE STAGE_ONE_HEALTH			100			// Amount of health lost before progressing to level two
+DEFINE STAGE_TWO_HEALTH			2000			// Amount of health lost before progressing to level three
+DEFINE STAGE_THREE_HEALTH		4000			// Amount of health lost before progressing to level three
+
+
+// Definitions: health tweaks etc go here
+DEFINE INITIAL_HEALTH			500			// Starting health
+DEFINE MAX_TIME_IN_THE_OPEN		300			// Amount of time spent in the open
+DEFINE MAX_HEALTH_LOST_IN_OPEN	50			// The max amount of health lost before submerging
+
+//DEFINE STAGE_ONE_HEALTH			10			// Amount of health lost before progressing to level two
+//DEFINE STAGE_TWO_HEALTH			15			// Amount of health lost before progressing to level three
+//DEFINE STAGE_THREE_HEALTH		18			// Amount of health lost before progressing to level three
+
+
+DEFINE SPEED					0.06		// Speed of the submarine under water
+//DEFINE NUM_BOBBIES				20			// Number of ground attack strats
+DEFINE NUM_BOBBIES				15
+
+// Locals
+LOCALFLOAT	surfaceHeight
+LOCALFLOAT	SinkAmount
+LOCALFLOAT	StartHealth
+LOCALFLOAT	tempX
+LOCALFLOAT	tempY
+LOCALINT	endOfPath
+LOCALINT	Count
+LOCALINT	Dive
+LOCALINT	NextAttack
+LOCALINT	fadeTime 
+LOCALFLOAT	barAlpha
+LOCALFLOAT SaveX
+LOCALFLOAT SaveY
+LOCALFLOAT SaveZ
+
+DEFINE AIR_ATTACK		1
+DEFINE GROUND_ATTACK	2
+DEFINE BEAM_ATTACK		4
+
+/*** BOSS TYPE 2 - WATER EXPLOSION
+LOCALINT	time
+LOCALINT	fadeStart
+LOCALFLOAT	dist
+LOCALFLOAT	tempf
+LOCALFLOAT	rnd
+
+STATE BossDeathWater
+	MyFlag = MyFlag | NODISP | FRIENDLY
+	MyVar = ParentVar
+	trans = 1.0
+	time = 0
+
+	IF (GetGlobalParamFloat(0))
+		scalex = scaley = scalez = GetGlobalParamFloat(0)
+	ENDIF
+
+	OBJECT> BOSSES\HYDROBOSS\HYDROBOSSDEATHWATER
+	MODELANIM>BOSSES\HYDROBOSS\HYDROBOSSDEATHWATER.RDO>EXPLODE>0
+
+	fadeStart = 30
+
+	
+	UnitiseMatrix()
+	STAT>Start
+ENDSTATE  
+
+
+
+STATE Start
+	dist = PlayerDistXY()
+	rnd = dist
+	rnd = 10.0 / rnd
+	dist = FSQRT(dist)
+	LOOP (74)
+		time = time + 1
+		IF (time > fadeStart)
+			MyFlag2 = MyFlag2 | TRANSLUCENT
+			IF (trans >= 0.1)
+				trans = trans - 0.1
+			ELSE
+				trans = 0.0
+			ENDIF
+		ENDIF
+		IF ((time / dist) > 4.0)
+			IF ((time / dist) < 7.0)
+				tempf = (1 - (((time / dist) - 4) / 3)) * 0.75
+				Vibrate (2, 1, tempf, 0)
+				tempf = RandRange(-rnd, rnd)
+				CamX = CamX + tempf
+				tempf = RandRange(-rnd, rnd)
+				CamY = CamY + tempf
+				tempf = RandRange(-rnd, rnd)
+				CamZ = CamZ + tempf
+			ENDIF
+		ENDIF
+		MyFlag = MyFlag 
+	ENDLOOP
+	Delete()
+ENDSTATE
+
+
+/*** END OF BOSS TYPE 2 ****/
+STATE Die
+	//TURN OFF THE COLLISION
+	MyFlag = MyFlag & LNOT(STRATCOLL)
+
+	WHILE (MyAnimFlag & RUNNING)
+		MyFlag = MyFlag
+	ENDWHILE
+
+	OBJECT>BOSSES\HYDROBOSS\HYDROBOSSEXPLOSION1
+	DontFogMeOut()
+	MODELANIM>BOSSES\HYDROBOSS\HYDROBOSSEXPLOSION1.RDO>EXPLODE>NOTWEEN
+  	MyVar = 0
+ //	scalex = scaley = scalez  = 3.0
+	//SET UP SCALE
+ 	SetGlobalParamFloat(0,7.0)
+   	SetGlobalParamInt(0,2)
+ //	CREAIND SPAWN_POLYEXPLOSIONWATER x, y, z + 2.0, 0,0,0
+	CREAIND HYDROBOSS x, y, z + 2.0, 0,0,0
+	ClearGlobalParams()
+
+	TRIGSET>WATER EVERY 30
+  
+	TRIGSET>EXP EVERY 30
+  
+  	WHILE (MyAnimFlag & RUNNING)
+		MyFlag = MyFlag
+	ENDWHILE
+
+	SetVisBit(1)
+ //	TRIGKILL>EXP1 EVERY 25
+
+	STAT>DeathStage2
+
+	
+
+ENDSTATE
+
+TRIGGER WATER
+  	MyVar = 0
+	//SET UP SCALE
+	SetGlobalParamFloat(0,7.0)
+	SetGlobalParamInt(0,2)
+   //	CREAIND SPAWN_POLYEXPLOSIONWATER x, y, z + 2.0, 0,0,0
+	CREAIND HYDROBOSS x, y, z + 2.0, 0,0,0
+	ClearGlobalParams()
+
+	TRIGSTOP
+ENDTRIGGER
+
+
+
+//LOCALINT WHITEDONE
+//LOCALFLOAT WHITE
+//LOCALFLOAT WHITETOGO
+
+
+//TRIGGER WhiteOut
+
+//   	CamLookX = CamLookX + ((x - CamLookX) * 0.05)
+//   	CamLookY = CamLookY + ((y - CamLookY) * 0.05)
+
+//	IF (!WHITETOGO)
+//		WHITE = WHITE + (WHITETOGO - WHITE) * 0.06
+//	ELSE
+//		WHITE = WHITE + (WHITETOGO - WHITE) * 0.05
+//	ENDIF
+
+//	SetWhiteOut(WHITE,WHITE,WHITE)
+
+//	IF (FABS(WHITETOGO - WHITE) < 0.02)
+//		WHITEDONE = 1
+//	ENDIF
+//	TRIGFIN
+//ENDTRIGGER
+
+STATE ShardExplode
+ 	OBJECT> BOSSES\SCORPIONBOSS\SCORPION-SHARD
+	DontFogMeOut()
+	scalex = scaley = scalez = 2.5
+
+
+
+   	MODELANIM>BOSSES\SCORPIONBOSS\SCORPION-SHARD.RDO>Explode>0
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+	trans = 1.0
+	fadeTime = 0
+	WHILE (MyAnimFlag & RUNNING)
+		frame = frame + 1
+		fadeTime = fadeTime + 1
+		
+	   //	IF (frame = 65)
+	   //		WHITETOGO = 1.0
+		 //	TRIGSET>WhiteOut EVERY 1
+	   //	ENDIF
+		IF (fadeTime > 65)
+			IF (trans > 0.03333)
+				trans = trans - 0.03333
+			ENDIF
+		ENDIF
+	ENDWHILE
+
+
+	MyFlag = MyFlag | NODISP
+ 
+ 	//WHILE (!WHITEDONE)
+	//	MyFlag = MyFlag
+	//ENDWHILE
+
+  
+  
+   	//WHITEDONE = 0
+   //	WHITETOGO = 0
+
+   //	WHILE (!WHITEDONE)
+   //		MyFlag = MyFlag
+   //	ENDWHILE
+	Delete()
+
+
+ENDSTATE
+
+
+
+
+
+STATE DeathStage2
+	//NOW THE EXPLOSION SHARD FROM THE SCORPION
+	Score = Score + 40000
+	SetGlobalParamInt(0,1)
+	CREAIND HYDROBOSS x, y, z,0,0,0
+	ClearGlobalParams()
+
+
+	TRIGSET>RippleMake EVERY 60
+	
+	LOOP (50)
+		MyFlag = MyFlag
+	ENDLOOP
+
+	OBJECT>BOSSES\HYDROBOSS\HYDROBOSSEXPLOSION2
+	DontFogMeOut()
+	MODELANIM>BOSSES\HYDROBOSS\HYDROBOSSEXPLOSION2.RDO>EXPLODE>NOTWEEN
+
+	TRIGSET>SPLASHDOWN1 EVERY 20
+	TRIGSET>SPLASHDOWN2 EVERY 20
+	TRIGSET>SPLASHDOWN3 EVERY 20
+	TRIGSET>SPLASHDOWN4 EVERY 20
+	TRIGSET>SPLASHDOWN5 EVERY 20
+	TRIGSET>SPLASHDOWN6 EVERY 20
+	TRIGSET>SPLASHDOWN7 EVERY 20
+	TRIGSET>SPLASHDOWN8 EVERY 20
+	TRIGSET>SPLASHDOWN9 EVERY 20
+	TRIGSET>SPLASHDOWN10 EVERY 20
+
+
+
+
+
+
+
+
+	WHILE (MyAnimFlag & RUNNING)
+		MyFlag = MyFlag
+	ENDWHILE
+   
+   	//NOW THE NEW SHOCKWAVE
+	MyVar = 0
+   //	CREAIND SPAWN_POLYEXPLOSION_SHOCKWAVE x, y, z,0,0,0
+   
+	//RESTORE THE DOME
+   	SetEnvironmentParms(-1,-1,-1,2,-1,-1,-1)
+	BossStrat = 0
+	TimeFunction(2)
+	//Restart the timer for the escape
+	TimeFunction(3)
+	Delete()
+
+
+ENDSTATE
+
+DEFINE PIECE1 1
+DEFINE PIECE2 2
+DEFINE PIECE3 3
+DEFINE PIECE4 4
+DEFINE PIECE5 5
+DEFINE PIECE6 6
+DEFINE PIECE7 7
+DEFINE PIECE8 8
+DEFINE PIECE9 9
+DEFINE PIECE10 10
+
+
+
+TRIGGER SPLASHDOWN1
+   //	CheckZ = GetObjectCrntPos(PIECE1, MODEZ)
+   //	CheckZ = CheckZ + z
+
+	SetCheckPosRel(PIECE1, 0, 0, 0)
+	IF (CheckZ < DogZ + OFF)
+   //	CheckX = GetObjectCrntPos(PIECE1,MODEX) + x
+  //	CheckY = GetObjectCrntPos(PIECE1,MODEY)	+ y
+
+  //	PLAYSOUND>SPLASH3 0 1.0 0.0 0.0 0.0 0
+
+
+	SetGlobalParamInt(0, 1)
+	SetGlobalParamInt(1, 12)
+	CheckZ = RandRange(8.0,10.0)
+	SetGlobalParamFloat(0,CheckZ)
+	SetGlobalParamInt(2,1)
+	SetGlobalParamInt(3,1)
+	IMMLOOP (30)
+	   temp1 = CheckX + RandRange(-15.0,15.0)
+	   temp2 = CheckY + RandRange(-15.0,15.0)
+		CREAIND SPAWN_SPLASH temp1, temp2, DogZ, 0, 0, 0
+	IMMENDLOOP
+	ClearGlobalParams()
+	TRIGSTOP
+	ELSE
+	TRIGFIN
+	ENDIF
+
+ENDTRIGGER
+
+TRIGGER SPLASHDOWN2
+   //	CheckZ = GetObjectCrntPos(PIECE1, MODEZ)
+   //	CheckZ = CheckZ + z
+
+	SetCheckPosRel(PIECE2, 0, 0, 0)
+	IF (CheckZ < DogZ + OFF)
+   //	CheckX = GetObjectCrntPos(PIECE1,MODEX) + x
+  //	CheckY = GetObjectCrntPos(PIECE1,MODEY)	+ y
+
+
+	SetGlobalParamInt(0, 1)
+	SetGlobalParamInt(1, 12)
+	CheckZ = RandRange(8.0,10.0)
+	SetGlobalParamFloat(0,CheckZ)
+	SetGlobalParamInt(2,1)
+	SetGlobalParamInt(3,1)
+	IMMLOOP (30)
+	   temp1 = CheckX + RandRange(-15.0,15.0)
+	   temp2 = CheckY + RandRange(-15.0,15.0)
+		CREAIND SPAWN_SPLASH temp1, temp2, DogZ, 0, 0, 0
+	IMMENDLOOP
+	ClearGlobalParams()
+	TRIGSTOP
+	ELSE
+	TRIGFIN
+	ENDIF
+
+ENDTRIGGER
+ TRIGGER SPLASHDOWN3
+   //	CheckZ = GetObjectCrntPos(PIECE1, MODEZ)
+   //	CheckZ = CheckZ + z
+
+	SetCheckPosRel(PIECE3, 0, 0, 0)
+	IF (CheckZ < DogZ + OFF)
+   //	CheckX = GetObjectCrntPos(PIECE1,MODEX) + x
+  //	CheckY = GetObjectCrntPos(PIECE1,MODEY)	+ y
+
+
+	SetGlobalParamInt(0, 1)
+	SetGlobalParamInt(1, 12)
+	CheckZ = RandRange(8.0,10.0)
+	SetGlobalParamFloat(0,CheckZ)
+	SetGlobalParamInt(2,1)
+	SetGlobalParamInt(3,1)
+	IMMLOOP (30)
+	   temp1 = CheckX + RandRange(-15.0,15.0)
+	   temp2 = CheckY + RandRange(-15.0,15.0)
+		CREAIND SPAWN_SPLASH temp1, temp2, DogZ, 0, 0, 0
+	IMMENDLOOP
+	ClearGlobalParams()
+	TRIGSTOP
+	ELSE
+	TRIGFIN
+	ENDIF
+
+ENDTRIGGER
+
+ TRIGGER SPLASHDOWN4
+   //	CheckZ = GetObjectCrntPos(PIECE1, MODEZ)
+   //	CheckZ = CheckZ + z
+
+	SetCheckPosRel(PIECE4, 0, 0, 0)
+	IF (CheckZ < DogZ + OFF)
+   //	CheckX = GetObjectCrntPos(PIECE1,MODEX) + x
+  //	CheckY = GetObjectCrntPos(PIECE1,MODEY)	+ y
+
+
+	SetGlobalParamInt(0, 1)
+	SetGlobalParamInt(1, 12)
+	CheckZ = RandRange(8.0,10.0)
+	SetGlobalParamFloat(0,CheckZ)
+	SetGlobalParamInt(2,1)
+	SetGlobalParamInt(3,1)
+	IMMLOOP (30)
+	   temp1 = CheckX + RandRange(-15.0,15.0)
+	   temp2 = CheckY + RandRange(-15.0,15.0)
+		CREAIND SPAWN_SPLASH temp1, temp2, DogZ, 0, 0, 0
+	IMMENDLOOP
+	ClearGlobalParams()
+	TRIGSTOP
+	ELSE
+	TRIGFIN
+	ENDIF
+
+ENDTRIGGER
+
+  TRIGGER SPLASHDOWN5
+   //	CheckZ = GetObjectCrntPos(PIECE1, MODEZ)
+   //	CheckZ = CheckZ + z
+
+	SetCheckPosRel(PIECE5, 0, 0, 0)
+	IF (CheckZ < DogZ + OFF)
+   //	CheckX = GetObjectCrntPos(PIECE1,MODEX) + x
+  //	CheckY = GetObjectCrntPos(PIECE1,MODEY)	+ y
+
+
+	SetGlobalParamInt(0, 1)
+	SetGlobalParamInt(1, 12)
+	CheckZ = RandRange(8.0,10.0)
+	SetGlobalParamFloat(0,CheckZ)
+	SetGlobalParamInt(2,1)
+	SetGlobalParamInt(3,1)
+	IMMLOOP (30)
+	   temp1 = CheckX + RandRange(-15.0,15.0)
+	   temp2 = CheckY + RandRange(-15.0,15.0)
+		CREAIND SPAWN_SPLASH temp1, temp2, DogZ, 0, 0, 0
+	IMMENDLOOP
+	ClearGlobalParams()
+	TRIGSTOP
+	ELSE
+	TRIGFIN
+	ENDIF
+
+ENDTRIGGER
+ TRIGGER SPLASHDOWN6
+   //	CheckZ = GetObjectCrntPos(PIECE1, MODEZ)
+   //	CheckZ = CheckZ + z
+
+	SetCheckPosRel(PIECE6, 0, 0, 0)
+	IF (CheckZ < DogZ + OFF)
+   //	CheckX = GetObjectCrntPos(PIECE1,MODEX) + x
+  //	CheckY = GetObjectCrntPos(PIECE1,MODEY)	+ y
+
+
+	SetGlobalParamInt(0, 1)
+	SetGlobalParamInt(1, 12)
+	CheckZ = RandRange(8.0,10.0)
+	SetGlobalParamFloat(0,CheckZ)
+	SetGlobalParamInt(2,1)
+	SetGlobalParamInt(3,1)
+	IMMLOOP (30)
+	   temp1 = CheckX + RandRange(-15.0,15.0)
+	   temp2 = CheckY + RandRange(-15.0,15.0)
+		CREAIND SPAWN_SPLASH temp1, temp2, DogZ, 0, 0, 0
+	IMMENDLOOP
+	ClearGlobalParams()
+	TRIGSTOP
+	ELSE
+	TRIGFIN
+	ENDIF
+
+ENDTRIGGER
+
+TRIGGER SPLASHDOWN7
+   //	CheckZ = GetObjectCrntPos(PIECE1, MODEZ)
+   //	CheckZ = CheckZ + z
+
+	SetCheckPosRel(PIECE7, 0, 0, 0)
+	IF (CheckZ < DogZ + OFF)
+   //	CheckX = GetObjectCrntPos(PIECE1,MODEX) + x
+  //	CheckY = GetObjectCrntPos(PIECE1,MODEY)	+ y
+
+
+	SetGlobalParamInt(0, 1)
+	SetGlobalParamInt(1, 12)
+	CheckZ = RandRange(8.0,10.0)
+	SetGlobalParamFloat(0,CheckZ)
+	SetGlobalParamInt(2,1)
+	SetGlobalParamInt(3,1)
+	IMMLOOP (30)
+	   temp1 = CheckX + RandRange(-15.0,15.0)
+	   temp2 = CheckY + RandRange(-15.0,15.0)
+		CREAIND SPAWN_SPLASH temp1, temp2, DogZ, 0, 0, 0
+	IMMENDLOOP
+	ClearGlobalParams()
+	TRIGSTOP
+	ELSE
+	TRIGFIN
+	ENDIF
+
+ENDTRIGGER
+
+TRIGGER SPLASHDOWN8
+   //	CheckZ = GetObjectCrntPos(PIECE1, MODEZ)
+   //	CheckZ = CheckZ + z
+
+	SetCheckPosRel(PIECE8, 0, 0, 0)
+	IF (CheckZ < DogZ + OFF)
+   //	CheckX = GetObjectCrntPos(PIECE1,MODEX) + x
+  //	CheckY = GetObjectCrntPos(PIECE1,MODEY)	+ y
+
+
+	SetGlobalParamInt(0, 1)
+	SetGlobalParamInt(1, 12)
+	CheckZ = RandRange(8.0,10.0)
+	SetGlobalParamFloat(0,CheckZ)
+	SetGlobalParamInt(2,1)
+	SetGlobalParamInt(3,1)
+	IMMLOOP (30)
+	   temp1 = CheckX + RandRange(-15.0,15.0)
+	   temp2 = CheckY + RandRange(-15.0,15.0)
+		CREAIND SPAWN_SPLASH temp1, temp2, DogZ, 0, 0, 0
+	IMMENDLOOP
+	ClearGlobalParams()
+	TRIGSTOP
+	ELSE
+	TRIGFIN
+	ENDIF
+
+ENDTRIGGER
+
+TRIGGER SPLASHDOWN9
+   //	CheckZ = GetObjectCrntPos(PIECE1, MODEZ)
+   //	CheckZ = CheckZ + z
+
+	SetCheckPosRel(PIECE9, 0, 0, 0)
+	IF (CheckZ < DogZ + OFF)
+   //	CheckX = GetObjectCrntPos(PIECE1,MODEX) + x
+  //	CheckY = GetObjectCrntPos(PIECE1,MODEY)	+ y
+
+
+	SetGlobalParamInt(0, 1)
+	SetGlobalParamInt(1, 12)
+	CheckZ = RandRange(8.0,10.0)
+	SetGlobalParamFloat(0,CheckZ)
+	SetGlobalParamInt(2,1)
+	SetGlobalParamInt(3,1)
+	IMMLOOP (30)
+	   temp1 = CheckX + RandRange(-15.0,15.0)
+	   temp2 = CheckY + RandRange(-15.0,15.0)
+		CREAIND SPAWN_SPLASH temp1, temp2, DogZ, 0, 0, 0
+	IMMENDLOOP
+	ClearGlobalParams()
+	TRIGSTOP
+	ELSE
+	TRIGFIN
+	ENDIF
+
+ENDTRIGGER
+   TRIGGER SPLASHDOWN10
+   //	CheckZ = GetObjectCrntPos(PIECE1, MODEZ)
+   //	CheckZ = CheckZ + z
+
+	SetCheckPosRel(PIECE10, 0, 0, 0)
+	IF (CheckZ < DogZ + OFF)
+   //	CheckX = GetObjectCrntPos(PIECE1,MODEX) + x
+  //	CheckY = GetObjectCrntPos(PIECE1,MODEY)	+ y
+
+
+	SetGlobalParamInt(0, 1)
+	SetGlobalParamInt(1, 12)
+	CheckZ = RandRange(8.0,10.0)
+	SetGlobalParamFloat(0,CheckZ)
+	SetGlobalParamInt(2,1)
+	SetGlobalParamInt(3,1)
+	IMMLOOP (30)
+	   temp1 = CheckX + RandRange(-15.0,15.0)
+	   temp2 = CheckY + RandRange(-15.0,15.0)
+		CREAIND SPAWN_SPLASH temp1, temp2, DogZ, 0, 0, 0
+	IMMENDLOOP
+	ClearGlobalParams()
+	TRIGSTOP
+	ELSE
+	TRIGFIN
+	ENDIF
+
+ENDTRIGGER
+
+
+
+
+
+DEFINE OFF 15.0
+
+
+
+
+
+
+
+TRIGGER RippleMake
+	PLAYSOUND>SPLASH2 0 1.0 0.0 0.0 0.0 0
+
+	CREAIND SPAWN_HydroBoss_Splash x, y - 10, z + 2.5, 0, 0, 0
+
+	TRIGSTOP
+ENDTRIGGER
+
+LOCALINT TWOTHIRDSEC
+LOCALINT ONESEC
+LOCALINT ONESECONETHIRD
+LOCALINT TWOSECS
+
+DEFINE TORUS 11
+
+TRIGGER VISBIT
+	ClearVisBit(1)
+	TRIGSTOP
+ENDTRIGGER
+
+
+//TRIGGER TO ENSURE YOU DON'T GET TO 'SEE' THE BOSS DURING THE CUT-SCENE
+TRIGGER TURNON
+	MyFlag = MyFlag & LNOT(NODISP)
+	TRIGSTOP
+
+ENDTRIGGER
+
+
+STATE Init
+	barAlpha = 0
+	IF (GetGlobalParamInt(0) = 1)
+		STAT>ShardExplode
+	ENDIF
+  	IF (GetGlobalParamInt(0) = 2)
+  		STAT>BossDeathWater
+  	ENDIF
+   
+	// Firstly set up the object used
+	IF (!PNode)
+		OBJECT>BOSSES\HYDROBOSS\HYDROBOSS
+    ENDIF
+  
+   	DELAY = 0
+
+	IF (PAL)
+		TWOTHIRDSEC = 16
+		ONESEC = 25
+		ONESECONETHIRD = 33
+		TWOSECS = 50
+	ELSE
+		TWOTHIRDSEC = 20
+		ONESEC = 30
+		ONESECONETHIRD = 40
+		TWOSECS = 60
+	ENDIF
+
+	MyFlag = MyFlag | NODISP
+	TRIGSET>TURNON EVERY 5
+
+   	MODELANIM>BOSSES\HYDROBOSS\HYDROBOSS.RDO>SUBMERGE>0
+	WHILE (MyAnimFlag & RUNNING)
+		MyFlag = MyFlag
+	ENDWHILE
+
+	WHILE (PlayerState != PS_NORMAL)
+		MyFlag = MyFlag
+	ENDWHILE
+
+	TRIGSET>VISBIT EVERY 120
+
+	//wait for the player to get inside a set region
+	//IF (HasActivation(1))
+	//	WHILE (!PlayerNearActivationXY(1))
+	//		MyFlag = MyFlag
+	//	ENDWHILE
+   //	ENDIF
+
+	OLDX = DogX
+	OLDY = DogY
+
+
+
+
+
+
+	GlobalVar = GlobalVar2 = 0
+
+
+   
+   	DontFogMeOut()
+	// Let them know who we are
+	IAmDaBoss
+	TRIGSET>DrawHealth EVERY 1
+	TRIGSET>DrawHealth WHENPAUSED
+
+   
+	//ENSURE THE OUTSIDE DOME IS OFF
+	SetEnvironmentParms(-1,-1,-1,0,-1,-1,-1)
+	
+	AllocStratSoundBlock(4)
+	SetAudibleRange(0, 100, 500)
+	SetAudibleRange(1, 100, 500)
+	SetAudibleRange(2, 100, 500)
+	SetAudibleRange(3, 100, 500)
+
+	// Set up collision
+	RegisterCollision()
+	Radius = 80.0
+	InitHDC()
+	InActivateObjectCollision(TORUS)
+	CalculateStratPolyData(0)
+  	SetFriction(1.0,0.1,0.05)
+	RotationRestriction(1.0,1.0,1.0)
+	// Flags
+	MyFlag = MyFlag |  ENEMY | STRATCOLL | HOVERMOVE
+
+	// Set up our health amount
+	IF (Hard)
+		SAVEHEALTH = health = HSTAGE_ONE_HEALTH
+	ELSE
+		SAVEHEALTH = health = STAGE_ONE_HEALTH
+	ENDIF
+	// Read our height; it's the surface height
+	surfaceHeight = z
+
+	// Clear the sibling array to prevent any nastiness as we set up the EVERY
+	//ClearSiblingArray()
+
+	// Wait for my daddy to get created
+	IF (MyParent)
+		WHILE (MyParentInvalid())
+			MyFlag = MyFlag
+		ENDWHILE
+	ENDIF
+
+	// Set up a trigger to deal with collision
+	TRIGSET>ProcessCollision EVERY 1
+
+	FIRSTTIMEOUT = 1
+	// Initialise the path
+	InitPath()
+	startz = z
+  	PointToXY(DogX, DogY, DogZ)
+	//90 DEGREES TO PLAYER
+  	RelRotateZ (TWOPI/4.0)
+
+  
+	STAT>Submerge
+ENDSTATE
+
+LOCALFLOAT tempf2
+
+TRIGGER DrawHealth
+	barAlpha = barAlpha + ((1 - barAlpha) * 0.1)
+	IF (Phase = 0)
+		IF (Hard)
+			tempf = health + HSTAGE_TWO_HEALTH + HSTAGE_THREE_HEALTH
+			tempf2 = HSTAGE_ONE_HEALTH + HSTAGE_TWO_HEALTH + HSTAGE_THREE_HEALTH
+		ELSE
+			tempf = health + STAGE_TWO_HEALTH + STAGE_THREE_HEALTH
+			tempf2 = STAGE_ONE_HEALTH + STAGE_TWO_HEALTH + STAGE_THREE_HEALTH
+		ENDIF
+	   	DrawStratBar(1, tempf / tempf2, 0, barAlpha)
+	ENDIF
+	IF (Phase = 1)
+		IF (Hard)
+			tempf = health + HSTAGE_THREE_HEALTH
+			tempf2 = HSTAGE_ONE_HEALTH + HSTAGE_TWO_HEALTH + HSTAGE_THREE_HEALTH
+		ELSE
+			tempf = health + STAGE_THREE_HEALTH
+			tempf2 = STAGE_ONE_HEALTH + STAGE_TWO_HEALTH + STAGE_THREE_HEALTH
+		ENDIF
+		DrawStratBar(1, tempf / tempf2, 0, barAlpha)
+	ENDIF
+	IF (Phase = 2)
+		tempf = health
+		IF (Hard)
+   			tempf2 = HSTAGE_ONE_HEALTH + HSTAGE_TWO_HEALTH + HSTAGE_THREE_HEALTH
+	   	ELSE
+   			tempf2 = STAGE_ONE_HEALTH + STAGE_TWO_HEALTH + STAGE_THREE_HEALTH
+		ENDIF
+		DrawStratBar(1, tempf / tempf2, 0, barAlpha)
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+LOCALINT FIRSTTIMEOUT
+LOCALINT STARTING
+
+// Go under water
+STATE Submerge
+   
+    MyFlag = MyFlag & LNOT(TARGETABLE)
+   	PLAYSOUND>BUZZER 0 1.0 0.0 0.0 0.0 0
+	EMERGED = 0
+
+
+	IF (!STARTING)
+		LOOP (30)
+			MyFlag = MyFlag
+		ENDLOOP
+		STARTING = 1
+	ELSE
+
+   	// Play klaxxon sound here
+	MODELANIM>BOSSES\HYDROBOSS\HYDROBOSS.RDO>SUBMERGE>0
+	WHILE (MyAnimFlag & RUNNING)
+		MyFlag = MyFlag
+	ENDWHILE
+
+
+	ENDIF
+
+
+
+	//snap z to its correct position
+	z = startz
+	//ensure our matrix is reset
+	UnitiseMatrix()
+
+	//PLAYSOUND>SMALLSPLASH 2 1.0 0.0 0.0 0.0 RANDOM
+	PLAYSOUND>BIGSPLASHOUT 1 1.0 0.0 0.0 0.0 RANDOM
+ 	STAT>Underwater
+ENDSTATE
+
+
+LOCALFLOAT OLDX
+LOCALFLOAT OLDY
+LOCALFLOAT BAGX
+LOCALFLOAT BAGY
+
+
+// While underwater
+STATE Underwater
+	// Wait a bit
+	MyFlag = MyFlag | NODISP
+	MyFlag = MyFlag & LNOT(STRATCOLL + TARGETABLE)
+   
+   	IF (!FIRSTTIMEOUT)
+		IF (PAL)
+		 	Count = RandRange(25,33)
+		ELSE
+		 	Count = RandRange(30,40)
+	   	ENDIF
+		WHILE (Count > 0)
+			Count = Count - 1
+		ENDWHILE
+	ENDIF
+
+	// Move somewhere else on the network
+	IF (FIRSTTIMEOUT)
+		TimeFunction(1)
+		FIRSTTIMEOUT = 0
+	ELSE
+		SinkAmount = 0
+		WHILE (!SinkAmount)
+		   	tempX = DogX
+		   	tempY = DogY
+			BAGX = x
+			BAGY = y
+
+
+			//PUT ME NEAR THE PLAYER'S OLD POS
+			x = OLDX
+			y = OLDY
+
+			//RANDOMNESS IF PLAYER DECIDES TO STAY IN ONE SPOT
+		   	IF (NearPlayerXY(20.0))
+			  	DogX = DogX + RandRange(-450, 450)
+			 	DogY = DogY + RandRange(-450, 450)
+		   	ENDIF
+
+
+			//RESTORE MY POS
+			x = BAGX
+			y = BAGY
+
+
+   //			OLDX = tempX
+   //			OLDY = tempY
+		   	//DogX = DogX + RandRange(-500, 500)
+		   	//DogY = DogY + RandRange(-500, 500)
+			endOfPath = GetFurthestWay(1)
+			DogX = tempX
+			DogY = tempY
+			IF (!endOfPath)
+				x = CheckX
+				y = CheckY
+			ENDIF
+
+			IF (HasActivation(0))
+				IF (PlayerNearActivationXY(0))
+					IF (!NearPlayerXY(100.0))
+						SinkAmount = 1
+					ENDIF
+				ELSE
+				IF (!NearPlayerXY(150.0))
+	   				SinkAmount = 1
+				ENDIF
+				ENDIF
+			ELSE
+
+				// Are we far enough from the player?
+				IF (!NearPlayerXY(150.0))
+	   				SinkAmount = 1
+				ENDIF
+			ENDIF
+		  //	IF ((Phase > 1) AND (SATELLITESOUT))
+		  //		IF (GlobalVar)
+		  //			SinkAmount = 0
+		  //		ENDIF
+		  //	ENDIF
+
+	   //	  SinkAmount = 1
+
+		ENDWHILE
+	ENDIF
+
+			OLDX = tempX
+			OLDY = tempY
+	NextAttack = AIR_ATTACK or GROUND_ATTACK
+
+
+	MyFlag = MyFlag & LNOT(NODISP)
+	MyFlag = MyFlag | STRATCOLL | TARGETABLE
+
+	MyFlag = MyFlag & LNOT(TARGETABLE)
+	VALIDTOKILL = 1
+
+   //	EMERGED = 1
+	STAT>Emerge
+ENDSTATE
+
+DEFINE ROCKETTUBE1 4
+DEFINE ROCKETTUBE2 5
+DEFINE ROCKETTUBE3 8
+DEFINE ROCKETTUBE4 7
+DEFINE ROCKETTUBE5 3
+DEFINE ROCKETTUBE6 2
+DEFINE ROCKETTUBE7 9
+DEFINE ROCKETTUBE8 6
+
+
+LOCALINT SP
+TRIGGER PlayTurn
+  	PointToXY(DogX, DogY, DogZ)
+
+	IF (RandRange(0,5.0) > 1.0)
+
+   	SP = RandRange(2.0,6.0)
+   	CheckY = RandRange(50.0, 80.0)
+   	CheckX = RandRange(-40.0,40.0)
+	SetGlobalParamInt(0, 1)
+	SetGlobalParamInt(1, 9)
+	CheckZ = RandRange(3.0,5.0)
+	SetGlobalParamFloat(0,CheckZ)
+	SetGlobalParamInt(2,1)
+    IMMLOOP (SP)
+		CheckX = CheckX + RandRange(-5.0,5.0)
+   
+		CREATE SPAWN_SPLASH CheckX, CheckY, 2.5, 0, 0, 0, 0
+
+	IMMENDLOOP
+	ClearGlobalParams()
+	ENDIF
+   	//90 DEGREES TO PLAYER
+  	RelRotateZ (TWOPI/4.0)
+
+	TRIGFIN
+ENDTRIGGER
+
+LOCALINT BOBBING
+
+TRIGGER BobbyBearing
+	temp1 = StrM00
+	temp2 = StrM01
+	temp3 = StrM02
+	temp4 = StrM10
+	temp5 = StrM11
+	temp6 = StrM12
+	temp7 = StrM20
+	temp8 = StrM21
+	temp9 = StrM22
+	   	PointToXY(DogX, DogY, DogZ)
+		SetCheckPosRel(0, 0.0,60.0,0)
+		MyVar = -200.0
+		PointToXY(CheckX, CheckY, CheckZ)
+	 	CREATE SPAWN_HYDRO_BOSS_BOBBY -30.0, 60.0 ,2.5, 0, 0, 0, 0
+	 
+	   	PointToXY(DogX, DogY, DogZ)
+		SetCheckPosRel(0, 0.0,60.0,0)
+		MyVar = -150.0
+	   	PointToXY(CheckX, CheckY, CheckZ)
+	 	CREATE SPAWN_HYDRO_BOSS_BOBBY -20.0, 70.0 , 2.5, 0, 0, 0, 0
+
+	   	PointToXY(DogX, DogY, DogZ)
+		SetCheckPosRel(0, 0.0,60.0,0)
+		MyVar = 0
+	   	PointToXY(CheckX, CheckY, CheckZ)
+	 	CREATE SPAWN_HYDRO_BOSS_BOBBY 0, 60.0 ,2.5, 0, 0, 0, 0
+
+	   	PointToXY(DogX, DogY, DogZ)
+		SetCheckPosRel(0, 0.0,60.0,0)
+		MyVar = 150.0
+		PointToXY(CheckX, CheckY, CheckZ)
+	 	CREATE SPAWN_HYDRO_BOSS_BOBBY 20.0, 70.0 , 2.5, 0, 0, 0, 0
+
+	   	PointToXY(DogX, DogY, DogZ)
+		SetCheckPosRel(0, 0.0,60.0,0)
+		MyVar = 200.0
+		PointToXY(CheckX, CheckY, CheckZ)
+	 	CREATE SPAWN_HYDRO_BOSS_BOBBY 30.0, 60.0 , 2.5, 0, 0, 0, 0
+
+		//STRAIGHTS
+	//   	PointToXY(DogX, DogY, DogZ)
+	//	SetCheckPosRel(0, -30.0,60.0,0)
+	 //	MyVar = -200.0
+	 //	PointToXY(CheckX, CheckY, CheckZ)
+	 //	CREATE SPAWN_HYDRO_BOSS_BOBBY -7.0, 60.0 ,2.5, 0, 0, 0, 0
+	 
+	  // 	PointToXY(DogX, DogY, DogZ)
+	  //	SetCheckPosRel(0, -30.0,60.0,0)
+	  //	MyVar = -150.0
+	  // 	PointToXY(CheckX, CheckY, CheckZ)
+	  //	CREATE SPAWN_HYDRO_BOSS_BOBBY -5.0, 70.0 , 2.5, 0, 0, 0, 0
+
+	  // 	PointToXY(DogX, DogY, DogZ)
+	  //	SetCheckPosRel(0, -30.0,60.0,0)
+	  //	MyVar = 0
+	  // 	PointToXY(CheckX, CheckY, CheckZ)
+	  //	CREATE SPAWN_HYDRO_BOSS_BOBBY 0, 70.0 ,2.5, 0, 0, 0, 0
+
+	  // 	PointToXY(DogX, DogY, DogZ)
+	  //	SetCheckPosRel(0, -30.0,60.0,0)
+	  //	MyVar = 150.0
+	  //	PointToXY(CheckX, CheckY, CheckZ)
+	  //	CREATE SPAWN_HYDRO_BOSS_BOBBY 5.0, 70.0 , 2.5, 0, 0, 0, 0
+
+	  // 	PointToXY(DogX, DogY, DogZ)
+	  //	SetCheckPosRel(0, -30.0,60.0,0)
+	  //	MyVar = 200.0
+	  //	PointToXY(CheckX, CheckY, CheckZ)
+	  //	CREATE SPAWN_HYDRO_BOSS_BOBBY 7.0, 60.0 , 2.5, 0, 0, 0, 0
+
+   //	PointToXY(DogX, DogY, DogZ)
+	//90 DEGREES TO PLAYER
+   //	RelRotateZ (TWOPI/4.0)
+
+	StrM00 = temp1
+	StrM01 = temp2
+	StrM02 = temp3
+
+	StrM10 = temp4
+
+	StrM11 = temp5
+
+	StrM12  = temp6
+
+	StrM20 = temp7
+
+	StrM21 = temp8
+
+	StrM22  = temp9
+
+		TRIGSET>BobbyBearing2 EVERY 120
+ 	TRIGSTOP
+ENDTRIGGER
+
+TRIGGER BobbyBearing2
+	temp1 = StrM00
+	temp2 = StrM01
+	temp3 = StrM02
+	temp4 = StrM10
+	temp5 = StrM11
+	temp6 = StrM12
+	temp7 = StrM20
+	temp8 = StrM21
+	temp9 = StrM22
+	   	PointToXY(DogX, DogY, DogZ)
+		SetCheckPosRel(0, 0.0,60.0,0)
+		MyVar = -200.0
+		PointToXY(CheckX, CheckY, CheckZ)
+	 	CREATE SPAWN_HYDRO_BOSS_BOBBY -40.0, 60.0 ,2.5, 0, 0, 0, 0
+	 
+	   	PointToXY(DogX, DogY, DogZ)
+		SetCheckPosRel(0, 0.0,60.0,0)
+		MyVar = -150.0
+	   	PointToXY(CheckX, CheckY, CheckZ)
+	 	CREATE SPAWN_HYDRO_BOSS_BOBBY -10.0, 70.0 , 2.5, 0, 0, 0, 0
+
+	   	PointToXY(DogX, DogY, DogZ)
+		SetCheckPosRel(0, 0.0,60.0,0)
+		MyVar = 0
+	   	PointToXY(CheckX, CheckY, CheckZ)
+	 	CREATE SPAWN_HYDRO_BOSS_BOBBY 0, 50.0 ,2.5, 0, 0, 0, 0
+
+	   	PointToXY(DogX, DogY, DogZ)
+		SetCheckPosRel(0, 0.0,60.0,0)
+		MyVar = 150.0
+		PointToXY(CheckX, CheckY, CheckZ)
+	 	CREATE SPAWN_HYDRO_BOSS_BOBBY 10.0, 70.0 , 2.5, 0, 0, 0, 0
+
+	   	PointToXY(DogX, DogY, DogZ)
+		SetCheckPosRel(0, 0.0,60.0,0)
+		MyVar = 200.0
+		PointToXY(CheckX, CheckY, CheckZ)
+	 	CREATE SPAWN_HYDRO_BOSS_BOBBY 40.0, 60.0 , 2.5, 0, 0, 0, 0
+
+		//STRAIGHTS
+	//   	PointToXY(DogX, DogY, DogZ)
+	//	SetCheckPosRel(0, 30.0,60.0,0)
+	//	MyVar = -200.0
+	//	PointToXY(CheckX, CheckY, CheckZ)
+	// 	CREATE SPAWN_HYDRO_BOSS_BOBBY -7.0, 60.0 ,2.5, 0, 0, 0, 0
+	 
+	 //  	PointToXY(DogX, DogY, DogZ)
+	 //	SetCheckPosRel(0, 30.0,60.0,0)
+	 //	MyVar = -150.0
+	  // 	PointToXY(CheckX, CheckY, CheckZ)
+	  //	CREATE SPAWN_HYDRO_BOSS_BOBBY -5.0, 70.0 , 2.5, 0, 0, 0, 0
+
+	  // 	PointToXY(DogX, DogY, DogZ)
+	  //	SetCheckPosRel(0, 30.0,60.0,0)
+	  //	MyVar = 0
+	  // 	PointToXY(CheckX, CheckY, CheckZ)
+	  //	CREATE SPAWN_HYDRO_BOSS_BOBBY 0, 70.0 ,2.5, 0, 0, 0, 0
+
+	  // 	PointToXY(DogX, DogY, DogZ)
+	  //	SetCheckPosRel(0, 30.0,60.0,0)
+	  //	MyVar = 150.0
+	  //	PointToXY(CheckX, CheckY, CheckZ)
+	  //	CREATE SPAWN_HYDRO_BOSS_BOBBY 5.0, 70.0 , 2.5, 0, 0, 0, 0
+
+	  // 	PointToXY(DogX, DogY, DogZ)
+	  //	SetCheckPosRel(0, 30.0,60.0,0)
+	  //	MyVar = 200.0
+	  //	PointToXY(CheckX, CheckY, CheckZ)
+	  //	CREATE SPAWN_HYDRO_BOSS_BOBBY 7.0, 60.0 , 2.5, 0, 0, 0, 0
+	StrM00 = temp1
+	StrM01 = temp2
+	StrM02 = temp3
+
+	StrM10 = temp4
+
+	StrM11 = temp5
+
+	StrM12  = temp6
+
+	StrM20 = temp7
+
+	StrM21 = temp8
+
+	StrM22  = temp9
+
+  //	PointToXY(DogX, DogY, DogZ)
+	//90 DEGREES TO PLAYER
+   //	RelRotateZ (TWOPI/4.0)
+
+ 	TRIGSTOP
+ENDTRIGGER
+
+LOCALINT DELAY
+LOCALFLOAT temp1
+LOCALFLOAT temp2
+LOCALFLOAT temp3
+LOCALFLOAT temp4
+LOCALFLOAT temp5
+LOCALFLOAT temp6
+LOCALFLOAT temp7
+LOCALFLOAT temp8
+LOCALFLOAT temp9
+
+
+// Go back up
+STATE Emerge
+	StartHealth = health
+ 	// Do we need to spawn the bobbies?
+   //	GlobalVar2 = 0
+	//frame = 0
+  	TRIGSET>Bob EVERY 1
+	BOBBING = 1
+	IF ((Phase) AND (NextAttack and GROUND_ATTACK) AND (!NearPlayerXY(85.0)))
+		WHILE (GlobalVar2)
+			MyFlag = MyFlag
+		ENDWHILE
+
+	   IF (Phase > 1)
+	   GlobalVar2 = NUM_BOBBIES
+	   ELSE
+	   GlobalVar2 = NUM_BOBBIES / 3
+
+	   ENDIF
+		// Kill off any of the bobbies
+		LOOP 1
+			MyVar = 0
+		ENDLOOP
+		//ClearSiblingArray()
+		
+		SinkAmount = 0
+		MyVar = 1
+		SaveX = CheckX
+		SaveY = CheckY
+		SaveZ = CheckZ
+
+	 //  	PointToXY(DogX, DogY, DogZ)
+	 //	SetCheckPosRel(0,-70.0,60.0,0)
+	 //	SetCheckPosRel(0, -7.0,60.0,0)
+	 //	MyVar = -70.0
+	 //	PointToXY(CheckX, CheckY, CheckZ)
+	 //	CREATE SPAWN_HYDRO_BOSS_BOBBY 0, 60.0 ,2.5, 0, 0, 0, 0
+	 
+	 //  	PointToXY(DogX, DogY, DogZ)
+	 //	SetCheckPosRel(0,-50.0,70.0,0)
+	 //	SetCheckPosRel(0, -5.0,60.0,0)
+	 //	MyVar = -50.0
+	 //  	PointToXY(CheckX, CheckY, CheckZ)
+	 //	CREATE SPAWN_HYDRO_BOSS_BOBBY 0, 70.0 , 2.5, 0, 0, 0, 0
+
+	 //  	PointToXY(DogX, DogY, DogZ)
+	 //	SetCheckPosRel(0,0.0,0.0,0)
+	 //	SetCheckPosRel(0, 0.0,60.0,0)
+	 //	MyVar = 0
+	 //  	PointToXY(CheckX, CheckY, CheckZ)
+	 //	CREATE SPAWN_HYDRO_BOSS_BOBBY 0, 70.0 ,2.5, 0, 0, 0, 0
+
+	 //  	PointToXY(DogX, DogY, DogZ)
+	 //	SetCheckPosRel(0,50.0,70.0,0)
+	 //	SetCheckPosRel(0, 5.0,60.0,0)
+	 //	MyVar = 50.0
+	 //	PointToXY(CheckX, CheckY, CheckZ)
+	 //	CREATE SPAWN_HYDRO_BOSS_BOBBY 0, 70.0 , 2.5, 0, 0, 0, 0
+
+	 //  	PointToXY(DogX, DogY, DogZ)
+	 //	SetCheckPosRel(0,70.0,60.0,0)
+	 //	SetCheckPosRel(0, 7.0,60.0,0)
+	 //	MyVar = 70.0
+	 //	PointToXY(CheckX, CheckY, CheckZ)
+	 //	CREATE SPAWN_HYDRO_BOSS_BOBBY 0, 60.0 , 2.5, 0, 0, 0, 0
+
+
+   	temp1 = StrM00
+   	temp2 = StrM01
+   	temp3 = StrM02
+   	temp4 = StrM10
+   	temp5 = StrM11
+   	temp6 = StrM12
+   	temp7 = StrM20
+   	temp8 = StrM21
+   	temp9 = StrM22
+		//STRAIGHTS
+	   	PointToXY(DogX, DogY, DogZ)
+		SetCheckPosRel(0, 0.0,60.0,0)
+		MyVar = -200.0
+		PointToXY(CheckX, CheckY, CheckZ)
+	 	CREATE SPAWN_HYDRO_BOSS_BOBBY -60.0, 60.0 ,2.5, 0, 0, 0, 0
+	 
+	   	PointToXY(DogX, DogY, DogZ)
+		SetCheckPosRel(0, 0.0,60.0,0)
+		MyVar = -150.0
+	   	PointToXY(CheckX, CheckY, CheckZ)
+	 	CREATE SPAWN_HYDRO_BOSS_BOBBY -40.0, 70.0 , 2.5, 0, 0, 0, 0
+
+	   	PointToXY(DogX, DogY, DogZ)
+		SetCheckPosRel(0, 0.0,60.0,0)
+		MyVar = 0
+	   	PointToXY(CheckX, CheckY, CheckZ)
+	 	CREATE SPAWN_HYDRO_BOSS_BOBBY 0, 70.0 ,2.5, 0, 0, 0, 0
+
+	   	PointToXY(DogX, DogY, DogZ)
+		SetCheckPosRel(0, 0.0,60.0,0)
+		MyVar = 150.0
+		PointToXY(CheckX, CheckY, CheckZ)
+	 	CREATE SPAWN_HYDRO_BOSS_BOBBY 40.0, 70.0 , 2.5, 0, 0, 0, 0
+
+	   	PointToXY(DogX, DogY, DogZ)
+		SetCheckPosRel(0, 0.0,60.0,0)
+		MyVar = 200.0
+		PointToXY(CheckX, CheckY, CheckZ)
+	 	CREATE SPAWN_HYDRO_BOSS_BOBBY 60.0, 60.0 , 2.5, 0, 0, 0, 0
+
+   	StrM00 = temp1
+  	StrM01 = temp2
+  	StrM02 = temp3
+
+   	StrM10 = temp4
+
+   	StrM11 = temp5
+
+   	StrM12  = temp6
+
+   	StrM20 = temp7
+
+   	StrM21 = temp8
+
+   	StrM22  = temp9
+
+		IF (Phase > 1)
+		TRIGSET>BobbyBearing EVERY 60
+	 	ENDIF
+	 //	CREAIND SPAWN_HYDRO_BOSS_BOBBY CheckX, CheckY, z + 2.5, 0, 0, 0
+	 //	SetCheckPosRel(0,-50.0,70.0,0)
+	 //	CREAIND SPAWN_HYDRO_BOSS_BOBBY CheckX, CheckY, z + 2.5, 0, 0, 0
+	 //	SetCheckPosRel(0,0,70.0,0)
+	 //	CREAIND SPAWN_HYDRO_BOSS_BOBBY CheckX, CheckY, z + 2.5, 0, 0, 0
+	 //	SetCheckPosRel(0,50.0,70.0,0)
+	 //	CREAIND SPAWN_HYDRO_BOSS_BOBBY CheckX, CheckY, z + 2.5, 0, 0, 0
+	 //	SetCheckPosRel(0,70.0,60.0,0)
+	 //	CREAIND SPAWN_HYDRO_BOSS_BOBBY CheckX, CheckY, z + 2.5, 0, 0, 0
+
+		CheckX = SaveX
+		CheckY = SaveY
+		CheckZ = SaveZ
+
+
+
+		//IMMLOOP NUM_BOBBIES
+		//	CREAIND SPAWN_HYDRO_BOSS_BOBBY x, y, z + 2.5, 0, 0, SinkAmount
+		//	SinkAmount = SinkAmount + (2 * PI / NUM_BOBBIES)
+		//IMMENDLOOP
+	
+	//	LOOP (120)
+	//		MyFlag = MyFlag
+	//	ENDLOOP
+	
+	ENDIF
+	
+  	TRIGKILL>Bob EVERY 1
+	TRIGSET>PlayTurn EVERY 1
+	//BOB NEEDS TO RUN AFTER THE PLAYTURN
+   	TRIGSET>Bob EVERY 1
+	MODELANIM>BOSSES\HYDROBOSS\HYDROBOSS.RDO>EMERGE>0
+	EMERGED = 1
+  	LOOP (TWOTHIRDSEC)
+		MyFlag = MyFlag
+	ENDLOOP
+	
+	PLAYSOUND>SMALLSPLASH  1 1.0 0.0 0.0 0.0 RANDOM
+	PLAYSOUND>BIGSPLASHIN 0 1.0 0.0 0.0 0.0 RANDOM	
+	CREAIND SPAWN_HydroBoss_Splash x, y - 10, z + 2.5, 0, 0, 0
+
+	LOOP (ONESEC)
+		MyFlag = MyFlag
+	ENDLOOP
+
+	PLAYSOUND>BIGSPLASHIN 0 1.0 0.0 0.0 0.0 RANDOM
+	PLAYSOUND>SMALLSPLASH  1 1.0 0.0 0.0 0.0 RANDOM
+	CREAIND SPAWN_HydroBoss_Splash x, y +  15, z + 2.5, 0, 0, 0
+	
+	LOOP (ONESECONETHIRD)
+		MyFlag = MyFlag
+	ENDLOOP
+
+
+	TRIGKILL>PlayTurn EVERY 1
+
+	IF (NextAttack and AIR_ATTACK)
+		//WAIT A BIT IF BOBBY ACTION GOING ON
+	   	IF (NextAttack and GROUND_ATTACK)
+			LOOP (60)
+				MyFlag = MyFlag
+			ENDLOOP
+		ENDIF
+
+		IF (PAL)
+//			DELAY = TWOSECS - (25 * Phase) + 5
+			DELAY = TWOSECS + 5
+		ELSE
+//			DELAY = TWOSECS - (30 * Phase) + 5 
+			DELAY = TWOSECS + 5 
+		ENDIF
+
+		IF (DELAY < 12)
+			DELAY = 12
+		ENDIF
+
+	   //	DELAY = TWOSECS
+	  
+		PLAYSOUND>LAUNCH3 1 1.0 0.0 0.0 0.0 0
+	  	//CREATE SALVO 1
+		CREATE SPAWN_HydroBoss_MissileA 0,0,0, 0, 0, 0, ROCKETTUBE1
+		LOOP (DELAY)
+			MyFlag = MyFlag
+		ENDLOOP
+		SetGlobalParamInt(0,1)
+		CREATE SPAWN_HydroBoss_MissileA 0,0,0, 0, 0, 0, ROCKETTUBE2
+	   ClearGlobalParams()
+	
+	   LOOP (DELAY)
+			MyFlag = MyFlag
+		ENDLOOP
+
+	   	SetGlobalParamInt(0,1)
+		CREATE SPAWN_HydroBoss_MissileA 0,0,0, 0, 0, 0, ROCKETTUBE3
+	   ClearGlobalParams()
+		LOOP (DELAY)
+			MyFlag = MyFlag
+		ENDLOOP
+		SetGlobalParamInt(0,0)
+		CREATE SPAWN_HydroBoss_MissileA 0,0,0, 0, 0, 0, ROCKETTUBE4
+		ClearGlobalParams()
+		
+		LOOP (TWOSECS)
+			MyFlag = MyFlag
+		ENDLOOP
+											 
+		PLAYSOUND>LAUNCH3 1 1.0 0.0 0.0 0.0 0
+
+		SetGlobalParamInt(0,0)
+		//CREATE SALVO 2
+		CREATE SPAWN_HydroBoss_MissileA 0,0,0, 0, 0, 0, ROCKETTUBE5
+	   ClearGlobalParams()
+	LOOP (DELAY)
+			MyFlag = MyFlag
+		ENDLOOP
+		SetGlobalParamInt(0,1)
+		CREATE SPAWN_HydroBoss_MissileA 0,0,0, 0, 0, 0, ROCKETTUBE6
+		
+		SetGlobalParamInt(0,1)
+		CREATE SPAWN_HydroBoss_MissileA 0,0,0, 0, 0, 0, ROCKETTUBE7
+	  ClearGlobalParams()
+	LOOP (DELAY)
+			MyFlag = MyFlag
+		ENDLOOP
+		SetGlobalParamInt(0,0)
+		CREATE SPAWN_HydroBoss_MissileA 0,0,0, 0, 0, 0, ROCKETTUBE8
+		ClearGlobalParams()
+	ENDIF
+
+
+	WHILE (MyAnimFlag & RUNNING)
+		MyFlag = MyFlag
+	ENDWHILE
+
+	
+
+   	STAT>OnTheSurface
+ENDSTATE
+
+
+LOCALINT Phase
+LOCALFLOAT SPECAMOUNT
+
+
+
+LOCALINT EMERGED
+TRIGGER ProcessCollision
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+//   	Phase = 2
+//   	health = STAGE_TWO_HEALTH
+
+	IF ((EMERGED) AND NearPlayerXY(85.0))
+		IF (!(MyAnimFlag & RUNNING))	
+	   
+	   	TRIGRESET
+   		STAT>OnTheSurface
+		ENDIF
+	 ENDIF
+
+	
+		IF ((MyFlag2 & PLAYERHIT) or (CollWith = BoatStrat))
+		 	PlayerHealth = PlayerHealth - 20
+		ENDIF
+	IF (MyFlag & HITSTRAT)
+		IF (health <= 0)
+			Phase = Phase + 1
+			IF (Phase = 1)
+				//GOING TO STAGE 2, BOBBIES APPAER
+				IF (Hard)
+			  		SAVEHEALTH = health = HSTAGE_TWO_HEALTH
+				ELSE
+			  		SAVEHEALTH = health = STAGE_TWO_HEALTH
+				ENDIF
+				Dive = 1
+			ENDIF
+		  
+			IF (Phase = 2)
+				//GOING TO STAGE 3, BOBBIES AND SATELLITES
+				IF (Hard)
+					SAVEHEALTH = health = HSTAGE_THREE_HEALTH
+				ELSE
+					SAVEHEALTH = health = STAGE_THREE_HEALTH
+				ENDIF
+				Dive = 1
+		   	ENDIF
+
+		   
+		   	IF (Phase > 2)
+		   		PauseTriggers(-1,FORGET)
+		   	   	GlobalVar = 1000.0
+		   
+				IF (BOBBING)
+		   			TRIGKILL>Bob EVERY 1
+				ENDIF 
+		   		TRIGRESET
+				TRIGSTOP
+		   		STAT>Die
+		   	ENDIF
+
+		ENDIF
+	ENDIF
+
+	IF ((MyFlag & HITSTRAT))
+		SPECAMOUNT = 0.4
+		PLAYSOUND>ENEMY_HIT 3 1.0 0.0 0.0 0.0 RANDOM
+	ENDIF
+	IF (SPECAMOUNT > 0)
+  		MyFlag2 = MyFlag2 | SPECULAR
+		SetSpecularColour(0, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		IF (PAL)
+			SPECAMOUNT = SPECAMOUNT - 0.12
+		ELSE
+			SPECAMOUNT = SPECAMOUNT - 0.1
+		ENDIF
+   	ELSE
+		SPECAMOUNT = 0
+		MyFlag2 = MyFlag2 & LNOT(SPECULAR)
+  	ENDIF
+
+
+ 
+
+	// Calc the collision
+   	CalculateStratPolyData(1)
+
+	// Also poll the sibling array while we're at it
+	//PollSiblingArray()
+	TRIGFIN
+ENDTRIGGER
+
+
+LOCALINT VALIDTOKILL
+LOCALFLOAT SAVEHEALTH
+LOCALFLOAT stime
+LOCALFLOAT temp
+LOCALFLOAT zoffset
+LOCALFLOAT startz
+
+
+TRIGGER Bob
+  //	temp1 = StrM00
+  //	temp2 = StrM01
+  //	temp3 = StrM02
+  //	temp4 = StrM10
+  //	temp5 = StrM11
+  //	temp6 = StrM12
+  //	temp7 = StrM20
+  //	temp8 = StrM21
+  //	temp9 = StrM22
+  //	PointToXY(DogX, DogY, DogZ)
+
+   //	SP = RandRange(5.0,8.0)
+   //	CheckY = RandRange(50.0, 80.0)
+   //	CheckX = RandRange(-20.0,20.0)
+  //	SetGlobalParamInt(0, 1)
+  //	SetGlobalParamInt(1, 5)
+  //	SetGlobalParamFloat(0,5.0)
+  //	SetGlobalParamInt(2,1)
+  //  IMMLOOP (SP)
+  //		CheckX = CheckX + RandRange(-5.0,5.0)
+   
+  //		CREATE SPAWN_SPLASH CheckX, CheckY, 2.5, 0, 0, 0, 0
+
+  //	IMMENDLOOP
+  //	ClearGlobalParams()
+   
+   
+  //	StrM00 = temp1
+  //	StrM01 = temp2
+  //	StrM02 = temp3
+
+  //	StrM10 = temp4
+
+  //	StrM11 = temp5
+
+  //	StrM12  = temp6
+
+  //	StrM20 = temp7
+
+  //	StrM21 = temp8
+
+  //	StrM22  = temp9
+
+   
+   	Flatten(1.0)
+	IF (PAL)
+		stime = stime + 1.2
+	ELSE
+		stime = stime + 1.0
+	ENDIF
+	temp = Ssin(stime * 0.06)
+	MoveXNoZ(temp * 0.06)
+//	RelRotateY(temp * 0.01)
+	RelRotateX(temp * 0.005)
+	temp = Ssin(stime * 0.1)
+	
+	z = startz + zoffset
+	IF (PAL)
+		zoffset = zoffset + temp * (0.02 * 1.2) 
+	ELSE
+		zoffset = zoffset + temp * 0.02 
+	ENDIF
+
+	// Calc the collision
+	//CalculateStratPolyData(1)
+
+
+	TRIGFIN
+ENDTRIGGER
+
+
+
+
+
+STATE OnTheSurface
+   //	StartHealth = health
+	Dive = 0
+	Count = MAX_TIME_IN_THE_OPEN
+	WHILE (!Dive)
+		// Dive if lost enough health
+	  
+	  	IF ((health < 0) OR (FABS(StartHealth - health) > MAX_HEALTH_LOST_IN_OPEN))
+	  		Dive = 1
+	   	ENDIF
+		//Dive after a certain amount of time
+		Count = Count - 1
+		IF (Count = 0)
+			Dive = 1
+		ENDIF
+		// Dive if player gets too near
+		IF (NearPlayerXY (85.0))
+			Dive = 1
+		ENDIF
+	ENDWHILE
+
+
+	IF (BOBBING)
+		BOBBING = 0
+		TRIGKILL>Bob EVERY 1
+	ENDIF
+
+	VALIDTOKILL = 0
+	SAVEHEALTH = health
+   
+ //  	IF (Phase > 1)
+ //		LOOP (ONESEC)
+ //			MyFlag = MyFlag
+ //		ENDLOOP
+	
+		//LAUNCH SATELLITES
+ //		GlobalVar = 4.0
+ //	   	frame = 0
+
+  //		SATELLITESOUT = 1
+  // 	ENDIF
+
+
+
+	STAT>Submerge
+ENDSTATE
+
+
+LOCALINT SATELLITESOUT
+
+TRIGGER EXP
+  	SetGlobalParamInt(1,99)
+	SetGlobalParamFloat(0,1.0)
+	SetGlobalParamFloat(1,0)
+	SetGlobalParamInt(2,0)
+   	SetGlobalParamInt(3,0)
+	CREATE ENV_EXPLOSION 0, 0, 0, 0, 0, 0, 0
+	ClearGlobalParams()
+  	SetGlobalParamInt(1,99)
+	SetGlobalParamFloat(0,1.5)
+	SetGlobalParamFloat(1,0)
+	SetGlobalParamInt(2,0)
+   	SetGlobalParamInt(3,0)
+	CREATE ENV_EXPLOSION ROCKETTUBE1, 0, 0, 0, 0, 0, 0
+ //	ClearGlobalParams()
+ // 	SetGlobalParamInt(1,99)
+ //	SetGlobalParamFloat(0,1.5)
+ //	SetGlobalParamFloat(1,0)
+ //	SetGlobalParamInt(2,0)
+ //  	SetGlobalParamInt(3,0)
+ //	CREATE ENV_EXPLOSION ROCKETTUBE5, 0, 0, 0, 0, 0, 0
+ //	ClearGlobalParams()
+	TRIGSET>EXP1 EVERY 25
+	TRIGSTOP
+ENDTRIGGER
+
+TRIGGER EXP1
+  	SetGlobalParamInt(1,99)
+	SetGlobalParamFloat(0,1.0)
+	SetGlobalParamFloat(1,0)
+	SetGlobalParamInt(2,0)
+   	SetGlobalParamInt(3,0)
+	CREATE ENV_EXPLOSION 0, 0, 0, 0, 0, 0, 0
+	ClearGlobalParams()
+  	SetGlobalParamInt(1,99)
+	SetGlobalParamFloat(0,1.5)
+	SetGlobalParamFloat(1,0)
+	SetGlobalParamInt(2,0)
+   	SetGlobalParamInt(3,0)
+	CREATE ENV_EXPLOSION ROCKETTUBE1, 0, 0, 0, 0, 0, 0
+	ClearGlobalParams()
+  	SetGlobalParamInt(1,99)
+	SetGlobalParamFloat(0,1.5)
+	SetGlobalParamFloat(1,0)
+	SetGlobalParamInt(2,0)
+   	SetGlobalParamInt(3,0)
+	CREATE ENV_EXPLOSION ROCKETTUBE5, 0, 0, 0, 0, 0, 0
+	ClearGlobalParams()
+  //	TRIGSET>EXP1 EVERY 15
+	TRIGSTOP
+ENDTRIGGER

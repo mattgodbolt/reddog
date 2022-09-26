@@ -1,0 +1,85 @@
+PARAMFLOAT topSpeed 0.4
+
+LOCALINT	rev
+LOCALFLOAT speed
+LOCALFLOAT dist
+DEFINE ACC 0.005
+DEFINE STOPDIST 10.0
+
+STATE Init
+	MyFlag = MyFlag | STRATCOLL | ENEMY
+	MyFlag2 = MyFlag2 | HOLDPLAYER  | COLLMOVE
+
+	rev = 100
+	IF (!(MyFlag & OWNFPARAMS))
+		topSpeed = 0.4
+	ENDIF
+
+	speed = 0.0
+	RegisterCollision()
+	InitPath()
+	IAmHoldPlayer()
+	InitHDC()
+	CalculateStratPolyData(1)
+	AllocStratSoundBlock(2)
+	IF (HasActivation(0))
+		WHILE (!PlayerNearActivationXY(0))
+			MyFlag = MyFlag
+		ENDWHILE
+	ENDIF
+	SetPitch(0, -0.4)
+	PLAYSOUND>LIFTLOOP 0 0.9 0.0 0.0 0.0 CONTINUOUS
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	dist = CheckPosDist()
+
+	IF (dist > STOPDIST)
+		IF (speed < topSpeed)
+			speed = speed + ACC
+		ELSE
+			speed = topSpeed
+		ENDIF
+	ELSE
+		speed = (dist / STOPDIST) * topSpeed
+		IF (speed < 0.05)
+			speed = 0.05
+		ENDIF
+	ENDIF
+
+	SetPitch(0, (-0.4 + speed))
+
+	rev = rev + 1
+	IF ((MyFlag2 & PLAYERHIT) AND (DogZ < z) AND (rev > 30))
+		rev = 0
+	ENDIF
+
+	IF ((dist < 0.1) OR (rev = 0))
+		IF (FirstWay())
+			GetNextWay()
+		ELSE
+			IF (LastWay())
+				GetPrevWay()
+			ELSE
+				GetNextWay()
+			ENDIF
+		ENDIF
+		speed = 0.0
+		absspeedx = 0.0
+		absspeedy = 0.0
+		absspeedz = 0.0
+		SetVolume(0, 0.0)
+		PLAYSOUND>BUMP4 1 1.0 0.0 0.0 0.0 0
+		IF (rev != 0)
+			LOOP (45)
+				MyFlag = MyFlag
+			ENDLOOP
+		ENDIF
+		SetVolume(0, 0.9)
+	ENDIF
+
+	MoveTowardCheckPosNow(speed)
+	CalculateStratPolyData(0)
+	HoldPlayer()
+ENDSTATE

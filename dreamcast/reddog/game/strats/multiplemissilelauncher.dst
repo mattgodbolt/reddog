@@ -1,0 +1,201 @@
+//PAL FRIENDLY
+//Creation trigger needed
+//activation circle 0 is for activating the strat
+//activation circle 1 is for close proximity weapon
+//any other activation cricles act as the long range weapon valid areas
+//Strat needs path move to the end parks and gets busy
+
+LOCALFLOAT	speed
+LOCALFLOAT	closeRangeFireTime
+LOCALFLOAT	longRangeFireTime
+LOCALINT	currentTurret
+DEFINE	TOPSPEED 0.3
+DEFINE	ACCELERATION 0.03333
+DEFINE	LEFT_TURRET		11
+DEFINE	RIGHT_TURRET	10
+DEFINE	FRONT_TURRET	8
+DEFINE	REAR_TURRET		9
+
+//1 SEC, 7 SEC DELAY
+DEFINE	NTSC_CLOSE_RANGE_FIRE_TIME	30.0
+DEFINE	NTSC_LONG_RANGE_FIRE_TIME	210.0
+
+DEFINE	PAL_CLOSE_RANGE_FIRE_TIME	25.0
+DEFINE	PAL_LONG_RANGE_FIRE_TIME	175.0
+
+
+
+DEFINE	LAUNCHER	7
+
+STATE Init
+	MyFlag = MyFlag | ENEMY | HOVERMOVE | STRATCOLL | FLOORCOLL | GRAVITYON | TARGETABLE | RELVELCALC | LOWCOLL
+	RegisterCollision()
+	TRIGSET>SpecularMadness EVERY 1
+   	MyFlag2 = MyFlag2 | COLLMOVE
+	RotationRestriction(1.0, 1.0, 1.0)
+	SetFriction(1.0, 0.0, 0.05)
+	IF (MyPath)
+		InitPath()
+		InitSplineData()
+	ENDIF
+	health = 70.0
+	currentTurret = LEFT_TURRET
+	closeRangeFireTime = 0
+	longRangeFireTime = 0
+	speed = 0.0
+	AllocStratSoundBlock(3)
+	RegisterDanger(100.0)
+	PLAYSOUND>MULTIMISSILE_ENG 0 1.0 0.0 0.0 0.0 CONTINUOUS
+	TRIGSET>Kill WHENDEAD
+	SetObjectShadowState(1)
+	STAT>Start
+ENDSTATE
+
+LOCALFLOAT SPECAMOUNT
+
+TRIGGER SpecularMadness
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+	IF ((MyFlag & HITSTRAT) AND (CollWithFlag & BULLETTYPE))
+		SPECAMOUNT = 1.0
+		PLAYSOUND>ENEMY_HIT 2 1.0 0.0 0.0 0.0 RANDOM
+	ENDIF
+	IF (SPECAMOUNT > 0)
+  		MyFlag2 = MyFlag2 | SPECULAR
+		SetSpecularColour(0, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		IF (PAL)
+		 	SPECAMOUNT = SPECAMOUNT - 0.12
+		ELSE
+		 	SPECAMOUNT = SPECAMOUNT - 0.1
+		ENDIF
+
+  	ELSE
+		SPECAMOUNT = 0
+ 		MyFlag2 = MyFlag2 & LNOT(SPECULAR)
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+STATE Start
+	absspeedx = 0.0
+	absspeedy = 0.0
+	MoveAlongPathXY(speed)
+	FaceAlongDirXY(1)
+	IF (speed < TOPSPEED)
+		speed = speed + ACCELERATION
+	ENDIF
+
+	IF (DistToLastWayXY(SQRROOT) < 100.0)
+		STAT>Park
+	ENDIF
+	SetPitch(0, (speed+1.0))
+ENDSTATE
+
+STATE Park
+	absspeedx = 0.0
+	absspeedy = 0.0
+	MoveAlongPathXY(speed)
+	FaceAlongDirXY(1)
+	IF (speed > ACCELERATION)
+		speed = speed - ACCELERATION
+	ELSE
+		SetPitch(0, 1.0)
+		speed = 0.0
+		SetFriction(1.0, 1.0, 0.05)
+		STAT>GetBusy
+	ENDIF
+	SetPitch(0, (speed+1.0))
+ENDSTATE
+
+STATE GetBusy 
+	IF (PlayerNearActivationXY(1))
+
+		IF (closeRangeFireTime > 0.0)
+			closeRangeFireTime = closeRangeFireTime - 1.0
+		ENDIF
+
+		IF (closeRangeFireTime <= 0.0)
+			IF (PAL)
+				closeRangeFireTime = RandRange(PAL_CLOSE_RANGE_FIRE_TIME * 0.5, PAL_CLOSE_RANGE_FIRE_TIME * 1.5)
+			ELSE
+				closeRangeFireTime = RandRange(NTSC_CLOSE_RANGE_FIRE_TIME * 0.5, NTSC_CLOSE_RANGE_FIRE_TIME * 1.5)
+			ENDIF
+		   	PLAYSOUND>LASER1XTPMIX2 1 1.0 0.0 0.0 0.0 0
+			CREATE SPAWN_RED_LASER_ENEMY 0.0, 0.0, 0.0, 0, 0, 0, currentTurret
+		ENDIF
+
+		CheckX = DogX
+		CheckY = DogY
+		CheckZ = DogZ
+		
+
+		SetCheckPosMyRotate(0)
+
+	   //	WorldToStrat(DogX, DogY, DogZ)
+
+		IF (CheckY > 0.0)
+			ObjectTowardPlayerXZ(FRONT_TURRET , 0.05, 0.05, HPI, HPI)	
+			CrntRotToIdleRotX(FRONT_TURRET, 0.05)
+			CrntRotToIdleRotZ(FRONT_TURRET, 0.05)
+			currentTurret = FRONT_TURRET
+		ELSE
+			IF (CheckY < 0.0)
+				ObjectTowardPlayerXZ(REAR_TURRET , 0.05, 0.05, HPI, HPI)	
+				CrntRotToIdleRotX(REAR_TURRET, 0.05)
+				CrntRotToIdleRotZ(REAR_TURRET, 0.05)
+				currentTurret = REAR_TURRET
+			ENDIF
+		ENDIF
+
+		IF (CheckX > 5.0)
+			ObjectTowardPlayerXZ(RIGHT_TURRET , 0.05, 0.05, HPI, HPI)	
+			CrntRotToIdleRotX(RIGHT_TURRET, 0.05)
+			CrntRotToIdleRotZ(RIGHT_TURRET, 0.05)
+			currentTurret = RIGHT_TURRET
+		ELSE
+			IF (CheckX < -5.0)
+				ObjectTowardPlayerXZ(LEFT_TURRET , 0.05, 0.05, HPI, HPI)	
+				CrntRotToIdleRotX(LEFT_TURRET, 0.05)
+				CrntRotToIdleRotZ(LEFT_TURRET, 0.05)
+				currentTurret = LEFT_TURRET
+			ENDIF
+		ENDIF		
+	ENDIF
+
+  
+  	
+	IF (SeePlayerZ(0.3))
+		IF (PlayerNearActivationXY(2) OR PlayerNearActivationXY(3) OR PlayerNearActivationXY(4))
+			IF (longRangeFireTime > 0.0)
+				longRangeFireTime = longRangeFireTime - 1.0
+			ENDIF
+
+			IF (longRangeFireTime <= 0.0)
+				IF (PAL)
+					longRangeFireTime = RandRange(PAL_LONG_RANGE_FIRE_TIME * 0.5, PAL_LONG_RANGE_FIRE_TIME * 1.5)
+				ELSE
+					longRangeFireTime = RandRange(NTSC_LONG_RANGE_FIRE_TIME * 0.5, NTSC_LONG_RANGE_FIRE_TIME * 1.5)
+				ENDIF
+				CREATE SPAWN_ENEMY_HOMING_MISSILE 0.0, 2.0, 0.0, 0, 0, -0.5, LAUNCHER
+				CREATE SPAWN_ENEMY_HOMING_MISSILE 0.0, 2.0, 0.0, 0, 0, 0.5, LAUNCHER
+				LOOP (30)
+					MyFlag = MyFlag
+				ENDLOOP
+				CREATE SPAWN_ENEMY_HOMING_MISSILE 0.0, 2.0, 0.0, 0, 0, -0.1, LAUNCHER
+				CREATE SPAWN_ENEMY_HOMING_MISSILE 0.0, 2.0, 0.0, 0, 0, 0.2, LAUNCHER
+			ENDIF
+		ENDIF
+	ELSE
+		RelTurnTowardPlayerXY(0.05)
+	ENDIF
+
+ENDSTATE
+
+
+STATE Kill
+	MakeFrags (0.1, 24)
+//	adrelanin = adrelanin + 0.2
+	StopSound(0,0)
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+	Score = Score + 2000
+	DESTROYME SPAWN_EXPLODINGBITS
+ENDSTATE

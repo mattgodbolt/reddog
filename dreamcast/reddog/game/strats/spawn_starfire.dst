@@ -1,0 +1,105 @@
+LOCALFLOAT tempf
+
+
+DEFINE size 0.5
+
+LOCALFLOAT ang
+
+STATE Link
+
+  //	MyVar = ParentSemaphore
+	MakeMeTheLast()
+  //	MyFlag = MyFlag | NODISP
+   //	MyFlag = MyFlag | SPRITE
+   	WHILE (MyParentFlag)
+   //	WHILE (ParentSemaphore != 3.0)
+	   	LinkToParentObject(0,0,0,0,0,0,0)
+	   	RelRotateY(ang)			
+	  	ang = ang + MyVar
+	ENDWHILE
+	Delete()
+ENDSTATE
+
+
+
+STATE Init
+	IF (GetGlobalParamInt(0) = 1)
+   		MyVar = -(TWOPI/360.0) * 2.0
+		OBJECT> WEAPON\StarFilter1
+		STAT>Link
+	ENDIF
+
+	IF (GetGlobalParamInt(0) = 2)
+		MyVar = (TWOPI/360.0) * 1.0
+		OBJECT> WEAPON\StarFilter2
+		STAT>Link
+	ENDIF
+
+	ExplosionLight (0.22, 0.22, 0.20, 12, 1, 0)
+
+	MyFlag = MyFlag | FLOORCOLL | STRATCOLL | ENEMY | NOTEXPLODE |  BULLETTYPE | LOWCOLL
+	MyFlag2 = MyFlag2 | BULLET_CF
+   	SetFriction(0.0,0.0,0.0)
+	OBJECT> WEAPON\FireBall
+	RegisterCollision()
+
+	SetGlobalParamInt(0,1)
+	CREATE SPAWN_STARFIRE 0,0,0,0,0,0,0
+	SetGlobalParamInt(0,0)
+
+
+	SetGlobalParamInt(0,2)
+	CREATE SPAWN_STARFIRE 0,0,0,0,0,0,0
+	SetGlobalParamInt(0,0)
+
+	AllocStratSoundBlock(1)
+
+	TRIGSET>StratHit		WHENHIT
+	TRIGSET>KillOffFloor	ONFLOOR
+	TRIGSET>KillOffFloor	EVERY 100
+	damage = 5.0
+
+ 	IF (GetGlobalParamInt(1) = 1)
+		PointPlayer()
+		PLAYSOUND>HOVERBIKE_GUN 0 1.0 0.0 0.0 0.0 RANDOM
+	ELSE
+		PLAYSOUND>ATANK_GUN 0 1.0 0.0 0.0 0.0 RANDOM
+ 	ENDIF
+	MoveY(2.0)
+	//PointTo(DogX, DogY, DogZ)
+	STAT>Start
+ENDSTATE 
+			   
+STATE Start
+	RelRotateY(0.5)
+ENDSTATE
+
+STATE KillOff
+	MyFlag = MyFlag | NODISP  
+	MyFlag = MyFlag & LNOT(STRATCOLL)
+	MyVar = 3.5
+	CREATE SPAWN_BLASTEXP 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0
+	Delete()
+  //	TRIGSTOP
+ENDSTATE
+
+STATE KillOffFloor
+	MyVar = 3.5
+	CREATE SPAWN_BLASTEXP 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0
+	Delete()
+ //	TRIGSTOP
+ENDSTATE
+
+Trigger StratHit
+	IF (CollWith = PlayerShieldStrat(0))
+		CREATE SPAWN_SHIELDDAMAGESOUND 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0
+		MyFlag = MyFlag | FRIENDLY
+		BounceOffShield(0)
+		TRIGFIN
+	ELSE
+		MyVar = 3.5
+		CREATE SPAWN_BLASTEXP 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0
+		Delete()
+   //		TRIGSTOP
+	ENDIF
+ENDTRIGGER

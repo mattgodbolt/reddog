@@ -1,0 +1,259 @@
+DEFINE		ATTACK	0
+DEFINE		RETREAT	1
+DEFINE		FAR		40.0
+DEFINE		NEAR	20.0
+DEFINE		LEFT	0
+DEFINE		RIGHT	1
+DEFINE		TURRET	3
+DEFINE		LEFTEYE	2
+DEFINE		RIGHTEYE 1 
+
+
+LOCALFLOAT lastdist
+LOCALINT endreached
+LOCALINT fireMODE
+
+STATE Init 
+	MyFlag = MyFlag | HOVERMOVE | FLOORCOLL | ENEMY | STRATCOLL | TARGETABLE | GRAVITYON
+   	MyFlag2 = MyFlag2 | COLLMOVE
+	OBJECT> ENEMIES\RAPIERBIG
+	RegisterCollision()
+	TRIGSET>SpecularMadness EVERY 1
+   	MODELANIM>ENEMIES\RAPIERBIG.RDO>walk>REPEAT
+	TRIGSET>FireCheck EVERY 1
+  	TRIGSET>MoveHead EVERY 1
+	TRIGSET>Ouch  WHENHIT
+  	RotationRestriction(0.0, 0.0, 1.0)
+	SetFriction(1.0, 0.3, 0.1)
+	health = 500.0
+	fireMODE = LEFT
+	DefFire = 0
+	fireCount = 0
+	InitPath()
+	AllocStratSoundBlock(2)
+	RegisterDanger(50.0)
+	SetAudibleRange(0, 10, 80)
+	TRIGSET>Kill WHENDEAD 
+	SetObjectShadowState(1)
+	STAT> Defend
+ENDSTATE
+
+LOCALFLOAT SPECAMOUNT
+
+TRIGGER SpecularMadness
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+	IF ((MyFlag & HITSTRAT) AND (CollWithFlag & BULLETTYPE))
+		SPECAMOUNT = 1.0
+	ENDIF
+	IF (SPECAMOUNT > 0)
+  		MyFlag2 = MyFlag2 | SPECULAR
+		SetSpecularColour(0, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		SPECAMOUNT = SPECAMOUNT - 0.1
+	ELSE
+		SPECAMOUNT = 0
+ 		MyFlag2 = MyFlag2 & LNOT(SPECULAR)
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+LOCALINT fireCount
+
+STATE MoveHead
+   //	HEADMOVEVALID = 1
+ //	IF (HEADMOVEVALID)
+   		ObjectTowardPlayerXZ(TURRET , 0.05, 0.05, TWOPI/8.0, TWOPI/8.0)
+   //		ObjectTowardPlayerXZ(TURRET , 0.05, 0.05, TWOPI, TWOPI)
+  // 	ELSE
+  // 		ObjectReturnToStart(TURRET)
+  //	ENDIF
+	CrntRotToIdleRotX(TURRET, 0.05)
+
+	CrntRotToIdleRotZ(TURRET, 0.05)
+	TRIGFIN
+ENDSTATE
+
+
+STATE Ouch
+   	IF ((health > 0.0) AND (!(MyFlag2 & PLAYERHIT)))
+
+		
+		PauseTriggers(-1,FORGET)
+		
+   
+		MODELANIM>ENEMIES\RAPIERBIG.RDO>GETHIT>NOTWEEN
+
+
+		WHILE  (MyAnimFlag & RUNNING)
+	   		MyFlag = MyFlag
+		ENDWHILE
+
+		UnPauseTriggers()
+		TRIGRESET
+		TRIGFIN
+		STAT>DefendWait
+	ENDIF
+  	TRIGFIN
+
+
+
+ENDSTATE
+
+
+
+STATE FireCheck
+	IF ((SeePlayerZ(0.1) AND (NearPlayerXY(FAR))) OR DefFire)
+	 	//IF (NearPlayerXY(FAR))
+			IF (fireCount > 32)
+
+			//ENSURE WE ARE LOOKING AND SEEING 
+		   	WHILE (!SeePlayerZ(TWOPI/8.0))
+		  		RelTurnTowardPlayerXY(0.05)
+		   	ENDWHILE
+			
+			KillMyVelocity()
+			MyFlag = MyFlag & LNOT(GRAVITYON + FLOORCOLL)
+			MyFlag2 = MyFlag2 | STOPPED
+			
+		   	IF (fireMODE = RIGHT)
+				fireMODE = LEFT
+				MODELANIM>ENEMIES\RAPIERBIG.RDO>RightFire>0
+
+				WHILE (MyAnimFlag & TWEEN)
+					MyFlag = MyFlag
+				ENDWHILE
+			   	LOOP (3)
+			   		MyFlag = MyFlag
+			   	ENDLOOP
+				MyVar = 7.0
+			   //	CREATE SPAWN_MISSILEEXPLODE 0.0, 2.0, 0.0, 0.0,  0.0, 0.0, RIGHTEYE
+			 	CREATE SPAWN_BLASTEXP 0.0, 2.0, 0.0, 0.0,  0.0, 0.0, RIGHTEYE
+				CREATE SPAWN_EnergyBall  0.0, 2.0, 0.0, 0.0,  0.0, 0.0, RIGHTEYE
+			ELSE
+				fireMODE = RIGHT
+				MODELANIM>ENEMIES\RAPIERBIG.RDO>LeftFire>0
+				WHILE (MyAnimFlag & TWEEN)
+					MyFlag = MyFlag
+				ENDWHILE
+			   	LOOP (3)
+			   		MyFlag = MyFlag
+			   	ENDLOOP
+				MyVar = 7.0
+			   //	CREATE SPAWN_MISSILEEXPLODE 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, LEFTEYE
+			   	CREATE SPAWN_BLASTEXP 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, LEFTEYE
+				CREATE SPAWN_EnergyBall  0.0, 2.0, 0.0, 0.0, 0.0, 0.0, LEFTEYE
+		   	ENDIF
+
+			WHILE (MyAnimFlag & RUNNING)
+				MyFlag = MyFlag
+			ENDWHILE
+
+		   	fireCount = 0
+
+			MODELANIM>ENEMIES\RAPIERBIG.RDO>Walk>REPEAT
+
+			MyFlag = MyFlag | GRAVITYON	+ FLOORCOLL
+			MyFlag2 = MyFlag2 & LNOT(STOPPED)
+			ENDIF
+	   	ENDIF
+   //	ENDIF
+
+	fireCount = fireCount + 1
+
+	TRIGFIN
+ENDSTATE 
+
+STATE Defend
+	lastdist = PlayerDistXY()
+    endreached = 0
+
+	IF (!NearPlayerXY(15.0))
+		DefFire = 0
+   	  	STAT>Attack
+	ELSE
+		STAT>GetOut
+	ENDIF
+ENDSTATE
+
+LOCALINT DefFire
+
+STATE GetOut
+	WHILE ((!endreached))
+		MODELANIM>ENEMIES\RAPIERBIG.RDO>walk>REPEAT
+
+	
+		endreached = GetFurthestWay(0)
+	
+		IF (!NearPlayerXY(35.0))
+			endreached = 1
+		ENDIF
+
+	 //  IF (NearCheckPosXY(0.0))
+	 //		IF (LastWay() OR FirstWay())
+	 //			endreached = 1
+	 //		ENDIF
+	 //  ENDIF
+
+	 	IF (!NearCheckPosXY(0.0))
+			IF (AwaySeeWayZ(0.5))
+				MoveY (-0.00)
+			ENDIF
+			AwayWayZ(0.05)
+		   //	RelTurnAwayCheckPosXY(0.05)
+	  	ENDIF
+
+
+	 ENDWHILE
+	 STAT>DefendWait
+ENDSTATE
+
+
+
+STATE DefendWait
+
+	MODELANIM>ENEMIES\RAPIERBIG.RDO>Standing>REPEAT
+	WHILE (MyAnimFlag & TWEEN)
+		MyFlag = MyFlag
+	ENDWHILE
+
+	lastdist = PlayerDistXY()
+
+	WHILE ((PlayerDistXY() < lastdist + 1.0) AND (PlayerDistXY() > lastdist - 1.0))
+		MyFlag = MyFlag
+	ENDWHILE
+
+   	STAT>Defend
+
+ENDSTATE
+
+
+STATE Attack
+	IF (NearPlayer (30.0) OR endreached)
+		STAT>DefendWait
+	ENDIF
+	MODELANIM>ENEMIES\RAPIERBIG.RDO>walk>REPEAT
+
+	endreached = GetNearestWaySpline(0.0)
+
+
+	IF (!endreached)
+	   	IF (SeeWayZ(0.5))
+			MoveY (0.20)
+		ENDIF
+		RelTurnTowardCheckPosXY(0.05)
+   	ELSE
+		DefFire = 1
+	ENDIF
+
+ENDSTATE
+
+STATE Kill
+	MakeFrags (0.1, 24)
+	PLAYSOUND>EX_HEAVY_IMPACT2 0 1.0 0.0 0.0 0.0 0
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+//	adrelanin = adrelanin + 0.2
+	IF (Radius > 0.0)
+		DESTROYME SPAWN_EXPLODINGBITS
+	ELSE
+		Delete()
+	ENDIF
+ENDSTATE

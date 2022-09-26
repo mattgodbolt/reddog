@@ -1,0 +1,25 @@
+
+//JUST ENSURES THE PLAYER DIES, NO NEED FOR DELETE WAREZ AS THE ENSUING MAPRESET SHALL DO IT
+
+
+LOCALINT i
+STATE Init
+	i = GetGlobalParamInt(0)
+
+	MyParent = 0
+	MakeMeTheLast()
+	WHILE (i > 0)
+		i = i - 1
+	ENDWHILE
+	IF (LevelReset = 1)
+		Delete()
+	ELSE
+		IF (Lives > 0)
+			Lives = Lives - 1
+			LevelReset = 1
+		ELSE
+			GameOver()
+		ENDIF
+	ENDIF
+ENDSTATE
+

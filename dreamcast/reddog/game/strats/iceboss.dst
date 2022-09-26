@@ -1,0 +1,2267 @@
+ //ICE BOSS
+//HARD DIFFICULTY HEALTH
+DEFINE HPHASE1HEALTH 600.0
+DEFINE HPHASE2HEALTH 2000.0
+DEFINE HPHASE3HEALTH 2000.0
+
+//EASY DIFFICULTY HEALTH
+DEFINE PHASE1HEALTH 300.0
+DEFINE PHASE2HEALTH 400.0
+DEFINE PHASE3HEALTH 500.0
+
+//NEEDS 1 INTIAL NETWORK WITH A PATROL, TO CATER FOR HOLE ATTACKS
+//BOSS WALKER DEFINES
+DEFINE TOPSIDEGUN 6
+DEFINE LOWSIDEGUN 7
+DEFINE HEADLASER1 12
+DEFINE MAINHEAD 13				  
+DEFINE BODY 20
+DEFINE LEFTLEG 19
+DEFINE LEFTSHIN	18
+DEFINE LEFTFOOT	17
+DEFINE RIGHTLEG 16
+DEFINE RIGHTSHIN 15
+DEFINE RIGHTFOOT 14
+
+DEFINE BACKPACK 4
+DEFINE BACKPACK2 5
+DEFINE WINKLE 2
+
+DEFINE EARANTENNA 8
+DEFINE SMALLEAR 9
+DEFINE BIGEAR 11
+DEFINE BIGEARLASER	10
+DEFINE FOCAL	1
+DEFINE GROINGUN 3
+
+
+
+//BOSS HOME DEFINES
+DEFINE HEAD 1
+DEFINE DOMELASER 2
+DEFINE HEADDOOR 3
+
+LOCALFLOAT barAlpha
+
+
+LOCALINT currfoot
+TRIGGER MakePuff
+	frame = frame - 1.0
+   //	IF (frame = 0)
+
+	PLAYSOUND>ICEB_MOTOR 0 1.0 0.0 0.0 0.0 0
+
+   	SetGlobalParamInt(0,2)
+	IF (currfoot = LEFTFOOT)
+	  	CREATE ICEBOSS -3.0, 0, -8.4, 0, 0, 0, 0
+    ELSE
+		CREATE ICEBOSS 3.0, 0, -8.4, 0, 0, 0, 0
+	ENDIF
+
+   //	CREATE ICEBOSS 0, 0, -3.0, 0, 0, 0, currfoot
+   	ClearGlobalParams()
+	IF (currfoot = RIGHTFOOT)
+		currfoot = LEFTFOOT
+	ELSE
+		currfoot = RIGHTFOOT
+	ENDIF
+
+		IF (currfoot = LEFTFOOT)
+			IF (PAL)
+				TRIGSET>MakePuff EVERY 14
+			ELSE
+				TRIGSET>MakePuff EVERY 18
+
+			ENDIF
+		ELSE
+			//ALL FIGURES FROM WALK CYCLE
+			IF (PAL)
+				//IMPACT AT 23, 7 FRAMES TO ENDCYCLE + 9 = 16
+	   			TRIGSET>MakePuff EVERY 16
+			ELSE
+				//IMPACT AT 27, 15 FRAMES TO ENDCYCLE + 9
+	   			TRIGSET>MakePuff EVERY 24
+			ENDIF
+		
+		ENDIF
+	   		//time for landing on left foot
+	 //		IF (PAL)
+	  //			frame = 23 - 9
+	  //		ELSE
+	   //			frame = 27 - 9
+	   //		ENDIF
+	   //	ELSE
+			//rightfoottime
+			frame = 30 - 23 + 9 
+	   //	ENDIF
+
+	//ENDIF
+	//ENDIF
+	LOOP (2)
+		MyFlag = MyFlag
+	ENDLOOP
+   //	PLAYSOUND>ICEB_MOTOR 0 1.0 0.0 0.0 0.0 0
+	PLAYSOUND>ICEB_STEP 1 1.0 0.0 0.0 0.0 0
+
+
+
+
+
+	TRIGSTOP
+	//TRIGFIN
+
+ENDTRIGGER
+
+
+
+STATE BossIntro
+
+	IF (MyPath)
+		//ensure the own pos is supported
+   		SetGlobalParamInt(0,99)
+		InitPath()
+		ClearGlobalParams()
+	 //	InitPath()
+	ENDIF
+	OBJECT>BOSSES\ICEBOSS\ICEBOSSCAVEANIM
+
+	IF (HasActivation(0))
+		WHILE (!PlayerNearActivationXY(0))
+			MyFlag = MyFlag
+		ENDWHILE
+	ENDIF
+
+
+
+	TRIGSET>IntroBlast EVERY 1
+	frame = 0
+
+	MyFlag2 = MyFlag2 | SPECULAR
+	WHILE (frame < 1.0)
+		frame = frame + 0.02
+		SetSpecularColour(0,frame, 0, frame)
+	ENDWHILE
+
+   	SetSpecularColour(0,1.0,0,1.0)
+
+	LOOP (30)
+		MyFlag = MyFlag
+	ENDLOOP
+
+	StopSound(0,0)
+
+	TRIGKILL>IntroBlast EVERY 1
+
+	
+
+
+	MODELANIM>BOSSES\ICEBOSS\ICEBOSSCAVEANIM.RDO>Play>0
+	frame = 0
+	WHILE (MyAnimFlag & RUNNING)
+//		ID = MyPNODEIDS + 1
+
+  //		currfoot = 0
+   //	   	IMMLOOP(ID)
+   //			IF (currfoot)
+   //		   	SparkSuck(currfoot,SPARKWHIRL, 5, 0, 0) 
+   //			ENDIF
+   //			currfoot = currfoot + 1
+   //		IMMENDLOOP
+
+
+		IF (frame = 10)
+			SetGlobalParamInt(0,4)
+			CREATE ICEBOSS 0, 0, 0, 0, 0, 0, 0
+			ClearGlobalParams()
+
+		ENDIF
+		frame = frame + 1
+	ENDWHILE
+
+	frame = 1.0
+	LOOP (30)
+		WHILE (frame > 0.0)
+			frame = frame - 1.0 / 30.0
+			SetSpecularColour(0,frame, 0, frame)
+		ENDWHILE
+
+		MyFlag = MyFlag
+	ENDLOOP
+
+	trans = 1.0
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+
+	WHILE (trans > 0.1)
+		trans = trans - 0.05
+	ENDWHILE
+
+	//HANG AROUND WHILST OUR SPARKS DISAPPEAR
+   //	LOOP (120)
+   //		MyFlag = MyFlag	| NODISP
+   //	ENDLOOP
+	
+	MyFlag = MyFlag | NODISP
+	WHILE (1)
+		MyFlag = MyFlag
+	ENDWHILE
+   //	Delete()
+
+ENDSTATE
+
+LOCALFLOAT lopval
+LOCALFLOAT TX
+LOCALFLOAT TY
+LOCALFLOAT TZ
+
+
+
+DEFINE FOCUSTIME 90.0
+
+
+//DOES THE HEAD FIRING FROM THE MAIN GUN
+
+LOCALFLOAT OffTX
+LOCALFLOAT OffTY
+
+LOCALFLOAT error
+
+STATE SearchBeam
+
+	//PICK A POINT FOR THE BEAM FROM BIG EAR
+	OBJECT>BOSSES\ICEBOSS\ICESEARCHBEAM
+	lopval = 1.0
+	floatang = 0
+	MakeMeTheLast()
+
+	error = RandRange(20.0, 40.0)
+	error = 0
+	VALTOCL = FOCUSTIME
+	HIT = 1 
+	WHILE ((VALTOCL > 0) AND HIT AND GlobalVar2)
+
+		OffTX = ((FOCUSTIME - lopval) / 32.0) * Ssin(floatang)
+		OffTY = ((FOCUSTIME - lopval) / 32.0) * Scos(floatang)
+		floatang = floatang  + 0.2
+
+	   LinkToParentObject(BIGEARLASER, 0, 0, 0, 0, 0, 0)
+		CheckX = x
+		CheckY = y
+		CheckZ = z
+	   	TX = CheckX + (((DogX - CheckX ) / FOCUSTIME) * lopval)
+		TY = CheckY + (((DogY - CheckY ) / FOCUSTIME) * lopval)
+		TZ = CheckZ + (((DogZ - CheckZ) / FOCUSTIME) * lopval)
+	 	TexturedLine(1, 0, 30.0, CheckX, CheckY, CheckZ, TX + OffTX, TY + OffTY, DogZ)
+	   	DrawTargetAt(TX, TY, TZ)
+	   LinkToParentObject(FOCAL, 0, 0, 0, 0, 0, 0)
+		CheckX = x
+		CheckY = y
+		CheckZ = z
+		TX = CheckX + (((DogX - CheckX) / FOCUSTIME) * lopval)
+		TY = CheckY + (((DogY - CheckY) / FOCUSTIME) * lopval)
+		TZ = CheckZ + (((DogZ - CheckZ) / FOCUSTIME) * lopval)
+		error = error * 0.85
+
+	 	TexturedLine(1, 0, 30.0, CheckX, CheckY, CheckZ, TX - OffTX, TY - OffTY, DogZ)
+		DrawTargetAt(TX, TY, TZ)
+		lopval = lopval + 1.0
+		
+
+		VALTOCL = VALTOCL - 1
+
+	ENDWHILE
+	GlobalVar2 = 0
+	Delete()
+ENDSTATE
+
+DEFINE NTSC_FIVESEC 150
+
+LOCALFLOAT SaveX
+LOCALFLOAT SaveY
+LOCALFLOAT SaveZ
+LOCALFLOAT TRACKX
+LOCALFLOAT TRACKY
+LOCALFLOAT TRACKZ
+
+
+
+TRIGGER FireMeHead
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+
+	IF (SeePlayerZ(TWOPI/360.0 * 45.0))
+	HEADFIRING = 1
+
+	GlobalVar2 = 1
+
+	SetGlobalParamInt(0,3)
+	CREATE ICEBOSS 0, 0, 0, 0, 0, 0, 0
+	ClearGlobalParams()
+
+	WHILE (GlobalVar2)
+		MyFlag = MyFlag
+	ENDWHILE
+
+
+  //	NOTURNHEAD = 1
+
+	IF (SeePlayerZ(TWOPI/360.0 * 45.0))
+		TRACKX = DogX
+		TRACKY = DogY
+		TRACKZ = DogZ
+
+
+ 	SetGlobalParamInt(0,1)
+   	MyVar = 1.0
+	CREATE SPAWN_ICEBASEBEAM 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, HEADLASER1
+	ClearGlobalParams()
+
+
+   	GlobalVar2 = 1
+	
+    FIREDELAY = NTSC_FIVESEC
+
+  	NOTURNHEAD = 1
+	
+	WHILE (((GlobalVar2) AND (!HIT)) OR (((!GlobalVar2) OR (HIT)) AND (FIREDELAY > 0)) )	
+		IF ((!GlobalVar2) OR (HIT))
+  	//WHILE (((GlobalVar2)) OR (((!GlobalVar2)) AND (FIREDELAY > 0)) )	
+	 //	IF ((!GlobalVar2))
+			//turn the beam off
+			GlobalVar2 = 0
+  			NOTURNHEAD = 0
+		ENDIF
+		FIREDELAY = FIREDELAY - 1
+	ENDWHILE
+	ENDIF
+
+	ENDIF
+	NOTURNHEAD = 0
+
+	HEADFIRING = 0
+	TRIGSTOP
+ENDTRIGGER
+
+TRIGGER IntroBlast
+
+   	PLAYSOUND>ICEB_LASER_BEAM_CUT 0 1.0 0.0 0.0 0.0 CONTINUOUS
+	MyVar = 12.0
+
+
+   //	LOOP (15)
+		CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+   //	ENDLOOP
+
+   //	TRIGSTOP
+	TRIGFIN
+ENDTRIGGER
+
+
+STATE FOOTPUFF
+	SparkSuck(0,SPARKPUFF, 400, 0, 20) 
+	Delete()
+ENDSTATE
+
+
+STATE Init 
+  //	IF (GetGlobalParamInt(0) = 1)
+  //		STAT>Flames
+  //	ENDIF
+   	IF (GetGlobalParamInt(0) = 2)
+   		STAT>FOOTPUFF
+   	ENDIF
+
+	IF (GetGlobalParamInt(0) = 3)
+		STAT>SearchBeam
+	ENDIF
+
+	barAlpha = 0
+	// MUST BE AT THE TOP:
+	AllocStratSoundBlock(11)
+
+
+	IF (GetGlobalParamInt(0) = 4)
+		InheritMyParent()	
+	   //	IF (MyParentParent)
+	   //	  	MyParent = MyParentParent
+	   //	ENDIF
+		TimeFunction(1)
+		STAT>BossMain
+	ENDIF
+
+	STAT>BossIntro
+
+ENDSTATE
+
+TRIGGER FadeIn
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+	trans = 0.0
+
+	WHILE (trans < 1.0)
+		trans = trans + 0.025
+	ENDWHILE
+
+	MyFlag2 = MyFlag2 & LNOT(TRANSLUCENT)
+
+	TRIGSTOP
+
+ENDTRIGGER
+
+
+STATE BossMain
+   //	InheritMyParent()	
+	IAmDaBoss
+   	SetEnvironmentParms(5,100.0,-1, -1,0,0,0)
+	BossDarkness(0.9)
+	MyFlag = MyFlag | ENEMY | STRATCOLL | HOVERMOVE
+	RotationRestriction(1.0, 1.0, 1.0)
+	TRIGSET>FadeIn EVERY 1
+
+
+	OBJECT> BOSSES\ICEBOSS\ICEBOSS
+    DontFogMeOut()
+	RegisterCollision()
+	SetObjectShadowState(1)
+	InActivateObjectCollision(EARANTENNA)
+	STAT>JUMPSET
+ENDSTATE
+
+
+
+
+LOCALINT EARWaitFrame
+LOCALINT EARFireState
+LOCALINT Lightning
+
+TRIGGER DestroySmallEar
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+	MyVar = 2.0
+	HideObject(TOPSIDEGUN)
+	HideObject(LOWSIDEGUN)
+	HideObject(SMALLEAR)
+	HideObject(EARANTENNA)
+	ObjectNotTargetable(TOPSIDEGUN)
+	ObjectNotTargetable(LOWSIDEGUN)
+	ObjectNotTargetable(SMALLEAR)
+	InActivateObjectCollision(TOPSIDEGUN)
+	InActivateObjectCollision(LOWSIDEGUN)
+	InActivateObjectCollision(SMALLEAR)
+
+
+				IMMLOOP (10) 
+					trailoff = RandRange(-1.0,3.0)
+   					CREATE SPAWN_EnemyDebris 0, 0, trailoff, 0, 0, 0, SMALLEAR
+   				IMMENDLOOP
+
+
+   //	IMMLOOP (10) 
+   //		CREATE SPAWN_EnemyDebris 0, 0, 5, 0, 0, 0, SMALLEAR
+   //	IMMENDLOOP
+
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, SMALLEAR
+	EARFireState = 2
+  	EARWaitFrame = 120
+  	WHILE ((EARWaitFrame) AND (EARFireState))
+		IF (EARFireState = 2)
+			MyVar = 2.0
+		ELSE
+			MyVar = 0.0
+		ENDIF
+		Lightning = DrawLightning (SMALLEAR, 0, 1.4, -0.25, Lightning,3)
+	    SetGlobalParamInt(0,SMALLEAR)
+		SetGlobalParamFloat(0,0)
+		SetGlobalParamFloat(1,0)
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, SMALLEAR
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, SMALLEAR
+	  	IF (EARFireState = 2)
+	  		MyVar = 3.0
+	  	ELSE
+	  		MyVar = 1.0
+	  	ENDIF
+	    SetGlobalParamInt(0,SMALLEAR)
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, SMALLEAR
+		ClearGlobalParams()
+	  	EARWaitFrame = EARWaitFrame - 1 
+	  	IF ((!(EARWaitFrame)) AND (EARFireState))
+			EARWaitFrame = 120
+			EARFireState = EARFireState - 1
+		ENDIF
+				   
+  	ENDWHILE
+
+	TRIGSTOP
+ENDTRIGGER
+
+TRIGGER DestroyBigEar
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+	MyVar = 2.0
+	HideObject(BIGEAR)
+	HideObject(BIGEARLASER)
+	InActivateObjectCollision(BIGEARLASER)
+	InActivateObjectCollision(BIGEAR)
+
+
+
+
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, BIGEAR
+  	IMMLOOP (10) 
+					trailoff = RandRange(-1.0,3.0)
+   					CREATE SPAWN_EnemyDebris 0, 0, trailoff, 0, 0, 0, BIGEAR
+   				IMMENDLOOP
+   //	IMMLOOP (10) 
+   //		CREATE SPAWN_EnemyDebris 0, 0, 5, 0, 0, 0, BIGEAR
+   //	IMMENDLOOP
+	EARFireState = 2
+  	EARWaitFrame = 210
+  	WHILE ((EARWaitFrame) AND (EARFireState))
+		IF (EARFireState = 2)
+			MyVar = 2.0
+		ELSE
+			MyVar = 0.0
+		ENDIF
+		Lightning = DrawLightning (BIGEAR, 0, 1.4, -0.25, Lightning,3)
+	    SetGlobalParamInt(0,BIGEAR)
+		SetGlobalParamFloat(0,0)
+		SetGlobalParamFloat(1,0)
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, BIGEAR
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, BIGEAR
+	  	IF (EARFireState = 2)
+	  		MyVar = 3.0
+	  	ELSE
+	  		MyVar = 1.0
+	  	ENDIF
+	    SetGlobalParamInt(0,BIGEAR)
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, BIGEAR
+		ClearGlobalParams()
+	  	EARWaitFrame = EARWaitFrame - 1 
+	  	IF ((!(EARWaitFrame)) AND (EARFireState))
+			EARWaitFrame = 210
+			EARFireState = EARFireState - 1
+		ENDIF
+				   
+  	ENDWHILE
+
+	TRIGSTOP
+ENDTRIGGER
+
+LOCALFLOAT floatang
+
+//TURNS THE BOSS'S HEAD TO TRACK THE PLAYER
+
+
+LOCALINT FIREMODE
+
+
+
+TRIGGER Calculate
+	//to maintain lockon
+	health = 1000.0
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+	IF (MyFlag2 & PLAYERHIT)
+	 	PlayerHealth = PlayerHealth - 1
+	ENDIF
+	CalculateStratPolyData(1)
+	TRIGFIN
+
+ENDTRIGGER
+
+
+LOCALINT Phase
+
+STATE JUMPSET
+		IF (HARD)
+			POWER = HPHASE2HEALTH
+		ELSE
+			POWER = PHASE2HEALTH
+		ENDIF
+		InitPath()
+	  	ClearGlobalParams()
+		//CLEAR THE PARENT FIELD SO HDC CAN WORK BETWEEN ME AND THE BASE
+		//MyParent = 0
+
+	 	MyFlag = MyFlag | REALGRAVITYON	| FLOORCOLL
+
+		InitHDC()
+		TRIGSET>Calculate EVERY 1
+		STAT>MainJump
+    
+ENDSTATE
+
+
+STATE MainJump
+
+	//ENSURE I'M FACING THE WAYPOINT
+  	PointToXY(CheckX,CheckY,z)
+ 	IF (IAmOnFloor)
+		KillMyVelocity()
+		MODELANIM>BOSSES\ICEBOSS\ICEBOSS.RDO>Walk>REPEAT
+		SetFriction(0.0,0.0,0.0)
+		MyFlag = MyFlag | RELVELCALC
+		TRIGSET>StopVel	EVERY 1
+		Phase = 2
+	  	TRIGSET>Phase2FireControl EVERY 1
+		TRIGSET>PHASE2DAM EVERY 1
+
+		IF (Hard)
+	  		SetObjectHealth(SMALLEAR,HPHASE2HEALTH)
+			SetObjectHealth(MAINHEAD,HPHASE2HEALTH)
+	  		SetObjectHealth(BODY,HPHASE2HEALTH)
+		ELSE
+	  		SetObjectHealth(SMALLEAR,PHASE2HEALTH)
+		    SetObjectHealth(MAINHEAD,PHASE2HEALTH)
+	  		SetObjectHealth(BODY,PHASE2HEALTH)
+		ENDIF
+
+		TRIGSET>DrawHealth EVERY 1
+		TRIGSET>DrawHealth WHENPAUSED
+
+		InActivateObjectCollision(TOPSIDEGUN)
+		InActivateObjectCollision(LOWSIDEGUN)
+		InActivateObjectCollision(BACKPACK)
+		InActivateObjectCollision(BACKPACK2)
+
+	  	ObjectTargetable(SMALLEAR)
+		ObjectNotTargetable(TOPSIDEGUN)
+		ObjectNotTargetable(LOWSIDEGUN)
+
+	  	ObjectTargetable(MAINHEAD)
+		ObjectTargetable(BODY)
+		SET = 0
+	   	STAT>Chase
+
+  	ENDIF
+
+							   
+ENDSTATE
+
+
+LOCALFLOAT BANG
+LOCALFLOAT BCOL
+LOCALINT dada
+
+TRIGGER PHASE2DAM
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+
+	IF (HEADFIRING)
+	   //	SetObjectTrans(BACKPACK, 0.5)
+	   //	SetObjectTrans(BACKPACK2, 0.5)
+		ObjectSpecularFlash(BACKPACK,1)
+		ObjectSpecularFlash(BACKPACK2,1)
+
+		BCOL = 0.65 + Ssin(BANG) * 0.3
+		BANG = BANG + (TWOPI/360.0) * 15.0
+
+
+		SetSpecularColour(BACKPACK, 0, 0, BCOL)
+		SetSpecularColour(BACKPACK2, 0, 0, BCOL)
+
+
+
+	ELSE
+	   //	SetObjectTrans(BACKPACK, 1.0)
+	   //	SetObjectTrans(BACKPACK2, 1.0)
+		ObjectSpecularFlash(BACKPACK,0)
+		ObjectSpecularFlash(BACKPACK2,0)
+
+	ENDIF
+
+
+	IF (dada OR ObjectHitStrat(MAINHEAD) OR ObjectHitStrat(BODY) OR ObjectHitStrat(GROINGUN) OR ObjectHitStrat(SMALLEAR))
+	// OR ObjectHitStrat(BIGEAR))
+		SPECULARCOLBIGEAR = 1.0
+		SPECULARCOLSMALLEAR = 1.0
+		SPECULARCOLHEAD = 1.0
+	dada = 0
+
+	ENDIF
+
+  //	IF (ObjectHitStrat(LEFTLEG))
+  //		SPECULARCOLLEFTLEG = 1.0
+  //	ENDIF
+   
+  // 	IF (ObjectHitStrat(RIGHTLEG))
+  //		SPECULARCOLRIGHTLEG = 1.0
+  //	ENDIF
+
+   //	IF (ObjectHitStrat(SMALLEAR))
+   //		SPECULARCOLBIGEAR = 1.0
+   //		SPECULARCOLHEAD = 1.0
+  //	   	SPECULARCOLSMALLEAR = 1.0
+  //	ENDIF
+
+  //	IF (ObjectHitStrat(BIGEAR))
+  //		SPECULARCOLBIGEAR = 1.0
+  //		SPECULARCOLHEAD = 1.0
+  //	   	SPECULARCOLSMALLEAR = 1.0
+  //	ENDIF
+
+	IF (VALTOCL)
+		ClearObjCollFlag(BODY,HITSTRAT)
+		ClearObjCollFlag(GROINGUN,HITSTRAT)
+		ClearObjCollFlag(MAINHEAD,HITSTRAT)
+		ClearObjCollFlag(RIGHTLEG,HITSTRAT)
+		ClearObjCollFlag(LEFTLEG,HITSTRAT)
+	ENDIF
+
+
+
+	IF (SPECULARCOLHEAD > 0)
+		ObjectSpecularFlash(MAINHEAD,1)
+		SetSpecularColour(MAINHEAD, SPECULARCOLHEAD, SPECULARCOLHEAD, SPECULARCOLHEAD)
+		ObjectSpecularFlash(BODY,1)
+		SetSpecularColour(BODY, SPECULARCOLHEAD, SPECULARCOLHEAD, SPECULARCOLHEAD)
+		IF (PAL)
+		   	SPECULARCOLHEAD = SPECULARCOLHEAD - (0.1 * 1.2)
+		ELSE
+		   	SPECULARCOLHEAD = SPECULARCOLHEAD - 0.1
+		ENDIF
+	ELSE
+		SPECULARCOLHEAD = 0
+		ObjectSpecularFlash(MAINHEAD,0)
+		ObjectSpecularFlash(BODY,0)
+	ENDIF
+
+	//IF (SPECULARCOLLEFTLEG > 0)
+	//	ObjectSpecularFlash(LEFTLEG,1)
+	//	SetSpecularColour(LEFTLEG, SPECULARCOLLEFTLEG, SPECULARCOLLEFTLEG, SPECULARCOLLEFTLEG)
+	//	ObjectSpecularFlash(LEFTSHIN,1)
+	//	SetSpecularColour(LEFTSHIN, SPECULARCOLLEFTLEG, SPECULARCOLLEFTLEG, SPECULARCOLLEFTLEG)
+	//	ObjectSpecularFlash(LEFTFOOT,1)
+	//	SetSpecularColour(LEFTFOOT, SPECULARCOLLEFTLEG, SPECULARCOLLEFTLEG, SPECULARCOLLEFTLEG)
+	//	IF (PAL)
+	//	   	SPECULARCOLLEFTLEG = SPECULARCOLLEFTLEG - (0.1 * 1.2)
+	//	ELSE
+	//	   	SPECULARCOLLEFTLEG = SPECULARCOLLEFTLEG - 0.1
+	//	ENDIF
+   //	ELSE
+   //		SPECULARCOLLEFTLEG = 0
+   //		ObjectSpecularFlash(LEFTLEG,0)
+  //		ObjectSpecularFlash(LEFTSHIN,0)
+  //		ObjectSpecularFlash(LEFTFOOT,0)
+  //	ENDIF
+
+  //	IF (SPECULARCOLRIGHTLEG > 0)
+  //		ObjectSpecularFlash(RIGHTLEG,1)
+  //		SetSpecularColour(RIGHTLEG, SPECULARCOLRIGHTLEG, SPECULARCOLRIGHTLEG, SPECULARCOLRIGHTLEG)
+  //		ObjectSpecularFlash(RIGHTSHIN,1)
+  //		SetSpecularColour(RIGHTSHIN, SPECULARCOLRIGHTLEG, SPECULARCOLRIGHTLEG, SPECULARCOLRIGHTLEG)
+  //		ObjectSpecularFlash(RIGHTFOOT,1)
+  //		SetSpecularColour(RIGHTFOOT, SPECULARCOLRIGHTLEG, SPECULARCOLRIGHTLEG, SPECULARCOLRIGHTLEG)
+  //		IF (PAL)
+  //		   	SPECULARCOLRIGHTLEG = SPECULARCOLRIGHTLEG - (0.1 * 1.2)
+  //		ELSE
+  //		   	SPECULARCOLRIGHTLEG = SPECULARCOLRIGHTLEG - 0.1
+  //		ENDIF
+  //	ELSE
+  //		SPECULARCOLRIGHTLEG	= 0
+  //		ObjectSpecularFlash(RIGHTLEG,0)
+  //		ObjectSpecularFlash(RIGHTFOOT,0)
+  //		ObjectSpecularFlash(RIGHTSHIN,0)
+  //	ENDIF
+
+	IF (SPECULARCOLSMALLEAR > 0)
+		ObjectSpecularFlash(SMALLEAR,1)
+		SetSpecularColour(SMALLEAR, SPECULARCOLSMALLEAR, SPECULARCOLSMALLEAR, SPECULARCOLSMALLEAR)
+		IF (PAL)
+		   	SPECULARCOLSMALLEAR = SPECULARCOLSMALLEAR - (0.1 * 1.2)
+		ELSE
+		   	SPECULARCOLSMALLEAR = SPECULARCOLSMALLEAR - 0.1
+		ENDIF
+	ELSE
+		SPECULARCOLSMALLEAR	= 0
+		ObjectSpecularFlash(SMALLEAR,0)
+	ENDIF
+
+	IF (SPECULARCOLBIGEAR > 0)
+		ObjectSpecularFlash(BIGEAR,1)
+		SetSpecularColour(BIGEAR, SPECULARCOLBIGEAR, SPECULARCOLBIGEAR, SPECULARCOLBIGEAR)
+		IF (PAL)
+		   	SPECULARCOLBIGEAR = SPECULARCOLBIGEAR - (0.1 * 1.2)
+		ELSE
+		   	SPECULARCOLBIGEAR = SPECULARCOLBIGEAR - 0.1
+		ENDIF
+	ELSE
+		SPECULARCOLBIGEAR	= 0
+		ObjectSpecularFlash(BIGEAR,0)
+	ENDIF
+
+	TRIGFIN
+ENDTRIGGER
+
+
+
+//CHECKS FOR FLOORS AND INITIATES BOOST
+
+//LOCALINT DoneEntry
+//TRIGGER FloorCheck
+
+//	CheckZ = z + 1.0
+// 	IF ((!(IAmOnFloor)) AND (!InsideArea()))
+
+//   		MyFlag2 = MyFlag2 | STOPPED
+//		PauseTriggers(-1,REMEMBER)
+//		DoneEntry = 0
+//   		MODELANIM>BOSSES\ICEBOSS\ICEBOSS.RDO>Hover>0
+//		WHILE (!InsideArea())
+
+//			IF (!DoneEntry)
+//				IF (!(MyAnimFlag & RUNNING))
+//					DoneEntry = 1
+//					MODELANIM>BOSSES\ICEBOSS\ICEBOSS.RDO>HoverMain>REPEAT
+//				ENDIF
+//		  	ENDIF
+
+
+
+//			TOPSPEED = 1.5
+//		 	height = RandRange(0.03,0.1) * 1.5 * Ssin(hang)
+//			IF (absspeedz < -0.08)
+//			  	 BREAK = 1
+//		 	ENDIF
+	
+//			IF (z < CheckZ)
+//				dist =  FABS(z - CheckZ)
+//  				IF (dist > (height))
+//  					hang = hang + 0.1
+//  					BOOSTUP = 1
+//  				ENDIF
+//			ELSE
+//				IF (z > CheckZ)
+//					dist =  FABS(z - CheckZ)
+//		 			IF (dist > (height + 1.0))
+//  						hang = hang + 0.1
+//  						BOOSTUP = 0 
+  						//CUT THE VELOCITY
+//  						velocity = 0
+//  					ENDIF
+//  				ENDIF
+//  			ENDIF
+// 			IF (((BOOSTUP) OR (BREAK)) AND (FABS(absspeedz < TOPSPEED)))
+		
+//				IF (BREAK)
+//					velocity = 0.095
+//					BREAK = 0
+//				ELSE
+//					velocity = 0.08
+//				ENDIF
+
+
+//	   			MoveZ(velocity)
+
+//			ELSE
+//				velocity = velocity * 0.75
+//			ENDIF
+
+//			SetFriction(1.0,0.5,0.0)
+//			MoveY(1.2)
+//		ENDWHILE
+
+//		MODELANIM>BOSSES\ICEBOSS\ICEBOSS.RDO>Land>0
+
+
+//		KillMyVelocity()
+//		WHILE (!(IAmOnFloor))
+//			MyFlag = MyFlag
+//		ENDWHILE
+//		KillMyVelocity()
+//		MODELANIM>BOSSES\ICEBOSS\ICEBOSS.RDO>Walk>REPEAT
+
+
+
+// 	ENDIF
+//	MyFlag2 = MyFlag2 & LNOT(STOPPED)
+//	UnPauseTriggers()
+
+
+
+
+//	TRIGFIN
+//ENDTRIGGER
+
+
+
+TRIGGER StopVel
+	//TO KILL OFF X/Y MOVEMENT EVERY FRAME
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+	SetGlobalParamInt(0,1)
+   	KillMyVelocity()
+	ClearGlobalParams()
+   	TRIGFIN
+ENDTRIGGER
+
+LOCALINT TopGun
+
+LOCALFLOAT TOPSIDE
+LOCALFLOAT LOWSIDE
+LOCALINT GUN1
+LOCALINT GUN2
+
+//CONTINUED BURST OF FIRE FROM TWO SIDE GUNS
+TRIGGER FireMeChains
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+	CHAINSFIRING = 1
+
+	IF (FIREMODE = HEADLASER)
+		GUN1 = BIGEARLASER
+		GUN2 = HEADLASER1
+	ELSE
+		GUN1 = TOPSIDEGUN
+		GUN2 = LOWSIDEGUN
+	ENDIF
+
+
+
+	TopGun = 0
+	FIREDELAY = 30
+	WHILE ((FIREDELAY > 0) AND (Phase = 2) AND (!HIT))
+		SetGlobalParamInt(0,1)
+		PLAYSOUND>ICEB_LASER 5 1.0 0.0 0.0 0.0 0
+
+		IF (TopGun)
+			TOPSIDE = 1.0
+			CREATE SPAWN_ENEMYMISSILE 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, GUN1
+		ELSE
+			LOWSIDE = 1.0
+			CREATE SPAWN_ENEMYMISSILE 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, GUN2
+		ENDIF
+
+		IF ((SQUATON) AND (!NEARBLASTS))
+			CREATE SPAWN_ENEMYMISSILE 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, WINKLE
+
+		ENDIF
+
+		ClearGlobalParams()
+
+		SetGlobalParamFloat(0,5.0)
+		//CREATE THE MUZZLE FLASH
+		IF (TopGun)
+			TOPSIDE = 1.0
+			SetGlobalParamInt(0,GUN1)
+			ObjectSpecularFlash(GUN1,1)
+			SetSpecularColour(GUN1, TOPSIDE, 0, 0)
+			CREATE SPAWN_ICEBOSSMUZZLE 0, 0.0, 0, 0, 0, 0, GUN1	
+		ELSE
+			LOWSIDE = 1.0
+			ObjectSpecularFlash(GUN2,1)
+			SetSpecularColour(GUN2, LOWSIDE, 0, 0)
+			SetGlobalParamInt(0,GUN2)
+			CREATE SPAWN_ICEBOSSMUZZLE 0, 0.0, 0, 0, 0, 0, GUN2	
+		ENDIF
+		ClearGlobalParams()
+
+		
+		LOOP (4)
+			IF (RandRange(0.0,5.0 > 4.0))
+			 	PLAYSOUND>ICEB_ELEC3 6 1.0 0.0 0.0 0.0 RANDOM
+			ELSE
+				IF (RandRange(0.0,5.0 > 1.5))
+			   		PLAYSOUND>ICEB_ELEC2 7 1.0 0.0 0.0 0.0 RANDOM
+				ELSE
+			   		PLAYSOUND>ICEB_ELEC1 8 1.0 0.0 0.0 0.0 RANDOM
+			   	ENDIF
+			ENDIF
+		  
+		  	Lightning = DrawLightning (EARANTENNA, 0, 1.4, -0.25, Lightning,3)
+		ENDLOOP
+		TopGun = !TopGun
+		FIREDELAY = FIREDELAY - 1
+		
+	ENDWHILE
+
+
+	FIREDELAY = 120
+ 	WHILE ((FIREDELAY > 0) AND (!HIT))
+		IF (TOPSIDE > 0)
+			ObjectSpecularFlash(GUN1,1)
+			SetSpecularColour(GUN1, TOPSIDE, 0, 0)
+		 	IF (PAL)
+			   	TOPSIDE = TOPSIDE - (0.1 * 1.2)
+			ELSE
+			   	TOPSIDE = TOPSIDE - 0.1
+			ENDIF
+	   	ELSE
+			TOPSIDE = 0
+			ObjectSpecularFlash(GUN1,0)
+	   	ENDIF
+		IF (LOWSIDE > 0)
+			ObjectSpecularFlash(GUN2,1)
+			SetSpecularColour(GUN2, LOWSIDE, 0, 0)
+		 	IF (PAL)
+			   	LOWSIDE = LOWSIDE - (0.1 * 1.2)
+			ELSE
+			   	LOWSIDE = LOWSIDE - 0.1
+			ENDIF
+	   	ELSE
+			LOWSIDE = 0
+			ObjectSpecularFlash(GUN2,0)
+	   	ENDIF
+	   	FIREDELAY = FIREDELAY - 1
+	ENDWHILE
+
+	TOPSIDE = 0
+	ObjectSpecularFlash(GUN1,0)
+	LOWSIDE = 0
+	ObjectSpecularFlash(GUN2,0)
+
+
+
+
+	CHAINSFIRING = 0
+	TRIGSTOP
+ENDTRIGGER
+
+//ROCKET 
+TRIGGER FireMeRockets
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+	
+	ROCKETFIRING = 1
+	
+	
+
+	IF (NEARBLASTS)
+		NEARBLASTS = 0
+		TRIGKILL>MakeFire EVERY 2
+  	ENDIF
+
+	MODELANIM>BOSSES\ICEBOSS\ICEBOSS.RDO>CrouchStand>REPEAT
+	TRIGSET>MakeFire EVERY 10
+
+	FIREDELAY = 60
+	WHILE (!NearPlayerXY(15.0) AND (FIREDELAY > 0))
+		ObjectTowardPlayerXZ(GROINGUN, 0.05, 0.0, 0.0, (TWOPI / 360.0 ) * 12.0)
+		CrntRotToIdleRotX(GROINGUN, 0.05)
+  		FIREDELAY = FIREDELAY - 1
+  
+
+	ENDWHILE
+
+	TRIGKILL>MakeFire EVERY 10
+
+	FIREDELAY = 60
+   //	WHILE ((FIREDELAY > 0) AND (!HIT))
+  //	WHILE ((FIREDELAY > 0))
+ 	WHILE (!NearPlayerXY(15.0) AND (FIREDELAY > 0))
+		FIREDELAY = FIREDELAY - 1
+	ENDWHILE
+
+
+
+	ROCKETFIRING = 0
+	TRIGSTOP
+ENDTRIGGER
+
+
+
+
+LOCALINT FIREDELAY
+LOCALINT HIT
+
+
+DEFINE HEADLASER 1
+DEFINE CHAINGUNS 2
+DEFINE ROCKETS 3
+
+LOCALINT CHAINSFIRING
+LOCALINT HEADFIRING
+LOCALINT ROCKETFIRING
+LOCALINT VALTOCL
+
+LOCALFLOAT POWER
+LOCALFLOAT BPOWER
+LOCALFLOAT EPOWER
+LOCALFLOAT SPECULARCOLHEAD
+LOCALFLOAT SPECULARCOLLEFTLEG
+LOCALFLOAT SPECULARCOLRIGHTLEG
+LOCALFLOAT SPECULARCOLSMALLEAR
+LOCALFLOAT SPECULARCOLBIGEAR
+LOCALINT TODIE
+LOCALINT HH
+LOCALINT HB
+
+LOCALINT rLightning
+LOCALINT lLightning
+LOCALFLOAT trailoff
+
+TRIGGER Phase2FireControl
+	
+	IF (((!HEADFIRING) AND (!CHAINSFIRING)) AND NearPlayerXY(50.0))
+
+	  	IF (FIREMODE = HEADLASER)
+			//TRIGSET>FireMeHead EVERY 1
+	  		TRIGSET>FireMeChains EVERY 1
+			FIREMODE = CHAINGUNS
+	  	ELSE
+	  		TRIGSET>FireMeChains EVERY 1
+	  		FIREMODE = HEADLASER
+	   	ENDIF
+	ENDIF
+
+	IF (NOTURNHEAD)
+		SaveX = DogX
+		SaveY = DogY
+		SaveZ = DogZ
+		DogX = TRACKX
+		DogY = TRACKY
+		DogZ = TRACKZ
+	//CONTROL THE MOVEMENT OF THE HEAD
+   	ObjectTowardPlayerXZ(MAINHEAD, 0.75, 0.75, (TWOPI/360.0) * 70.0, (TWOPI/360.0) * 30)
+   	CrntRotToIdleRotX(MAINHEAD, 0.75)
+   	CrntRotToIdleRotZ(MAINHEAD, 0.75)
+   
+   	ObjectTowardPlayerXZ(HEADLASER1, 0.15, 0.15, (TWOPI/360.0) * 70.0, (TWOPI/360.0) * 30)
+   	CrntRotToIdleRotX(HEADLASER1, 0.15)
+   	CrntRotToIdleRotZ(HEADLASER1, 0.15)
+   	ELSE
+
+
+
+	//CONTROL THE MOVEMENT OF THE HEAD
+   	ObjectTowardPlayerXZ(MAINHEAD, 0.75, 0.75, (TWOPI/360.0) * 70.0, (TWOPI/360.0) * 30)
+   	CrntRotToIdleRotX(MAINHEAD, 0.075)
+   	CrntRotToIdleRotZ(MAINHEAD, 0.075)
+   
+   	ObjectTowardPlayerXZ(HEADLASER1, 0.015, 0.015, (TWOPI/360.0) * 70.0, (TWOPI/360.0) * 30)
+   	CrntRotToIdleRotX(HEADLASER1, 0.015)
+   	CrntRotToIdleRotZ(HEADLASER1, 0.015)
+	ENDIF
+
+	IF (NOTURNHEAD)
+		DogX = SaveX
+		DogY = SaveY
+		DogZ = SaveZ
+
+	ENDIF
+
+
+	ObjectTowardPlayerXZ(GROINGUN, 0.05, 0.0, 0.0, (TWOPI / 360.0 ) * 12.0)
+	CrntRotToIdleRotX(GROINGUN, 0.05)
+
+	//IF (Phase = 2)
+	//CONTROL THE MOVEMENT OF THE EAR PIECE	LASERS
+
+   	ObjectTowardPlayerXZ(TOPSIDEGUN, 0.025, 0.025, (TWOPI/360.0) * 70.0, (TWOPI/360.0) * 30)
+   	CrntRotToIdleRotX(TOPSIDEGUN, 0.025)
+   	CrntRotToIdleRotZ(TOPSIDEGUN, 0.025)
+
+   	ObjectTowardPlayerXZ(LOWSIDEGUN, 0.025, 0.025, (TWOPI/360.0) * 70.0, (TWOPI/360.0) * 30)
+   	CrntRotToIdleRotX(LOWSIDEGUN, 0.025)
+   	CrntRotToIdleRotZ(LOWSIDEGUN, 0.025)
+
+	IF (ObjectHitStrat(SMALLEAR))
+		dada = 1
+	   	IF (GetObjectHealth(SMALLEAR) < 0)
+			TODIE = 1
+
+		ENDIF
+	   	ClearObjCollFlag(SMALLEAR,HITSTRAT)
+
+	ENDIF
+  //	ENDIF
+
+
+   	POWER = GetObjectHealth(MAINHEAD)
+   	BPOWER = GetObjectHealth(BODY)
+   	EPOWER = GetObjectHealth(SMALLEAR)
+	HH = ObjectHitStrat(MAINHEAD)
+	HB = ObjectHitStrat(BODY)
+
+	IF (HH OR HB)
+		dada = 1
+	ENDIF
+
+	IF ((MyFlag2 & BIGDAMAGE) AND ((!HH) AND (!HB)))
+		BPOWER = BPOWER - 7.0
+		POWER = POWER - 7.0
+	 	SetObjectHealth(MAINHEAD,POWER)
+		SetObjectHealth(BODY,BPOWER)
+	ENDIF
+	IF ((!TODIE) AND (HH OR HB))
+	   	ClearObjCollFlag(MAINHEAD,HITSTRAT)
+	   	ClearObjCollFlag(BODY,HITSTRAT)
+		IF ((POWER < 0.0) OR (BPOWER < 0.0))
+			TODIE = 1
+		ELSE
+			HIT = 1
+			EXITTURN = 1
+  			IF (MyFlag2 & BIGDAMAGE)
+			   //SPAWN SOME WAREZ
+
+			 //   BPOWER = BPOWER - 30.0
+			  //	SetObjectHealth(BODY,BPOWER)
+
+				
+				IMMLOOP (20) 
+					trailoff = RandRange(-3.0,3.0)
+   					CREATE SPAWN_EnemyDebris 0, 0, trailoff, 0, 0, trailoff, 0
+   				IMMENDLOOP
+
+			   
+			   	PauseTriggers(-1,REMEMBER)
+				LOOP (2)
+					MyFlag = MyFlag
+				ENDLOOP
+				HEADRESET = 1
+				TRIGSET>ResetHead EVERY 1
+
+			IF (RandRange(0.0,5.0 > 4.0))
+			 	PLAYSOUND>ICEB_HIT3 6 1.0 0.0 0.0 0.0 0
+			ELSE
+				IF (RandRange(0.0,5.0 > 1.5))
+			   		PLAYSOUND>ICEB_HIT2 7 1.0 0.0 0.0 0.0 0
+				ELSE
+			   		PLAYSOUND>ICEB_HIT1 8 1.0 0.0 0.0 0.0 0
+			   	ENDIF
+			ENDIF
+				MODELANIM>BOSSES\ICEBOSS\ICEBOSS.RDO>GetHit>NOTWEEN
+				IF (NEARBLASTS)
+					NEARBLASTS = 0
+					TRIGKILL>MakeFire EVERY 2
+				ENDIF	
+			   
+			   
+			   	MyFlag2 = MyFlag2 | STOPPED
+				frame = 0
+				VALTOCL = 1
+
+
+				WHILE (MyAnimFlag & RUNNING)
+				 	POWER = GetObjectHealth(MAINHEAD)
+				  	BPOWER = GetObjectHealth(BODY)
+					EPOWER = GetObjectHealth(SMALLEAR)
+   					KillMyVelocity()
+
+				   	IF (frame < 18)
+						//-6.7 METRES IN 18 FRAMES FOR NTSC
+						MoveY(-6.7/18.0)
+				   	ENDIF
+					frame = frame + 1
+
+				ENDWHILE
+
+				MODELANIM>BOSSES\ICEBOSS\ICEBOSS.RDO>IdleStand>NOTWEEN
+
+				WHILE (MyAnimFlag & RUNNING)
+					POWER = GetObjectHealth(MAINHEAD)
+				 	BPOWER = GetObjectHealth(BODY)
+				 	EPOWER = GetObjectHealth(SMALLEAR)
+					KillMyVelocity()
+				ENDWHILE
+
+				VALTOCL = 0
+
+				ClearObjCollFlag(MAINHEAD,HITSTRAT)
+				ClearObjCollFlag(SMALLEAR,HITSTRAT)
+				ClearObjCollFlag(BODY,HITSTRAT)
+				
+		   		SetObjectHealth(MAINHEAD,POWER)
+			 	SetObjectHealth(BODY,BPOWER)
+			 	SetObjectHealth(SMALLEAR,EPOWER)
+				MyFlag2 = MyFlag2 & LNOT(STOPPED)
+				HEADRESET = 0
+				TRIGKILL>ResetHead EVERY 1
+				UnPauseTriggers()
+			ENDIF
+   		ENDIF
+	ELSE
+		IF (!TODIE)
+  			SetObjectHealth(MAINHEAD,POWER)
+  			SetObjectHealth(BODY,BPOWER)
+		ENDIF
+	ENDIF
+
+	IF (!TODIE)
+		IF (ObjectHitStrat(LEFTLEG))
+			HIT = 1
+			EXITTURN = 1
+		   	ClearObjCollFlag(LEFTLEG,HITSTRAT)
+		   	PauseTriggers(-1,REMEMBER)
+			MODELANIM>BOSSES\ICEBOSS\ICEBOSS.RDO>LeftHitLeg>NOTWEEN
+			IF (NEARBLASTS)
+					NEARBLASTS = 0
+					TRIGKILL>MakeFire EVERY 2
+		   	ENDIF	
+			MyFlag2 = MyFlag2 | STOPPED
+			frame = 0
+
+			VALTOCL = 1
+			WHILE (MyAnimFlag & RUNNING)
+				POWER = GetObjectHealth(MAINHEAD)
+			 	BPOWER = GetObjectHealth(BODY)
+			 	EPOWER = GetObjectHealth(SMALLEAR)
+				lLightning = DrawLightning (LEFTLEG, 0, 0, 0, lLightning,3)
+			   	KillMyVelocity()
+
+			   //	IF (frame < 18)
+					//-6.7 METRES IN 18 FRAMES FOR NTSC
+			   //		MoveY(-6.7/18.0)
+			   //	ENDIF
+			   //	frame = frame + 1
+
+				//MyFlag = MyFlag
+			ENDWHILE
+
+			MODELANIM>BOSSES\ICEBOSS\ICEBOSS.RDO>IdleStand>NOTWEEN
+
+			WHILE (MyAnimFlag & RUNNING)
+			 	POWER = GetObjectHealth(MAINHEAD)
+			 	BPOWER = GetObjectHealth(BODY)
+				EPOWER = GetObjectHealth(SMALLEAR)
+				KillMyVelocity()
+			ENDWHILE
+
+			ClearObjCollFlag(MAINHEAD,HITSTRAT)
+			ClearObjCollFlag(SMALLEAR,HITSTRAT)
+			ClearObjCollFlag(BODY,HITSTRAT)
+				
+		   	SetObjectHealth(MAINHEAD,POWER)
+			SetObjectHealth(BODY,BPOWER)
+			SetObjectHealth(SMALLEAR,EPOWER)
+			MyFlag2 = MyFlag2 & LNOT(STOPPED)
+			VALTOCL = 0
+			UnPauseTriggers()
+		ELSE
+		 	ClearObjCollFlag(LEFTLEG,HITSTRAT)
+	   	ENDIF
+
+		IF (ObjectHitStrat(RIGHTLEG))
+			HIT = 1
+			EXITTURN = 1
+			ClearObjCollFlag(RIGHTLEG,HITSTRAT)
+			PauseTriggers(-1,REMEMBER)
+			MODELANIM>BOSSES\ICEBOSS\ICEBOSS.RDO>RightHitLeg>NOTWEEN
+		   IF (NEARBLASTS)
+					NEARBLASTS = 0
+					TRIGKILL>MakeFire EVERY 2
+				ENDIF	
+			MyFlag2 = MyFlag2 | STOPPED
+			frame = 0
+			VALTOCL = 1
+
+			WHILE (MyAnimFlag & RUNNING)
+				POWER = GetObjectHealth(MAINHEAD)
+				BPOWER = GetObjectHealth(BODY)
+				EPOWER = GetObjectHealth(SMALLEAR)
+				rLightning = DrawLightning (RIGHTLEG, 0, 0, 0, rLightning,3)
+				KillMyVelocity()
+
+			 //  	IF (frame < 18)
+					//-6.7 METRES IN 18 FRAMES FOR NTSC
+			 //		MoveY(-6.7/18.0)
+			 //  	ENDIF
+			 //	frame = frame + 1
+
+			 //	MyFlag = MyFlag
+			ENDWHILE
+
+			MODELANIM>BOSSES\ICEBOSS\ICEBOSS.RDO>IdleStand>NOTWEEN
+
+			WHILE (MyAnimFlag & RUNNING)
+			  	POWER = GetObjectHealth(MAINHEAD)
+			  	BPOWER = GetObjectHealth(BODY)
+				EPOWER = GetObjectHealth(SMALLEAR)
+				KillMyVelocity()
+			ENDWHILE
+
+			VALTOCL = 0
+			MyFlag2 = MyFlag2 & LNOT(STOPPED)
+
+			ClearObjCollFlag(MAINHEAD,HITSTRAT)
+			ClearObjCollFlag(SMALLEAR,HITSTRAT)
+			ClearObjCollFlag(BODY,HITSTRAT)
+				
+		   	SetObjectHealth(MAINHEAD,POWER)
+			SetObjectHealth(BODY,BPOWER)
+			SetObjectHealth(SMALLEAR,EPOWER)
+			UnPauseTriggers()
+		ELSE
+		   	ClearObjCollFlag(RIGHTLEG,HITSTRAT)
+		ENDIF
+	ENDIF
+
+	//ENSURE THE DAMAGE FLAG IS CLEARED
+  	MyFlag2 = MyFlag2 & LNOT(BIGDAMAGE)
+	HIT = 0
+
+	IF (TODIE)
+   		TODIE = 0
+   	    //stop this trigger
+   		TRIGSTOP
+   		TRIGSET>DestroySmallEar EVERY 1
+   		TRIGSET>Phase3FireControl EVERY 1
+   		IF (Hard)
+   			SetObjectHealth(MAINHEAD,HPHASE3HEALTH)
+   			SetObjectHealth(BODY,HPHASE3HEALTH)
+   			POWER = HPHASE3HEALTH
+   		ELSE
+   			SetObjectHealth(MAINHEAD,PHASE3HEALTH)
+   			SetObjectHealth(BODY,PHASE3HEALTH)
+   			POWER = PHASE3HEALTH
+   		ENDIF
+   		Phase = 3
+	ELSE
+
+		TRIGFIN
+	ENDIF
+ENDTRIGGER
+
+LOCALINT NOTURNHEAD
+LOCALINT HEADRESET
+
+TRIGGER ResetHead
+	ObjectReturnToStart(MAINHEAD)
+   	CrntRotToIdleRotX(MAINHEAD, 0.1)
+   	CrntRotToIdleRotZ(MAINHEAD, 0.1)
+	ObjectReturnToStart(HEADLASER1)
+   	CrntRotToIdleRotX(HEADLASER1, 0.15)
+   	CrntRotToIdleRotZ(HEADLASER1, 0.15)
+
+	TRIGFIN
+ENDTRIGGER
+
+
+
+TRIGGER Phase3FireControl
+	
+	IF (((!HEADFIRING) AND (!ROCKETFIRING)) AND NearPlayerXY(50.0))
+
+		IF (FIREMODE = HEADLASER)
+			TRIGSET>FireMeHead EVERY 1
+			FIREMODE = ROCKETS
+		ELSE
+			//RUN THE ENTRY ANIM FOR SQUAT
+			ROCKETFIRING = 1
+			TRIGRESET
+			
+			IF (SET)
+				SET = 0
+				TRIGKILL>MakePuff EVERY 9
+			ENDIF
+			
+			STAT>SquatGunMode
+		   
+	   	ENDIF
+	ENDIF
+
+
+
+	IF (NOTURNHEAD)
+		SaveX = DogX
+		SaveY = DogY
+		SaveZ = DogZ
+		DogX = TRACKX
+		DogY = TRACKY
+		DogZ = TRACKZ
+		//CONTROL THE MOVEMENT OF THE HEAD
+		ObjectTowardPlayerXZ(MAINHEAD, 0.25, 0.25, (TWOPI/360.0) * 70.0, (TWOPI/360.0) * 30)
+		CrntRotToIdleRotX(MAINHEAD, 0.1)
+		CrntRotToIdleRotZ(MAINHEAD, 0.1)
+   
+	   	ObjectTowardPlayerXZ(HEADLASER1, 0.15, 0.15, (TWOPI/360.0) * 70.0, (TWOPI/360.0) * 30)
+		CrntRotToIdleRotX(HEADLASER1, 0.15)
+		CrntRotToIdleRotZ(HEADLASER1, 0.15)
+   ELSE
+		
+
+
+		//CONTROL THE MOVEMENT OF THE HEAD
+		ObjectTowardPlayerXZ(MAINHEAD, 0.025, 0.025, (TWOPI/360.0) * 70.0, (TWOPI/360.0) * 30)
+		CrntRotToIdleRotX(MAINHEAD, 0.01)
+		CrntRotToIdleRotZ(MAINHEAD, 0.01)
+   
+	   	ObjectTowardPlayerXZ(HEADLASER1, 0.015, 0.015, (TWOPI/360.0) * 70.0, (TWOPI/360.0) * 30)
+		CrntRotToIdleRotX(HEADLASER1, 0.015)
+		CrntRotToIdleRotZ(HEADLASER1, 0.015)
+	ENDIF
+  //	ELSE
+  //		ObjectReturnToStart(MAINHEAD)
+  //		CrntRotToIdleRotX(MAINHEAD, 0.01)
+  //		CrntRotToIdleRotZ(MAINHEAD, 0.01)
+  //	ENDIF
+	IF (NOTURNHEAD)
+		DogX = SaveX
+		DogY = SaveY
+		DogZ = SaveZ
+	ENDIF
+
+
+   	POWER = GetObjectHealth(MAINHEAD)
+   	BPOWER = GetObjectHealth(BODY)
+   	EPOWER = GetObjectHealth(SMALLEAR)
+	HH = ObjectHitStrat(MAINHEAD)
+	HB = ObjectHitStrat(BODY)
+	IF (HH OR HB)
+		dada = 1
+	ENDIF
+   
+   	IF ((MyFlag2 & BIGDAMAGE) AND ((!HH) AND (!HB)))
+		BPOWER = BPOWER - 7.0
+		POWER = POWER - 7.0
+	 	SetObjectHealth(MAINHEAD,POWER)
+	 
+	 	SetObjectHealth(BODY,BPOWER)
+	ENDIF
+	IF ((!TODIE) AND (HH OR HB))
+	   	ClearObjCollFlag(MAINHEAD,HITSTRAT)
+	   	ClearObjCollFlag(BODY,HITSTRAT)
+		IF ((POWER < 0.0) OR (BPOWER < 0.0))
+			TODIE = 1
+		ELSE
+			HIT = 1
+			EXITTURN = 1
+  			IF ((MyFlag2 & BIGDAMAGE) AND (!HEADFIRING))
+
+
+				IMMLOOP (20) 
+					trailoff = RandRange(-3.0,3.0)
+   					CREATE SPAWN_EnemyDebris 0, 0, trailoff, 0, 0, trailoff, 0
+   				IMMENDLOOP
+
+			   // BPOWER = BPOWER - 30.0
+			   //	SetObjectHealth(BODY,BPOWER)
+
+			   	PauseTriggers(-1,REMEMBER)
+				LOOP (2)
+					MyFlag = MyFlag
+				ENDLOOP
+
+				HEADRESET = 1
+				TRIGSET>ResetHead EVERY 1
+				
+			IF (RandRange(0.0,5.0 > 4.0))
+			 	PLAYSOUND>ICEB_HIT3 6 1.0 0.0 0.0 0.0 0
+			ELSE
+				IF (RandRange(0.0,5.0 > 1.5))
+			   		PLAYSOUND>ICEB_HIT2 7 1.0 0.0 0.0 0.0 0
+				ELSE
+			   		PLAYSOUND>ICEB_HIT1 8 1.0 0.0 0.0 0.0 0
+			   	ENDIF
+			ENDIF
+				IF (ROCKETFIRING)
+				   //	HITSQUAT = 1
+			   		MODELANIM>BOSSES\ICEBOSS\ICEBOSS.RDO>SquatHit>NOTWEEN
+			   	ELSE
+					IF (!HEADFIRING)
+					MODELANIM>BOSSES\ICEBOSS\ICEBOSS.RDO>GetHit>NOTWEEN
+					ENDIF
+				ENDIF
+				IF (NEARBLASTS)
+					NEARBLASTS = 0
+					TRIGKILL>MakeFire EVERY 2
+				ENDIF	
+				MyFlag2 = MyFlag2 | STOPPED
+				frame = 0
+				VALTOCL = 1
+
+				WHILE (MyAnimFlag & RUNNING)
+				 	POWER = GetObjectHealth(MAINHEAD)
+				 	BPOWER = GetObjectHealth(BODY)
+					KillMyVelocity()
+
+				   	IF (frame < 18)
+						//-6.7 METRES IN 18 FRAMES FOR NTSC
+						MoveY(-6.7/18.0)
+				   	ENDIF
+					frame = frame + 1
+
+				ENDWHILE
+
+				//IF (HITSQUAT)
+				
+				//	MODELANIM>BOSSES\ICEBOSS\ICEBOSS.RDO>Squat>NOTWEEN
+			   //	ELSE
+			   //		MODELANIM>BOSSES\ICEBOSS\ICEBOSS.RDO>IdleStand>NOTWEEN
+
+			   //	ENDIF
+
+			   //	WHILE (MyAnimFlag & RUNNING)
+			   //		KillMyVelocity()
+			   //	ENDWHILE
+
+				VALTOCL = 0
+
+				ClearObjCollFlag(MAINHEAD,HITSTRAT)
+				ClearObjCollFlag(SMALLEAR,HITSTRAT)
+				ClearObjCollFlag(BODY,HITSTRAT)
+				
+		   		SetObjectHealth(MAINHEAD,POWER)
+			 	SetObjectHealth(BODY,BPOWER)
+			 	SetObjectHealth(SMALLEAR,EPOWER)
+				MyFlag2 = MyFlag2 & LNOT(STOPPED)
+				HEADRESET = 0
+				TRIGKILL>ResetHead EVERY 1
+
+				UnPauseTriggers()
+			ENDIF
+   		ENDIF
+	ELSE
+		IF (!TODIE)
+  			SetObjectHealth(MAINHEAD,POWER)
+  			SetObjectHealth(BODY,BPOWER)
+		ENDIF
+	ENDIF
+
+	IF (!TODIE)
+		IF (ObjectHitStrat(LEFTLEG) AND (!HEADFIRING))
+			HIT = 1
+			EXITTURN = 1
+		   	ClearObjCollFlag(LEFTLEG,HITSTRAT)
+		   	PauseTriggers(-1,REMEMBER)
+			MODELANIM>BOSSES\ICEBOSS\ICEBOSS.RDO>LeftHitLeg>NOTWEEN
+		   IF (NEARBLASTS)
+					NEARBLASTS = 0
+					TRIGKILL>MakeFire EVERY 2
+				ENDIF	
+			MyFlag2 = MyFlag2 | STOPPED
+			frame = 0
+
+			VALTOCL = 1
+			WHILE (MyAnimFlag & RUNNING)
+			 	POWER = GetObjectHealth(MAINHEAD)
+			 	BPOWER = GetObjectHealth(BODY)
+				lLightning = DrawLightning (LEFTLEG, 0, 0, 0, lLightning,3)
+				KillMyVelocity()
+
+			//   	IF (frame < 18)
+					//-6.7 METRES IN 18 FRAMES FOR NTSC
+			 //		MoveY(-6.7/18.0)
+			 //  	ENDIF
+			 //	frame = frame + 1
+
+				MyFlag = MyFlag
+			ENDWHILE
+
+			MODELANIM>BOSSES\ICEBOSS\ICEBOSS.RDO>IdleStand>NOTWEEN
+
+			WHILE (MyAnimFlag & RUNNING)
+				POWER = GetObjectHealth(MAINHEAD)
+				BPOWER = GetObjectHealth(BODY)
+				KillMyVelocity()
+			ENDWHILE
+
+				ClearObjCollFlag(MAINHEAD,HITSTRAT)
+				ClearObjCollFlag(SMALLEAR,HITSTRAT)
+				ClearObjCollFlag(BODY,HITSTRAT)
+				
+		   		SetObjectHealth(MAINHEAD,POWER)
+			 	SetObjectHealth(BODY,BPOWER)
+			 	SetObjectHealth(SMALLEAR,EPOWER)
+			MyFlag2 = MyFlag2 & LNOT(STOPPED)
+			VALTOCL = 0
+			UnPauseTriggers()
+		ELSE
+		 	ClearObjCollFlag(LEFTLEG,HITSTRAT)
+	   	ENDIF
+
+		IF (ObjectHitStrat(RIGHTLEG) AND !HEADFIRING)
+			HIT = 1
+			EXITTURN = 1
+			ClearObjCollFlag(RIGHTLEG,HITSTRAT)
+			PauseTriggers(-1,REMEMBER)
+			MODELANIM>BOSSES\ICEBOSS\ICEBOSS.RDO>RightHitLeg>NOTWEEN
+		 IF (NEARBLASTS)
+					NEARBLASTS = 0
+					TRIGKILL>MakeFire EVERY 2
+				ENDIF	
+			MyFlag2 = MyFlag2 | STOPPED
+			frame = 0
+			VALTOCL = 1
+
+			WHILE (MyAnimFlag & RUNNING)
+				POWER = GetObjectHealth(MAINHEAD)
+			 	BPOWER = GetObjectHealth(BODY)
+				rLightning = DrawLightning (RIGHTLEG, 0, 0, 0, rLightning,3)
+				KillMyVelocity()
+
+			   //	IF (frame < 18)
+					//-6.7 METRES IN 18 FRAMES FOR NTSC
+			   //		MoveY(-6.7/18.0)
+			   //	ENDIF
+			   //	frame = frame + 1
+
+				MyFlag = MyFlag
+			ENDWHILE
+
+			MODELANIM>BOSSES\ICEBOSS\ICEBOSS.RDO>IdleStand>NOTWEEN
+
+			WHILE (MyAnimFlag & RUNNING)
+			 	POWER = GetObjectHealth(MAINHEAD)
+			 	BPOWER = GetObjectHealth(BODY)
+				KillMyVelocity()
+			ENDWHILE
+
+			VALTOCL = 0
+			MyFlag2 = MyFlag2 & LNOT(STOPPED)
+
+		   	ClearObjCollFlag(MAINHEAD,HITSTRAT)
+		   	ClearObjCollFlag(SMALLEAR,HITSTRAT)
+		   	ClearObjCollFlag(BODY,HITSTRAT)
+				
+		   	SetObjectHealth(MAINHEAD,POWER)
+		   	SetObjectHealth(BODY,BPOWER)
+		   	SetObjectHealth(SMALLEAR,EPOWER)
+			UnPauseTriggers()
+		ELSE
+		   	ClearObjCollFlag(RIGHTLEG,HITSTRAT)
+		ENDIF
+	ENDIF
+
+	//ENSURE THE DAMAGE FLAG IS CLEARED
+  	MyFlag2 = MyFlag2 & LNOT(BIGDAMAGE)
+
+
+
+	HIT = 0
+
+	IF (TODIE)
+		    //stop this trigger
+			TRIGRESET
+			TRIGSTOP
+			TRIGSET>DestroyBigEar EVERY 1
+		   	STAT>Die			
+	ELSE
+
+		TRIGFIN
+	ENDIF
+
+
+
+ENDTRIGGER
+
+//LOCALINT ID
+
+TRIGGER Blasts
+
+	TopGun = MyPNODEIDS + 1
+
+	frame = RandRange(0,TopGun)
+
+	TopGun = TOINT(frame)
+
+	IF (RandRange(0,25) > 22)
+		MyVar = 2.0
+	ELSE
+		IF (RandRange(0,25) > 15)
+			MyVar = 0.5
+		ELSE
+			MyVar = 1.0
+		ENDIF
+
+	ENDIF
+
+	Lightning = DrawLightning(TopGun, 0, 0, 0, Lightning, 2)
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, TopGun
+
+	TRIGFIN
+ENDTRIGGER
+
+TRIGGER DeathSound
+	WHILE (MyAnimFlag & TWEEN)
+		MyFlag = MyFlag
+	ENDWHILE
+	PLAYSOUND>ICEB_FALL 0 1.0 0.0 0.0 0.0 0
+
+	TRIGSTOP
+ENDTRIGGER
+
+
+//LOCALINT WASROCKETFIRING
+STATE Die
+
+	PauseTriggers(-1,FORGET)
+	
+	//ENSURE THE BARS GO AWAY
+	TRIGKILL>DrawHealth EVERY 1
+	TRIGKILL>DrawHealth WHENPAUSED
+	IF (HEADFIRING)
+		TRIGKILL>FireMeHead EVERY 1
+	ENDIF
+	IF (ROCKETFIRING)
+		TRIGKILL>FireMeRockets EVERY 1
+	ENDIF
+
+	IF (HEADRESET)
+		TRIGKILL>ResetHead EVERY 1
+	ENDIF
+
+	IF (NEARBLASTS)
+		TRIGKILL>MakeFire EVERY 2
+	ENDIF	
+	
+	VALTOCL = ROCKETFIRING
+
+	Score = Score + 25000
+	IF (ROCKETFIRING)
+		MODELANIM>BOSSES\ICEBOSS\ICEBOSS.RDO>CrouchStand>REPEAT
+	ELSE
+		MODELANIM>BOSSES\ICEBOSS\ICEBOSS.RDO>IdleStand>REPEAT
+	ENDIF
+
+	TRIGSET>Blasts EVERY 4
+   	LOOP (210)
+   		MyFlag = MyFlag
+	ENDLOOP
+
+	//ensure all speculars are reset
+
+	ROCKETFIRING = 0
+
+	IMMLOOP (MyPNODEIDS + 1)
+		IF (ROCKETFIRING)
+			ObjectSpecularFlash(ROCKETFIRING,0)
+		ENDIF
+		ROCKETFIRING = ROCKETFIRING + 1
+
+	IMMENDLOOP
+
+ 	IF (VALTOCL)
+		MODELANIM>BOSSES\ICEBOSS\ICEBOSS.RDO>SquatDeath>0
+		IF (PAL)
+			TRIGSET>DeathSound EVERY 20
+		ELSE
+			TRIGSET>DeathSound EVERY 24
+		ENDIF
+	ELSE
+		IF (PAL)
+			TRIGSET>DeathSound EVERY 36
+		ELSE
+			TRIGSET>DeathSound EVERY 43
+		ENDIF
+		MODELANIM>BOSSES\ICEBOSS\ICEBOSS.RDO>Death>0
+	ENDIF
+	WHILE (MyAnimFlag & RUNNING)
+ 		MyFlag = MyFlag
+	ENDWHILE
+
+	TRIGKILL>Blasts EVERY 4
+	TRIGKILL>PHASE2DAM EVERY 1
+	TRIGKILL>Calculate EVERY 1
+
+	MyFlag = MyFlag & LNOT(REALGRAVITYON)
+
+   		IMMLOOP (10) 
+					trailoff = RandRange(-3.0,3.0)
+   					CREATE SPAWN_EnemyDebris 0, 0, trailoff, 0, 0, 0, 0
+   				IMMENDLOOP
+	//IMMLOOP (10) 
+   	//	CREATE SPAWN_EnemyDebris 0, 0, 5, 0, 0, 0, 0
+   	//IMMENDLOOP
+//	RemoveMeFromAllTargets()
+	OBJECT>BOSSES\ICEBOSS\ICEBOSSDEATH
+	MODELANIM>BOSSES\ICEBOSS\ICEBOSSDEATH.RDO>Play>NOTWEEN
+
+
+   	WHILE (MyAnimFlag & RUNNING)
+//   		MyFlag = MyFlag
+	ROCKETFIRING = 0
+
+	IMMLOOP (MyPNODEIDS + 1)
+		IF (ROCKETFIRING)
+			MyVar = 1.5
+			IF (RandRange(0, 25) > 18.0)
+	    SetGlobalParamInt(0,ROCKETFIRING)
+		SetGlobalParamFloat(0,0)
+		SetGlobalParamFloat(1,0)
+		SetGlobalParamFloat(3,1.0)
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, ROCKETFIRING
+		   //		CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, ROCKETFIRING
+			ENDIF
+ 		ENDIF
+		ROCKETFIRING = ROCKETFIRING + 1
+
+	IMMENDLOOP
+	ENDWHILE
+
+	//CREATE SOME FRAGS
+	
+	ROCKETFIRING = 0
+
+	IMMLOOP (MyPNODEIDS + 1)
+		IF (ROCKETFIRING)
+			MyVar = 1.5
+			IF (RandRange(0, 25) > 15.0)
+				CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, ROCKETFIRING
+			ENDIF
+		   	SparkSuck(ROCKETFIRING,SPARKPUFF, 400, 0, 20) 
+ 		ENDIF
+		ROCKETFIRING = ROCKETFIRING + 1
+
+	IMMENDLOOP
+	
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+	trans = 1.0
+
+	WHILE (trans > 0.1)
+	ROCKETFIRING = 0
+
+	IMMLOOP (MyPNODEIDS + 1)
+		IF (ROCKETFIRING)
+			MyVar = 1.5
+			IF (RandRange(0, 25) > 18.0)
+	    SetGlobalParamInt(0,ROCKETFIRING)
+		SetGlobalParamFloat(0,0)
+		SetGlobalParamFloat(1,0)
+		SetGlobalParamFloat(3,1.0)
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, ROCKETFIRING
+		   //		CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, ROCKETFIRING
+			ENDIF
+ 		ENDIF
+		ROCKETFIRING = ROCKETFIRING + 1
+
+	IMMENDLOOP
+		trans = trans - 0.05
+	ENDWHILE
+  	TimeFunction(2)
+	BossStrat = 0
+
+	//ENSURE THE DOME IS ON	and fog is reset
+	//SetEnvironmentParms(-1,-1,-1, -2,-1,-1,-1)
+
+
+   	DeleteMyParent()
+   	Delete()
+
+
+ENDSTATE
+
+					
+
+					
+
+DEFINE ENTRYRAD 30.0
+DEFINE EXITRAD	40.0
+
+
+
+LOCALINT SET
+
+
+STATE Chase
+	IF (NearPlayerXY(ENTRYRAD))
+		IF (SET)
+			SET = 0
+			TRIGKILL>MakePuff EVERY 9
+		ENDIF
+		STAT>Guard
+	ENDIF
+
+	MODELANIM>BOSSES\ICEBOSS\ICEBOSS.RDO>Walk>REPEAT
+
+	IF (!NOTURNHEAD)
+		TowardPlayer(0.05,0.05)
+  	ENDIF
+	//MoveY(6.0/18.0)
+	MoveY(8.0/18.0)
+
+
+	IF ( (!(MyAnimFlag & TWEEN)) AND (!SET) )
+		currfoot = RIGHTFOOT
+		frame = 9
+	   	TRIGSET>MakePuff EVERY 9
+	   	SET = 1
+
+	ENDIF
+ENDSTATE
+
+LOCALINT SQUATON
+LOCALFLOAT ang
+LOCALINT NEARBLASTS
+TRIGGER TurnSounds
+			IF (PAL)
+				IF (MyAnimFrame = 5)
+					PLAYSOUND>ICEB_MOTOR 0 1.0 0.0 0.0 0.0 0
+				ENDIF
+
+				IF (MyAnimFrame = 15)
+					PLAYSOUND>ICEB_STEP 1 1.0 0.0 0.0 0.0 0
+				ENDIF
+			ELSE
+				IF (MyAnimFrame = 18)
+					PLAYSOUND>ICEB_STEP 1 1.0 0.0 0.0 0.0 0
+				ENDIF
+
+				IF (MyAnimFrame = 6)
+					PLAYSOUND>ICEB_MOTOR 0 1.0 0.0 0.0 0.0 0
+				ENDIF
+			ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+LOCALINT EXITTURN
+
+STATE Guard
+
+	IF (NearPlayerXY(EXITRAD))
+   		IF (!NearPlayerXY(30.0))
+			MODELANIM>BOSSES\ICEBOSS\ICEBOSS.RDO>IdleStand>REPEAT
+			SQUATON = 0
+	   	ELSE
+			MODELANIM>BOSSES\ICEBOSS\ICEBOSS.RDO>CrouchStand>REPEAT
+			SQUATON = 1
+		ENDIF
+		
+		IF ((PlayerHealth > 0) AND NearPlayerXY(10.0) AND SeePlayerZ(TWOPI/360.0 * 22.5))
+			IF (!NEARBLASTS)
+				NEARBLASTS = 1
+				TRIGSET>MakeFire EVERY 2
+			ENDIF
+	   	ELSE
+			IF (NEARBLASTS)
+				TRIGKILL>MakeFire EVERY 2
+				NEARBLASTS = 0
+			 ENDIF
+		ENDIF
+
+	   	IF (!NOTURNHEAD)
+  		IF (!SeePlayerZ(TWOPI/16.0))
+
+		//	SaveX = CheckX
+		//	SaveY = CheckY
+		//	SaveZ = CheckZ
+
+			CheckX = DogX
+			CheckY = DogY
+			CheckZ = DogZ
+		
+
+			SetCheckPosMyRotate(0)
+
+			IF (CheckX  > 0)
+   				IF (SQUATON)
+					MODELANIM>BOSSES\ICEBOSS\ICEBOSS.RDO>SquatTurnRight>REPEAT
+				ELSE
+					MODELANIM>BOSSES\ICEBOSS\ICEBOSS.RDO>TurnRight>REPEAT
+				ENDIF
+				ang = - TWOPI / 4.0
+				//PAL NTSC CHECK NEEDED HERE
+			   	ang = ang / 30.0
+			ELSE
+   				IF (SQUATON)
+					MODELANIM>BOSSES\ICEBOSS\ICEBOSS.RDO>SquatTurnLeft>REPEAT
+				ELSE
+				   	MODELANIM>BOSSES\ICEBOSS\ICEBOSS.RDO>TurnLeft>REPEAT
+				ENDIF
+				ang =  TWOPI / 4.0 
+				//PAL NTSC CHECK NEEDED HERE
+				ang = ang / 30.0
+			ENDIF
+
+			WHILE (MyAnimFlag & TWEEN)
+				MyFlag = MyFlag
+			ENDWHILE
+
+
+		
+			TRIGSET>TurnSounds EVERY 1
+		  	WHILE (!SeePlayerZ(TWOPI/64.0) AND (!EXITTURN))
+			   	RelRotateZ(ang)
+			ENDWHILE
+
+			EXITTURN = 0
+
+			TRIGKILL>TurnSounds EVERY 1
+
+   			IF (!NearPlayerXY(30.0))
+				MODELANIM>BOSSES\ICEBOSS\ICEBOSS.RDO>IdleStand>REPEAT
+				SQUATON = 0
+			ELSE
+	   			//PLAYSOUND>ICEB_MOTORUP 10 1.0 0.0 0.0 0.0 0
+
+				MODELANIM>BOSSES\ICEBOSS\ICEBOSS.RDO>CrouchStand>REPEAT
+				SQUATON = 1
+	   		ENDIF
+	
+			IF (NearPlayerXY(10.0))
+				IF (!NEARBLASTS)
+					NEARBLASTS = 1
+					TRIGSET>MakeFire EVERY 2
+				ENDIF
+			ELSE
+				IF (NEARBLASTS)
+					NEARBLASTS = 0
+					TRIGKILL>MakeFire EVERY 2
+				 ENDIF
+			ENDIF
+
+		  //	MODELANIM>BOSSES\ICEBOSS\ICEBOSS.RDO>IdleStand>REPEAT
+
+			WHILE (MyAnimFlag & TWEEN)
+				MyFlag = MyFlag
+			ENDWHILE
+
+		ENDIF
+
+		ENDIF
+		KillMyVelocity()
+	ELSE
+	
+	  	IF (NEARBLASTS)
+			NEARBLASTS = 0
+			TRIGKILL>MakeFire EVERY 2
+		 ENDIF
+   
+		SET = 0
+		STAT>Chase
+	ENDIF
+ENDSTATE
+
+
+STATE SquatGunMode
+   	MODELANIM>BOSSES\ICEBOSS\ICEBOSS.RDO>Squat>0
+	PLAYSOUND>ICEB_MOTORUP 10 1.0 0.0 0.0 0.0 0
+
+
+  	WHILE (MyAnimFlag & RUNNING)
+  		IF (!(MyAnimFlag & TWEEN))
+			IF ((PAL) AND (MyAnimFrame = 17))
+				PLAYSOUND>ICEB_CLUNK 10 1.0 0.0 0.0 0.0 0
+			ELSE
+				IF ((!PAL) AND (MyAnimFrame = 21))
+					PLAYSOUND>ICEB_CLUNK 10 1.0 0.0 0.0 0.0 0
+				ENDIF
+			ENDIF
+		ENDIF
+		KillMyVelocity()
+		TowardPlayer(0.05,0.05)
+  	ENDWHILE
+
+
+  	TRIGSET>FireMeRockets EVERY 1
+  	FIREMODE = HEADLASER
+	WHILE (ROCKETFIRING)
+  		IF (!SeePlayerZ(TWOPI/16.0))
+
+		//	SaveX = CheckX
+		//	SaveY = CheckY
+		//	SaveZ = CheckZ
+
+			CheckX = DogX
+			CheckY = DogY
+			CheckZ = DogZ
+		
+
+			SetCheckPosMyRotate(0)
+
+			IF (CheckX  > 0)
+   			 	MODELANIM>BOSSES\ICEBOSS\ICEBOSS.RDO>SquatTurnRight>REPEAT
+				ang = - TWOPI / 4.0
+				//PAL NTSC CHECK NEEDED HERE
+			   	ang = ang / 30.0
+			ELSE
+			   	MODELANIM>BOSSES\ICEBOSS\ICEBOSS.RDO>SquatTurnLeft>REPEAT
+				ang =  TWOPI / 4.0 
+				//PAL NTSC CHECK NEEDED HERE
+				ang = ang / 30.0
+			ENDIF
+
+			WHILE (MyAnimFlag & TWEEN)
+				MyFlag = MyFlag
+			ENDWHILE
+
+		  //	CheckX = SaveX
+		  //	CheckY = SaveY
+		  //	CheckZ = SaveZ 
+		
+			WHILE (!SeePlayerZ(TWOPI/64.0))
+			   	RelRotateZ(ang)
+			ENDWHILE
+
+			MODELANIM>BOSSES\ICEBOSS\ICEBOSS.RDO>IdleStand>REPEAT
+
+			WHILE (MyAnimFlag & TWEEN)
+				MyFlag = MyFlag
+			ENDWHILE
+
+		ENDIF
+	  //	ENDIF
+
+		KillMyVelocity()
+  //		TowardPlayer(0.05,0.05)
+  	ENDWHILE
+
+	SET = 0
+	STAT>Chase
+ENDSTATE
+
+LOCALFLOAT totHealth
+TRIGGER DrawHealth
+	UpdateTrigFlag (TRIG_ALWAYS_RUN)
+	barAlpha = barAlpha + ((1 - barAlpha) * 0.1)
+	IF (Phase = 2)
+		IF (BPOWER < POWER)
+			IF (EPOWER < BPOWER)
+				IF (Hard)
+					totHealth = EPOWER / HPHASE2HEALTH 
+				ELSE
+					totHealth = EPOWER / PHASE2HEALTH 
+				ENDIF
+				POWER = BPOWER = EPOWER
+		   	ELSE
+				IF (Hard)
+					totHealth = BPOWER / HPHASE2HEALTH 
+				ELSE
+					totHealth = BPOWER / PHASE2HEALTH 
+				ENDIF
+				POWER = EPOWER = BPOWER
+			ENDIF
+	   	ELSE
+			IF (EPOWER < POWER)
+				IF (Hard)
+					totHealth = EPOWER / (HPHASE2HEALTH)
+				ELSE
+					totHealth = EPOWER / (PHASE2HEALTH)
+				ENDIF
+			   	BPOWER = POWER = EPOWER
+			ELSE
+				IF (Hard)
+					totHealth = POWER  / (HPHASE2HEALTH)
+				ELSE
+					totHealth = POWER  / (PHASE2HEALTH)
+				ENDIF
+				BPOWER = EPOWER = POWER
+			ENDIF
+	   	ENDIF
+	   	IF (totHealth < 0)
+	   		totHealth = 0
+	   	ENDIF
+	   	totHealth = (totHealth / 2) + 0.5
+	ELSE
+		IF (BPOWER < POWER)
+			IF (Hard)
+				totHealth = BPOWER / (HPHASE3HEALTH)
+			ELSE
+				totHealth = BPOWER / (PHASE3HEALTH)
+			ENDIF
+			POWER = BPOWER
+		ELSE
+			IF (Hard)
+				totHealth = POWER / (HPHASE3HEALTH)
+			ELSE
+				totHealth = POWER / (PHASE3HEALTH)
+			ENDIF
+			BPOWER = POWER
+		ENDIF
+	   	IF (totHealth < 0)
+	  		totHealth = 0
+	  	ENDIF
+	   	totHealth = (totHealth / 2)
+	ENDIF
+	DrawStratBar (1, totHealth, 0, barAlpha)
+	TRIGFIN
+ENDTRIGGER
+
+LOCALINT FIRSTFIRE
+
+TRIGGER MakeFire
+	IF (FIRSTFIRE)
+	  	PLAYSOUND>ICEB_FIREBALL1 2 1.0 0.0 0.0 0.0 0
+	ELSE
+		PLAYSOUND>ICEB_FIREBALL2 3 1.0 0.0 0.0 0.0 0
+	ENDIF
+   	FIRSTFIRE = !FIRSTFIRE
+   //	SetGlobalParamInt(0,1)
+  	 CREATE SPAWN_ICEBOSSFLAMES 0, 0, 0, 0, 0, 0, GROINGUN
+  	//CREATE ICEBOSS 0, 0, 0, 0, 0, 0, GROINGUN
+   //	ClearGlobalParams()
+	TRIGFIN
+ENDTRIGGER
+
+
+

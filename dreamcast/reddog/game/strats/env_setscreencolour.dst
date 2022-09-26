@@ -1,0 +1,38 @@
+PARAMINT	nframes 1
+PARAMFLOAT	alpha	1.0
+PARAMFLOAT	red		0.0
+PARAMFLOAT	green	0.0
+PARAMFLOAT	blue	0.0
+LOCALFLOAT	i
+
+STATE Init
+	IF (!(MyFlag2 & OWNIPARAMS))
+		nframes = 1
+	ENDIF
+	IF (!(MyFlag & OWNFPARAMS))
+		alpha = 1.0
+		red = 0.0
+		green = 0.0
+		blue = 0.0
+	ENDIF
+	IF (GetGlobalParamInt(0))
+		nframes = GetGlobalParamInt(0)
+		alpha = 1.0
+		red = 0.0
+		green = 0.0
+		blue = 0.0
+	ENDIF
+
+	i = nframes
+	WHILE(i > 0.0)
+		i = i - 1.0
+		SetScreenARGB(alpha, red, green, blue)
+	ENDWHILE
+	i = 30.0
+	WHILE(i > 0.0)
+		SetScreenARGB(i * 0.033333, red, green, blue)
+		i = i - 1.0
+	ENDWHILE
+	Delete()
+ENDSTATE
+		

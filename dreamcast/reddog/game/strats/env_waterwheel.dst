@@ -1,0 +1,32 @@
+//PAL FRIENDLY
+PARAMFLOAT rotatespeed 
+
+STATE Init
+
+	IF (!(MyFlag & OWNFPARAMS))
+		rotatespeed = 0.008
+	ENDIF
+
+	MyFlag = MyFlag | STRATCOLL | ENEMY
+	RegisterCollision()
+   	MyFlag2 = MyFlag2 | COLLMOVE | HOLDPLAYER
+//	OBJECT> MISC\ENV_HYDRO_WATERWHEEL
+//	NoCollObject(7)
+//	HideObject(7)
+	IAmHoldPlayer()
+	InitHDC()
+	AllocStratSoundBlock(1)
+	SetAudibleRange(0, 15, 60)
+	PLAYSOUND>MECHANISM 0 0.5 0.0 0.0 0.0 CONTINUOUS
+	STAT> Test
+ENDSTATE
+
+STATE Test
+	CalculateStratPolyData(0)
+	HoldPlayer()
+	RelRotateX (rotatespeed)
+ENDSTATE
+
+
+
+

@@ -1,0 +1,12 @@
+STATE Init
+	MyFlag = MyFlag | ENEMY
+	OBJECT>MISC\SOLIDARROW
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	ArrowStrat = Me
+	GetNearestTagToPlayer()
+	DrawArrowTo(CheckX, CheckY, CheckZ, 1.0, 1.0, 1.0, 1.0)
+	ArrowStrat = 0
+ENDSTATE

@@ -1,0 +1,34 @@
+PARAMFLOAT	speed
+LOCALFLOAT	time
+LOCALFLOAT posspeed
+
+
+STATE Init
+	IF (!(MyFlag & OWNFPARAMS))
+		speed = 1.0
+	ENDIF
+
+//	OBJECT> MISC\ENV_CONVEYER
+	posspeed = FABS(speed)
+
+
+	IF (!MyPath)
+		Delete()
+	ELSE
+
+	RotationRestriction(0.0, 0.0, 0.0)
+	InitPath()
+	time = 0
+	STAT> Start
+	ENDIF
+ENDSTATE
+
+STATE Start
+	time = time + 1.0
+	IF (time > (220.0 / posspeed))
+		time = 0.0
+		SetGlobalParamFloat(0, speed)
+		CREATE	SPAWN_BELT 0, 0, 0, 0, 0, 0, 0
+		SetGlobalParamFloat(0, 0.0)
+	ENDIF
+ENDSTATE

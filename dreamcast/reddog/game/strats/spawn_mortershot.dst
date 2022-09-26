@@ -1,0 +1,54 @@
+DEFINE BULLET_SPEED 30.0
+LOCALFLOAT	tempf
+LOCALINT	tempi
+
+STATE Init 
+	MyFlag = MyFlag | STRATCOLL | FLOORCOLL | REALGRAVITYON | ENEMY
+	RegisterCollision()
+   	OBJECT> WEAPON\MORTERSHOT
+	SetObjectShadowState(1)
+	SetFriction(0.0, 0.0, 0.0)
+	TRIGSET>KillOff	EVERY 300
+
+	damage = 20.0
+	//IF MY PARENT HAS A PARENT (TARGET) THEN FACE THAT
+
+
+	
+	
+	tempf = GetGlobalParamFloat(0)
+	SetGlobalParamFloat(0, 0.0)
+	tempi = GetGlobalParamInt(0)
+	IF (tempi = 1)
+		CheckX = DogX
+		CheckY = DogY
+		CheckZ = DogZ
+	ENDIF
+	IF (tempi = 2)
+		CheckX = GetGlobalParamFloat(1)
+		CheckY = GetGlobalParamFloat(2)
+		CheckZ = GetGlobalParamFloat(3)
+	ENDIF
+	FacePosXY(tempf)	
+	MoveY(BULLET_SPEED * 0.03333333)
+	
+	MyVar = 0
+	TRIGSET>KillOff	WHENHIT
+	TRIGSET>KillOff	ONFLOOR
+	STAT> Project
+ENDSTATE
+
+STATE Project
+	MyVar = MyVar + 1
+	IF (MyVar > 240)
+		STAT> KillOff
+	ENDIF
+ENDSTATE
+
+STATE KillOff
+	MyVar = 4.0
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+	Delete()
+ //	TRIGSTOP
+ENDSTATE
+ 

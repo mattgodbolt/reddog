@@ -1,0 +1,642 @@
+; RendSuptA.src
+; Renderer support routines
+
+				.CPU			SH4
+				.OUTPUT			DBG=DWARF
+				.SECTION		PRASTERISERS, CODE, ALIGN=16
+				.INCLUDE		"..\RedDog.pre"
+
+; prototype: CLIPTYPE rOnScreen (const Matrix *modelToScreen, 
+;					const Point3 *lowPoint, const Point3 *hiPoint)
+; typedef enum {	
+; 	CLIP_OFFSCREEN			= 0,
+; 	CLIP_PARTIALLYONSCREEN	= 1,
+; 	CLIP_COMPLETELYONSCREEN	= 2,
+; 	CLIP_NEARCLIPPED		= 3
+; } CLIPTYPE;
+
+plane:			.FREG	FV12
+planeX:			.FREG	FR12
+planeY:			.FREG	FR13
+planeZ:			.FREG	FR14
+planeW:			.FREG	FR15
+point0:			.FREG	FV4
+point0X:		.FREG	FR4
+point0Y:		.FREG	FR5
+point0Z:		.FREG	FR6
+point1:			.FREG	FV8
+point1X:		.FREG	FR8
+point1Y:		.FREG	FR9
+point1Z:		.FREG	FR10
+
+				.MACRO	GET FREG,A,B
+				MOV		#\A*16+\B*4, R0
+				FMOV.S	@(R0, R4), \FREG
+				.ENDM
+
+				.MACRO	DOPLANE loX,loY,loZ,hiX,hiY,hiZ
+				FCMP/GT	FR1, planeX
+				FMOV	\loX, FR0
+				BF		$+4
+				FMOV	\hiX, FR0
+
+				FMOV	planeX, FR2			; FR2 is result
+				FMUL	FR0, FR2			; FR2 = plane.x * (plane.x>0)?hi.x:lo.x
+
+				FCMP/GT	FR1, planeY
+				FMOV	\loY, FR0
+				BF		$+4
+				FMOV	\hiY, FR0
+
+				FMAC	FR0, planeY, FR2	; FR2 += next bit
+
+				FCMP/GT	FR1, planeZ
+				FMOV	\loZ, FR0
+				BF		$+4
+				FMOV	\hiZ, FR0
+
+				FMAC	FR0, planeZ, FR2	; FR2 += next bit
+
+				FCMP/GT	FR2, planeW
+
+				.ENDM
+
+				.MACRO DOPLANEHI
+				DOPLANE	point0X, point0Y, point0Z, point1X, point1Y, point1Z
+				.ENDM
+
+				.MACRO DOPLANELO
+				DOPLANE	point1X, point1Y, point1Z, point0X, point0Y, point0Z
+				.ENDM
+
+				.MACRO PREPADD row
+				GET		FR0, 0, 3
+				GET		planeX, 0, \row
+				FADD	FR0, planeX
+				GET		FR0, 1, 3
+				GET		planeY, 1, \row
+				FADD	FR0, planeY
+				GET		FR0, 2, 3
+				GET		planeZ, 2, \row
+				FADD	FR0, planeZ
+				GET		FR0, 3, 3
+				GET		planeW, 3, \row
+				FADD	FR0, planeW
+				FNEG	planeW
+				.ENDM
+
+				.MACRO PREPSUB row
+				GET		planeX, 0, 3
+				GET		FR0, 0, \row
+				FSUB	FR0, planeX
+				GET		planeY, 1, 3
+				GET		FR0, 1, \row
+				FSUB	FR0, planeY
+				GET		planeZ, 2, 3
+				GET		FR0, 2, \row
+				FSUB	FR0, planeZ
+				GET		planeW, 3, 3
+				GET		FR0, 3, \row
+				FSUB	FR0, planeW
+				FNEG	planeW
+				.ENDM
+
+				.EXPORT _rOnScreen
+_rOnScreen:
+				; Get a prefetch going now
+				PREF	@R5
+
+				; Preserve the FREGs
+				FMOV.S	FR12, @-R15
+
+				FMOV.S	FR13, @-R15
+
+				FMOV.S	FR14, @-R15
+
+				FMOV.S	FR15, @-R15
+
+				PREF	@R4					; prefetch the matrix a bit
+
+				; Read in the two points
+				FMOV.S	@R5+, point0X
+
+				FLDI0	FR1					; FR1 is zero
+
+				FMOV.S	@R5+, point0Y
+				MOV		#2, R1				; Completely on screen
+
+				FMOV.S	@R5+, point0Z
+				MOV		#0, R2				; Not nearclipped
+
+				FMOV.S	@R6+, point1X
+				MOVA	offScreen, R0		; R0 is 'we're outta here'
+
+				FMOV.S	@R6+, point1Y
+
+				FMOV.S	@R6+, point1Z
+				MOV		R0, R5				; r5 is now exit code
+
+				; First check - Z==0 plane
+				GET		planeX, 0, 2
+				GET		planeY, 1, 2
+				GET		planeZ, 2, 2
+				GET		planeW, 3, 2
+				FNEG	planeW
+
+				DOPLANEHI
+				BF		not00
+				JMP		@R5
+				NOP
+
+not00:			DOPLANELO
+				BF		notNearClipped
+				MOV		#1, R2				; mark as near clipped
+notNearClipped:
+
+				; Check the far plane
+				PREPSUB	2
+				DOPLANEHI
+				BF		not0
+				JMP		@R5
+				NOP
+
+not0:			DOPLANELO
+				BF		$+4
+				MOV		#1, R1
+
+				; Now to check the left plane
+				PREPADD	0
+				DOPLANEHI
+				BF		not1
+				JMP		@R5
+				NOP
+
+not1:			DOPLANELO
+				BF		$+4
+				MOV		#1, R1
+
+				; Now to check the right plane
+				PREPSUB	0
+				DOPLANEHI
+				BF		not2
+				JMP		@R5
+				NOP
+
+not2:			DOPLANELO
+				BF		$+4
+				MOV		#1, R1
+
+				; Check the upper plane
+				PREPADD	1
+				DOPLANEHI
+				BT		offScreen
+
+				DOPLANELO
+				BF		$+4
+				MOV		#1, R1
+
+				; Check the bottom plane
+				PREPSUB	1
+				DOPLANEHI
+				BT		offScreen
+
+				DOPLANELO
+				BF		$+4
+				MOV		#1, R1
+
+
+				TST		R2, R2
+				BT		$+4
+				MOV		#3, R1
+
+				BRA		endOSC
+				MOV		R1, R0
+
+offScreen:
+				MOV		#0, R0
+
+endOSC:			; Get back the fregs and return
+				FMOV.S	@R15+, FR15
+				FMOV.S	@R15+, FR14
+				FMOV.S	@R15+, FR13
+				RTS
+				FMOV.S	@R15+, FR12
+
+				.SECTION		PRENDSUPT, CODE, ALIGN=16
+
+; prototype: Uint32 UVLerp (Uint32 a, Uint32 b, float alpha, float *U, float *V)
+; LERP a UV value
+				.EXPORT _UVLerp
+_UVLerp:
+				; Unpack the UV values
+				MOV.L	#H'ffff0000, R2		; R2 is the mask
+				MOV		R4, R0				; R0=R4= 'a'
+				AND		R2, R4				; get the top bits of R4 into R4 == UA
+				SHLL16	R0					; R0 == VA
+				LDS		R4, FPUL			; FPUL == UA
+				MOV		R5, R1				; R1=R5= 'b'
+				FSTS	FPUL, FR5			; FR5 = UA
+				AND		R2, R5				; get top bits of R5 into R5 == UB
+				LDS		R0, FPUL			; FPUL == VA
+				SHLL16	R1					; R1 = vb
+				FSTS	FPUL, FR6			; FR6 = VA
+				LDS		R5, FPUL
+				FSTS	FPUL, FR7			; FR7 = UB
+				LDS		R1, FPUL
+				FSTS	FPUL, FR8			; FR8 = VB
+
+				; Calculate U'V'
+				FSUB	FR5, FR7			; FR7 = UB - UA
+				FSUB	FR6, FR8			; FR8 = VB - VA
+				
+				FMUL	FR4, FR7			; FR7 = (UB - UA) * alpha
+				FMUL	FR4, FR8			; FR8 = (VB - VA) * alpha
+
+				FADD	FR5, FR7			; FR7 = UA + (UB - UA) * alpha
+				FADD	FR6, FR8			; FR8 = VA + (VB - VA) * alpha
+
+				; Store out
+				FMOV.S	FR7, @R6
+				RTS
+				FMOV.S	FR8, @R7
+
+; prototype: Uint32 ColLerp (Uint32 a, Uint32 b, float alpha)
+; LERP a colour
+				.MACRO GETCOL PACKED, FR
+				MOV		\PACKED, R0			; take a copy of the packed register
+				AND		R1, R0				; AND with 0xff
+				LDS		R0, FPUL			; place in FPUL
+				SHLR8	\PACKED
+				FLOAT	FPUL, \FR			; and then put into FR
+				.ENDM
+
+				.EXPORT	_ColLerp
+_ColLerp:
+				CMP/EQ	R4, R5				; spot easy-out
+				BT		easyout
+				; FR0-FR3 will be the unpacked 'a'
+				; FR8-FR11 will be the unpacked 'b'
+				MOV.L	#H'ff, R1			; r1 is the mask
+
+				GETCOL	R4, FR0				; FR0 is aB
+				GETCOL	R5, FR8				; FR8 is bB
+
+				GETCOL	R4, FR1				; FR1 is aG
+				GETCOL	R5, FR9				; FR9 is bG
+
+				FSUB	FR0, FR8			; FR8 = (bB - bA)
+
+				GETCOL	R4, FR2				; FR2 is aR
+				GETCOL	R5, FR10			; FR10 is bR
+
+				FSUB	FR1, FR9			; FR9 = (bG - bG)
+
+				GETCOL	R4, FR3				; FR3 is aA
+
+				FSUB	FR2, FR10			; FR10 = (bR - bR)
+				
+				; Scale all of the delta values
+				FMUL	FR4, FR8
+
+				FMUL	FR4, FR9
+
+				FMUL	FR4, FR10
+
+				; Add the bases back in
+				FADD	FR0, FR8
+
+				FADD	FR2, FR10
+
+				FADD	FR1, FR9
+
+				; Repack the numbers
+				FTRC	FR10, FPUL			; get red
+
+				STS		FPUL, R0			; R0 == 000000rr
+
+				FTRC	FR9, FPUL			; get green
+
+				STS		FPUL, R2			; R2 == 000000ff
+				SHLL8	R0					; R0 == 0000rr00
+
+				FTRC	FR8, FPUL			; get blue
+				OR		R2, R0				; R0 == 0000rrgg
+
+				STS		FPUL, R1			; R1 == 000000bb
+				SHLL8	R0					; R0 == 00rrgg00
+
+				RTS
+				OR		R1, R0				; R0 == 00rrggbb
+
+easyout:
+				RTS
+				MOV		R4, R0				; return 'a'
+
+; Prototype: bool VisIsInside (float x, float y, float z)
+; returns whether or not m * [x,y,z] lives inside (0,0,0) - (1,1,1)
+				.EXPORT _VisIsInside
+_VisIsInside:
+				FLDI1	FR7
+				FLDI0	FR0
+				FTRV	XMTRX, FV4
+				FLDI1	FR1
+
+				FCMP/GT	FR1, FR4
+				BT		?NotInside
+				FCMP/GT	FR4, FR0
+				BT		?NotInside
+
+				FCMP/GT	FR1, FR5
+				BT		?NotInside
+				FCMP/GT	FR5, FR0
+				BT		?NotInside
+
+				FCMP/GT	FR1, FR6
+				BT		?NotInside
+				FCMP/GT	FR6, FR0
+				BT		?NotInside
+
+?IsInside:		RTS
+				MOV		#1, R0
+?NotInside:		RTS
+				MOV		#0, R0
+
+; =========================================================================
+
+				.SECTION		PSCAPERAST, CODE, ALIGN=16
+
+; Prototype: PKMDWORD CopyMaterialData32 (PKMDWORD pkmCurrentPtr, void *GLOBALPARAMBUFFER);
+; Copies data followed by -1,-1,-1,-1 to pkmCurrentPtr, prefetches, and returns pkmCurrentPtr+32
+				.EXPORT _CopyMaterialData32
+				.ALIGN	16
+_CopyMaterialData32:
+				PREF	@R5					; start the read of GLOBALPARAMBUFFER
+				MOV		#-1, R1				; start by storing in the -1's as the prefetch completes
+
+				MOV		R4, R6				; r6 points where we need the info
+				ADD		#32, R4				; point at the end of the buffer
+
+				MOV		R4, R0				; take a copy of pkmCurrentPtr for the return value
+				MOV.L	R1, @-R4			; store in the first terminator
+
+				MOV.L	R1, @-R4
+
+				MOV.L	R1, @-R4
+
+				MOV.L	R1, @-R4			; store in the last terminator
+
+				MOV.L	@R5+, R2			; read the first word of info
+
+				MOV.L	@R5+, R3			; read the second word of info
+
+				MOV.L	R2, @R6				; store the first word
+				ADD		#4, R6				; and increment
+
+				MOV.L	R3, @R6				; store the second word
+				ADD		#4, R6				; and increment
+
+				MOV.L	@R5+, R2			; read the third word of info
+
+				MOV.L	@R5+, R3			; read the fourth word of info
+
+				MOV.L	R2, @R6				; store the third word
+				ADD		#4, R6				; and increment
+
+				MOV.L	R3, @R6				; store the fourth word
+				RTS							; and return
+				PREF	@R6					; prefetch in the delay slot
+
+; =========================================================================
+; Prototype: PKMDWORD CopyMaterialData64 (PKMDWORD pkmCurrentPtr, void *GLOBALPARAMBUFFER);
+; Copies data followed by -1,-1,-1,-1,1.f,R,G,B,0,0,0,0 to 
+; pkmCurrentPtr, prefetches, and returns pkmCurrentPtr+32
+
+				.SECTION		PRASTERISERS, CODE, ALIGN=16
+
+				.EXPORT _CopyMaterialData64
+				.ALIGN	16
+_CopyMaterialData64:
+				PREF	@R5					; start the read of GLOBALPARAMBUFFER
+				MOV		#-1, R1				; start by storing in the -1's as the prefetch completes
+
+				MOV		R6, R0		
+				FMOV.S	@R0+, FR4			; read red
+
+				FMOV.S	@R0+, FR5			; read green
+
+				FMOV.S	@R0, FR6			; read blue
+				MOV		R4, R6				; r6 points where we need the info
+
+				ADD		#32, R4				; point at the end of the buffer
+				MOV		R4, R0				; take a copy of pkmCurrentPtr for the float action
+
+				MOV.L	R1, @-R4			; store in the first terminator
+
+				MOV.L	R1, @-R4
+
+				MOV.L	R1, @-R4
+				MOV		#0, R7				; r7 is zero
+
+				MOV.L	R1, @-R4			; store in the last terminator
+				ADD		#32, R0				; move r0 to the end of the float section
+
+				FLDI1	FR0					; get one ready
+
+				MOV.L	R7, @-R0			; first zero store
+
+				MOV.L	R7, @-R0
+
+				MOV.L	R7, @-R0
+
+				MOV.L	R7, @-R0			; last zero store
+
+				MOV.L	@R5+, R2			; read the first word of info
+
+				MOV.L	@R5+, R3			; read the second word of info
+
+				MOV.L	R2, @R6				; store the first word
+				ADD		#4, R6				; and increment
+
+				MOV.L	R3, @R6				; store the second word
+				ADD		#4, R6				; and increment
+
+				MOV.L	@R5+, R2			; read the third word of info
+
+				MOV.L	@R5+, R3			; read the fourth word of info
+
+				MOV.L	R2, @R6				; store the third word
+				ADD		#4, R6				; and increment
+
+				MOV.L	R3, @R6				; store the fourth word
+
+				PREF	@R6					; prefetch the first set of data
+
+				FMOV.S	FR6, @-R0			; colour store
+
+				FMOV.S	FR5, @-R0
+
+				FMOV.S	FR4, @-R0
+
+				FMOV.S	FR0, @-R0			; last one store in alpha
+
+				PREF	@R0					; prefetch the second set
+
+				RTS
+				ADD		#32, R0				; move r0 to the right place
+
+; ====================
+; CalcLightPos (&mCurMatrix.m[0][0], &sunDir.x, pRead);
+				.EXPORT _CalcLightPos
+				.ALIGN 16
+_CalcLightPos:
+				FPUSH	FR15
+
+				FPUSH	FR14
+
+				FPUSH	FR13
+
+				FPUSH	FR12
+
+				FSCHG						; big reeds
+				PREF	@R5					; get the sun direction in and going
+				
+				FMOV.D	@R4+, DR0			; read out the first line of the matrix
+				
+				FMOV.D	@R4+, DR2			; ...
+				
+				FMOV.D	@R5+, DR4			; FV4 will be the sun direction
+				
+				FMOV.D	@R5+, DR6			; ...and it is now
+				
+				FMOV.D	@R4+, DR8			; read out the second line of the matrix
+				FIPR	FV4, FV0			; get the first dot product into fr3
+
+				FMOV.D	@R4+, DR10			; continue on the second line
+
+				FMOV.D	@R4+, DR12			; start reading the third line
+				
+				FMOV.D	@R4+, DR14			; ...
+				FIPR	FV4, FV8			; second dot product into fr11
+
+				FSCHG						; back to small stores
+				FMOV	FR3, FR2			; copy dot1
+
+				FMUL	FR2, FR2			; fr2 = SQR(dot1)
+
+				FIPR	FV4, FV12			; third dot product
+				FMOV	FR11, FR0			; copy dot2
+
+				FMAC	FR0, FR0, FR2		; fr2 = SQR(dot2) + SQR(dot1)
+				PREF	@R6					; might as well...
+
+				FMOV	FR15, FR0			; copy dot3
+				FMAC	FR0, FR0, FR2		; fr2 = SQR(dot3) + (SQR(dot2) + SQR(dot1))
+
+				FPOP	FR12				; start popping
+
+				FPOP	FR13
+				FSRRA	FR2					; fr2 is now the scale amount for t'others
+				
+				FPOP	FR14				; pop some more
+				ADD		#12, R6				; get to the end of R6
+
+				FMUL	FR2, FR15			; calc lZ
+
+				FMUL	FR2, FR11			; calc lY
+
+				FMUL	FR2, FR3			; calc lX
+				FMOV.S	FR15, @-R6			; store lZ
+
+				FMOV.S	FR11, @-R6			; store lY
+
+				FMOV.S	FR3, @-R6			; store lX
+
+				RTS
+				FPOP	FR15
+
+				.ALIGN 16
+				.EXPORT _sunDir
+_sunDir:		.RES 16
+
+; Aligned multiplication routine
+				.EXPORT _mMultiplyAligned
+				; Prototype: void mModelMatrixPrep (Matrix *res, const Matrix *m1, const Matrix *m2)
+_mMultiplyAligned:
+				FRCHG				; change to bank 1
+				PREF	@R5			; prefetch m1
+
+				FSCHG				; double word
+				PREF	@R4			; start prefetching the result area
+
+				FMOV.D	@R6+, DR0	; read in m2 into XMTRX
+
+				FMOV.D	@R6+, DR2	; ...
+
+				FMOV.D	@R6+, DR4	; ...
+
+				FMOV.D	@R6+, DR6	; ...
+
+				FMOV.D	@R6+, DR8	; keep reading in m2 into XMTRX
+
+				FMOV.D	@R6+, DR10	; ...
+
+				FMOV.D	@R6+, DR12	; ...
+
+				FMOV.D	@R6+, DR14	; ...finally there!
+
+				FRCHG				; back to bank 0 of the FP registers
+
+				FMOV.D	@R5+, DR0	; read in m1
+
+				FMOV.D	@R5+, DR2	; more m1
+
+				FMOV.D	@R5+, DR4	; even more m1 while we wait for read latency
+
+				FTRV	XMTRX, FV0	; transform fv0
+				FMOV.D	@R5+, DR6	; more reading action goes on...
+
+				FMOV.D	@R5+, DR8	; and even more...
+
+				FMOV.D	@R5+, DR10	; the last bit of prereading is now done
+				ADD		#16, R4		; R4 points at t'end
+
+				FTRV	XMTRX, FV4	; stall, then start transforming next bitty boy
+				FMOV.D	DR2, @-R4	; store first line
+
+				FMOV.D	DR0, @-R4	; and that too
+
+				; stall
+				FMOV.D	@R5+, DR0
+
+				FMOV.D	@R5+, DR2	; last bit of matrix in FV0
+				ADD		#32, R4		; move to end of line 2
+
+				FTRV	XMTRX, FV8	; get 8 underway
+				FMOV.D	DR6, @-R4	; store line 2
+
+				FMOV.D	DR4, @-R4	; more storing
+
+				ADD		#32, R4
+				FTRV	XMTRX, FV0	; stall then transform some more
+
+				FMOV.D	DR10, @-R4	; line 3
+
+				FMOV.D	DR8, @-R4
+
+				ADD		#32, R4
+
+				FMOV.D	DR2, @-R4
+
+				FMOV.D	DR0, @-R4
+				RTS
+				FSCHG
+
+								
+				.END
+
+
+
+
+
+
+

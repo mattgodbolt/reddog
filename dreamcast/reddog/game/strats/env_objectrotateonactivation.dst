@@ -1,0 +1,29 @@
+LOCALINT	time
+LOCALFLOAT	rotatespeed
+
+STATE Init
+	MyFlag = MyFlag | ENEMY | STRATCOLL
+	InitHDC()
+	time = 0
+	rotatespeed = 0
+	STAT>Start
+ENDSTATE
+
+STATE Rotate
+	IF (time < 30)
+		rotatespeed = rotatespeed + 0.001
+		IF rotatespeed > 0.015
+			rotatespeed = 0.015
+		ENDIF
+		RelRotateX(-rotatespeed)
+		time = time + 1
+	ENDIF
+	CalculateStratPolyData(0)
+ENDSTATE
+
+STATE Start
+	CalculateStratPolyData(0)
+	IF (PlayerNearActivationXY(0))
+		STAT>Rotate
+	ENDIF
+ENDSTATE 

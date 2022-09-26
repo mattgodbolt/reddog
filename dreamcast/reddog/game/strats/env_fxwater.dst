@@ -1,0 +1,20 @@
+// All-new water strat!
+
+// Wicked parameter warez courtesy of MattP
+PARAMFLOAT Choppiness  0.04
+PARAMFLOAT WaterHeight 2.5
+
+STATE Init 
+	IF (!(MyFlag & OWNFPARAMS))
+		Choppiness = 0.04
+		WaterHeight = 2.5
+	ENDIF
+	IAmWater(Choppiness, WaterHeight)
+//	Delete()
+	AllocStratSoundBlock(1)
+	PLAYSOUND>ICE_RIVER 0 0.0  0.0 0.0 0.0  CONTINUOUS
+	STAT>Start
+ENDSTATE
+
+STATE Start
+ENDSTATE

@@ -1,0 +1,11 @@
+STATE Init
+	MyFlag = MyFlag | ENEMY | NODISP
+	OBJECT>MISC\SOLIDARROW
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	ArrowStrat = Me
+	DrawArrowTo(DestX, DestY, DestZ, 1.0, 1.0, 1.0, 1.0)
+	ArrowStrat = 0
+ENDSTATE

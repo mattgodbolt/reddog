@@ -1,0 +1,31 @@
+
+//EXPLODES MAKING MATERIALS WITH VIS MASK 'VISTOCLEAR' DISAPPEAR
+
+PARAMINT VisToSet -1
+PARAMINT VisToClear -1
+
+STATE Init
+	IF (!(MyFlag2 & OWNIPARAMS))
+		VisToSet = -1
+		VisToClear = -1
+	ENDIF
+
+
+	WHILE (frame)
+		frame = frame - 1.0
+	ENDWHILE
+   	STAT>Explode
+ENDSTATE
+
+STATE Explode
+	MakeFrags (0.1, 24)
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+   	IF (VisToClear >= 0)
+   		ClearVisBit(VisToClear)
+   	ENDIF
+
+//	TRIGSTOP
+//	absspeedy = 3.0
+	DESTROYME SPAWN_EXPLODINGBITS
+ENDSTATE
+

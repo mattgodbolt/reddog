@@ -1,0 +1,1079 @@
+//PAL FRIENDLY
+DEFINE WALK 0
+DEFINE DIE 2
+DEFINE STOP 3
+DEFINE GUARD 4
+DEFINE CLOAK 8
+DEFINE HIT 16
+DEFINE TARGETTRACKING 32
+DEFINE GUARDDEFENSIVE 64
+DEFINE FIRERANGE 90
+  
+//3 * speed
+
+//DEFINE RUNSPEED	0.020
+DEFINE RUNSPEED 0.02
+
+PARAMINT WaitAfterSpawn 0 //Amount of time before Battletank starts to move
+PARAMINT CHALLENGE 0
+
+LOCALINT TARGETVALID
+LOCALINT MODE
+LOCALINT STATUS
+LOCALINT Firing
+LOCALINT dead
+
+
+DEFINE	GUN1    12
+DEFINE	GUN2	9
+DEFINE	CHEST   19
+DEFINE	ARM1	13
+DEFINE  ARM2	10
+DEFINE HEAD     18
+DEFINE BODY		18
+LOCALINT LEFTFIRE
+
+
+
+TRIGGER MakeFire
+	IF (health > 0.0)
+		SetGlobalParamInt(0,1)
+		IF (LEFTFIRE)
+			IF (!ARM1DEAD)
+				PLAYSOUND>WALKER_WEAPON 2 1.0 0.0 0.0 0.0 0
+				CREATE WALKER 0,1.0,0,0,0,0, GUN1
+			ENDIF
+		ELSE
+			IF (!ARM2DEAD)
+				PLAYSOUND>WALKER_WEAPON 2 1.0 0.0 0.0 0.0 0
+				CREATE WALKER 0,1.0,0,0,0,0, GUN2
+   			ENDIF
+		ENDIF
+		LEFTFIRE = !LEFTFIRE
+		ClearGlobalParams()
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+
+STATE WalkerFire
+	MakeMeTheLast()
+
+	AllocStratSoundBlock(1)
+
+	MyFlag = MyFlag | ENEMY | NOTEXPLODE | PLANEMOVE | LOWCOLL | NODISP	| TARGETABLE
+   	SetFriction(0.1,0.1,0.1)
+
+	OBJECT> WEAPON\MISSILE06
+	damage = 10.0
+
+	CheckX = DogX
+	CheckY = DogY
+	CheckZ = DogZ 
+	//at rd type
+   	MyVar = 1.0
+	RegisterCollision()
+	MyFlag = MyFlag | STRATCOLL	| FLOORCOLL
+	TRIGSET>KillOff	WHENHIT
+	TRIGSET>KillOff	ONFLOOR
+	frame = 0.1		
+	TRIGSET>BeamShock EVERY 4
+	PointTo(DogX, DogY, DogZ)
+	PLAYSOUND>WALKER_FIREBALL 0 0.9 0.0 0.0 0.0 CONTINUOUS
+	STAT>Start
+ENDSTATE
+
+
+
+STATE Start
+	IF (frame < 0.2)
+		frame = frame + 0.003
+	ENDIF
+	MoveY(frame)
+ENDSTATE
+
+STATE KillOff
+	MyFlag = MyFlag | NODISP  
+	
+	Delete()
+  //	TRIGSTOP
+ENDSTATE
+
+LOCALFLOAT firescale
+TRIGGER BeamShock
+	firescale = 0.1
+	TRIGSTOP
+	TRIGSET>BeamShock2 EVERY 2
+ENDTRIGGER
+
+TRIGGER BeamShock2
+ 	SetGlobalParamFloat(0,firescale)
+	MyVar = 1.5
+   	CREATE SPAWN_BLASTEXP 0,0,0,0,0,0, 0
+ 	ClearGlobalParams()
+ 	IF (firescale < 0.25)
+		IF (PAL)
+ 			firescale = firescale + (0.05 * 1.2)
+		ELSE
+ 			firescale = firescale + 0.05
+		ENDIF
+ 	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+
+
+
+DEFINE BODYHEALTH 200.0
+DEFINE ARMHEALTH 30.0
+
+TRIGGER Always
+	IF (health <= 0)
+		TRIGRESET
+		TRIGSTOP
+		STAT>Wait
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+STATE Init
+	dead = 0
+	IF (GetGlobalParamInt(0))
+		STAT>WalkerFire
+	ENDIF
+
+	IF (!(MyFlag2 & OWNIPARAMS))
+		WaitAfterSpawn = 0
+		CHALLENGE = 0
+	ENDIF
+
+	IF (PAL)
+		WAITCOUNT = PAL_WAITCOUNT
+		FIREDELAY = PAL_FIREDELAY
+	ELSE
+		WAITCOUNT = NTSC_WAITCOUNT
+		FIREDELAY = NTSC_FIREDELAY
+	ENDIF
+
+
+	SIGHTANG = (TWOPI/360.0) * 45.0
+	Moving = 1
+	RotationRestriction(0.0, 0.0, 1.0)
+	health = 500.0
+	AllocStratSoundBlock(7)
+	SetAudibleRange(6,50,100)
+	RegisterDanger(200.0)	
+	TRIGSET>Always EVERY 1
+   	MyFlag = MyFlag | IMPACT | RELVELCALC | STRATCOLL |  ENEMY | HOVERMOVE | GRAVITYON | FLOORCOLL
+   	RegisterCollision()
+   	MyFlag2 = MyFlag2 | TRANSLUCENT
+	OBJECT> ENEMIES\walker
+  //	MODELANIM>ENEMIES\walker.RDO>Walk>REPEAT
+	MODE = WALK
+
+	OLDBODYHEALTH = BODYHEALTH
+	SetObjectHealth(BODY,BODYHEALTH)
+	SetObjectHealth(ARM1,ARMHEALTH)
+	SetObjectHealth(ARM2,ARMHEALTH)
+	SetObjectHealth(GUN1,ARMHEALTH)
+	SetObjectHealth(GUN2,ARMHEALTH)
+	ObjectTargetable(ARM1)
+	ObjectTargetable(ARM2)
+	ObjectTargetable(GUN1)
+	ObjectTargetable(GUN2)
+	ObjectTargetable(BODY)
+
+	InitPath()
+
+	//WAIT FOR FLOOR TO BE HIT
+	InitHDC()
+	CalculateStratPolyData(1)
+	WHILE (!(MyFlag & HITFLOOR))
+		MyFlag = MyFlag
+	ENDWHILE
+
+	MyFlag = MyFlag & LNOT(NODISP)
+
+   	TRIGSET>FadeIn EVERY 1
+ 
+	WHILE (WaitAfterSpawn > 0)
+		WaitAfterSpawn = WaitAfterSpawn - 1
+	ENDWHILE
+	 MODELANIM>ENEMIES\walker.RDO>Walk>REPEAT
+
+//	SetFriction(1.0,0.1,0.0)
+
+   	TRIGSET>StartMove EVERY 1
+   
+   	IF ((MyPath) AND (!(OnNet)))
+ 		STAT>Defend
+	ELSE
+		inrange = 0
+		TRIGSET>StopGoCheck EVERY 1
+   		IF (MyPath) AND (MyPatrol) 
+			STAT>StartNetwork
+		ELSE
+			IF (MyPath)
+				STAT>Network
+			ELSE
+	 			STAT>Wait
+			ENDIF
+		ENDIF
+   	ENDIF
+  
+  
+
+  //	SetObjectShadowState(1)
+ENDSTATE
+
+
+STATE TargetTrack
+  
+   	WHILE (!NearCheckPosXY(0.0))
+				IF (!NearCheckPosXY(10.0) AND (SeeWayZ(TWOPI/8.0)))
+					MODE = WALK
+					movement = AnimMoveOffset(WALKERWALK)
+
+					MoveY(movement)
+					TowardWay(0.10,0.10)
+				ELSE
+					MODE = WALK
+					movement = AnimMoveOffset(WALKERWALK)
+
+					MoveY(movement)
+					TowardWay(0.05,0.05)
+				ENDIF
+
+	ENDWHILE
+	
+
+	MODE = STOP 
+	//MODELANIM>ENEMIES\walker.RDO>footSoldierStop>REPEAT
+
+	//KillMyVelocity()
+	MyFlag = MyFlag & LNOT(GRAVITYON + FLOORCOLL)
+
+	WHILE (!SeeTargetZ(0.05))
+		Moving = 0
+			TowardTarget(0.1,0.0)
+	ENDWHILE
+	Moving = 1
+	MyFlag = MyFlag | (GRAVITYON + FLOORCOLL)
+
+
+
+
+ENDSTATE
+
+
+
+STATE FadeIn
+
+	trans =  trans + 0.02
+
+	IF (trans > 0.98)
+		MyFlag2 = MyFlag2 & LNOT(TRANSLUCENT) 
+
+		trans = 1.0
+		TRIGSTOP
+	ELSE
+		
+
+		TRIGFIN
+
+	ENDIF
+ENDSTATE
+
+
+LOCALFLOAT cang
+LOCALFLOAT col
+
+
+TRIGGER GunControl
+
+	IF (!ARM1DEAD)
+		SetObjectTrans(GUN1, 0.75)
+	  	ObjectSpecularFlash(GUN1,1)
+	ENDIF
+	IF (!ARM2DEAD)
+		SetObjectTrans(GUN2, 0.75)
+		ObjectSpecularFlash(GUN2,1)
+	ENDIF
+	cang = 0
+
+	WHILE (Firing)
+		IF (PAL)
+			cang = cang + ((TWOPI/360.0) * 2.0 * 1.2)
+		ELSE
+			cang = cang + ((TWOPI/360.0) * 2.0)
+		ENDIF
+	   	col = 0.5 *	 Ssin(cang)
+
+		IF (!ARM1DEAD)
+			SetSpecularColour(GUN1,0.85 + col, 0, 0)
+		ENDIF
+		IF (!ARM2DEAD)
+		 	SetSpecularColour(GUN2,0.85 + col, 0, 0)
+		ENDIF
+	ENDWHILE
+  
+	IF (!ARM1DEAD)
+		ObjectSpecularFlash(GUN1,0)
+  
+		SetObjectTrans(GUN1, 1.0)
+	ENDIF
+
+	IF (!ARM2DEAD)
+	 	ObjectSpecularFlash(GUN2,0)
+  
+		SetObjectTrans(GUN2, 1.0)
+	ENDIF
+	TRIGSTOP
+ENDTRIGGER
+
+LOCALINT GUNWaitFrame
+LOCALINT GUNFireState
+
+//6 SECOND DELAY
+DEFINE NTSC_WAITCOUNT 180
+DEFINE PAL_WAITCOUNT 150
+LOCALINT WAITCOUNT
+
+//1 SEC FIRE DELAY
+DEFINE NTSC_FIREDELAY 30
+DEFINE PAL_FIREDELAY 25
+LOCALINT FIREDELAY
+
+
+TRIGGER Smokey
+	GUNFireState = 2
+  	GUNWaitFrame = WAITCOUNT
+  	WHILE ((GUNWaitFrame) AND (GUNFireState))
+		MyVar = 1.0
+		SetGlobalParamFloat(0,3.0)
+		SetGlobalParamFloat(1,0)
+		//set speed
+		SetGlobalParamFloat(3,0.6)
+		IF (!ARM1DEAD)
+			SetGlobalParamInt(0,GUN1)
+			CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, GUN1
+		ENDIF
+		IF (!ARM2DEAD)
+			SetGlobalParamInt(0,GUN2)
+			CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, GUN2
+		ENDIF
+
+
+		ClearGlobalParams()
+	  	GUNWaitFrame = GUNWaitFrame - 1 
+	  	IF ((!(GUNWaitFrame)) AND (GUNFireState))
+			GUNWaitFrame = WAITCOUNT
+			GUNFireState = GUNFireState - 1
+		ENDIF
+				   
+  	ENDWHILE
+
+	TRIGSTOP
+
+
+ENDTRIGGER
+
+
+
+
+LOCALINT FireChance
+
+STATE FireCheck
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+	IF (NearPlayerXY (FIRERANGE))
+		IF ((MODE = STOP) OR (MODE = GUARD))
+			FireChance = RandRange (0, 50)
+		ELSE
+			FireChance = RandRange (0, 100)
+		ENDIF
+   
+   		IF ((FireChance < FIREDELAY) && ObjectSeePlayerZ(TWOPI/16.0, HEAD,0,0,0) && FireSightPlayer())
+				 	  
+			Firing = 1		  	   
+		   	PauseTriggers(WHENHIT,REMEMBER)
+			TRIGSET>GunControl EVERY 1
+			
+			PLAYSOUND>WALKER_RECHARGE 1 0.95 0.0 0.0 0.0 CONTINUOUS
+
+			spinAmt = 0
+		   	spinAmtTo = (TWOPI/360.0 * 35.0) 
+			LOOP (33)
+				TowardPlayer(0.1,0.0)
+				spinAmt = spinAmt + ((spinAmtTo - spinAmt) * 0.09)
+				IF (!ARM1DEAD)
+				  	RotateObjectXYZ (GUN1, 0, spinAmt, 0)
+				ENDIF
+				IF (!ARM2DEAD)
+				 	RotateObjectXYZ (GUN2, 0, -spinAmt, 0)
+				ENDIF
+			ENDLOOP	
+
+			IF (PAL)
+				TRIGSET>MakeFire EVERY 25
+			ELSE
+				TRIGSET>MakeFire EVERY 30
+			ENDIF
+
+		   	LOOP (120)
+				IF (!ARM1DEAD)
+					RotateObjectXYZ (GUN1, 0, spinAmt, 0)
+				ENDIF
+				IF (!ARM2DEAD)
+					RotateObjectXYZ (GUN2, 0, -spinAmt, 0)
+				ENDIF
+			ENDLOOP
+			spinAmtTo = 0.0
+
+			IF (PAL)
+				TRIGKILL>MakeFire EVERY 25
+			ELSE
+				TRIGKILL>MakeFire EVERY 30
+			ENDIF
+			TRIGSET>Smokey EVERY 1		
+			
+	  		LOOP (33)
+				TowardPlayer(0.1,0.0)
+				spinAmt = spinAmt + ((spinAmtTo - spinAmt) * 0.09)
+				IF (!ARM1DEAD)
+					RotateObjectXYZ (GUN1, 0, spinAmt, 0)
+				ENDIF
+				IF (!ARM2DEAD)
+				 	RotateObjectXYZ (GUN2, 0, -spinAmt, 0)
+				ENDIF
+			ENDLOOP
+
+		   // 	TRIGKILL>Smokey EVERY 1
+
+			StopSound(1,0)
+
+			Firing = 0
+			UnPauseTriggers()
+			TRIGFIN
+			ENDIF
+	ENDIF
+	TRIGFIN
+ENDSTATE
+
+
+
+LOCALFLOAT spinAmt
+LOCALFLOAT spinAmtTo
+
+LOCALINT res
+LOCALINT RETURNING
+
+STATE MoveHead
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+
+	IF (MyFlag & HITSTRAT)
+		IF (!IsPlaying(6))
+			PLAYSOUND>ENEMY_HIT 6 1.0 0.0 0.0 0.0 RANDOM
+		ENDIF
+	ENDIF
+
+   	IF (!RETURNING)
+   		res = ObjectTowardPlayerXZ(HEAD , 0.01, 0.05, (TWOPI/360.0) * 270.0, (TWOPI/360.0) * 22.5)
+   	ELSE
+   		res = 0
+   		CrntRotToIdleRotZ(HEAD, (TWOPI/360.0) * 2.5)
+   		CrntRotToIdleRotX(HEAD, (TWOPI/360.0) * 2.5)
+
+   		RETURNING = RETURNING - 1
+   	ENDIF
+
+   	IF ((res = 1))
+   		ReturnToStartTransform(HEAD)
+   		RETURNING = 30
+
+   	ELSE
+   		CrntRotToIdleRotZ(HEAD, 0.05)
+   		CrntRotToIdleRotX(HEAD, 0.01)
+   	ENDIF
+
+
+	IF (SeePlayerZ(TWOPI/4.0))
+ 
+  // Spin the gun up to 45degrees a frame
+		IF (!ARM1DEAD)
+			ObjectTowardPlayerXZ(ARM1 , 0.05, 0.05, TWOPI/8.0, TWOPI/8.0)
+  			CrntRotToIdleRotX(ARM1, 0.005)
+  			CrntRotToIdleRotZ(ARM1, 0.005)
+		ENDIF
+		IF (!ARM2DEAD)
+			ObjectTowardPlayerXZ(ARM2 , 0.05, 0.05, TWOPI/8.0, TWOPI/8.0)
+  			CrntRotToIdleRotX(ARM2, 0.005)
+  			CrntRotToIdleRotZ(ARM2, 0.005)
+ 		ENDIF
+  	ELSE
+  // Spin the gun up to 45degrees a frame
+	   	ReturnToStartTransform(CHEST)
+		IF (!ARM1DEAD)
+			ReturnToStartTransform(ARM1)
+ 			CrntRotToIdleRotX(ARM1, 0.003)
+ 			CrntRotToIdleRotZ(ARM1, 0.003)
+		ENDIF
+		IF (!ARM2DEAD)
+			ReturnToStartTransform(ARM2)
+	
+ 			CrntRotToIdleRotX(ARM2, 0.003)
+ 			CrntRotToIdleRotZ(ARM2, 0.003)
+  		ENDIF
+	ENDIF
+
+
+	TRIGFIN
+ENDSTATE
+
+
+   
+STATE StartMove
+
+		TRIGSET>Hit					EVERY 1
+		TRIGSET>GravControl			EVERY 1
+	   	TRIGSET>MoveHead			EVERY 1
+	  	TRIGSET>FireCheck			EVERY 40 
+	   //	TRIGSET>CollStrat			EVERY 1
+	TRIGSTOP
+ENDSTATE
+
+LOCALINT timer
+
+LOCALFLOAT LASTX
+LOCALFLOAT LASTY
+LOCALINT SAVETARGET
+LOCALINT MainTarget
+
+
+
+
+LOCALINT Moving
+LOCALINT thisFrame
+
+TRIGGER GravControl
+    //ensure that this trigger can never be paused	
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+
+	SetGlobalParamInt(0,1)
+	KillMyVelocity()
+	ClearGlobalParams()
+
+	thisFrame = MyAnimFrame
+	IF ((thisFrame = 5) OR (thisFrame = 74))
+		PLAYSOUND>WALKER_PRESTEPR 0 1.0 0.0 0.0 0.0 0
+	ENDIF
+	IF ((thisFrame = 24) OR (thisFrame = 60))
+		PLAYSOUND>WALKER_PRESTEPL 0 1.0 0.0 0.0 0.0 0
+	ENDIF
+	IF ((thisFrame = 15) OR (thisFrame = 54))
+		PLAYSOUND>WALKER_STEPR 0 1.0 0.0 0.0 0.0 0
+	ENDIF
+	IF ((thisFrame = 34) OR (thisFrame = 70))
+		PLAYSOUND>WALKER_STEPL 0 1.0 0.0 0.0 0.0 0
+	ENDIF	
+
+	MyFlag2 = MyFlag2 & LNOT(STOPPED)
+
+
+
+	IF (MODE != DIE)
+		CalculateStratPolyData(0)
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+
+LOCALFLOAT distNow
+
+
+
+
+LOCALINT Counter
+LOCALINT OutsideMap
+
+LOCALINT NEAR
+LOCALINT endreached
+
+LOCALFLOAT dist
+
+LOCALFLOAT Savex
+LOCALFLOAT Savey
+
+
+LOCALFLOAT movement
+
+
+STATE Walk
+	Moving = 1
+   	MODELANIM>ENEMIES\WALKER.RDO>Walk>REPEAT
+	MODE = WALK
+	CheckX = DogX
+	CheckY = DogY
+
+   	TowardWay(0.05,0.05)
+
+	movement = AnimMoveOffset(WALKERWALK)
+
+   	MoveY(movement)
+  	IF (NearPlayerXY(20.0))
+		STAT>Stop
+	ENDIF
+ENDSTATE
+
+
+LOCALINT antime
+STATE Stop
+	//KillMyVelocity()
+	Moving = 0
+
+	antime = 0
+	MODE = STOP
+	WHILE (NearPlayerXY(25.0))
+		Moving = 0
+		IF (!SeePlayerZ(0.2))
+			TowardPlayer(0.1,0.0)
+		   	MODELANIM>ENEMIES\WALKER.RDO>Walk>REPEAT
+			antime = FIREDELAY
+	   	ELSE
+		   	IF (!antime)
+		   		MODELANIM>ENEMIES\WALKER.RDO>Stop>REPEAT
+		   	ENDIF
+	   	ENDIF
+
+		antime = antime - 1
+	ENDWHILE
+	Moving = 1
+
+
+	STAT>Walk
+ENDSTATE
+
+
+LOCALFLOAT OLDBODYHEALTH
+LOCALINT DamageHitBody
+LOCALFLOAT SPECAMOUNT
+
+TRIGGER DamageBody
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+	SPECAMOUNT = 1.0 / 10
+	LOOP (10)
+		SetSpecularColour(BODY, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		SPECAMOUNT = SPECAMOUNT + 1.0 / 10.0
+		ObjectSpecularFlash(BODY,1)
+	ENDLOOP
+	ObjectSpecularFlash(BODY,0)
+	DamageHitBody = 0
+	TRIGSTOP
+ENDTRIGGER
+
+LOCALINT ARM1Lightning
+LOCALINT ARM1WaitFrame
+LOCALINT ARM1FireState	   
+
+TRIGGER BlowLeft
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+	MyVar = 2.0
+	HideObject(ARM1)
+	InActivateObjectCollision(ARM1)
+	HideObject(GUN1)
+	InActivateObjectCollision(GUN1)
+	ObjectNotTargetable(ARM1)
+	ObjectNotTargetable(GUN1)
+
+
+
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, ARM1
+	ARM1FireState = 2
+  	ARM1WaitFrame = WAITCOUNT
+
+	PLAYSOUND>WALKER_ELEC 5 0.9 0.0 0.0 0.0 CONTINUOUS
+  	WHILE ((ARM1WaitFrame) AND (ARM1FireState))
+		IF (ARM1FireState = 2)
+			MyVar = 2.0
+		ELSE
+			MyVar = 0.0
+		ENDIF
+	    SetGlobalParamInt(0,ARM1)
+		SetGlobalParamFloat(0,0)
+		SetGlobalParamFloat(1,0)
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, ARM1
+	  	IF (ARM1FireState = 2)
+	  		MyVar = 3.0
+	  	ELSE
+	  		MyVar = 1.0
+	  	ENDIF
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, ARM1
+		ClearGlobalParams()
+		ARM1Lightning = DrawLightning (ARM1, 0, 0, 0, ARM1Lightning,3)
+
+	  	ARM1WaitFrame = ARM1WaitFrame - 1 
+	  	IF ((!(ARM1WaitFrame)) AND (ARM1FireState))
+			ARM1WaitFrame = WAITCOUNT
+			ARM1FireState = ARM1FireState - 1
+		ENDIF
+				   
+  	ENDWHILE
+	StopSound(5,0)
+
+	TRIGSTOP
+ENDTRIGGER
+
+
+LOCALINT ARM1DEAD
+LOCALINT ARM2Lightning
+LOCALINT ARM2WaitFrame
+LOCALINT ARM2FireState
+
+TRIGGER BlowRight
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+	MyVar = 2.0
+	HideObject(ARM2)
+	InActivateObjectCollision(ARM2)
+	HideObject(GUN2)
+	InActivateObjectCollision(GUN2)
+		ObjectNotTargetable(ARM2)
+		ObjectNotTargetable(GUN2)
+
+
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, ARM2
+	ARM2FireState = 2
+  	ARM2WaitFrame = WAITCOUNT
+	PLAYSOUND>WALKER_ELEC 5 0.9 0.0 0.0 0.0 CONTINUOUS
+  	WHILE ((ARM2WaitFrame) AND (ARM2FireState))
+		IF (ARM2FireState = 2)
+			MyVar = 2.0
+		ELSE
+			MyVar = 0.0
+		ENDIF
+	    SetGlobalParamInt(0,ARM2)
+		SetGlobalParamFloat(0,0)
+		SetGlobalParamFloat(1,0)
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, ARM2
+	  	IF (ARM2FireState = 2)
+	  		MyVar = 3.0
+	  	ELSE
+	  		MyVar = 1.0
+	  	ENDIF
+	  	CREATE SPAWN_ScapeSmoke 0, 0, 0, 0,0,0, ARM2
+		ClearGlobalParams()
+		ARM2Lightning = DrawLightning (ARM2, 0, 0, 0, ARM2Lightning,3)
+
+	  	ARM2WaitFrame = ARM2WaitFrame - 1 
+	  	IF ((!(ARM2WaitFrame)) AND (ARM2FireState))
+			ARM2WaitFrame = WAITCOUNT
+			ARM2FireState = ARM2FireState - 1
+		ENDIF
+				   
+  	ENDWHILE
+	StopSound(5,0)
+
+	TRIGSTOP
+ENDTRIGGER
+
+
+LOCALINT ARM2DEAD
+
+
+STATE Hit
+
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+	Moving = 0
+
+	IF ((ARM1DEAD AND ARM2DEAD) OR (ObjectHitStrat(BODY)))
+		IF ((ARM1DEAD AND ARM2DEAD) OR (GetObjectHealth(BODY) <=0) )
+			PauseTriggers(-1,REMEMBER)
+			TRIGRESET
+			TRIGSTOP
+			health = 0
+			STAT>Wait
+		ELSE
+			OLDBODYHEALTH = GetObjectHealth(BODY)
+			IF (!DamageHitBody)
+			//	OLDBODYHEALTH = GetObjectHealth(BODY)
+				DamageHitBody = 1
+			  	TRIGSET>DamageBody EVERY 1
+				ClearObjCollFlag(BODY,HITSTRAT)
+		  	ENDIF	 
+			SetObjectHealth(BODY,OLDBODYHEALTH)
+			PLAYSOUND>ENEMY_HIT4 3 1.0 0.0 0.0 0.0 0
+		ENDIF
+	ENDIF
+
+	IF (!ARM1DEAD)
+		IF (ObjectHitStrat(ARM1))
+			IF (GetObjectHealth(ARM1) <=0)
+				ARM1DEAD = 1
+				TRIGSET>BlowLeft EVERY 1
+			ENDIF
+				ClearObjCollFlag(ARM1,HITSTRAT)
+		ELSE
+		IF (ObjectHitStrat(GUN1))
+			IF (GetObjectHealth(GUN1) <=0)
+				ARM1DEAD = 1
+				TRIGSET>BlowLeft EVERY 1
+			ENDIF
+				ClearObjCollFlag(GUN1,HITSTRAT)
+		ENDIF
+		ENDIF
+	ENDIF
+
+	IF (!ARM2DEAD)
+		IF (ObjectHitStrat(ARM2))
+			IF (GetObjectHealth(ARM2) <=0)
+				ARM2DEAD = 1
+				TRIGSET>BlowRight EVERY 1
+			ENDIF
+				ClearObjCollFlag(ARM2,HITSTRAT)
+		ELSE
+	   	IF (ObjectHitStrat(GUN2))
+			IF (GetObjectHealth(GUN2) <=0)
+				ARM2DEAD = 1
+				TRIGSET>BlowRight EVERY 1
+			ENDIF
+				ClearObjCollFlag(GUN2,HITSTRAT)
+		ENDIF
+		ENDIF
+	ENDIF
+
+
+	Moving = 1
+
+	TRIGFIN
+ENDSTATE
+
+STATE Wait
+  	MODE = DIE
+	IF (dead = 0)
+		dead = 1
+		MyFlag2 = MyFlag2 | TRANSLUCENT
+	//	FreeHDBlock()
+		IF (ARM1DEAD)
+			SetGlobalParamInt(0,1)
+		ENDIF
+		IF (ARM2DEAD)
+			SetGlobalParamInt(1,1)
+		ENDIF
+
+
+		StopSound(1,0.0)
+		StopSound(5,0.0)
+		CREATE SPAWN_DEATH_Walker 0, 0, 0, 0, 0, 0, 0
+		IF (IsChallengeLevel())
+			Score = Score - 1
+		ELSE
+			Score = Score + 5000
+		ENDIF
+		ClearGlobalParams()
+		ClearLastStratCollision()
+		MyFlag = MyFlag | NODISP
+		MyFlag = MyFlag & LNOT(FLOORCOLL | STRATCOLL)
+		PauseTriggers(-1, FORGET)
+		Delete()
+	ENDIF
+ENDSTATE
+
+STATE Defend
+
+	SetPlayerToTarget(TARGETVALID)
+	lastdist = PlayerDistXY()
+
+	endreached = 0
+   	IF (!NearPlayerXY(15.0))
+   	  	STAT>Attack
+   	ELSE
+
+   		STAT>GetOut
+   	ENDIF
+	SetPlayerBack()
+
+ENDSTATE
+
+
+STATE GetOut
+
+	SetPlayerToTarget(TARGETVALID)
+	WHILE ((!endreached))
+	
+		   	MODELANIM>ENEMIES\WALKER.RDO>BackWalk>REPEAT
+		SetPlayerToTarget(TARGETVALID)
+		endreached = GetFurthestWay(0)
+		
+		IF (!NearPlayerXY(35.0))
+   			endreached = 1
+   		ENDIF
+
+	 	IF (!NearCheckPosXY(0.0))
+		  //	IF (AwaySeeWayZ(0.5))
+				movement = AnimMoveOffset(WALKERBACKWALK)
+
+   				MoveY(movement)
+		  //	ENDIF
+			AwayWayZ(0.10)
+		ENDIF
+
+		SetPlayerBack()
+
+
+	 ENDWHILE
+	 SetPlayerBack()
+	 STAT>DefendWait
+ENDSTATE
+
+
+LOCALFLOAT distnow
+
+STATE DefendWait
+	SetPlayerToTarget(TARGETVALID)
+	lastdist = PlayerDistXY()
+	distnow = lastdist
+
+	MODELANIM>ENEMIES\WALKER.RDO>Stop>REPEAT
+	WHILE ((distnow < lastdist + 1.0) AND (distnow > lastdist - 1.0))
+		SetPlayerToTarget(TARGETVALID)
+		distnow = PlayerDistXY()
+   		SetPlayerBack()
+	ENDWHILE
+
+   	SetPlayerBack()
+	STAT>Defend
+
+ENDSTATE
+
+
+STATE Attack
+	SetPlayerToTarget(TARGETVALID)
+	IF (NearPlayer (30.0) OR endreached)
+		STAT>DefendWait
+	ENDIF
+
+	endreached = GetNearestWaySpline(0.0)
+
+	MODELANIM>ENEMIES\WALKER.RDO>Walk>REPEAT
+   	IF (!endreached)
+   		//IF (SeeWayZ(0.5))
+			movement = AnimMoveOffset(WALKERWALK)
+			MoveY(movement)
+   		//ENDIF
+   		TowardWay (0.05,0.05)
+   	ENDIF
+   	SetPlayerBack()
+
+ENDSTATE
+
+
+LOCALFLOAT lastdist
+
+//*** NETWORK CODE ***
+
+LOCALINT inrange
+STATE StopGoCheck
+	IF (inrange)
+		RelTurnTowardPlayerXY(0.05)
+		IF (CHALLENGE)
+	   	IF (!NearPlayerXY(20.0))
+			inrange = 0
+		ENDIF
+
+		ELSE
+	   	IF (!NearPlayerXY(30.0))
+			inrange = 0
+		ENDIF
+		ENDIF
+	ELSE
+		IF (CHALLENGE)
+		IF (NearPlayerXY(10.0))
+			inrange = 1
+			MODELANIM>ENEMIES\WALKER.RDO>Stop>REPEAT
+		ENDIF
+
+		ELSE
+		IF (NearPlayerXY(20.0))
+			inrange = 1
+			MODELANIM>ENEMIES\WALKER.RDO>Stop>REPEAT
+		ENDIF
+		ENDIF
+	ENDIF
+
+	TRIGFIN
+
+ENDSTATE
+
+
+LOCALINT LEAVEPATROL
+
+STATE StartNetwork
+	IF (inrange)
+		LEAVEPATROL = 1
+	ENDIF
+	IF (NearCheckPosXY(0.0))
+		//if last hit or left patrol
+		IF (LastWay() OR (LEAVEPATROL))	
+			LeaveFixedPath()
+			endreached  = 0 
+			STAT> Network
+		ELSE
+			GetNextWay()
+		ENDIF
+	ENDIF
+	MODELANIM>ENEMIES\WALKER.RDO>Walk>REPEAT
+   	IF (SeeWayZ(0.05))
+		movement = AnimMoveOffset(WALKERWALK)
+		MoveY(movement)
+	ELSE
+		TowardWay (0.05,0.05)
+   	ENDIF
+ENDSTATE
+
+
+STATE Network
+	endreached = GetNearestWay(0.0)
+	STAT>NetworkMain
+ENDSTATE
+
+LOCALFLOAT SIGHTANG
+
+
+STATE NetworkMain
+  	IF (!inrange) 
+
+	  	IF (NearCheckPosXY(0.0))
+			endreached = GetNearestWay(0.0)
+		
+	   	ELSE
+			IF (!endreached)
+				//MODELANIM>ENEMIES\WALKER.RDO>Walk>REPEAT
+			   	IF (SeeWayZ(SIGHTANG))
+					MODELANIM>ENEMIES\WALKER.RDO>Walk>REPEAT
+					movement = AnimMoveOffset(WALKERWALK)
+					MoveY(movement)
+					TowardWay(TWOPI,TWOPI)
+				ELSE
+					MODELANIM>ENEMIES\WALKER.RDO>Stop>REPEAT
+					TowardWay (0.05,0.05)
+			   	ENDIF
+			ELSE
+				IF (!NearCheckPosXY(0.0))
+
+			   //	MODELANIM>ENEMIES\WALKER.RDO>Walk>REPEAT
+			   	IF (SeeWayZ(SIGHTANG))
+					MODELANIM>ENEMIES\WALKER.RDO>Walk>REPEAT
+					movement = AnimMoveOffset(WALKERWALK)
+					MoveY(movement)
+					TowardWay(TWOPI,TWOPI)
+				ELSE
+					MODELANIM>ENEMIES\WALKER.RDO>Stop>REPEAT
+					TowardWay (0.05,0.05)
+			   	ENDIF
+			ENDIF
+								   
+			ENDIF				 
+	  	ENDIF
+	ENDIF
+ENDSTATE
+
+
+

@@ -1,0 +1,49 @@
+// Missile exhaust strat
+
+LOCALFLOAT temp
+
+STATE Init
+	MyFlag = MyFlag | SPRITE | NOTEXPLODE
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+	trans = RandRange (0.2, 0.6)
+
+	SetFriction(0.03,0.03,0.03)
+	
+	scalex = 0.2
+	scaley = 0.2
+
+	OBJECT> SFX\MissileTrail
+	ANIM> MissileTrail>Smoke
+	TRIGSET>KillOff WHENANIMOVER
+
+	MoveZ (0.002)
+	temp = RandRange(-0.33, -0.28) * 0.1
+	MoveY (temp)
+	temp = RandRange(-0.015, 0.015) * 0.5
+	MoveX (temp)
+
+	x = x + RandRange(-0.1, 0.1)
+	y = y + RandRange(-0.1, 0.1)
+
+	temp = RandRange(0, TWOPI)
+	RotateObjectXYZ(0, 0,0, temp)
+
+	STAT>Wait
+ENDSTATE
+
+STATE Wait
+	MoveZ (0.002)
+	x = x + windX * 0.02 + parentabsspeedx * 0.4
+	y = y + windY * 0.02 + parentabsspeedy * 0.4
+	z = z + parentabsspeedz * 0.3
+	scalex = scalex + 0.03
+	scaley = scaley + 0.03
+	trans = trans - 0.015
+ENDSTATE
+
+STATE KillOff
+	Delete()
+ //	TRIGFIN
+ENDSTATE
+
+

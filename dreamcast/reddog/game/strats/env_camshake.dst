@@ -1,0 +1,61 @@
+PARAMINT	DelayFor 0
+PARAMINT	Duration 60
+PARAMINT	type	 0
+
+PARAMFLOAT	Strength 0.1
+
+STATE Init
+	IF (!(MyFlag2 & OWNIPARAMS))
+		DelayFor = 0
+		Duration = 30
+		type = 0
+	ENDIF
+
+	IF (!(MyFlag & OWNFPARAMS))
+		Strength = 0.1
+	ENDIF
+
+	WHILE (DelayFor > 0)
+		DelayFor = DelayFor - 1
+	ENDWHILE
+
+	IF (type = 0)
+		AllocStratSoundBlock(2)
+		PLAYSOUND>QUAKEL 0 0.9 0.0 0.0 0.0 (CONTINUOUS | PAN_HARDLEFT | RANDOM | NOPOSITION)
+		PLAYSOUND>QUAKER 1 0.9 0.0 0.0 0.0 (CONTINUOUS | PAN_HARDRIGHT | RANDOM | NOPOSITION)
+		STAT>Explode
+	ENDIF
+	Delete()
+ENDSTATE
+
+LOCALFLOAT	tempf
+LOCALFLOAT	tempf1
+LOCALFLOAT	tempf2
+LOCALFLOAT	tempf3
+LOCALINT i
+
+STATE Explode
+	i = 0
+	WHILE (i < Duration)
+		tempf = Strength - SmoothFromToSum(Strength, i, Duration)
+		CamX = CamX + RandRange(-tempf, tempf)
+		CamY = CamY + RandRange(-tempf, tempf)
+		CamZ = CamZ + RandRange(-tempf, tempf)
+
+		CamLookX = CamLookX + RandRange(-tempf, tempf)
+		CamLookY = CamLookY + RandRange(-tempf, tempf)
+		CamLookZ = CamLookZ + RandRange(-tempf, tempf)
+				
+		tempf = tempf * 0.1
+		tempf1 = RandRange(-tempf, tempf)
+		tempf2 = RandRange(-tempf, tempf)
+		tempf3 = RandRange(-tempf, tempf)
+
+		PlayerRelRotateXYZ(tempf1, tempf2, tempf3)
+
+		CamTilt = CamTilt + RandRange(-tempf, tempf)
+		CamTilt = CamTilt * 0.95
+		i = i + 1
+	ENDWHILE
+	Delete()
+ENDSTATE

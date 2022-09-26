@@ -1,0 +1,88 @@
+PARAMINT waterbomber 1
+PARAMINT bombfrequency 30
+PARAMINT bombDelay 45
+
+/* ENDPARAMS */
+
+LOCALINT bombTime
+DEFINE	SPEED 1.2
+
+STATE Init
+	IF (!(MyFlag2 & OWNIPARAMS))
+		waterbomber = 1
+		bombfrequency = 30
+		bombDelay = 60
+	ENDIF
+
+	MyFlag = MyFlag | STRATCOLL | LOWCOLL | ENEMY | TARGETABLE 
+	RegisterCollision()
+	TRIGSET>SpecularMadness EVERY 1
+   	RotationRestriction (1,1,1)
+	InitPath()
+	InitSplineData()
+	health = 100
+	WHILE (!PlayerNearActivationXY(0))
+		MyFlag = MyFlag
+	ENDWHILE
+	SetObjectShadowState(1)
+
+//	bombTime = RandRange(0, 30)
+	bombTime = 30
+	STAT>Start
+ENDSTATE
+
+LOCALFLOAT SPECAMOUNT
+
+TRIGGER SpecularMadness
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+	IF ((MyFlag & HITSTRAT) AND (CollWithFlag & BULLETTYPE))
+		SPECAMOUNT = 1.0
+	ENDIF
+	IF (SPECAMOUNT > 0)
+  		MyFlag2 = MyFlag2 | SPECULAR
+		SetSpecularColour(0, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		SPECAMOUNT = SPECAMOUNT - 0.1
+	ELSE
+		SPECAMOUNT = 0
+ 		MyFlag2 = MyFlag2 & LNOT(SPECULAR)
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+STATE Start
+	IF (health < 0)
+		STAT>Explode
+	ENDIF
+	MoveAlongPath(SPEED)
+	FaceAlongPath(1)
+	TiltAlongPath(1.0)
+	SplineRelFlatten(0.5)
+	IF (NearActivationXY(1))
+		bombTime = bombTime + 1
+
+
+		IF (bombTime > 30)
+			IF (waterbomber = 1)
+				SetGlobalParamInt(0, bombDelay)
+				CREATE SPAWN_BOMBER_WATER_BOMB 0.0, 0.0, 0.0, 0.0, 0, 0, 0
+				SetGlobalParamInt(0, 0)
+			ELSE
+				CREATE SPAWN_BOMBER_BOMB 0.0, 0.0, 0.0, 0.0, 0, 0, 0
+			ENDIF
+			bombTime = 0
+		ENDIF
+	ENDIF
+	IF (LastSplineSection())
+		IF (distToLastWay() < 10)
+			Delete()
+		ENDIF
+	ENDIF
+ENDSTATE
+
+STATE Explode
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+//	adrelanin = adrelanin + 0.2
+	Score = Score + 300
+	Delete()
+ //	TRIGSTOP
+ENDSTATE

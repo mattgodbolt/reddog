@@ -1,0 +1,90 @@
+//
+// Scorpion boss intro sounds - the music fade is handled by a seperate trigger
+//
+
+LOCALINT SOUND1
+LOCALINT SOUND2
+LOCALINT SOUND3
+LOCALFLOAT MUSVOL
+LOCALFLOAT temp
+
+//TRIGGER MUSFADE
+//	temp = MUSVOL
+//	WHILE (temp > (MUSVOL / 3.0))
+//		MusicFade(temp)
+//		temp = temp * 0.6
+//	ENDWHILE
+//  	TRIGSTOP
+//ENDTRIGGER
+
+STATE Init 	
+	//NEEDS SAME ACTIVATION AS THE SCORPION INTRO
+   	IF (HasActivation(0))
+		WHILE (!(PlayerNearActivationXY(0)))
+			MyFlag = MyFlag
+		ENDWHILE  
+   	ENDIF
+	
+	
+//	IF (sfxGetCDVolume() > 0.3)
+//		MUSVOL = sfxGetCDVolume()
+//		TRIGSET>MUSFADE EVERY 1
+//	ENDIF
+
+   //set the appropriate game map field
+   //SO WE CAN HANDLE THIS ONLY RUNNING ONCE PER SESSION
+	UpdateGameMapEntry()
+  	//TRIGSET>CleanUp WHENDELETED
+  	MyFlag = MyFlag | RUNONCE 
+	
+	//kill all existing sounds
+	StopSound(-1,-1)
+	AllocStratSoundBlock(3)
+	SetAudibleRange(0, 800, 1000)
+	SetAudibleRange(1, 800, 1000)
+	SetAudibleRange(2, 800, 1000)
+
+
+
+	SOUND1 = 168
+	SOUND2 = 190
+	SOUND3 = 250
+
+	IF (PAL)
+		SOUND1 = SOUND1 / 1.2
+		SOUND2 = SOUND2 / 1.2
+		SOUND3 = SOUND3 / 1.2
+	ENDIF
+
+   	frame = 0
+	WHILE (frame < SOUND1)
+		frame = frame + 1.0
+	ENDWHILE
+
+	PLAYSOUND>VLBOSSREL 0 1.0  0.0 0.0 0.0  NOPOSITION 
+   
+	WHILE (frame < SOUND2)
+		frame = frame + 1.0
+	ENDWHILE
+	PLAYSOUND>VLSTOMP 1 1.0  0.0 0.0 0.0  NOPOSITION 
+
+	
+	WHILE (frame < SOUND3)
+		frame = frame + 1.0
+	ENDWHILE
+	PLAYSOUND>VLBOSSSTART 2 1.0  0.0 0.0 0.0  NOPOSITION 
+	
+	LOOP (100)
+		MyFlag = MyFlag
+	ENDLOOP
+
+	// get the looping sounds (reddog engines) started again...
+	StopSound(-2,-1)
+
+//   	MusicFade(MUSVOL)
+	Delete()
+
+
+ENDSTATE
+
+

@@ -1,0 +1,202 @@
+LOCALFLOAT randFireX
+LOCALFLOAT randFireZ
+LOCALINT innerBand
+LOCALINT outerBand
+
+TRIGGER CleanUp
+	DeleteBand (innerBand)
+	DeleteBand (outerBand)
+
+ENDTRIGGER
+
+STATE Init
+
+	MakeMeTheLast()
+	MyFlag = MyFlag  | STRATCOLL | DELETECALLBACK | ENEMY | NOTEXPLODE | BULLETTYPE | LOWCOLL | FLOORCOLL
+	MyFlag2 = MyFlag2 | TRANSLUCENT	| BULLET_CF
+ 	SetFriction(0.0,0.0,0.0)
+	damage = 15.0
+	OBJECT> WEAPON\FOOTLASER
+	RegisterCollision()
+	AllocStratSoundBlock(2)
+	TRIGSET>HitStrat	WHENHIT
+	TRIGSET>KillOff	ONFLOOR
+	TRIGSET>KillOff	EVERY 100
+	TRIGSET>CleanUp WHENDELETED
+	trans = 0.2
+  
+	// Hide object, and use the trails instead
+  //	MyFlag = MyFlag | NODISP
+
+	col = RandRange (0.1,0.7)
+   	innerBand = CreateBand (1, 2, 1, 1, col, 0, 0, 0.4, 1, 1, 1)
+   	outerBand = CreateBand (1, 2, 1, 1, 1, 1, 1, 0.4, col, 0, 0)
+  	TRIGSET>BandTrigger EVERY 1
+
+	MyTarget = MyParentTarget
+	IF (MyTarget)
+		CheckX = TargetX
+		CheckY = TargetY
+		CheckZ = TargetZ
+	   	PointToTarget()
+   		TRIGSET>KillOff WHENTARGETDEAD
+   	ELSE
+		//IF THE PLAYER IS ON THE TRAIN TARGET A POINT AHEAD OF HIM
+		//BY SPEED
+
+		IF (PlayerState = PS_ONTRAIN)
+		  	SetCheckPosRelOffsetPlayerObject(0,0.0,PlayerVelY + 25.0,0.0)
+		
+			PointToTarget()
+		ELSE
+			PointPlayer ()
+		ENDIF
+	ENDIF
+  	MoveY(0.1)
+
+	PLAYSOUND>SOLDIER_GUN 0 1.0  0.0 0.0 0.0  0
+
+	STAT>SetPos
+ENDSTATE
+ 
+LOCALFLOAT col
+
+LOCALFLOAT offSx
+LOCALFLOAT offSy
+
+
+STATE BandTrigger
+	RubberBand (innerBand, 1, -1.6, 0, 0.1)
+	RubberBand (outerBand, 0, -1.6, 0, 0.5)
+	AddBandSegment (innerBand, 1, 0, 0, 0.1)
+	AddBandSegment (outerBand, 0, 0, 0, 0.5)
+	TRIGFIN
+ENDSTATE
+
+STATE SetPos
+
+		IF (MyTarget)
+   		 	PointToTarget()
+	   	ELSE
+	  	IF (PlayerState = PS_ONTRAIN)
+	  		offSx = 5.0 * RandRange(0.15,0.25)
+	  		offSy = 5.0 * RandRange(0.15,0.25)
+			SetCheckPosRelOffsetPlayerObject(0,offSx, offSy, 0)
+	  	  	PointToTarget()
+	   
+	   	ELSE
+			PointPlayer ()
+		ENDIF
+		ENDIF
+  	MoveY(3.0)
+	STAT>Move
+
+ENDSTATE
+
+STATE Move
+	IF (PlayerState = PS_ONTRAIN)
+			//SetCheckPosRelOffsetPlayerObject(0,0,-10,0)
+		  //	SetCheckPosRelOffsetPlayerObject(0,0.0,PlayerVelY + 25.0,0.0)
+		  //	x = CheckX
+		  //	y = CheckY
+		  //	z = CheckZ
+		 //   x = x + PlayerVelX
+		 //	y = y + PlayerVelY
+		 //	z = z + PlayerVelZ
+   	 	x = x + PlayerActVelX
+   	 	y = y + PlayerActVelY
+   	 	z = z + PlayerActVelZ
+
+		   //	PointToTarget()
+	   	   TowardPlayer(0.05,0.05)	
+		 //	PointPlayer()
+	ENDIF
+ENDSTATE
+
+LOCALINT set
+
+//ON DYING TRIGGER CHANGE THE MAIN RUN ADDRESS TO DEATH
+STATE KillOff
+	VelX = -VelX / 6.0
+	VelY = -VelY / 6.0
+	VelZ = -VelZ / 6.0	
+
+	//RandomPointTo()
+
+	set = rand()&3
+	LOOP (20)
+		IF (set = 0)
+			SetBandColour (innerBand, 1, col, col, 0, 0, 1, 1, 1)
+			SetBandColour (outerBand, 1, 1, 1, 1, 0, col, col, 0)
+		ENDIF
+		IF (set = 1)
+			SetBandColour (innerBand, 1, col, 0, col, 0, 1, 1, 1)
+			SetBandColour (outerBand, 1, 1, 1, 1, 0, col, 0, col)
+		ENDIF
+		IF (set = 2)
+			SetBandColour (innerBand, 1, 0, col, col, 0, 1, 1, 1)
+			SetBandColour (outerBand, 1, 1, 1, 1, 0, 0, col, col)
+		ENDIF
+	  
+	  
+	  
+	  	col = col + 0.2
+		Yaw(TWOPI/2.0)
+
+	ENDLOOP
+
+
+	PauseTriggers(-1,FORGET)
+	MyFlag = MyFlag | NODISP  
+	MyFlag = MyFlag & LNOT(STRATCOLL)
+//	DeleteBand (innerBand)
+//	DeleteBand (outerBand)
+	Delete()
+ENDSTATE
+
+
+TRIGGER HitStrat
+	IF (CollWith = PlayerShieldStrat(0))
+		PLAYSOUND>DAMAGE3 1 1.0  0.0 0.0 0.0  RANDOM
+
+		MyFlag = MyFlag | FRIENDLY
+		BounceOffShield(0)
+		TRIGFIN
+	ELSE
+		VelX = -VelX / 6.0
+		VelY = -VelY / 6.0
+		VelZ = -VelZ / 6.0	
+
+		set = rand()&3
+		LOOP (20)
+			IF (set = 0)
+				SetBandColour (innerBand, 1, col, col, 0, 0, 1, 1, 1)
+				SetBandColour (outerBand, 1, 1, 1, 1, 0, col, col, 0)
+			ENDIF
+			IF (set = 1)
+				SetBandColour (innerBand, 1, col, 0, col, 0, 1, 1, 1)
+				SetBandColour (outerBand, 1, 1, 1, 1, 0, col, 0, col)
+			ENDIF
+			IF (set = 2)
+				SetBandColour (innerBand, 1, 0, col, col, 0, 1, 1, 1)
+				SetBandColour (outerBand, 1, 1, 1, 1, 0, 0, col, col)
+			ENDIF
+		  
+		  
+		  
+	  		col = col + 0.2
+			Yaw(TWOPI/2.0)
+
+		ENDLOOP
+
+		PauseTriggers(-1,FORGET)
+		MyFlag = MyFlag | NODISP  
+		MyFlag = MyFlag & LNOT(STRATCOLL)
+//		DeleteBand (innerBand)
+//		DeleteBand (outerBand)
+		Delete()
+//		TRIGSTOP
+	ENDIF
+ENDTRIGGER
+
+

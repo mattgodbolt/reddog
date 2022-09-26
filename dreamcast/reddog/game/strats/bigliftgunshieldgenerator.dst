@@ -1,0 +1,33 @@
+LOCALFLOAT	ox
+LOCALFLOAT	oy
+LOCALFLOAT	oz
+
+STATE Init
+	MyFlag = MyFlag | ENEMY | STRATCOLL | LOWCOLL | TARGETABLE
+	MyFlag2 = MyFlag2 | COLLMOVE
+	RegisterCollision()
+	health = 100.0
+	ox = x
+	oy = y
+	oz = z
+
+	IF (MyParent)
+		WHILE (MyParentInvalid())
+			MyParent = MyParent
+		ENDWHILE
+	ENDIF
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	x = ox
+	y = oy
+	z = oz
+	IF (health <= 0.0)
+		ParentVar = ParentVar - 1.0
+		CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+		Delete()
+	ELSE
+		DrawShock(x, y, z, parentx, parenty, parentz, 1.0, 5.0, 3.0)
+	ENDIF
+ENDSTATE

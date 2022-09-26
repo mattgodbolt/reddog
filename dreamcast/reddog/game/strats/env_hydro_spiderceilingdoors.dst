@@ -1,0 +1,50 @@
+// Spider room door (ceiling version)
+// Closes when player passes through its activation circle
+
+LOCALFLOAT closedLeft
+LOCALFLOAT closedRight
+LOCALFLOAT temp
+
+DEFINE OpenAmount 6.1
+
+STATE Init
+	// Set up object
+	OBJECT>Scenery\Doors\ENV_SpiderCeilingDoors
+
+	// Read positions
+	closedLeft = GetObjectCrntPos(1,MODEX)
+	closedRight = GetObjectCrntPos(2,MODEX)
+	
+	// Open the doors
+	SetObjectCrntPos(1,closedLeft - OpenAmount, MODEX)
+	SetObjectCrntPos(2,closedRight + OpenAmount, MODEX)
+
+	// Wait for activation
+	WHILE (!PlayerNearActivationXY(0))
+		MyFlag = MyFlag
+	ENDWHILE
+
+	STAT>Close
+ENDSTATE
+
+// Close the doors
+STATE Close
+	temp = GetObjectCrntPos (1, MODEX)
+	temp = temp + (((closedLeft + 1) - temp) * 0.1)
+	IF (temp > closedLeft)
+		temp = closedLeft
+	ENDIF
+	SetObjectCrntPos(1, temp, MODEX)
+	temp = GetObjectCrntPos (2, MODEX)
+	temp = temp + (((closedRight - 1) - temp) * 0.1)
+	IF (temp < closedRight)
+		temp = closedRight
+	ENDIF
+	SetObjectCrntPos(2, temp, MODEX)
+	IF (temp = closedRight)
+		STAT>End
+	ENDIF
+ENDSTATE
+
+STATE End
+ENDSTATE

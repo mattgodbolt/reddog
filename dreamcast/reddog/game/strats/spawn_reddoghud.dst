@@ -1,0 +1,24 @@
+STATE Init
+	MyFlag = MyFlag 
+	MakeMeTheLast()
+	IAmRedDogHud
+	OBJECT>REDDOG\REDDOGHUD
+	STAT>Start
+ENDSTATE
+
+
+STATE Start
+
+	//STICK TO PLAYER IF IN 1ST PERSON, AND THE PLAYER IS STILL ALIVE
+	IF (PlayerFlag)
+		IF (CameraState = FIRST_PERSON)
+			MyFlag = MyFlag & LNOT(NODISP)
+			//StickToParent(0, 0, 0, 0, 1)
+			SetOnCamera(0, -3.5, 0.5, 0, 0, 0)
+		ELSE
+			MyFlag = MyFlag | NODISP
+		ENDIF
+	ELSE
+		Delete()
+	ENDIF
+ENDSTATE

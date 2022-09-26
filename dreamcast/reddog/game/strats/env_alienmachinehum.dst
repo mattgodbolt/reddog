@@ -1,0 +1,87 @@
+PARAMINT MAINGEN 0
+PARAMINT PINKPULSE 0
+
+STATE Init
+	IF (!MyParent)
+		STAT>Die
+	ENDIF
+
+	WHILE (MyParentInvalid())
+		MyFlag = MyFlag
+	ENDWHILE
+
+		AllocStratSoundBlock(2)
+		SetAudibleRange(1,0,100.0)
+	IF (MAINGEN)
+  //		AllocStratSoundBlock(2)
+   //		SetAudibleRange(1,0,100.0)
+		TRIGSET>BLINK EVERY 18
+	//ELSE
+	//	AllocStratSoundBlock(1)
+	ENDIF
+
+	IF (PINKPULSE)
+		TRIGSET>PINK EVERY 27
+
+
+	ENDIF
+
+
+
+
+
+
+	SetAudibleRange(0,0,350.0)
+	CheckX = 1.0
+    SetPitch(0,CheckX)
+	IF (MAINGEN)
+		PLAYSOUND>generator_red 0 1.0 0.0 0.0 0.0 CONTINUOUS | NODIRECTION
+
+	ELSE
+		PLAYSOUND>al_machine_hum 0 1.0 0.0 0.0 0.0 CONTINUOUS | NODIRECTION
+	ENDIF
+	WHILE (MyParentFlag)
+		PointToXY(DogX,DogY,DogZ)
+	 	MyFlag = MyFlag
+	ENDWHILE
+
+   //	CheckX = 0.5
+
+	//KILL OFF THE BLEEPS BEFORE WE FADE DOWN
+    IF (MAINGEN)
+		TRIGKILL>BLINK EVERY 18
+  	ENDIF
+
+    IF (PINKPULSE)
+		TRIGKILL>PINK EVERY 27
+  	ENDIF
+
+
+
+
+	WHILE (CheckX > 0.1)
+		SetPitch(0,CheckX)
+		CheckX = CheckX * 0.98
+	ENDWHILE
+
+	Delete()
+
+ENDSTATE
+
+TRIGGER BLINK
+   PLAYSOUND>AL_MACHINE_LIGHT 1 1.0 0.0 0.0 0.0 0 | NODIRECTION
+
+	TRIGFIN
+ENDTRIGGER
+
+TRIGGER PINK
+   PLAYSOUND>RED_GEN_PULSE 1 1.0 0.0 0.0 0.0 0 | NODIRECTION
+
+	TRIGFIN
+ENDTRIGGER
+
+
+
+STATE Die
+	Delete()
+ENDSTATE

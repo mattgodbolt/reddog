@@ -1,0 +1,636 @@
+PARAMFLOAT NearRange 40.0
+LOCALFLOAT FireChance
+LOCALINT	isGenerated
+
+DEFINE GUNARM 5
+DEFINE HEAD 1
+DEFINE FEET	 10
+DEFINE RUNSPEED	0.028
+DEFINE STOP 0
+DEFINE WALK 1
+DEFINE RUN  2
+DEFINE DIE  3 
+
+DEFINE CLOSERANGEFIRE 1
+
+LOCALINT FIRED
+LOcALINT TARGETVALID
+LOCALINT STATUS
+LOCALINT MODE
+
+STATE Init 
+	//set up the near range if not uniquely specified
+	IF (GetGlobalParamFloat(3))
+		NearRange = GetGlobalParamFloat(3)
+	ELSE
+		IF (!(MyFlag & OWNFPARAMS))
+			NearRange = 40.0
+		ENDIF
+
+		//ENSURE THE NEAR RANGE IS A DECENT VALUE
+		IF (NearRange < 10.0)
+			NearRange = 10.0
+		ENDIF
+	ENDIF
+
+	STATUS = 0
+	SetFriction(1.0,0.1,0.0)
+	RotationRestriction(0.0, 0.0, 1.0)
+//	health = 40.0
+	FIRED = 0
+	isGenerated = 0
+   //	InitPath()
+   	MyFlag = MyFlag | IMPACT | STRATCOLL | ENEMY | LOWCOLL | HOVERMOVE | GRAVITYON | FLOORCOLL | TARGETABLE
+	MyFlag2 = MyFlag2 | COLLMOVE
+	OBJECT> ENEMIES\FOOTSOLDIER
+  
+  	//EL DODGO HACK FOR SOFT COLLISION
+	mass = 4001.0
+
+	RegisterCollision()
+	AllocStratSoundBlock(3)
+	SetAudibleRange(0,100,250)
+	SetAudibleRange(1,100,250)
+	SetAudibleRange(2,100,250)
+	RegisterDanger(50.0)
+	InActivateObjectCollision(HEAD)
+	InActivateObjectCollision(FEET)
+	MODELANIM>ENEMIES\FOOTSOLDIER.RDO>footSoldierWalk>REPEAT
+	MODE = WALK
+	TARGETVALID = 0
+	SetObjectShadowState(1)
+	
+	IF (GetGlobalParamFloat(0) = 1.0)
+		isGenerated = 1
+		InheritMyParent()
+	ELSE
+		isGenerated = 0
+		IF (MyParent)
+			WHILE (MyParentInvalid())
+				MyFlag = MyFlag
+			ENDWHILE
+			MyTarget = MyParent
+
+			TARGETVALID = 1
+		ENDIF
+	ENDIF
+
+	health = 40.0
+   	TRIGSET>KillCheck EVERY 1 
+  	TRIGSET>SoundTrigger EVERY 1 
+
+	IF (MyPath)
+		InitPath()
+	   	IF (HasActivation(0))
+			WHILE (!PlayerNearActivationXY(0))
+				health = 40.0
+			ENDWHILE
+		ENDIF
+		//to stop the instant death warez on activating
+		//health = 40.0
+		TRIGSET>SpecularMadness EVERY 1
+		STAT>Move
+	ELSE
+		//TRIGSET>SpecularMadness EVERY 1
+		STAT>DropToFloor
+	ENDIF
+ENDSTATE
+
+LOCALFLOAT SPECAMOUNT
+
+TRIGGER SpecularMadness
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+	IF ((MyFlag & HITSTRAT) AND (CollWithFlag & BULLETTYPE) AND (health > 0.0))
+		SPECAMOUNT = 1.0
+	ENDIF
+	IF (SPECAMOUNT > 0)
+  		MyFlag2 = MyFlag2 | SPECULAR
+		SetSpecularColour(0, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		SPECAMOUNT = SPECAMOUNT - 0.1
+	ELSE
+		SPECAMOUNT = 0
+ 		MyFlag2 = MyFlag2 & LNOT(SPECULAR)
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+
+STATE Move
+	SetPlayerToTarget(TARGETVALID)
+
+	IF( (!MyPath) OR ((!TARGETVALID) && NearPlayerXY(NearRange)))
+   		SetPlayerBack()
+		WHILE (!(MyFlag & HITFLOOR))
+			MyFlag = MyFlag
+		ENDWHILE
+
+   		MyFlag = MyFlag & LNOT(GRAVITYON)
+		MyFlag = MyFlag & LNOT(FLOORCOLL)
+		SetFriction(1.0,0.4,1.0)
+		MODELANIM>ENEMIES\FOOTSOLDIER.RDO>footSoldierStop>0
+		MODE = STOP
+		KillMyVelocity()
+	  	STAT>Wait
+	ENDIF
+   	SetPlayerBack()
+
+
+	IF (SeeWayZ(0.1))
+		IF(NearCheckPosXY(5.0))
+			IF (!(MyAnimFlag & TWEEN))
+  				MoveY(RUNSPEED/2.0)
+			ENDIF
+		   	IF (!(MyAnimFlag & RUNNING))
+				MODELANIM>ENEMIES\FOOTSOLDIER.RDO>footSoldierWalk>REPEAT
+				MODE = WALK
+		   	ENDIF
+		ELSE
+			IF (!(MyAnimFlag & TWEEN))
+				MoveY(RUNSPEED)
+			ENDIF
+		  	IF (!(MyAnimFlag & RUNNING))
+				MODELANIM>ENEMIES\FOOTSOLDIER.RDO>footSoldierRun>REPEAT
+				MODE = RUN
+		  	ENDIF
+		ENDIF
+	ENDIF
+
+	RelTurnTowardCheckPosXY(0.05)
+	IF(NearCheckPosXY(2.0))
+		IF(LastWay())
+			MyFlag = MyFlag & LNOT(GRAVITYON)
+			MyFlag = MyFlag & LNOT(FLOORCOLL)
+			SetFriction(1.0,0.4,1.0)
+		  	KillMyVelocity()
+			MODELANIM>ENEMIES\FOOTSOLDIER.RDO>footSoldierStop>0
+			MODE = STOP
+	//	 	SetPlayerBack()
+
+			STAT> Wait
+		ENDIF
+		GetNextWay()
+	ENDIF
+   //	SetPlayerBack()
+
+ENDSTATE
+
+STATE DropToFloor
+	
+	WHILE (!(MyFlag & HITFLOOR))
+		MyFlag = MyFlag
+	ENDWHILE
+	
+	SetFriction(1.0,0.4,1.0)
+	MyFlag = MyFlag & LNOT(GRAVITYON)
+	MyFlag = MyFlag & LNOT(FLOORCOLL)
+	KillMyVelocity()
+	MODELANIM>ENEMIES\FOOTSOLDIER.RDO>footSoldierStop>0
+	MODE = STOP
+	
+   	IF (HasActivation(0))
+   		WHILE (!PlayerNearActivationXY(0))
+   			health = 40.0
+   		ENDWHILE
+   	ENDIF
+	health = 40.0
+	TRIGSET>SpecularMadness EVERY 1
+   	//TRIGSET>KillCheck EVERY 1 
+
+
+	STAT> Wait
+ENDSTATE
+
+LOCALINT Seen
+STATE Wait
+	SetPlayerToTarget(TARGETVALID)
+
+  	RelTurnTowardPlayerXY(0.05)	
+	Seen = NearPlayer(NearRange + 40.0)
+	SetPlayerBack()
+
+
+	IF (Seen)
+		FireChance = RandRange (0, 100)
+
+		//FUNCTION OF DISTANCE TO PLAYER CLOSER MORE FIRING 
+
+		IF (FireChance < 3.0)
+				SetPlayerToTarget(TARGETVALID)
+
+			   	Seen = SeePlayerZ(0.05)
+			  	WHILE (!Seen)
+					SetPlayerToTarget(TARGETVALID)
+					TowardPlayer(0.1,0.0)
+					Seen = SeePlayerZ(0.05)
+					SetPlayerBack()
+				ENDWHILE
+			   
+			   
+				SetPlayerToTarget(TARGETVALID)
+			  	Seen = NearPlayer(NearRange - 10.0)
+			   	SetPlayerBack()
+				IF (!Seen)
+
+				  	IF (FIRED)
+						MODELANIM>ENEMIES\FOOTSOLDIER.RDO>FootExitFire>0
+						MODE = STOP
+					  	WHILE  (MyAnimFlag & RUNNING)
+							SetPlayerToTarget(TARGETVALID)
+							TowardPlayer(0.1,0.0)
+							SetPlayerBack()
+						ENDWHILE
+
+				   	ENDIF
+				
+				    STATUS = STATUS & LNOT(CLOSERANGEFIRE)
+				   	MODELANIM>ENEMIES\FOOTSOLDIER.RDO>FootSoldierShoot>0
+					MODE = STOP
+				
+				 //WE AWAIT THE TWEEN TO STOP
+					WHILE (MyAnimFlag & TWEEN)
+						SetPlayerToTarget(TARGETVALID)
+						TowardPlayer(0.1,0.0)
+						SetPlayerBack()
+				   	ENDWHILE
+
+
+		 			LOOP (16)
+						SetPlayerToTarget(TARGETVALID)
+						TowardPlayer(0.1,0.0)
+						SetPlayerBack()
+					ENDLOOP					
+
+					MyVar = 1.0
+					CREATE SPAWN_FOOTSOLDIERLASERPARENT 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, GUNARM
+					
+					WHILE  (MyAnimFlag & RUNNING)
+						MyFlag = MyFlag
+					ENDWHILE
+			   
+			   		
+			   
+					MODELANIM>ENEMIES\FOOTSOLDIER.RDO>FootSoldierStop>REPEAT
+					MODE = STOP
+			   
+
+					FIRED = 0
+				ELSE
+
+					STATUS = STATUS | CLOSERANGEFIRE
+					IF (!FIRED)
+		 				MODELANIM>ENEMIES\FOOTSOLDIER.RDO>FootEnterFire>0
+						MODE = STOP
+
+						WHILE (MyAnimFlag & RUNNING)
+							MyFlag = MyFlag
+						ENDWHILE
+						FIRED = 1
+					ENDIF
+
+
+					MODELANIM>ENEMIES\FOOTSOLDIER.RDO>FootFireMain>0
+					MODE = STOP
+				 //WE AWAIT THE TWEEN TO STOP
+					WHILE (MyAnimFlag & TWEEN)
+						SetPlayerToTarget(TARGETVALID)
+						TowardPlayer(0.1,0.0)
+						SetPlayerBack()
+			   		ENDWHILE
+
+
+		 			LOOP (16)
+						SetPlayerToTarget(TARGETVALID)
+						TowardPlayer(0.1,0.0)
+						SetPlayerBack()
+					ENDLOOP					
+
+					MyVar = 1.0
+					CREATE SPAWN_FOOTSOLDIERLASERPARENT 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, GUNARM
+
+					WHILE  (MyAnimFlag & RUNNING)
+						SetPlayerToTarget(TARGETVALID)
+						TowardPlayer(0.1,0.0)
+						SetPlayerBack()
+					ENDWHILE
+			   
+			   		
+			   
+				 	MODELANIM>ENEMIES\FOOTSOLDIER.RDO>FootMark>REPEAT
+					MODE = STOP
+			   
+
+				ENDIF
+			
+			
+			
+
+		ENDIF 
+	ENDIF
+//   	SetPlayerBack()
+
+ENDSTATE
+
+
+LOCALFLOAT deathvel
+LOCALINT DieForward
+
+   
+STATE KillCheck
+
+    //ensure that this trigger can never be paused	
+
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+
+	IF ((MyFlag & HITSTRAT) || (health <= 0.0))
+
+		//ONE HIT DEAL SO ENSURE THE HEALTH IS ZERO'D
+		health = 0.0
+
+		IF (MyFlag2 & PLAYERHIT)
+			PLAYSOUND>ENEMY_HIT3 1 1.0 0.0 0.0 0.0 RANDOM
+			MyFlag = MyFlag | FLOORCOLL
+			deathvel = FABS(PlayerRelVelY) * 1.2
+			//ENSURE CORRECT FRICTION
+			IF (SeePlayerZ(TWOPI/4.0) OR (deathvel < 0.5))
+				SetFriction(0.4,0.1,0.5)
+			 	MoveY(-deathvel)
+				MoveZ(0.5)
+	  		ELSE
+
+		  		SetFriction(0.0,0.0,0.0)
+				DieForward = 1
+				deathvel = deathvel
+				MoveY(0.2 + deathvel)
+			   	MoveZ(0.25)
+			ENDIF
+		ELSE
+			PLAYSOUND>ENEMY_HIT2 1 1.0 0.0 0.0 0.0 RANDOM
+			IF (MyFlag2 & BIGDAMAGE)
+				MyFlag = MyFlag | GRAVITYON	| FLOORCOLL
+				//ENSURE CORRECT FRICTION
+				SetFriction(1.0,0.4,1.0)
+		  		MoveY(0.5) 
+				MoveZ(0.5)
+			ENDIF
+		ENDIF
+
+		MyFlag = MyFlag & LNOT(STRATCOLL)
+
+		Score = Score + 500
+//		adrelanin = adrelanin + 0.2
+		TRIGRESET
+		TRIGSTOP
+		STAT>WaitForDeath
+	ELSE
+		TRIGFIN
+	ENDIF
+ENDSTATE
+
+LOCALINT time
+LOCALINT DEATHTIME
+LOCALINT ACTIVECOLL
+STATE WaitForDeath
+  //let new ones pop out of generator
+	IF (isGenerated = 1.0)
+		ParentParentVar = ParentParentVar + 1.0
+	ENDIF
+
+	//ensure soldiers dont try to avoid us
+	MyFlag = MyFlag | NOSTRAT2STRAT
+
+	IF (MyFlag2 & BIGDAMAGE)
+		MODELANIM>ENEMIES\FOOTSOLDIER.RDO>footSoldierHitBlast>NOTWEEN 
+		MODE = DIE
+		SetFriction(0.0,0.0,0.0)
+		InActivateObjectCollision(0)
+	   	ActivateObjectCollision(1)
+		time = 0
+		WHILE (!ObjectHitFloor(1) AND time < 200) 
+			time = time + 1
+		ENDWHILE
+		PLAYSOUND>SOLDIER_FALL 0 1.0 0.0 0.0 0.0 RANDOM
+		MakeFrags (1.2, 10)
+		speedz = - speedz/2.0
+	  	SetFriction(0.1,0.1,0.0)
+	ELSE
+		MODE = DIE
+	   	//AM I CROUCHING ?
+	   	IF (STATUS & CLOSERANGEFIRE)
+	   		MODELANIM>ENEMIES\FOOTSOLDIER.RDO>footMarkDie>NOTWEEN 
+	   	ELSE
+	   		//NOT CROUCHING SO CHECK SPIN DIRECTION 
+	   		IF ((MyFlag2 & HIT_LEFT) AND (MyFlag2 & HIT_RIGHT))
+	   			MODELANIM>ENEMIES\FOOTSOLDIER.RDO>footSoldierDie>NOTWEEN
+	   		ELSE
+	   			IF (MyFlag2 & HIT_LEFT)
+	   				MODELANIM>ENEMIES\FOOTSOLDIER.RDO>footSoldierHitLeft>NOTWEEN
+	   			ELSE
+	   				IF (MyFlag2 & HIT_RIGHT)
+	   					MODELANIM>ENEMIES\FOOTSOLDIER.RDO>footSoldierHitRight>NOTWEEN
+	   				ELSE
+	   					MODELANIM>ENEMIES\FOOTSOLDIER.RDO>footSoldierDie>NOTWEEN
+					ENDIF
+				ENDIF
+		  	ENDIF
+		ENDIF
+	ENDIF
+
+	IF (MyFlag2 & PLAYERHIT)
+		MODE = DIE
+	   	IF (DieForward)
+	   		MODELANIM>ENEMIES\FOOTSOLDIER.RDO>footSoldierHitBlast>NOTWEEN 
+	    ENDIF
+	   //	ELSE
+	   //	 	MODELANIM>ENEMIES\FOOTSOLDIER.RDO>footSoldierDie>NOTWEEN
+	   //	ENDIF
+	 
+	 	MyFlag = MyFlag | REALGRAVITYON
+	 	InActivateObjectCollision(0)
+	   
+		//IF WE'RE DYING IN A FORWARD MANNER, THE ACTIVE COLLISION SPOT IS THE FEET
+		//ELSE, THE ACTIVE COLLISION IS THE HEAD
+	  //	IF (DieForward)
+	  //		ACTIVECOLL = FEET
+	  //	ELSE
+			ACTIVECOLL = HEAD
+	  //	ENDIF
+			
+	   
+	   	ActivateObjectCollision(ACTIVECOLL)
+	 	time = 0
+		//WHILE WE'RE DYING AND NOT HITTING, CONTINUE
+		
+		IF (PAL)
+			IF (DieForward)
+				DEATHTIME = 28
+			ELSE
+				DEATHTIME = 14
+			ENDIF
+	   	ELSE
+			IF (DieForward)
+				DEATHTIME = 35
+			ELSE
+				DEATHTIME = 15
+			ENDIF
+		ENDIF
+		
+		WHILE ((time < DEATHTIME) AND (!ObjectHitFloor(ACTIVECOLL))) 
+	   		time = time + 1
+		ENDWHILE
+
+		PLAYSOUND>SOLDIER_FALL 0 1.0 0.0 0.0 0.0 RANDOM
+
+		MyAnimFlag = MyAnimFlag | PAUSED
+
+		WHILE (!ObjectHitFloor(ACTIVECOLL) AND time < 200)
+ 			IF (DieForward)
+				z = z - 0.3
+			ELSE
+				z = z - 0.2
+			ENDIF
+			time = time + 1
+		ENDWHILE
+
+		PLAYSOUND>SOLDIER_FALL 0 1.0 0.0 0.0 0.0 RANDOM
+
+		IF (DieForward)
+			SetFriction(0.1,0.1,0.0)
+		ENDIF
+
+		MyAnimFlag = MyAnimFlag & LNOT(PAUSED)
+
+		WHILE (MyAnimFlag & RUNNING)
+			MyFlag = MyFlag
+		ENDWHILE
+
+		MakeFrags (1.2, 10)
+		speedz = - speedz/2.0
+	  	SetFriction(0.1,0.1,0.0)
+	ELSE
+
+		MODE = DIE
+
+		WHILE (MyAnimFlag & RUNNING)
+			MyFlag = MyFlag
+		ENDWHILE
+
+	ENDIF
+   //	WHILE (MyAnimFlag & RUNNING)
+   //		MyFlag = MyFlag
+   //	ENDWHILE
+	//FADE OUT THE FUCKWIT
+ 	MyFlag2 = MyFlag2 | TRANSLUCENT
+	WHILE (trans > 0.02)
+		trans = trans - 0.02
+	ENDWHILE
+//	IF (isGenerated)
+//		ParentVar = ParentVar + 1.0
+//	ENDIF
+	Delete ()
+ENDSTATE
+
+LOCALINT endSound
+TRIGGER SoundTrigger
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+
+	IF (MODE <= DIE)
+		// Wait until the start of the animation
+		WHILE ((MyAnimFrame) OR (MyAnimFlag & TWEEN))
+			MyFlag = MyFlag
+		ENDWHILE
+	ENDIF
+
+	endSound = 0
+	
+	IF (PAL)
+		IF (MODE = WALK)
+			WHILE ((MODE = WALK) AND (MyAnimFrame < 5))
+				MyFlag = MyFlag
+			ENDWHILE
+			IF (MODE = WALK)
+				PLAYSOUND>SMLSTEP18 0 0.8 0.0 0.0 0.0 RANDOM
+			ENDIF
+			WHILE ((MODE = WALK) AND (MyAnimFrame < 20))
+				MyFlag = MyFlag
+			ENDWHILE
+			IF (MODE = WALK)
+				PLAYSOUND>SMLSTEP7 0 0.8 0.0 0.0 0.0 RANDOM
+			ENDIF
+		ENDIF
+
+		IF (MODE = RUN)
+			WHILE ((MODE = RUN) AND (MyAnimFrame < 6))
+				MyFlag = MyFlag
+			ENDWHILE
+			IF (MODE = RUN)
+				PLAYSOUND>SOLDIER_RUNL 0 0.8 0.0 0.0 0.0 RANDOM
+			ENDIF
+			WHILE ((MODE = RUN) AND (MyAnimFrame < 18))
+				MyFlag = MyFlag
+			ENDWHILE
+			IF (MODE = RUN)
+				PLAYSOUND>SOLDIER_RUNR 0 0.8 0.0 0.0 0.0 RANDOM
+			ENDIF
+		ENDIF
+				
+		IF (MODE = DIE)						
+			WHILE ((MODE = DIE) AND (MyAnimFrame < 12))
+				MyFlag = MyFlag
+			ENDWHILE
+			IF (MODE = DIE)
+				PLAYSOUND>SOLDIER_FALL 0 1.0 0.0 0.0 0.0 RANDOM	
+			ENDIF
+			endSound = 1
+		ENDIF
+	// else of IF (PAL)
+	ELSE
+		IF (MODE = WALK)
+			WHILE ((MODE = WALK) AND (MyAnimFrame < 6))
+				MyFlag = MyFlag
+			ENDWHILE
+			IF (MODE = WALK)
+				PLAYSOUND>SMLSTEP18 0 0.8 0.0 0.0 0.0 RANDOM
+			ENDIF
+			WHILE ((MODE = WALK) AND (MyAnimFrame < 24))
+				MyFlag = MyFlag
+			ENDWHILE
+			IF (MODE = WALK)
+				PLAYSOUND>SMLSTEP7 0 0.8 0.0 0.0 0.0 RANDOM
+			ENDIF
+		ENDIF
+
+		IF (MODE = RUN)
+			WHILE ((MODE = RUN) AND (MyAnimFrame < 8))
+				MyFlag = MyFlag
+			ENDWHILE
+			IF (MODE = RUN)
+				PLAYSOUND>SOLDIER_RUNL 0 0.8 0.0 0.0 0.0 RANDOM
+			ENDIF
+			WHILE ((MODE = RUN) AND (MyAnimFrame < 23))
+				MyFlag = MyFlag
+			ENDWHILE
+			IF (MODE = RUN)
+				PLAYSOUND>SOLDIER_RUNR 0 0.8 0.0 0.0 0.0 RANDOM
+			ENDIF
+		ENDIF
+				
+		IF (MODE = DIE)						
+			WHILE ((MODE = DIE) AND (MyAnimFrame < 15))
+				MyFlag = MyFlag
+			ENDWHILE
+			IF (MODE = DIE)
+				PLAYSOUND>SOLDIER_FALL 0 1.0 0.0 0.0 0.0 RANDOM	
+			ENDIF
+			endSound = 1
+		ENDIF
+
+	// end  of IF (PAL)
+	ENDIF
+
+	IF (endSound)
+		TRIGSTOP
+	ELSE
+		TRIGFIN
+	ENDIF
+ENDTRIGGER
+

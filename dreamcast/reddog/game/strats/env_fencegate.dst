@@ -1,0 +1,57 @@
+STATE Init
+	OBJECT> SCENERY\DOORS\ENV_FENCEGATE
+
+	MyFlag = MyFlag | STRATCOLL | ENEMY
+	RegisterCollision()
+	MyFlag2 = MyFlag2 | COLLMOVE
+	InitHDC()
+	CalculateStratPolyData(1)
+	AllocStratSoundBlock(1)
+
+	health = 30.0
+	STAT> Start
+ENDSTATE
+
+LOCALINT QUARTSEC
+LOCALINT INNER
+
+STATE Start
+	IF (PAL)
+		QUARTSEC = 7
+		INNER = 3
+	ELSE
+		QUARTSEC = 8
+		INNER = 4
+	ENDIF
+
+	IF ((MyFlag2 & PLAYERHIT) OR (health < 0.0))
+//		CREATE SPAWN_BLASTEXP 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0
+		STAT> Open
+	ENDIF
+ENDSTATE
+
+STATE Open
+	health = 0
+	Score = Score + 50
+	LOOP (QUARTSEC)
+		RotateObjectXYZ(1, 0.0, 0.0, -0.2)
+		RotateObjectXYZ(2, 0.0, 0.0, 0.2)
+		CalculateStratPolyData(1)
+	ENDLOOP
+	PLAYSOUND>GATE 0 0.9 0.0 0.0 0.0 0
+	LOOP (INNER)
+		RotateObjectXYZ(1, 0.0, 0.0, 0.1)
+		RotateObjectXYZ(2, 0.0, 0.0, -0.1)
+		CalculateStratPolyData(1)
+	ENDLOOP
+	LOOP (QUARTSEC)
+		RotateObjectXYZ(1, 0.0, 0.0, -0.05)
+		RotateObjectXYZ(2, 0.0, 0.0, 0.05)
+		CalculateStratPolyData(1)
+	ENDLOOP
+	STAT> End
+ENDSTATE
+
+STATE End
+
+ENDSTATE

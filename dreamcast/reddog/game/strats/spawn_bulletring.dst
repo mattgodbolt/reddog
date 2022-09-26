@@ -1,0 +1,58 @@
+LOCALINT i
+LOCALINT type
+LOCALFLOAT a
+LOCALFLOAT b
+LOCALFLOAT c
+LOCALFLOAT tempf
+
+STATE Init
+	MyFlag = MyFlag | ENEMY
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+	trans = 1.0
+	type = GetGlobalParamInt(0)
+	a = GetGlobalParamFloat(0)
+	b = GetGlobalParamFloat(1)
+	c = GetGlobalParamFloat(2)
+	
+	tempf = 1.0 / ((a * a) + (b * b) + (c * c))
+	a = a * tempf
+	b = b * tempf
+	c = c * tempf
+
+	x = x + a * 0.05
+	y = y + b * 0.05
+	z = z + c * 0.05
+	SetStratMatrixVector(a, b, c)
+	IF (type = 0)
+		OBJECT>Weapon\BulletRing
+	ENDIF
+	IF (type = 1)
+		OBJECT>Weapon\BulletRingBlue
+	ENDIF
+	IF (type = 2)
+		OBJECT>Weapon\LaserBurnRed
+
+		i = 0
+		LOOP (30)
+			i = i + 1
+			IF (i > 20)
+				trans = trans - 0.1
+			ENDIF
+		ENDLOOP
+	ELSE
+		i = 0
+		LOOP (10)
+			scalex = scalex + 2.0
+			scaley = scaley + 2.0
+			scalez = scalez + 2.0
+			i = i + 1
+			IF (i > 7)
+				trans = trans - 0.3
+			ENDIF
+		ENDLOOP
+	ENDIF
+	Delete()
+ENDSTATE
+
+
+

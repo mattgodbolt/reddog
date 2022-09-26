@@ -1,0 +1,11 @@
+STATE Init
+	WHILE (BoatStrat = 0)
+		MyFlag = MyFlag
+	ENDWHILE
+	PlayerOnBoat = 1
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	Delete()
+ENDSTATE

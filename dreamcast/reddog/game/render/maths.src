@@ -1,0 +1,945 @@
+; Maths.src
+; Assembly maths routines
+
+				.CPU			SH4
+				.OUTPUT			DBG=DWARF
+				.SECTION		MATHS, CODE, ALIGN=16
+				.INCLUDE		"..\RedDog.pre"
+
+; Prototype:	float v3Normalise (Point3 *vector);
+; Normalises the given vector, and stores it back in vector
+; Returns 1/sqrt value
+; Stalls on almost every instruction
+				.EXPORT	_v3Normalise
+				.ALIGN 16
+_v3Normalise:
+				FLDI0	FR3					; get 0 into FR3
+				FMOV.S	@R4+, FR0			; get vector->x into FR0
+
+				FMOV.S  @R4+, FR1			; get vector->y into FR1
+
+				FMOV.S	@R4+, FR2			; get vector->z into FR2
+
+				FIPR	FV0, FV0			; inner product gives x*x + y*y + z*z + 0*0 in FR3
+											; other registers should be unaffected
+
+				FSRRA	FR3					; wooo!
+
+				FMUL	FR3, FR2			; rescale z
+
+				FMUL	FR3, FR1			; rescale y
+
+				FMUL	FR3, FR0			; rescale x
+				FMOV.S	FR2, @-R4			; store z
+
+				FMOV.S	FR1, @-R4			; store y
+
+				FMOV.S	FR0, @-R4			; store x
+				RTS
+				FMOV	FR3, FR0			; [slot]
+
+; Prototype: float v3Dot (const Vector3 *a, const Vector3 *b);
+; Calculates a dot product (non-inline version)
+				.EXPORT _v3Dot
+				.ALIGN 16
+_v3Dot:			
+				FMOV.S	@R4+, FR2			; fr2 is x1
+
+				FMOV.S	@R5+, FR3			; fr3 is x2
+
+				FMOV.S	@R4+, FR0			; fr0 is y1
+
+				FMOV.S	@R5+, FR1			; fr1 is y2
+				FMUL	FR2, FR3			; FR3 = x1*x2
+
+				FMOV.S	@R4+, FR4			; fr4 is z1
+
+				FMOV.S	@R5+, FR5			; fr5 is z2
+				FMAC	FR0, FR1, FR3		; fr3 = x1*x2 + y1*y2
+
+				FMUL	FR4, FR5			; fr5 is z1 * z2
+
+				FMOV	FR3, FR0
+				RTS
+				FADD	FR5, FR0			; fr0 is final result
+
+;				FMOV.S	@R4+, FR2
+;				FLDI0	FR3					; get FV0 = {x1, y1, z1, 0}
+;
+;				FMOV.S	@R5+, FR4
+;				FMOV.S	@R5+, FR5
+;				FMOV.S	@R5+, FR6
+;				FLDI0	FR7					; get FV4 = {x2, y2, z2, 0}
+;
+;				FIPR	FV4, FV0			; FR3 = x1*x2 + y1*y2 + z1*z2
+;				RTS
+;				FMOV	FR3, FR0			; move to destination
+
+; Prototype: void mLoadForVector (Matrix *m);
+; Load a matrix for vectors ie with no translation
+				.EXPORT _mLoadForVector
+				.ALIGN 16
+_mLoadForVector:
+				.AIFDEF USE_DOUBLE				
+				FSCHG
+				.AENDI
+				FRCHG
+				.AIFDEF USE_DOUBLE				
+				FMOV.D	@R4+, DR0
+				FMOV.D	@R4+, DR2
+				FMOV.D	@R4+, DR4
+				FMOV.D	@R4+, DR6
+				FMOV.D	@R4+, DR8
+				FMOV.D	@R4+, DR10
+				.AELSE
+				FMOV.S	@R4+, FR0
+				FMOV.S	@R4+, FR1
+				FMOV.S	@R4+, FR2
+				FMOV.S	@R4+, FR3
+				FMOV.S	@R4+, FR4
+				FMOV.S	@R4+, FR5
+				FMOV.S	@R4+, FR6
+				FMOV.S	@R4+, FR7
+				FMOV.S	@R4+, FR8
+				FMOV.S	@R4+, FR9
+				FMOV.S	@R4+, FR10
+				FMOV.S	@R4+, FR11
+				.AENDI
+				FLDI0	FR12
+				FLDI0	FR13
+				.AIFDEF USE_DOUBLE				
+				FSCHG
+				.AENDI
+				FLDI0	FR14
+				FLDI1	FR15
+				RTS
+				FRCHG
+
+; void mPoint3 (Point3 *out, Point3 *in);
+; Multiply a point3 with XMTRX, the result is stored out
+				.EXPORT _mPoint3
+				.ALIGN 16
+_mPoint3:
+				FMOV.S	@R5+, FR0
+				FMOV.S	@R5+, FR1
+				FMOV.S	@R5+, FR2
+				FLDI1	FR3
+				FTRV	XMTRX, FV0
+				ADD		#12, R4
+				FMOV.S	FR2, @-R4
+				FMOV.S	FR1, @-R4
+				RTS
+				FMOV.S	FR0, @-R4
+
+; void rColToLV (LightingValue *colour, Uint32 colour);
+; Unpacks a 32-bit colour into four floats
+				.EXPORT _rColToLV
+				.ALIGN 16
+_rColToLV:
+				CMPZ	R5					; is it all black?
+				MOV		#-1, R1				; get all white
+
+				BT		?AllBlack			; the colour is all black
+				CMP/EQ	R5,R1				; is it all white?
+
+				BT		?AllWhite			; 
+				NOP							; nop to align the next bit of code
+
+				MOV.L	#oneover255, R1
+				MOV		R5, R6				; take a copy of the colour
+
+				MOV.L	#H'ff, R0			; get the mask ready
+				SHLR8	R6					; move r6 down so the bottom few bits are green (00AARRGG)
+
+				FMOV.S	@R1, FR0			; get 1.f/255.f
+				MOV		R5, R7				; take another copy of the input
+
+				AND		R0, R5				; r5 = blue
+				MOV		R6, R3				; take a new copy of the green in r3 (00AARRGG)
+
+				ADD		#16, R4				; move to the end of the colour itself
+				LDS		R5, FPUL			; move blue to the FPUL
+
+				SHLR16	R7					; move r7 down so the bottom few bits are red (0000AARR)
+
+				FLOAT	FPUL, FR1			; FR1 == blue*255 now
+				AND		R0, R6				; r6 = green
+
+				LDS		R6, FPUL			; move green to the fpul
+				FMUL	FR0, FR1			; blue *= 1/255
+
+				AND		R0, R7				; r7 is red now
+				FLOAT	FPUL, FR2			; FR2 == green*255
+
+				LDS		R7, FPUL			; move red to fpul
+				SHLR16	R3					; move 0000AARR down to 000000AA
+
+				FMUL	FR0, FR2			; green is ready now
+				FLOAT	FPUL, FR3			; FR3 == red*255
+
+				LDS		R3, FPUL			; move alpha to fpul
+				FMUL	FR0, FR3			; red is ready now (geddit)
+
+				FLOAT	FPUL, FR4			; fr4 = alpha*255
+				FMOV.S	FR1, @-R4			; store out blue component
+
+				FMUL	FR0, FR4			; alpha is ready
+				FMOV.S	FR2, @-R4			; store out green component
+
+				FMOV.S	FR3, @-R4			; store out red component
+				RTS							; return
+
+				FMOV.S	FR4, @-R4			; [slot] store out alpha
+
+?AllBlack		ADD		#16, R4				; move r4 on a to the end
+				MOV.L	R5, @-R4			; store zero
+				MOV.L	R5, @-R4			; store zero
+				MOV.L	R5, @-R4			; store zero
+				RTS
+				MOV.L	R5, @-R4			; store zero
+
+?AllWhite		ADD		#16, R4				; move r4 on to the end
+				FLDI1	FR4					; get one
+
+				FMOV.S	FR4, @-R4			; store it
+				FMOV.S	FR4, @-R4			; store it
+				FMOV.S	FR4, @-R4			; store it
+				RTS
+				FMOV.S	FR4, @-R4			; store it
+
+; void rApplyLight (LightingValue *output, LightingValue *lights, LightingValue *modelColour)
+; Mulitplies lights[] with modelColour[] and stores out in output
+; Output is 8-word aligned
+				.EXPORT _rApplyLight
+				.ALIGN 16
+_rApplyLight:
+				FMOV.S	@R5+, FR0
+				ADD		#16, R4
+				FMOV.S	@R6+, FR4
+				FMOV.S	@R5+, FR1			
+				FMOV.S	@R6+, FR5
+				FMOV.S	@R5+, FR2			
+				FMOV.S	@R6+, FR6
+				FMUL	FR4, FR0
+				FMOV.S	@R5+, FR3			
+				FMUL	FR5, FR1
+				FMOV.S	@R6+, FR7
+				FSCHG
+				FMUL	FR6, FR2
+				FMUL	FR7, FR3
+				FMOV.D	DR2, @-R4
+				FMOV.D	DR0, @-R4
+				RTS
+				FSCHG
+
+; prototype: void mPoint3Apply(Point3 *p, const Matrix *mat);
+; p = p * MAT
+				.EXPORT _mPoint3Apply
+				.ALIGN 16
+_mPoint3Apply:
+				.AIFDEF USE_DOUBLE				
+				FSCHG
+				.AENDI
+				FRCHG
+				.AIFDEF USE_DOUBLE				
+				FMOV.D	@R5+, DR0
+				FMOV.D	@R5+, DR2
+				FMOV.D	@R5+, DR4
+				FMOV.D	@R5+, DR6
+				FMOV.D	@R5+, DR8
+				FMOV.D	@R5+, DR10
+				FMOV.D	@R5+, DR12
+				FMOV.D	@R5+, DR14
+				FSCHG
+				.AELSE
+				FMOV.S	@R5+, FR0
+				FMOV.S	@R5+, FR1
+				FMOV.S	@R5+, FR2
+				FMOV.S	@R5+, FR3
+				FMOV.S	@R5+, FR4
+				FMOV.S	@R5+, FR5
+				FMOV.S	@R5+, FR6
+				FMOV.S	@R5+, FR7
+				FMOV.S	@R5+, FR8
+				FMOV.S	@R5+, FR9
+				FMOV.S	@R5+, FR10
+				FMOV.S	@R5+, FR11
+				FMOV.S	@R5+, FR12
+				FMOV.S	@R5+, FR13
+				FMOV.S	@R5+, FR14
+				FMOV.S	@R5+, FR15
+				.AENDI
+				FRCHG
+				FLDI1	FR3
+				FMOV.S	@R4+, FR0
+				FMOV.S	@R4+, FR1
+				FMOV.S	@R4+, FR2
+				FTRV	XMTRX, FV0
+				FMOV.S	FR2, @-R4
+				FMOV.S	FR1, @-R4
+				RTS
+				FMOV.S	FR0, @-R4
+
+				.EXPORT _mPoint3Apply3
+				.ALIGN 16
+_mPoint3Apply3:
+				.AIFDEF USE_DOUBLE
+				FSCHG
+				.AENDI
+				FRCHG
+				.AIFDEF USE_DOUBLE
+				FMOV.D	@R5+, DR0
+				FLDI0	FR12
+				FMOV.D	@R5+, DR2
+				FLDI0	FR13
+				FMOV.D	@R5+, DR4
+				FLDI0	FR14
+				FMOV.D	@R5+, DR6
+				FLDI1	FR15
+				FMOV.D	@R5+, DR8
+				FMOV.D	@R5+, DR10
+				FSCHG
+				.AELSE
+				FMOV.S	@R5+, FR0
+				FLDI0	FR12
+				FMOV.S	@R5+, FR1
+				FLDI0	FR13
+				FMOV.S	@R5+, FR2
+				FLDI0	FR14
+				FMOV.S	@R5+, FR3
+				FLDI1	FR15
+				FMOV.S	@R5+, FR4
+				FMOV.S	@R5+, FR5
+				FMOV.S	@R5+, FR6
+				FMOV.S	@R5+, FR7
+				FMOV.S	@R5+, FR8
+				FMOV.S	@R5+, FR9
+				FMOV.S	@R5+, FR10
+				FMOV.S	@R5+, FR11
+				.AENDI
+				FRCHG
+				FLDI1	FR3
+				FMOV.S	@R4+, FR0
+				FMOV.S	@R4+, FR1
+				FMOV.S	@R4+, FR2
+				FTRV	XMTRX, FV0
+				FMOV.S	FR2, @-R4
+				FMOV.S	FR1, @-R4
+				RTS
+				FMOV.S	FR0, @-R4
+
+; ======================
+
+; Replace broken compiler routines
+				.EXPORT _mLoad
+				.ALIGN 16
+_mLoad:
+				FRCHG
+				FMOV.S	@R4+, FR0
+				FMOV.S	@R4+, FR1
+				FMOV.S	@R4+, FR2
+				FMOV.S	@R4+, FR3
+				FMOV.S	@R4+, FR4
+				FMOV.S	@R4+, FR5
+				FMOV.S	@R4+, FR6
+				FMOV.S	@R4+, FR7
+				FMOV.S	@R4+, FR8
+				FMOV.S	@R4+, FR9
+				FMOV.S	@R4+, FR10
+				FMOV.S	@R4+, FR11
+				FMOV.S	@R4+, FR12
+				FMOV.S	@R4+, FR13
+				FMOV.S	@R4+, FR14
+				FMOV.S	@R4+, FR15
+				RTS
+				FRCHG
+
+				.EXPORT _mLoad43
+				.ALIGN 16
+_mLoad43:
+				FRCHG
+				FMOV.S	@R4+, FR0
+				FMOV.S	@R4+, FR1
+				FMOV.S	@R4+, FR2
+				FLDI0	FR3
+				FMOV.S	@R4+, FR4
+				FMOV.S	@R4+, FR5
+				FMOV.S	@R4+, FR6
+				FLDI0	FR7
+				FMOV.S	@R4+, FR8
+				FMOV.S	@R4+, FR9
+				FMOV.S	@R4+, FR10
+				FLDI0	FR11
+				FMOV.S	@R4+, FR12
+				FMOV.S	@R4+, FR13
+				FMOV.S	@R4+, FR14
+				FLDI1	FR15
+				RTS
+				FRCHG
+
+				.EXPORT _mMul
+				.ALIGN 16
+_mMul:
+				PREF	@R5
+				MOV		R4, R0
+
+				OR		R5, R0			; r0 is src|dest
+				PREF	@R4
+
+				ADD		#16, R4			; move r4 to end of first line of dest
+				TST		#7, R0			; are both src and dest 8-byte aligned?
+
+				BT/S	?mMulAligned
+				PREF	@R4
+
+				FMOV.S	@R5+, FR0
+				FMOV.S	@R5+, FR1
+				FMOV.S	@R5+, FR2
+				FMOV.S	@R5+, FR3
+				FTRV	XMTRX, FV0
+				FMOV.S	@R5+, FR4
+				FMOV.S	@R5+, FR5
+				FMOV.S	@R5+, FR6
+				FMOV.S	@R5+, FR7
+				FMOV.S	FR3, @-R4
+				FMOV.S	FR2, @-R4
+				FMOV.S	FR1, @-R4
+				FMOV.S	FR0, @-R4
+				ADD		#32, R4
+				PREF	@R4
+				FTRV	XMTRX, FV4
+				FMOV.S	@R5+, FR0
+				FMOV.S	@R5+, FR1
+				FMOV.S	@R5+, FR2
+				FMOV.S	@R5+, FR3
+				FMOV.S	FR7, @-R4
+				FMOV.S	FR6, @-R4
+				FMOV.S	FR5, @-R4
+				FMOV.S	FR4, @-R4
+				ADD		#32, R4
+				PREF	@R4
+				FTRV	XMTRX, FV0
+				FMOV.S	@R5+, FR4
+				FMOV.S	@R5+, FR5
+				FMOV.S	@R5+, FR6
+				FMOV.S	@R5+, FR7
+				FMOV.S	FR3, @-R4
+				FMOV.S	FR2, @-R4
+				FMOV.S	FR1, @-R4
+				FMOV.S	FR0, @-R4
+				FTRV	XMTRX, FV4
+				ADD		#32, R4
+				FMOV.S	FR7, @-R4
+				FMOV.S	FR6, @-R4
+				FMOV.S	FR5, @-R4
+				RTS
+				FMOV.S	FR4, @-R4
+
+?mMulAligned	FSCHG					; swap to using doubles
+				FMOV.D	@R5+, DR0
+				FMOV.D	@R5+, DR2
+				FTRV	XMTRX, FV0
+				FMOV.D	@R5+, DR4
+				FMOV.D	@R5+, DR6
+				FMOV.D	DR2, @-R4
+				FMOV.D	DR0, @-R4
+				ADD		#32, R4
+				PREF	@R4
+				FTRV	XMTRX, FV4
+				FMOV.D	@R5+, DR0
+				FMOV.D	@R5+, DR2
+				FMOV.D	DR6, @-R4
+				FMOV.D	DR4, @-R4
+				ADD		#32, R4
+				PREF	@R4
+				FTRV	XMTRX, FV0
+				FMOV.D	@R5+, DR4
+				FMOV.D	@R5+, DR6
+				FMOV.D	DR2, @-R4
+				FMOV.D	DR0, @-R4
+				FTRV	XMTRX, FV4
+				PREF	@R4
+				ADD		#32, R4
+				FMOV.D	DR6, @-R4
+				FMOV.D	DR4, @-R4
+				RTS
+				FSCHG					; back to singles
+
+				; prototype: void mLoadWithXYScale (Matrix *m, float xScale, float yScale);
+				; Loads an aligned matrix and multiplies the first two columns with xScale and yScale
+				.EXPORT _mLoadWithXYScale
+				.ALIGN 16
+_mLoadWithXYScale:
+				FSCHG
+				FMOV.D	@R4+, DR0			; read [0][01]
+				FMOV.D	@R4+, DR2			; read [0][23]
+				FMUL	FR4, FR0			; scale [0][0] by XScale
+				FMOV.D	@R4+, DR8			; read [1][01]
+				FMUL	FR5, FR1			; scale [0][1] by YScale
+				FMOV.D	@R4+, DR10			; read [1][23]
+				FMOV	DR0, XD0			; XMTRX[0][01] = [0][01]
+				FMOV	DR2, XD2			; XMTRX[0][23] = [0][23]
+				FMUL	FR4, FR8			; scale [1][0] by XScale
+				FMUL	FR5, FR9			; scale [1][1] by YScale
+				FMOV	DR8, XD4			; XMTRX[1][01] = [1][01]
+				FMOV	DR10, XD6			; XMTRX[1][23] = [1][23]
+				FMOV.D	@R4+, DR0			; read [2][01]
+				FMOV.D	@R4+, DR2			; read [2][23]
+				FMUL	FR4, FR0			; scale [2][0] by XScale
+				FMOV.D	@R4+, DR8			; read [3][01]
+				FMUL	FR5, FR1			; scale [2][1] by YScale
+				FMOV.D	@R4+, DR10			; read [3][23]
+				FMOV	DR0, XD8			; XMTRX[2][01] = [2][01]
+				FMOV	DR2, XD10			; XMTRX[2][23] = [2][23]
+				FMUL	FR4, FR8			; scale [3][0] by XScale
+				FMUL	FR5, FR9			; scale [3][1] by YScale
+				FMOV	DR8, XD12			; XMTRX[3][01] = [3][01]
+				FMOV	DR10, XD14			; XMTRX[3][23] = [3][23]
+				RTS
+				FSCHG
+
+				; prototype: void mLoadWithXYScale (Matrix *m, float xScale, float yScale);
+				; Loads an aligned matrix and multiplies the first two columns with xScale and yScale
+				; and does it the other way around!
+				.EXPORT _mLoadWithXYScaleMirrored
+				.ALIGN 16
+_mLoadWithXYScaleMirrored:
+				FMOV.S	@R4+, FR3
+				FMOV.S	@R4+, FR2
+				FMOV.S	@R4+, FR1
+				FMOV.S	@R4+, FR0			; read the first row
+
+				FMUL	FR4, FR3
+				FMUL	FR5, FR2
+				FSCHG
+
+				FMOV	DR0, XD0			; XMTRX[0][01] = [0][01]
+				FMOV	DR2, XD2			; XMTRX[0][23] = [0][23]
+				FSCHG
+
+				FMOV.S	@R4+, FR3
+				FMOV.S	@R4+, FR2
+				FMOV.S	@R4+, FR1
+				FMOV.S	@R4+, FR0			; read the second row
+
+				FMUL	FR4, FR3
+				FMUL	FR5, FR2
+				FSCHG
+
+				FMOV	DR0, XD4			; XMTRX[0][01] = [0][01]
+				FMOV	DR2, XD6			; XMTRX[0][23] = [0][23]
+				FSCHG
+
+				FMOV.S	@R4+, FR3
+				FMOV.S	@R4+, FR2
+				FMOV.S	@R4+, FR1
+				FMOV.S	@R4+, FR0			; read the third row
+
+				FMUL	FR4, FR3
+				FMUL	FR5, FR2
+				FSCHG
+
+				FMOV	DR0, XD8			; XMTRX[0][01] = [0][01]
+				FMOV	DR2, XD10			; XMTRX[0][23] = [0][23]
+				FSCHG
+
+				FMOV.S	@R4+, FR3
+				FMOV.S	@R4+, FR2
+				FMOV.S	@R4+, FR1
+				FMOV.S	@R4+, FR0			; read the last row
+
+				FMUL	FR4, FR3
+				FMUL	FR5, FR2
+				FSCHG
+
+				FMOV	DR0, XD12			; XMTRX[0][01] = [0][01]
+				FMOV	DR2, XD14			; XMTRX[0][23] = [0][23]
+
+				RTS
+				FSCHG
+
+; proto: void mPointMirrored (Point *out, Point *in);
+				.EXPORT _mPointMirrored
+				.ALIGN 16
+_mPointMirrored:
+				FMOV.S	@R5+, FR4
+				FMOV.S	@R5+, FR5
+				FMOV.S	@R5+, FR6
+				FMOV.S	@R5+, FR7			; read in the point
+
+				FTRV	XMTRX, FV4			; transform
+				ADD		#16, R4				; move to end
+
+				FMOV.S	FR4, @-R4			; store backwards
+				FMOV.S	FR5, @-R4			; store backwards
+				FMOV.S	FR6, @-R4			; store backwards
+				RTS
+				FMOV.S	FR7, @-R4			; store backwards
+
+; ======================
+
+; prototype: float FIPR (A, B, C, D, E, F, G, H)
+; Returns (x*A + y*B + z*C + D)
+				.EXPORT _FIPR
+				.ALIGN 16
+_FIPR:
+				FIPR	FV4, FV8
+				RTS
+				FMOV	FR11, FR0
+
+; ======================
+
+; Multiply three floats with an XMTRX, result is a Point
+; void mPointXYZ (Point *out, float x, float y, float z);
+				.EXPORT _mPointXYZ
+				.ALIGN 16
+_mPointXYZ:
+				FLDI1	FR7				; now FR4,FR5,FR6,FR7 = {X, Y, Z, 1}
+				FTRV	XMTRX, FV4		; transform vector
+				ADD		#16, R4			; point R4 at the end of the vector
+				FMOV.S	FR7, @-R4		; Store in W
+				FMOV.S	FR6, @-R4		; Store in Z
+				FMOV.S	FR5, @-R4		; Store in Y
+				RTS
+				FMOV.S	FR4, @-R4		; Store in X
+
+; ======================
+
+; Multiply three floats with an XMTRX, result stored to a 4d Point
+; Returns the outcode too
+; Outcode mPointXYZOut (Point *out, float x, float y, float z);
+				.EXPORT _mPointXYZOut
+				.ALIGN 16
+_mPointXYZOut:
+				FLDI1	FR7				; FV4 is now a vector
+				MOV		#0, R0			; R0 will be our outcode
+
+				MOV.L	#H'fc0, R1
+										; Set up 'not' outcode
+				FTRV	XMTRX, FV4		; Start the long process of transforming
+
+				MOV.L	#H'7fffffff, R2	; r2 is the bitmask required to get the absolute value
+
+				; Stall mungery while the trv goes on
+				; Now I prefetch at the destination address to alleviate cache stalls
+				PREF	@R4
+
+				ADD		#16, R4			; point R4 at the end of the vector
+
+				PREF	@R4				; prefetch the end of the vector which makes sure the whole vector is in
+
+				FLDS	FR7, FPUL		; pull w into FPUL
+				
+				STS		FPUL, R5		; r5 is now 'w' in FP form
+
+				AND		R2, R5			; r5 is now abs_w
+				FLDS	FR6, FPUL		; pull z into FPUL
+
+				STS		FPUL, R6		; r6 == iz
+				MOV		R5, R7			; r7 is a temp copy of abs_w, about to be diff
+
+				MOV		R6, R3			; get ready to get a(iz)
+				AND		R2, R3			; r3 is a(iz)
+
+				SUB		R3, R7			; R7 == diff = abs_w - a(iz)
+				FLDS	FR4, FPUL		; get x into FPUL
+
+				SHAL	R7				; get top bit of R7 into T
+
+				MOVT	R7				; r7 = s(diff)
+
+				SHAL	R6				; get top bit of R6 into T
+
+				MOVT	R6				; r6 = s(iz)
+
+				SHLD	R6, R7			; diff = diff << t
+
+				OR		R7, R0			; outcode |= diff << t
+				STS		FPUL, R6		; r6 = ix
+
+				MOV		R5, R7			; r7 is a temp copy of abs_w, about to be diff
+
+				MOV		R6, R3			; get ready to get a(ix)
+				AND		R2, R3			; r3 is a(ix)
+
+				SUB		R3, R7			; R7 == diff = abs_w - a(ix)
+				FLDS	FR5, FPUL		; get y into FPUL
+
+				SHAL	R6				; get top bit of R6 into T
+
+				MOVT	R6				; r6 = s(ix)
+
+				SHAL	R7				; get top bit of R7 into T
+
+				MOVT	R7				; r7 = s(diff)
+				ADD		#4, R6			; t = s(ix) + 4
+
+				SHLD	R6, R7			; diff = diff << t
+
+				OR		R7, R0			; outcode |= diff << t								
+				STS		FPUL, R6		; r6 = iy
+
+				MOV		R5, R7			; r7 is a temp copy of abs_w, about to be diff
+
+				MOV		R6, R3			; get ready to get a(iy)
+				AND		R2, R3			; r3 is a(iy)
+
+				SUB		R3, R7			; R7 == diff = abs_w - a(iy)
+
+				SHAL	R6				; get top bit of R6 into T
+
+				MOVT	R6				; r6 = s(ix)
+
+				SHAL	R7				; get top bit of R7 into T
+
+				MOVT	R7				; r7 = s(diff)
+				ADD		#2, R6			; t = s(ix) + 2
+
+				SHLD	R6, R7			; diff = diff << t
+
+				OR		R7, R0			; outcode |= diff << t
+
+				MOV		R0, R2			; temp copy (ready for the not values)
+
+				SHLL2	R2
+				FMOV.S	FR7, @-R4
+
+				SHLL2	R2
+				FMOV.S	FR6, @-R4
+
+				SHLL2	R2
+				FMOV.S	FR5, @-R4
+
+				OR		R2, R0			; r0 = outcode | (outcode << OC_BITS)
+				FMOV.S	FR4, @-R4
+
+				RTS
+				XOR		R1, R0			; and NOT it : r0 = outcode | (outcode << OC_BITS) ^ OC_NOT
+
+
+; ======================
+				
+; prototype: void SinCos (float angle, SinCosVal *val)
+				.EXPORT _SinCos
+				.ALIGN 16
+_SinCos:
+				;First convert angle to Uint16s by multiplying by 65536.f / 2pi == 
+				MOV.L	#sixKover2PI, R1
+				ADD		#8, R4			; move r4 past end of val
+				FMOV.S	@R1, FR0		; get 1.f/255.f
+				FMUL	FR0, FR4
+				FTRC	FR4, FPUL
+				FSCA	FPUL, DR0		; lookup sin and cosine
+
+				FMOV.S	FR1, @-R4		; store cos
+				RTS
+				FMOV.S	FR0, @-R4		; store sin [slot]
+
+; ---------------------------------------
+; -- Lightning fast atan2 approximation --
+; ---------------------------------------
+; Prototype: float atan2 (float x, float y);
+; returns values in the range [-0.5, 0.5]
+x:				.FREG	FR4
+y:				.FREG	FR5
+fabsX:			.FREG	FR6
+fabsY:			.FREG	FR7
+tan:			.FREG	FR6		; overlaps with fabsX
+magicA:			.FREG	FR0
+magicB:			.FREG	FR2
+retVal:			.FREG	FR0		; overlaps with magicA
+
+;tabAddr;		.REG	R4		; XXX dunno why can't use this...
+octant:			.REG	R0
+pullData:		.REG	R1
+shift:			.REG	R2
+temp:			.REG	R3
+temp2:			.REG	R5
+				.EXPORT _fatan2
+				.ALIGN 16
+_fatan2:
+				FMOV	x, fabsX	
+
+				FABS	fabsX				; Get fabs(x)
+
+				MOV.L	#magic_a, pullData
+
+				FMOV	y, fabsY
+
+				FABS	fabsY				; Get fabs(y)
+
+				MOV.L	#a_Octant, R4		; get the octant table ready XXX dunno
+				FCMP/GT	fabsX, fabsY		; compare to see which subquadrant we're in
+
+				FMOV.S	@pullData+, magicA	; read in the first magic number
+
+				FMOV.S	@pullData, magicB	; read in the second magic number
+
+				FLDS	x, FPUL				; fpul is now the x component
+				BT		?yGtX				; branch if y > x
+
+				MOV		#4, octant			; zeroth subquadrant (x > y)
+				FMOV	y, tan				; get tan = y for the divide
+
+				BRA		?doApproximation	; Jump to do the actual approximation
+				FDIV	x, tan				; tan = y / x; [slot]
+				; ---gap---
+?yGtX			MOV		#0, octant			; first subquadrant
+				FMOV.S	x, tan				; get tan = x for the divide
+
+				FDIV	y, tan				; tan = x / y
+
+?doApproximation
+				; Now to assemble the rest of the octant bitmap
+				STS		FPUL, pullData		; pullData is now the FP representation of x
+
+				FLDS	y, FPUL				; load y into FPUL
+				MOV		#-(31-4), shift		; get the X shift down
+
+				STS		FPUL, temp			; temp is now the FP representation of y
+
+				SHLD	shift, pullData		; shift pullData down
+
+				MOV		#16, temp2			; get ready for the ANDing later
+
+				MOV.L	@R4, R4				; read pullData address
+				MOV		#-(31-3), shift		; get the Y shift down amount
+
+				SHLD	shift, temp			; shift temp down
+
+				AND		temp2, pullData		; pullData is '8' if x neg, 0 otherwise
+
+				MOV		#8, shift			; shift is 16 for the AND
+
+				FABS	tan
+				AND		shift, temp			; temp is '16' if y neg, 0 otherwise
+
+				FMAC	magicA, tan, magicB	; magicB = magic_a * tan + magic_b
+				OR		pullData, octant	; first round of octant setup
+
+				OR		temp, octant		; octant is now set up
+
+				ADD		R4, octant			; octant now points at the correct octant address
+				FMUL	tan, magicB			; magicB is now (magic_a * tan + magic_b) * tan
+
+				FMOV.S	@octant, retVal		; get the octant offset
+
+				FSUB	magicB, retVal		; finally retVal = (+/-)atan(y/x)
+
+				RTS
+				FABS	retVal				; get the abs value
+
+; void rColToLVMul (LightingValue *colour, Uint32 colour, float *mulBy);
+; Unpacks a 32-bit colour into four floats, and multiply by mulBy
+				.EXPORT _rColToLVMul
+				.ALIGN 16
+_rColToLVMul:
+				CMPZ	R5					; is it all black?
+				MOV		#-1, R1				; get all white
+
+				BT		?AllBlack			; the colour is all black
+				CMP/EQ	R5,R1				; is it all white?
+
+				BT		?AllWhite			; 
+				FMOV.S	@R6+, FR5			; read the red modifier
+
+				MOV.L	#oneover255, R1
+				MOV		R5, R2				; take a copy of the colour
+
+				MOV.L	#H'ff, R0			; get the mask ready
+				SHLR8	R2					; move R2 down so the bottom few bits are green (00AARRGG)
+
+				FMOV.S	@R1, FR0			; get 1.f/255.f
+				MOV		R5, R7				; take another copy of the input
+
+				AND		R0, R5				; r5 = blue
+				MOV		R2, R3				; take a new copy of the green in r3 (00AARRGG)
+
+				ADD		#16, R4				; move to the end of the colour itself
+				LDS		R5, FPUL			; move blue to the FPUL
+
+				SHLR16	R7					; move r7 down so the bottom few bits are red (0000AARR)
+				FMOV.S	@R6+, FR6			; read green modifier
+
+				FLOAT	FPUL, FR1			; FR1 == blue*255 now
+				AND		R0, R2				; R2 = green
+
+				LDS		R2, FPUL			; move green to the fpul
+				FMUL	FR0, FR1			; blue *= 1/255
+
+				AND		R0, R7				; r7 is red now
+				FLOAT	FPUL, FR2			; FR2 == green*255
+
+				FMOV.S	@R6+, FR7			; read blue modifier
+
+				LDS		R7, FPUL			; move red to fpul
+				SHLR16	R3					; move 0000AARR down to 000000AA
+
+				FMUL	FR0, FR2			; green is ready now
+				FLOAT	FPUL, FR3			; FR3 == red*255
+
+				FMUL	FR7, FR1			; modify blue
+
+				LDS		R3, FPUL			; move alpha to fpul
+				FMUL	FR0, FR3			; red is ready now (geddit)
+
+				FMUL	FR6, FR2			; modify green
+
+				FMUL	FR5, FR3			; modify red
+
+				FLOAT	FPUL, FR4			; fr4 = alpha*255
+				FMOV.S	FR1, @-R4			; store out blue component
+
+				FMUL	FR0, FR4			; alpha is ready
+				FMOV.S	FR2, @-R4			; store out green component
+
+				FMOV.S	FR3, @-R4			; store out red component
+				RTS							; return
+
+				FMOV.S	FR4, @-R4			; [slot] store out alpha
+
+?AllBlack		ADD		#16, R4				; move r4 on a to the end
+				MOV.L	R5, @-R4			; store zero
+				MOV.L	R5, @-R4			; store zero
+				MOV.L	R5, @-R4			; store zero
+				RTS
+				MOV.L	R5, @-R4			; store zero
+
+?AllWhite		ADD		#16, R4				; move r4 on to the end
+				FLDI1	FR4					; get one
+				FMOV.S	@R6+, FR7			; read r
+				FMOV.S	@R6+, FR6			; read g
+				FMOV.S	@R6+, FR5			; read b
+
+				FMOV.S	FR5, @-R4			; store it
+				FMOV.S	FR6, @-R4			; store it
+				FMOV.S	FR7, @-R4			; store it
+				RTS
+				FMOV.S	FR4, @-R4			; store it
+
+
+				
+				.SECTION MATHDATA, DATA
+				.IMPORT _Octant
+oneover255:		.FDATA	F'0.0039215686
+sixKover2PI:	.FDATA	F'10430.378
+magic_a:		.FDATA	F'-0.0451672
+magic_b:		.FDATA	F'0.170167				
+a_Octant:		.DATA.L	_Octant
+
+				.SECTION DSG, DATA, ALIGN=32
+				.EXPORT	_usrGlobalWork
+				.ALIGN 32
+_usrGlobalWork:
+				.DATA.B H'FF,H'FF,H'FF,H'FF,H'FF,H'FF,H'FF,H'FF
+				.DATA.B H'FF,H'FF,H'FF,H'FF,H'FF,H'FF,H'FF,H'FF
+				.DATA.B H'FF,H'FF,H'FF,H'FF,H'FF,H'FF,H'FF,H'FF
+				.DATA.B H'FF,H'FF,H'FF,H'FF,H'FF,H'FF,H'FF,H'FF
+				.DATA.B H'FF,H'FF,H'FF,H'FF,H'FF,H'FF,H'FF,H'FF
+				.DATA.B H'FF,H'FF,H'FF,H'FF,H'FF,H'FF,H'FF,H'FF
+				.DATA.B H'FF,H'FF,H'FF,H'FF,H'FF,H'FF,H'FF,H'FF
+				.DATA.B H'FF,H'FF,H'FF,H'FF,H'FF,H'FF,H'FF,H'FF
+
+				.ALIGN      4
+
+				.END

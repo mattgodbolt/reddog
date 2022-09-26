@@ -1,0 +1,50 @@
+LOCALFLOAT	tx
+LOCALFLOAT	ty
+LOCALFLOAT	tz
+
+STATE Init
+	MakeMeTheLast()
+
+	MyFlag = MyFlag | FLOORCOLL | STRATCOLL | ENEMY | NOTEXPLODE | BULLETTYPE | LOWCOLL
+	MyFlag2 = MyFlag2 | BULLET_CF
+	
+	SetFriction(0.0,0.0,0.0)
+	damage = 0.5
+	OBJECT> WEAPON\REDDOGLASER
+	RegisterCollision()
+	AllocStratSoundBlock(1)
+
+	TRIGSET>HitStrat WHENHIT
+	TRIGSET>KillOff	ONFLOOR
+	TRIGSET>KillOff	EVERY 50
+	MoveY(4.0)
+
+	STAT>SetPos
+ENDSTATE 
+
+STATE SetPos
+	FaceAlongDir()
+ENDSTATE
+
+STATE KillOff
+	damage = 0	 
+	MyFlag = MyFlag | NODISP  
+	MyFlag = MyFlag & LNOT(STRATCOLL)
+	Delete()
+ENDSTATE
+
+TRIGGER HitStrat
+	IF (CollWith = PlayerShieldStrat(0))
+		PLAYSOUND>DAMAGE3 0 1.0  0.0 0.0 0.0  RANDOM
+		MyFlag = MyFlag | FRIENDLY
+		MyFlag = MyFlag & LNOT(ENEMY)
+		BounceOffShield(0)
+		TRIGFIN
+	ELSE
+		damage = 0	
+		MyFlag = MyFlag | NODISP  
+		MyFlag = MyFlag & LNOT(STRATCOLL)
+		Delete()
+	ENDIF
+ENDTRIGGER
+

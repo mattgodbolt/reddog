@@ -1,0 +1,57 @@
+STATE Init
+	MyFlag = MyFlag | ENEMY | STRATCOLL | LOWCOLL | TARGETABLE
+
+	WHILE (MyParentInvalid())
+		MyFlag = MyFlag 
+	ENDWHILE
+	AllocStratSoundBlock(2)
+	RegisterCollision()
+	TRIGSET>SpecularMadness EVERY 1
+	health = 50.0
+	PLAYSOUND>ELECLOOP 1 0.9  0.0 0.0 0.0  (CONTINUOUS | RANDOM)
+	STAT>Start
+ENDSTATE
+
+LOCALFLOAT SPECAMOUNT
+
+TRIGGER SpecularMadness
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+	IF ((MyFlag & HITSTRAT) AND (CollWithFlag & BULLETTYPE))
+		SPECAMOUNT = 1.0
+		PLAYSOUND>ENEMY_HIT 0 1.0 0.0 0.0 0.0 RANDOM
+	ENDIF
+	IF (SPECAMOUNT > 0)
+  		MyFlag2 = MyFlag2 | SPECULAR
+		SetSpecularColour(0, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		IF (PAL)
+		  	SPECAMOUNT = SPECAMOUNT - (0.1 * 1.2)
+		ELSE
+		  	SPECAMOUNT = SPECAMOUNT - 0.1
+		ENDIF
+   	ELSE
+		SPECAMOUNT = 0
+ 		MyFlag2 = MyFlag2 & LNOT(SPECULAR)
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+STATE Start
+	IF (health <= 0.0)
+		Score = Score + 500
+		STAT>Die
+	ELSE
+		SetGlobalParamInt(0, 0)
+		GetParentObjectPos(6)
+		DrawShock2(x, y, z, CheckX, CheckY, CheckZ, 0.25, 1.0, 1.0, 3)
+	ENDIF
+ENDSTATE
+
+STATE Die
+	AddParentSem(1, 1)
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+	CREATE ENV_SPAWN_GENERIC_EXPLOSION 0, 0, 0, 0, 0, 0, 0
+	Delete()
+ENDSTATE
+
+
+

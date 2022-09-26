@@ -1,0 +1,144 @@
+LOCALINT MineHeight
+LOCALFLOAT TopMineHeightFloat
+LOCALINT TopMineHeight
+
+define FIVESECS 300		 
+
+define ENDCHASERANGE 100
+define CHARGERANGE 30
+define INNERSTOPRANGE 10
+define ACTIVERANGE 200
+define ACTIVATEPROXIMITY 40
+
+
+
+STATE Init
+
+	TopMineHeightFloat = RandRange (4, 11)
+	
+	TopMineHeight = TOINT (TopMineHeightFloat)
+
+	IF (TopMineHeight < 8)
+		TopMineHeight = 3
+	ELSE
+		TopMineHeight = 11
+	ENDIF
+
+	WHILE (frame)
+		frame = frame - 1.0
+	ENDWHILE
+
+	PointToXY(DogX, DogY, DogZ)
+	MineHeight = 0
+	MyFlag = MyFlag | LOWCOLL | STRATCOLL | ENEMY | HOVERMOVE | NOTEXPLODE | TARGETABLE | FLOORCOLL
+
+	
+	IF (!PNode)
+		OBJECT> ENEMIES\MINE_PopUp 
+		MyFlag = MyFlag | AGGRESSIVE
+	ENDIF
+	RegisterCollision() 
+	TRIGSET>SpecularMadness EVERY 1
+	SetFriction(0.2,0.2,0.2)
+	health = 1.0
+	TRIGSET>Shot WHENDEAD 
+	TRIGSET>Always EVERY 1
+
+// Move mine up or down?
+
+	IF (DogZ > z)
+		STAT>LiftToWayHeight
+	ENDIF
+
+	IF (DogZ < z)
+		STAT>LowerToWayHeight
+	ENDIF
+
+ENDSTATE
+
+LOCALFLOAT SPECAMOUNT
+
+TRIGGER SpecularMadness
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+	IF ((MyFlag & HITSTRAT) AND (CollWithFlag & BULLETTYPE))
+		SPECAMOUNT = 1.0
+	ENDIF
+	IF (SPECAMOUNT > 0)
+  		MyFlag2 = MyFlag2 | SPECULAR
+		SetSpecularColour(0, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		SPECAMOUNT = SPECAMOUNT - 0.1
+	ELSE
+		SPECAMOUNT = 0
+ 		MyFlag2 = MyFlag2 & LNOT(SPECULAR)
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+TRIGGER Always
+	AvoidStrats(2.0)
+	TRIGFIN
+ENDTRIGGER
+
+STATE LiftToWayHeight
+MyFlag = MyFlag & LNOT(RELVELCALC)
+
+	WHILE (MineHeight < TopMineHeight)
+		MoveZ (0.16)
+		MineHeight = MineHeight + 1
+	ENDWHILE
+
+	AllocStratSoundBlock(1)
+	SetAudibleRange(0,0,800.0)
+	TRIGSET>SOUND EVERY 25
+	STAT>ChasePlayer
+
+ENDSTATE
+
+TRIGGER SOUND
+	PLAYSOUND>Mine_LOCKON 0 1.0 0.0 0.0 0.0 0
+	TRIGFIN
+ENDTRIGGER
+
+STATE LowerToWayHeight
+	MyFlag = MyFlag & LNOT(RELVELCALC)
+	MyFlag = MyFlag & LNOT(NODISP)
+
+	WHILE (MineHeight < TopMineHeight)
+		MoveZ (-0.16)
+		MineHeight = MineHeight + 1
+	ENDWHILE
+
+   	AllocStratSoundBlock(1)
+	SetAudibleRange(0,0,800.0)
+	TRIGSET>SOUND EVERY 25
+   //	PLAYSOUND>Mine_LOCKON 0 1.0 0.0 0.0 0.0 0
+	STAT>ChasePlayer
+
+ENDSTATE
+
+STATE ChasePlayer
+	CheckX = DogX
+	CheckY = DogY
+	CheckZ = DogZ
+	MoveTowardCheckPos (0.1)
+	RelTurnTowardPlayerXY(0.1)
+  
+	IF (NearPlayer(2))
+		STAT>Kill
+	ENDIF
+ENDSTATE
+
+STATE Kill
+	PlayerHealth = PlayerHealth - 10.0
+	MyVar = 1.0
+ 	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+	DESTROYME SPAWN_EXPLODINGBITS
+ENDSTATE
+ 
+STATE Shot
+// 	adrelanin = adrelanin + 0.2
+ 	MyVar = 1.0
+  	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+	Score = Score + 500
+ 	DESTROYME SPAWN_EXPLODINGBITS
+ENDSTATE

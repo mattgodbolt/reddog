@@ -1,0 +1,49 @@
+LOCALINT	dir
+LOCALFLOAT	ax
+LOCALFLOAT	az
+LOCALFLOAT	time
+
+STATE Init
+	MyFlag = MyFlag | ENEMY | STRATCOLL | LOWCOLL | FLOORCOLL | TARGETABLE
+
+	dir = GetGlobalParamInt(0)
+	SetFriction(0.1, 0.1, 0.1)
+
+	OBJECT> BOSSES\SWAMPBOSSWEAPONS\SWAMPTORPEDO
+	RegisterCollision()
+	CREATE SPAWN_WhiteTrail 0, -2.0, 0, 0, 0, 0, 0
+	TRIGSET>Die	EVERY	300
+	TRIGSET>Die ONFLOOR	
+	TRIGSET>Die WHENHIT
+	TRIGSET>Always EVERY 1
+	time = 0.0
+	damage = 20.0
+	health = 1.0
+	ax = 0
+	az = 0
+	IF (dir = -1)
+		AllocStratSoundBlock(1)
+		PLAYSOUND>WALKER_FIREBALL 0 1.0 0.0 0.0 0.0 (RANDOM | CONTINUOUS)
+	ENDIF
+	STAT>Start
+ENDSTATE
+
+TRIGGER Always
+	time = time + 0.1
+	FaceAlongDir()
+	ax = (DogX + Ssin(time * 0.6) + 1.0) - x
+	az = (DogZ + Ssin(time * 0.9) + 1.0) - z
+	absspeedx = absspeedx + (ax * 0.01)
+	absspeedy = 3.0
+	absspeedz = absspeedz + (az * 0.01)
+	TRIGFIN
+ENDTRIGGER
+
+STATE Start
+	MyFlag = MyFlag
+ENDSTATE
+
+STATE Die
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+	Delete()
+ENDSTATE

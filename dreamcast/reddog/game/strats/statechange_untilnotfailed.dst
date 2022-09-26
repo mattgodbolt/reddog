@@ -1,0 +1,11 @@
+STATE Init
+	MyFlag = MyFlag & LNOT(ENEMY)
+	WHILE (MissionFailure)
+		MyFlag = MyFlag
+	ENDWHILE
+
+	Delete()
+
+ENDSTATE
+
+

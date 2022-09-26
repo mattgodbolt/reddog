@@ -1,0 +1,174 @@
+
+
+DEFINE		VERT_FIRE		2.3
+DEFINE		HOR_FIRE		4.0
+DEFINE		FOR_FIRE		3.0
+DEFINE		MOVE_FACT	1.5
+LOCALINT	pos
+LOCALFLOAT	time
+LOCALINT	Lightning
+LOCALINT	shockHim
+LOCALINT	shockTime
+LOCALINT	type
+LOCALFLOAT  rand
+LOCALFLOAT  randFireX
+LOCALFLOAT  randFireZ
+LOCALFLOAT	tx
+LOCALFLOAT	ty
+LOCALFLOAT	tz
+
+STATE Init 
+	MyFlag = MyFlag | STRATCOLL | ENEMY | LOWCOLL | TARGETABLE
+	OBJECT>ENEMIES\HOVERBOT
+	RegisterCollision()
+	TRIGSET>SpecularMadness EVERY 1
+	TRIGSET>FiringWarez EVERY 1
+	pos = GetGlobalParamInt(0)
+	type = GetGlobalParamInt(1)
+	health = 100.0
+	shockHim = 0
+	AllocStratSoundBlock(1) 
+	STAT>Start
+ENDSTATE
+
+LOCALFLOAT SPECAMOUNT
+
+TRIGGER SpecularMadness
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+	IF ((MyFlag & HITSTRAT) AND (CollWithFlag & BULLETTYPE))
+		SPECAMOUNT = 1.0
+	ENDIF
+	IF (SPECAMOUNT > 0)
+  		MyFlag2 = MyFlag2 | SPECULAR
+		SetSpecularColour(0, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		SPECAMOUNT = SPECAMOUNT - 0.1
+	ELSE
+		SPECAMOUNT = 0
+ 		MyFlag2 = MyFlag2 & LNOT(SPECULAR)
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+STATE FiringWarez
+	IF (!NearPlayerXY(60))
+		shockHim = 0
+		shockTime = 0
+	ENDIF
+	IF (shockHim = 0)
+		IF (NearPlayerXY(100.0))
+			IF (NearPlayerXY(50.0))
+				IF (RandRange(0.0, 50.0) < 1.0)
+					shockHim = 1
+					shockTime = 0
+				ENDIF
+			ELSE
+				rand = RandRange(0.0, 100.0)
+				IF (rand < 1.0)
+					randFireX = 0.2
+					randFireZ = 0.2
+					randFireX = RandRange(- randFireX , randFireX )
+					randFireZ = RandRange(- randFireZ , randFireZ )
+					PLAYSOUND>SQUAR009PMIX 0 1.0 0.0 0.0 0.0 0
+//					PlaySound (0,6,1, 0, 0, 0, 0)
+					CREATE SPAWN_RED_LASER_ENEMY -1.3, 0.0, -0.6, randFireX, 0, randFireZ, 0
+					CREATE SPAWN_RED_LASER_ENEMY 1.3, 0.0, -0.6, randFireX, 0, randFireZ, 0
+					
+				ENDIF
+			ENDIF
+		ENDIF
+	ELSE	
+		shockTime = shockTime + 1
+		IF (shockTime > 0)
+			MyStratToWorld(-HOR_FIRE, FOR_FIRE, 0.0)
+			tx = CheckX
+			ty = CheckY
+			tz = CheckZ 
+			MyStratToWorld(0.0, FOR_FIRE, VERT_FIRE)
+			DrawShock(tx, ty, tz, CheckX, CheckY, CheckZ, 0.1, 2.0, 2.0)
+		ENDIF
+			
+		IF (shockTime > 20)
+			MyStratToWorld(0.0, FOR_FIRE, VERT_FIRE)
+			tx = CheckX
+			ty = CheckY
+			tz = CheckZ
+			MyStratToWorld(HOR_FIRE, FOR_FIRE, 0.0)
+			DrawShock(tx, ty, tz, CheckX, CheckY, CheckZ, 0.1, 2.0, 2.0)
+		ENDIF
+
+		IF (shockTime > 40)
+			MyStratToWorld(HOR_FIRE, FOR_FIRE, 0.0)
+			tx = CheckX
+			ty = CheckY
+			tz = CheckZ
+			MyStratToWorld(0.0, FOR_FIRE, -VERT_FIRE)
+			DrawShock(tx, ty, tz, CheckX, CheckY, CheckZ, 0.1, 2.0, 2.0)
+		ENDIF
+
+		IF (shockTime > 60)
+			MyStratToWorld(0.0, FOR_FIRE, -VERT_FIRE)
+			tx = CheckX
+			ty = CheckY
+			tz = CheckZ
+			MyStratToWorld(-HOR_FIRE, FOR_FIRE, 0.0)
+			DrawShock(tx, ty, tz, CheckX, CheckY, CheckZ, 0.1, 2.0, 2.0)
+		ENDIF
+
+		IF (shockTime > 80)
+			MyStratToWorld(0.0, FOR_FIRE, 0.0)
+			tx = CheckX
+			ty = CheckY
+			tz = CheckZ
+			MyStratToWorld(-HOR_FIRE, FOR_FIRE, 0.0)
+			DrawShock(tx, ty, tz, CheckX, CheckY, CheckZ, 0.2, 2.0, 2.0)
+			MyStratToWorld(HOR_FIRE, FOR_FIRE, 0.0)
+			DrawShock(tx, ty, tz, CheckX, CheckY, CheckZ, 0.2, 2.0, 2.0)
+			MyStratToWorld(0.0, FOR_FIRE, VERT_FIRE)
+			DrawShock(tx, ty, tz, CheckX, CheckY, CheckZ, 0.2, 2.0, 2.0)
+			MyStratToWorld(0.0, FOR_FIRE, -VERT_FIRE)
+			DrawShock(tx, ty, tz, CheckX, CheckY, CheckZ, 0.2, 2.0, 2.0)
+		ENDIF
+
+		IF ((shockTime > 100) AND (PlayerHealth > 0.0))
+			PlayerHealth = PlayerHealth - 1.0
+			Lightning = DrawLightning (0, 0, 0, 0, Lightning,0)
+		ENDIF
+	ENDIF
+ENDSTATE
+
+
+STATE Start
+	time = time + 0.1
+	
+	IF (pos = 0)
+		StickToParent(0, -10.0, 0.0, 0.0, 0)
+		x = x + (Ssin(time * 1.6) * MOVE_FACT)
+		y = y + (Ssin(time * 1.2) * MOVE_FACT)
+		z = z + (Ssin(time * 0.8) * MOVE_FACT)
+	ENDIF
+	IF (pos = 1)
+		StickToParent(0, 10.0, 0.0, 0.0, 0)
+		x = x - (Ssin(time * 1.6) * MOVE_FACT)
+		y = y + (Ssin(time * 1.2) * MOVE_FACT)
+		z = z + (Ssin(time * 0.2) * MOVE_FACT)
+	ENDIF
+	IF (pos = 2)
+		StickToParent(0, 0.0, 0.0, -6.0, 0)
+		x = x + (Ssin(time * 0.6) * MOVE_FACT)
+		y = y - (Ssin(time * 1.8) * MOVE_FACT)
+		z = z + (Ssin(time * 0.8) * MOVE_FACT)
+	ENDIF
+	IF (pos = 3)
+		StickToParent(0, 0.0, 0.0, 6.0, 0)
+		x = x + (Ssin(time * 0.6) * MOVE_FACT)
+		y = y + (Ssin(time * 0.4) * MOVE_FACT)
+		z = z - (Ssin(time * 0.6) * MOVE_FACT)
+	ENDIF
+	PointToXY(DogX, DogY, DogZ)
+	IF (health <= 0.0)
+		ParentVar = ParentVar + 1.0
+		CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+		Delete()
+	ENDIF
+ENDSTATE
+

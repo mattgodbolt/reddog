@@ -1,0 +1,1399 @@
+//Microsoft Developer Studio generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_PANEL DIALOG DISCARDABLE  0, 0, 110, 856
+STYLE WS_CHILD | WS_VISIBLE
+FONT 8, "MS Sans Serif"
+BEGIN
+    PUSHBUTTON      "",IDC_OBJECT_TYPE,7,13,100,13
+    CONTROL         "Box",IDC_BOX,"Button",BS_AUTORADIOBUTTON | WS_GROUP,5,
+                    62,28,10
+    CONTROL         "Arrow",IDC_DISPLAY_ARROW,"Button",BS_AUTORADIOBUTTON,35,
+                    62,34,10
+    CONTROL         "Mesh",IDC_MESH,"Button",BS_AUTORADIOBUTTON,70,62,30,10
+    CTEXT           "Select model and display as :",IDC_STATIC,7,54,100,8
+    LTEXT           "Strat name:",IDC_STATIC,7,1,50,9
+    LTEXT           "Strat model:",IDC_STATIC,7,76,60,10
+    PUSHBUTTON      "Select Model",IDC_STRAT_OBJECTS,7,88,100,14
+    PUSHBUTTON      "Select Path",IDC_PATHPICK1,7,130,100,14
+    CONTROL         "Normal",IDC_NORMPATH,"Button",BS_AUTORADIOBUTTON | 
+                    WS_GROUP,13,753,45,15
+    CONTROL         "Offset",IDC_OFFPATH,"Button",BS_AUTORADIOBUTTON,13,766,
+                    40,15
+    CONTROL         "PlaneMove",IDC_PLANEMOVE,"Button",BS_AUTORADIOBUTTON | 
+                    WS_GROUP,13,247,52,10
+    CONTROL         "HoverMove",IDC_HOVERMOVE,"Button",BS_AUTORADIOBUTTON,13,
+                    257,60,10
+    PUSHBUTTON      "Select Creation",IDC_TRIGPOINT1,13,307,87,9
+    LTEXT           "Waypoint:",IDC_STATIC,7,106,50,8
+    LTEXT           "Creation trigger:",IDC_STATIC,13,295,50,8
+    CONTROL         "",IDC_ARMOUR,"CustEdit",WS_TABSTOP,54,795,36,11
+    CONTROL         "",IDC_ARMOURSPINNER,"SpinnerControl",0x0,90,795,7,11
+    CONTROL         "",IDC_HEALTH,"CustEdit",WS_TABSTOP,56,810,36,8
+    CONTROL         "",IDC_HEALTHSPINNER,"SpinnerControl",0x0,90,810,7,8
+    LTEXT           "Health:",IDC_STATIC,13,810,24,8
+    LTEXT           "Armour:",IDC_STATIC,13,795,25,8
+    CONTROL         "Aggressive",IDC_AGGRESSIVE,"Button",BS_AUTORADIOBUTTON | 
+                    WS_GROUP,13,431,60,10
+    CONTROL         "Defensive",IDC_DEFENSIVE,"Button",BS_AUTORADIOBUTTON,13,
+                    444,60,10
+    CONTROL         "Holding",IDC_HOLDING,"Button",BS_AUTORADIOBUTTON,13,457,
+                    50,10
+    CONTROL         "Path only",IDC_PATH,"Button",BS_AUTORADIOBUTTON,13,469,
+                    60,10
+    CONTROL         "",IDC_NODE,"CustEdit",WS_TABSTOP,56,166,36,9
+    CONTROL         "",IDC_NODESPINNER,"SpinnerControl",0x0,100,166,6,10
+    LTEXT           "Activation trigger:",IDC_STATIC,13,372,56,8
+    PUSHBUTTON      "Select Activation",IDC_ACTTRIGPOINT,13,385,86,10
+    LTEXT           "Patrol Route:",IDC_STATIC,7,122,67,8
+    CONTROL         "",IDC_ROUTENUM,"CustEdit",WS_TABSTOP,56,152,36,9
+    CONTROL         "",IDC_ROUTESPINNER,"SpinnerControl",0x0,100,152,6,9
+    CONTROL         "Use entire network",IDC_ENTIRENET,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,184,75,10
+    CONTROL         "Use own rotation",IDC_OWNROT,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,7,195,69,10
+    PUSHBUTTON      "0",IDC_ACTNUM,84,398,16,14
+    PUSHBUTTON      "Select Activation",IDC_IPARAM,13,522,77,11
+    PUSHBUTTON      "0",IDC_IPARAMNUM,70,503,20,14
+    CONTROL         "",IDC_INTPARAM,"CustEdit",WS_TABSTOP,54,538,36,9
+    CONTROL         "",IDC_INTPARAMSPINNER,"SpinnerControl",0x0,90,538,8,9
+    LTEXT           "Parameter",IDC_STATIC,14,506,40,12
+    LTEXT           "Value",IDC_STATIC,13,538,28,8
+    GROUPBOX        "Behaviour Types",IDC_STATIC,7,421,100,60
+    GROUPBOX        "Int Parameters",IDC_STATIC,7,496,93,64
+    PUSHBUTTON      "Select Activation",IDC_FPARAM,13,588,77,11
+    PUSHBUTTON      "0",IDC_FPARAMNUM,70,571,20,14
+    CONTROL         "",IDC_FLOATPARAM,"CustEdit",WS_TABSTOP,54,602,36,9
+    CONTROL         "",IDC_FLOATPARAMSPINNER,"SpinnerControl",WS_TABSTOP,90,
+                    602,8,9
+    LTEXT           "Parameter",IDC_STATIC,13,576,40,12
+    LTEXT           "Value",IDC_STATIC,13,605,28,8
+    GROUPBOX        "Float Parameters",IDC_STATIC,7,564,93,64
+    CONTROL         "",IDC_DELAY,"CustEdit",WS_TABSTOP,47,649,36,9
+    CONTROL         "",IDC_DELAYSPINNER,"SpinnerControl",0x0,83,649,7,9
+    CONTROL         "Defaults",IDC_IINTDEF,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,13,547,42,10
+    CONTROL         "Defaults",IDC_IFLOATDEF,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,13,616,42,10
+    PUSHBUTTON      "Select Event",IDC_EVENTPOINT,13,358,86,10
+    LTEXT           "Event trigger:",IDC_STATIC,14,347,43,8
+    CONTROL         "Friendly",IDC_FRIENDLY,"Button",BS_AUTORADIOBUTTON | 
+                    WS_GROUP,13,684,50,10
+    CONTROL         "Enemy",IDC_ENEMY,"Button",BS_AUTORADIOBUTTON,13,696,45,
+                    10
+    CONTROL         "Gravity on",IDC_GRAVITYONC,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,13,708,65,10
+    CONTROL         "CalcRelVel",IDC_CALCRELVELC,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,13,721,65,10
+    LTEXT           "Node:",IDC_STATIC,7,166,20,8
+    LTEXT           "Patrol:",IDC_STATIC,7,152,21,8
+    GROUPBOX        "Movement Flags",IDC_STATIC,7,237,100,33
+    LTEXT           "Activation point:",IDC_STATIC,13,400,52,8
+    GROUPBOX        "Strat local Parameters",IDC_STATIC,7,487,94,141
+    GROUPBOX        "Events And Triggers",IDC_STATIC,7,282,100,134
+    PUSHBUTTON      "ORPHAN",IDC_PARENT,7,38,100,12
+    LTEXT           "Parent",IDC_STATIC,7,29,38,8
+    PUSHBUTTON      "Clear",IDC_CLEARPARENT,74,28,33,10
+    PUSHBUTTON      "Clear",IDC_CLEARWAY,67,106,33,9
+    PUSHBUTTON      "Clear",IDC_CLEARCREATE,67,295,33,9
+    PUSHBUTTON      "Clear",IDC_CLEAREVENT,67,347,33,9
+    PUSHBUTTON      "Clear",IDC_CLEARACT,67,372,33,9
+    GROUPBOX        "Strat delay",IDC_STATIC,7,636,93,31
+    GROUPBOX        "Strat flags",IDC_STATIC,7,673,93,62
+    GROUPBOX        "Path type",IDC_STATIC,7,742,93,43
+    PUSHBUTTON      "Clear",IDC_CLEARMODEL,67,76,33,10
+    CONTROL         "",IDC_ARMOUR2,"CustEdit",WS_TABSTOP,54,795,36,11
+    CONTROL         "",IDC_HEALTH2,"CustEdit",WS_TABSTOP,54,810,36,8
+    LTEXT           "Health:",IDC_STATIC,13,810,24,8
+    LTEXT           "Armour:",IDC_STATIC,13,795,25,8
+    GROUPBOX        "Behaviour Types",IDC_STATIC,7,421,100,60
+    GROUPBOX        "Strat local Parameters",IDC_STATIC,7,487,94,141
+    GROUPBOX        "Strat delay",IDC_STATIC,7,636,93,31
+    GROUPBOX        "Strat flags",IDC_STATIC,7,673,93,62
+    GROUPBOX        "Path type",IDC_STATIC,7,742,93,43
+    CONTROL         "Offset",IDC_OFFPATH2,"Button",BS_AUTORADIOBUTTON,13,766,
+                    40,15
+    CONTROL         "",IDC_ARMOUR3,"CustEdit",WS_TABSTOP,54,795,36,11
+    CONTROL         "",IDC_HEALTH3,"CustEdit",WS_TABSTOP,54,810,36,8
+    LTEXT           "Health:",IDC_STATIC,13,810,24,8
+    LTEXT           "Armour:",IDC_STATIC,13,795,25,8
+    GROUPBOX        "Behaviour Types",IDC_STATIC,7,421,100,60
+    GROUPBOX        "Strat local Parameters",IDC_STATIC,7,487,94,141
+    GROUPBOX        "Strat delay",IDC_STATIC,7,636,93,31
+    GROUPBOX        "Strat flags",IDC_STATIC,7,673,93,62
+    GROUPBOX        "Path type",IDC_STATIC,7,742,93,43
+    CONTROL         "Offset",IDC_OFFPATH3,"Button",BS_AUTORADIOBUTTON,13,766,
+                    40,15
+    CONTROL         "",IDC_ARMOUR4,"CustEdit",WS_TABSTOP,54,795,36,11
+    CONTROL         "",IDC_HEALTH4,"CustEdit",WS_TABSTOP,54,810,36,8
+    LTEXT           "Health:",IDC_STATIC,13,810,24,8
+    LTEXT           "Armour:",IDC_STATIC,13,795,25,8
+    GROUPBOX        "Behaviour Types",IDC_STATIC,7,421,100,60
+    GROUPBOX        "Strat local Parameters",IDC_STATIC,7,487,94,141
+    GROUPBOX        "Strat delay",IDC_STATIC,7,636,93,31
+    GROUPBOX        "Strat flags",IDC_STATIC,7,673,93,62
+    GROUPBOX        "Path type",IDC_STATIC,7,742,93,43
+    CONTROL         "Offset",IDC_OFFPATH4,"Button",BS_AUTORADIOBUTTON,13,766,
+                    40,15
+    CONTROL         "",IDC_ARMOUR5,"CustEdit",WS_TABSTOP,54,795,36,11
+    CONTROL         "",IDC_HEALTH5,"CustEdit",WS_TABSTOP,54,810,36,8
+    LTEXT           "Health:",IDC_STATIC,13,810,24,8
+    LTEXT           "Armour:",IDC_STATIC,13,795,25,8
+    GROUPBOX        "Behaviour Types",IDC_STATIC,7,421,100,60
+    GROUPBOX        "Strat local Parameters",IDC_STATIC,7,487,94,141
+    GROUPBOX        "Strat delay",IDC_STATIC,7,636,93,31
+    GROUPBOX        "Strat flags",IDC_STATIC,7,673,93,62
+    GROUPBOX        "Path type",IDC_STATIC,7,742,93,43
+    PUSHBUTTON      "Select Deletion",IDC_DELETIONEVENTPOINT,13,329,87,9
+    LTEXT           "Deletion Event:",IDC_STATIC,13,317,50,8
+    PUSHBUTTON      "Clear",IDC_CLEARDELETIONEVENT,67,317,33,9
+    CONTROL         "Use own position",IDC_OWNPOS,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,7,208,70,10
+END
+
+IDD_CHOOSE_OBJECT DIALOG DISCARDABLE  0, 0, 186, 95
+STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Choose an object"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,129,7,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,129,24,50,14
+    CONTROL         "Tree1",IDC_OBJECT_TREE,"SysTreeView32",TVS_HASBUTTONS | 
+                    TVS_HASLINES | TVS_LINESATROOT | TVS_DISABLEDRAGDROP | 
+                    WS_BORDER | WS_TABSTOP,5,5,110,85
+END
+
+IDD_PREVIEW DIALOG DISCARDABLE  0, 0, 111, 742
+STYLE WS_CHILD | WS_VISIBLE
+FONT 8, "MS Sans Serif"
+BEGIN
+    CONTROL         "Convert textures",IDC_CONVERT,"CustButton",WS_TABSTOP,
+                    13,50,87,12
+    GROUPBOX        "Statistics",IDC_STATIC,6,3,99,31
+    GROUPBOX        "Conversion",IDC_STATIC,7,38,99,50
+    CONTROL         "Convert materials",IDC_CONVERTMAT,"CustButton",
+                    WS_TABSTOP,13,68,87,12
+    GROUPBOX        "Exporting",IDC_STATIC,7,97,97,138
+    CONTROL         "Save Landscape",IDC_SAVESCAPE,"CustButton",WS_TABSTOP,
+                    13,110,87,12
+    CONTROL         "Save All Maps",IDC_SAVEMAP,"CustButton",WS_TABSTOP,13,
+                    127,87,12
+    CONTROL         "This Map and Landscape",IDC_SAVEBOTH,"CustButton",
+                    WS_TABSTOP,13,160,87,12
+    LTEXT           "Name:",IDC_STATIC,9,180,22,8
+    CONTROL         "",IDC_LEVELNAME,"CustEdit",WS_TABSTOP,37,177,63,12
+    CONTROL         "Save This Map Only",IDC_SAVESOLEMAP,"CustButton",
+                    WS_TABSTOP,13,143,87,12
+    GROUPBOX        "Strats",IDC_STATIC,7,239,97,165
+    CONTROL         "Strats and Events",IDC_VIEWSTRATS,"CustButton",
+                    WS_TABSTOP,13,249,87,12
+    CONTROL         "Update Emulator",IDC_AUTORUN_GDS,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,14,206,86,10
+    CONTROL         "Run the Game",IDC_AUTORUN_CODE,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,14,219,86,10
+    CONTROL         "Convert Names",IDC_CONVNAMES,"CustButton",WS_TABSTOP,13,
+                    268,87,12
+    CONTROL         "DELETE STRATS",IDC_DELETESTRATS,"CustButton",WS_TABSTOP,
+                    13,286,87,12
+    CONTROL         "FREEZE STRATS",IDC_FREEZESTRATS,"CustButton",WS_TABSTOP,
+                    13,305,87,12
+    CONTROL         "EDITOR",IDC_EDITOR,"CustButton",WS_TABSTOP,13,321,87,12
+    CONTROL         "Object stats",IDC_STATS,"CustButton",WS_TABSTOP,13,15,
+                    87,12
+    CONTROL         "As an object",IDC_SAVEOBJ,"CustButton",WS_TABSTOP,13,
+                    193,87,12
+    GROUPBOX        "MattG's magic numbers",IDC_STATIC,7,607,97,98
+    LTEXT           "MIN_BBOX_POLYS:",IDC_STATIC,13,667,67,8
+    LTEXT           "MAX_BBOX_SIZE",IDC_STATIC,13,549,60,8
+    LTEXT           "MAX_POLY_DENSITY",IDC_STATIC,13,575,74,8
+    LTEXT           "BASE_CARVE",IDC_STATIC,13,621,48,8
+    CONTROL         "",IDC_EDIT1,"CustEdit",WS_TABSTOP,13,680,87,12
+    CONTROL         "",IDC_EDIT2,"CustEdit",WS_TABSTOP,13,558,87,12
+    CONTROL         "",IDC_EDIT3,"CustEdit",WS_TABSTOP,13,586,87,12
+    CONTROL         "",IDC_EDIT4,"CustEdit",WS_TABSTOP,23,632,77,12
+    CONTROL         "SHOW START STRATS",IDC_FILTER,"CustButton",WS_TABSTOP,
+                    13,339,87,12
+    CONTROL         "GOD MODE BUILD",IDC_GODMODE,"CustButton",WS_TABSTOP,13,
+                    373,87,12
+    GROUPBOX        "Clarke-o-matic bonus calc",IDC_STATIC,7,459,97,72
+    CONTROL         "",IDC_SALARY,"CustEdit",WS_TABSTOP,52,474,48,12
+    CONTROL         "",IDC_BONUS,"CustEdit",WS_TABSTOP,52,491,48,12
+    CONTROL         "",IDC_BONUS_AMT,"CustEdit",WS_TABSTOP,52,508,48,12
+    LTEXT           "Salary:",IDC_STATIC,13,476,33,8
+    LTEXT           "Bonus:",IDC_STATIC,13,492,33,8
+    LTEXT           "Bonus %",IDC_STATIC,13,510,33,8
+    GROUPBOX        "Camera control",IDC_STATIC,7,421,97,36
+    CONTROL         "Control camera",IDC_CTRL_CAMERA,"CustButton",WS_TABSTOP,
+                    13,433,87,12
+    CONTROL         "",IDC_EDIT5,"CustEdit",WS_TABSTOP,23,650,77,12
+    LTEXT           "X",IDC_STATIC,13,634,8,8
+    LTEXT           "Y",IDC_STATIC,13,651,8,8
+    CONTROL         "NONDELETED STRATS",IDC_NONDELETEDSTRATS,"CustButton",
+                    WS_TABSTOP,13,356,87,12
+    CONTROL         "DEMO DISC MAKE",IDC_GINSU,"CustButton",WS_TABSTOP,13,
+                    390,87,12
+END
+
+IDD_COLLISION DIALOG DISCARDABLE  0, 0, 108, 38
+STYLE WS_CHILD | WS_VISIBLE
+FONT 8, "MS Sans Serif"
+BEGIN
+    CONTROL         "Use parent's rotation",IDC_IGNPARENT,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,5,5,81,10
+    CONTROL         "0, 5000, 0",IDC_RADIUS_SPIN,"SpinnerControl",WS_TABSTOP,
+                    90,20,11,10
+    CONTROL         "0",IDC_RADIUS,"CustEdit",WS_TABSTOP,49,20,39,10
+    LTEXT           "Radius :",IDC_STATIC,7,20,33,10,SS_CENTERIMAGE
+END
+
+IDD_OBJFLAGS DIALOG DISCARDABLE  0, 0, 108, 391
+STYLE WS_CHILD | WS_VISIBLE
+FONT 8, "MS Sans Serif"
+BEGIN
+    CONTROL         "Object can &move",IDC_CALC_MATRIX,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,9,18,70,10
+    CONTROL         "Object can be &targetted",IDC_TARGETABLE,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,9,30,91,10
+    CONTROL         "",IDC_ID,"CustEdit",WS_TABSTOP,51,57,36,9
+    CONTROL         "",IDC_IDSPINNER,"SpinnerControl",0x0,89,57,7,9
+    CONTROL         "",IDC_OBJECTNAME,"CustEdit",WS_TABSTOP,35,166,63,9
+    CONTROL         "",IDC_RADIUS,"CustEdit",WS_TABSTOP,53,180,36,9
+    CONTROL         "",IDC_RADIUSSPINNER,"SpinnerControl",0x0,91,180,7,9
+    CONTROL         "",IDC_MASS,"CustEdit",WS_TABSTOP,53,193,36,9
+    CONTROL         "",IDC_MASSSPINNER,"SpinnerControl",0x0,91,193,7,9
+    CONTROL         "Calculate mass and radius",IDC_CALCULATE,"CustButton",
+                    WS_TABSTOP,11,204,87,12
+    CONTROL         "",IDC_EXPROT,"CustEdit",WS_TABSTOP,53,222,36,9
+    CONTROL         "",IDC_EXPROTSPINNER,"SpinnerControl",0x0,91,222,7,9
+    CONTROL         "",IDC_MOI,"CustEdit",WS_TABSTOP,53,236,36,9
+    CONTROL         "",IDC_MOISPINNER,"SpinnerControl",0x0,91,236,7,9
+    CONTROL         "",IDC_UID,"CustEdit",WS_TABSTOP,53,246,36,9
+    CONTROL         "",IDC_UIDSPINNER,"SpinnerControl",0x0,91,246,7,9
+    CONTROL         "Own obj &instance copy",IDC_INSTANCE,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,11,262,88,10
+    CONTROL         "",IDC_FRICTION_X,"CustEdit",WS_TABSTOP,53,292,36,9
+    CONTROL         "",IDC_FRICTION_X_SPINNER,"SpinnerControl",0x0,91,292,7,
+                    9
+    CONTROL         "",IDC_FRICTION_Y,"CustEdit",WS_TABSTOP,53,305,36,9
+    CONTROL         "",IDC_FRICTION_Y_SPINNER,"SpinnerControl",0x0,91,305,7,
+                    9
+    CONTROL         "",IDC_FRICTION_Z,"CustEdit",WS_TABSTOP,53,316,36,9
+    CONTROL         "",IDC_FRICTION_Z_SPINNER,"SpinnerControl",0x0,91,316,7,
+                    9
+    CONTROL         "",IDC_FRICTION_X2,"CustEdit",WS_TABSTOP,53,345,36,9
+    CONTROL         "",IDC_FRICTION_X_SPINNER2,"SpinnerControl",0x0,91,345,7,
+                    9
+    CONTROL         "",IDC_FRICTION_Y2,"CustEdit",WS_TABSTOP,53,358,36,9
+    CONTROL         "",IDC_FRICTION_Y_SPINNER2,"SpinnerControl",0x0,91,358,7,
+                    9
+    CONTROL         "",IDC_FRICTION_Z2,"CustEdit",WS_TABSTOP,53,369,36,9
+    CONTROL         "",IDC_FRICTION_Z_SPINNER2,"SpinnerControl",0x0,91,369,7,
+                    9
+    LTEXT           "Object ID :",IDC_STATIC,9,57,35,8
+    GROUPBOX        "Sub-object properties",IDC_STATIC,3,3,99,148
+    GROUPBOX        "Entire object properties",IDC_STATIC,5,150,99,123
+    LTEXT           "Name:",IDC_STATIC,11,166,22,9
+    LTEXT           "Radius:",IDC_STATIC,11,180,25,8
+    LTEXT           "Mass",IDC_STATIC,11,193,18,8
+    LTEXT           "M.of.Inertia:",IDC_STATIC,11,236,38,8
+    LTEXT           "Unique ID:",IDC_STATIC,11,246,35,8
+    LTEXT           "X Friction",IDC_STATIC,11,292,30,8
+    LTEXT           "Y Friction",IDC_STATIC,11,305,30,8
+    LTEXT           "Z Friction",IDC_STATIC,11,316,30,8
+    GROUPBOX        "Ground friction",IDC_STATIC,5,278,99,51
+    LTEXT           "Exp. Rot",IDC_STATIC,11,222,28,8
+    LTEXT           "X Friction",IDC_STATIC,11,345,30,8
+    LTEXT           "Y Friction",IDC_STATIC,11,358,30,8
+    LTEXT           "Z Friction",IDC_STATIC,11,369,30,8
+    GROUPBOX        "Air friction",IDC_STATIC,5,332,99,53
+    CONTROL         "&High detail collision",IDC_HIGH_D_COLL,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,9,42,76,10
+    CONTROL         "Object casts a shadow",IDC_CASTSHADOW,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,10,70,88,10
+    CONTROL         "Object is unlit",IDC_UNLIT,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,10,90,58,10
+    CONTROL         "Has a round shadow",IDC_ROUNDSHADOW,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,10,80,81,10
+    CONTROL         "Draw face on to camera",IDC_FACEON,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,10,100,92,10
+    CONTROL         "Object moves on strat",IDC_STRATMOVE,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,10,110,85,10
+    CONTROL         "Water effect model",IDC_WATEREFFECT,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,10,120,76,10
+    CONTROL         "Lava effect model",IDC_LAVAEFFECT,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,10,130,73,10
+    LTEXT           "Tick both effects for flag",IDC_STATIC,21,141,78,8
+END
+
+IDD_COM DIALOG DISCARDABLE  0, 0, 108, 21
+STYLE WS_CHILD | WS_VISIBLE
+FONT 8, "MS Sans Serif"
+BEGIN
+    LTEXT           "This is the object's centre of mass",IDC_STATIC,0,6,107,
+                    8
+END
+
+IDD_DIALOG1 DIALOG DISCARDABLE  0, 0, 186, 95
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Dialog"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,129,7,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,129,24,50,14
+END
+
+IDD_VCMOD_PANEL DIALOG DISCARDABLE  0, 0, 108, 44
+STYLE WS_CHILD | WS_VISIBLE
+FONT 8, "MS Sans Serif"
+BEGIN
+    CTEXT           "This modifier is managed by the ""Prelight Vertex Colors"" Utility plug-in.",
+                    IDC_STATIC,7,7,94,30
+END
+
+IDD_VCUTIL_PANEL DIALOG DISCARDABLE  0, 0, 108, 25
+STYLE WS_CHILD | WS_VISIBLE
+FONT 8, "MS Sans Serif"
+BEGIN
+    PUSHBUTTON      "Recalculate prelighting",IDC_VCUTIL_APPLY,16,6,76,13
+END
+
+IDD_LEVELFLAGS DIALOG DISCARDABLE  0, 0, 108, 373
+STYLE WS_CHILD | WS_VISIBLE
+FONT 8, "MS Sans Serif"
+BEGIN
+    CONTROL         "",IDC_ARED,"CustEdit",WS_TABSTOP,53,86,36,9
+    CONTROL         "",IDC_AREDSPINNER,"SpinnerControl",0x0,93,85,7,9
+    CONTROL         "",IDC_AGREEN,"CustEdit",WS_TABSTOP,53,97,36,9
+    CONTROL         "",IDC_AGREENSPINNER,"SpinnerControl",WS_TABSTOP,93,97,7,
+                    9
+    GROUPBOX        "Entire level properties",IDC_STATIC,7,7,99,344
+    LTEXT           "AMBIENT LIGHTING",IDC_STATIC,13,75,69,8
+    LTEXT           "Red",IDC_STATIC,13,85,25,8
+    LTEXT           "Green",IDC_STATIC,13,97,25,8,WS_TABSTOP
+    LTEXT           "Blue",IDC_STATIC,13,108,25,8
+    CONTROL         "",IDC_ABLUESPINNER,"SpinnerControl",0x0,93,108,7,9
+    CONTROL         "",IDC_ABLUE,"CustEdit",WS_TABSTOP,53,108,36,9
+    LTEXT           "FOG LEVELS",IDC_STATIC,15,170,44,8
+    LTEXT           "Near dist",IDC_STATIC,15,181,31,10
+    LTEXT           "Far dist",IDC_STATIC,16,194,31,10
+    CONTROL         "",IDC_FOGNEAR,"CustEdit",WS_TABSTOP,51,181,36,9
+    CONTROL         "",IDC_FOGFAR,"CustEdit",WS_TABSTOP,51,194,36,9
+    CONTROL         "",IDC_FOGNEARSPINNER,"SpinnerControl",0x0,93,180,7,9
+    CONTROL         "",IDC_FOGFARSPINNER,"SpinnerControl",0x0,93,194,7,9
+    LTEXT           "Scape Intensitiy",IDC_STATIC,15,125,31,17
+    CONTROL         "",IDC_SCAPEINTENSITY,"CustEdit",WS_TABSTOP,51,130,36,9
+    CONTROL         "",IDC_SCAPEINTENSITYSPINNER,"SpinnerControl",0x0,93,129,
+                    7,9
+    LTEXT           "Strat Intensity",IDC_STATIC,15,145,31,16
+    CONTROL         "",IDC_STRATINTENSITY,"CustEdit",WS_TABSTOP,51,150,36,9
+    CONTROL         "",IDC_STRATINTENSITYSPINNER,"SpinnerControl",0x0,93,150,
+                    7,9
+    CONTROL         "",IDC_FRED,"CustEdit",WS_TABSTOP,53,211,36,9
+    CONTROL         "",IDC_FREDSPINNER,"SpinnerControl",0x0,93,211,7,9
+    CONTROL         "",IDC_FGREEN,"CustEdit",WS_TABSTOP,53,222,36,9
+    CONTROL         "",IDC_FGREENSPINNER,"SpinnerControl",0x0,93,222,7,9
+    LTEXT           "Red",IDC_STATIC,16,209,25,8
+    LTEXT           "Green",IDC_STATIC,15,221,25,8
+    LTEXT           "Blue",IDC_STATIC,16,233,25,8
+    CONTROL         "",IDC_FBLUESPINNER,"SpinnerControl",0x0,93,233,7,9
+    CONTROL         "",IDC_FBLUE,"CustEdit",WS_TABSTOP,53,233,36,9
+    LTEXT           "VIEW LEVELS",IDC_STATIC,15,248,48,8
+    LTEXT           "FOV",IDC_STATIC,15,259,31,10
+    LTEXT           "FarZ",IDC_STATIC,16,272,31,10
+    CONTROL         "",IDC_FOV,"CustEdit",WS_TABSTOP,51,259,36,9
+    CONTROL         "",IDC_FARZ,"CustEdit",WS_TABSTOP,51,272,36,9
+    CONTROL         "",IDC_FOVSPINNER,"SpinnerControl",0x0,93,259,7,9
+    CONTROL         "",IDC_FARZSPINNER,"SpinnerControl",0x0,93,272,7,9
+    LTEXT           "CAMERA LEVELS",IDC_STATIC,15,289,60,8
+    LTEXT           "Height",IDC_STATIC,15,300,31,10
+    LTEXT           "Dist",IDC_STATIC,16,313,31,10
+    CONTROL         "",IDC_HEIGHT,"CustEdit",WS_TABSTOP,51,300,36,9
+    CONTROL         "",IDC_DIST,"CustEdit",WS_TABSTOP,51,313,36,9
+    CONTROL         "",IDC_HEIGHTSPINNER,"SpinnerControl",0x0,93,299,7,9
+    CONTROL         "",IDC_DISTSPINNER,"SpinnerControl",0x0,93,312,7,9
+    LTEXT           "Look Height",IDC_STATIC,16,328,31,18
+    CONTROL         "",IDC_LOOKHEIGHT,"CustEdit",WS_TABSTOP,51,328,36,9
+    CONTROL         "",IDC_LOOKHEIGHTSPINNER,"SpinnerControl",0x0,93,329,7,9
+    PUSHBUTTON      "CHOOSE DOME",IDC_OBJECTNAME,7,40,99,16
+    CONTROL         "CLEAR",IDC_CLEARDOME,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,35,22,47,10
+END
+
+IDD_MATERIAL DIALOG DISCARDABLE  0, 0, 217, 444
+STYLE WS_CHILD | WS_VISIBLE
+FONT 8, "MS Sans Serif"
+BEGIN
+    CONTROL         "Normal",IDC_NOTRANS,"Button",BS_AUTORADIOBUTTON | 
+                    WS_GROUP,115,68,38,10
+    CONTROL         "&Additive",IDC_ADDITIVE,"Button",BS_AUTORADIOBUTTON | 
+                    WS_GROUP,115,78,41,10
+    CONTROL         "&Subtractive",IDC_SUBTRACTIVE,"Button",
+                    BS_AUTORADIOBUTTON,155,78,52,10
+    CONTROL         "Sc&reen",IDC_SCREEN,"Button",BS_AUTORADIOBUTTON,115,88,
+                    39,10
+    CONTROL         "&Punchthru",IDC_PUNCHTHRU,"Button",BS_AUTORADIOBUTTON,
+                    155,88,49,10
+    CONTROL         "Poly is &collisionable",IDC_COLLISION,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,8,8,76,10
+    CONTROL         "&Two-sided",IDC_TWOSIDED,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,8,18,49,10
+    CONTROL         "&Anisotropic filter",IDC_ANISOTROPIC,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,110,25,65,8
+    CONTROL         "&Unlit (self-illuminating)",IDC_UNLIT,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,110,35,81,10
+    CONTROL         "&None",IDC_NOFILT,"Button",BS_AUTORADIOBUTTON | 
+                    WS_GROUP,16,48,33,10
+    CONTROL         "&Bilinear",IDC_BILINEAR,"Button",BS_AUTORADIOBUTTON,16,
+                    58,39,10
+    CONTROL         "Tri&linear",IDC_TRILINEAR,"Button",BS_AUTORADIOBUTTON,
+                    16,68,41,10
+    GROUPBOX        "Filtering",IDC_STATIC,8,38,58,44
+    CONTROL         "User1",IDC_DIFFUSE,"ColorSwatch",0x0,76,112,34,12
+    CONTROL         "User1",IDC_SPECULAR,"ColorSwatch",0x0,164,112,34,12
+    LTEXT           "Specular:",IDC_STATIC,128,112,31,12,SS_CENTERIMAGE
+    LTEXT           "Diffuse :",IDC_STATIC,40,112,31,12,SS_CENTERIMAGE
+    GROUPBOX        "Material colours",IDC_STATIC,8,102,201,28
+    LTEXT           "Opacity:",IDC_STATIC,8,87,27,11,SS_CENTERIMAGE
+    CONTROL         "0,100,0",IDC_OP_SPIN,"SpinnerControl",WS_TABSTOP,75,88,
+                    11,10
+    CONTROL         "",IDC_OP_EDIT,"CustEdit",WS_TABSTOP,40,88,32,10
+    GROUPBOX        "Textures",IDC_STATIC,8,137,201,63
+    CONTROL         "",IDC_AMT_PA,"CustEdit",WS_TABSTOP,66,173,20,10
+    CONTROL         "0,255,0",IDC_SPIN_PA,"SpinnerControl",0x0,86,173,8,10
+    CONTROL         "Custom1",IDC_MAP_DI,"CustButton",WS_TABSTOP,100,161,98,
+                    10
+    CONTROL         "Custom1",IDC_MAP_PA,"CustButton",WS_TABSTOP,100,173,98,
+                    10
+    LTEXT           "Texture map......................",IDC_STATIC,16,161,84,
+                    8
+    LTEXT           "Pasted map......",IDC_STATIC,16,173,50,8
+    CONTROL         "Environment map",IDC_EMAP,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,15,185,71,10
+    CONTROL         "Choose Camera",IDC_MATCAM,"CustButton",WS_TABSTOP,66,
+                    237,88,10
+    LTEXT           "Camera Link.........",IDC_STATIC,15,237,50,12,
+                    SS_CENTERIMAGE
+    CONTROL         "CLEAR",IDC_CAMCLEAR,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,159,237,39,10
+    CONTROL         "",IDC_AMT_ADJUST,"CustEdit",WS_TABSTOP,100,149,31,10
+    CONTROL         "0,255,0",IDC_SPIN_ADJUST,"SpinnerControl",0x0,133,149,8,
+                    10
+    LTEXT           "Mipmap Adjustment:..........",IDC_STATIC,16,149,84,8
+    CONTROL         "Custom1",IDC_CONV,"CustButton",WS_TABSTOP,111,8,98,10
+    CONTROL         "Bump map",IDC_BUMPMAP,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,94,185,51,10
+    CONTROL         "U/X",IDC_WRAP_U,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    145,48,29,10
+    GROUPBOX        "Transparency type",IDC_STATIC,109,58,100,45
+    GROUPBOX        "Miscellaneous properties",IDC_STATIC,8,210,201,44
+    COMBOBOX        IDC_SURFACE,66,221,133,78,CBS_DROPDOWNLIST | WS_TABSTOP
+    LTEXT           "Surface type:",IDC_STATIC,16,221,43,16,SS_CENTERIMAGE
+    LTEXT           "Pal #",IDC_STATIC,145,149,18,8
+    CONTROL         "",IDC_PAL_ADJUST,"CustEdit",WS_TABSTOP,167,149,24,10
+    CONTROL         "0,255,0",IDC_SPIN_PAL,"SpinnerControl",0x0,191,149,8,10
+    GROUPBOX        "Visibility IDs",IDC_STATIC,8,261,201,175
+    CONTROL         "0",IDC_CHECK1,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,19,
+                    269,20,10
+    CONTROL         "1",IDC_CHECK2,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,19,
+                    279,20,10
+    CONTROL         "2",IDC_CHECK3,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,19,
+                    289,20,10
+    CONTROL         "3",IDC_CHECK4,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,19,
+                    299,20,10
+    CONTROL         "4",IDC_CHECK5,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,19,
+                    309,20,10
+    CONTROL         "5",IDC_CHECK6,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,19,
+                    319,20,10
+    CONTROL         "6",IDC_CHECK7,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,19,
+                    329,20,10
+    CONTROL         "7",IDC_CHECK17,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,19,
+                    339,20,10
+    CONTROL         "8",IDC_CHECK9,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,62,
+                    269,20,10
+    CONTROL         "9",IDC_CHECK10,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,62,
+                    279,20,10
+    CONTROL         "10",IDC_CHECK11,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    62,289,24,10
+    CONTROL         "11",IDC_CHECK12,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    62,299,24,10
+    CONTROL         "12",IDC_CHECK13,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    62,309,24,10
+    CONTROL         "13",IDC_CHECK14,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    62,319,24,10
+    CONTROL         "14",IDC_CHECK15,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    62,329,24,10
+    CONTROL         "15",IDC_CHECK16,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    62,339,24,10
+    CONTROL         "16",IDC_CHECK18,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    100,269,24,10
+    CONTROL         "17",IDC_CHECK19,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    100,279,24,10
+    CONTROL         "18",IDC_CHECK20,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    100,289,24,10
+    CONTROL         "19",IDC_CHECK21,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    100,299,24,10
+    CONTROL         "20",IDC_CHECK22,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    100,309,24,10
+    CONTROL         "21",IDC_CHECK23,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    100,319,24,10
+    CONTROL         "22",IDC_CHECK24,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    100,329,24,10
+    CONTROL         "23",IDC_CHECK25,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    100,339,24,10
+    CONTROL         "24",IDC_CHECK26,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    143,269,24,10
+    CONTROL         "25",IDC_CHECK27,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    143,279,24,10
+    CONTROL         "26",IDC_CHECK28,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    143,289,24,10
+    CONTROL         "27",IDC_CHECK29,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    143,299,24,10
+    CONTROL         "28",IDC_CHECK30,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    143,309,24,10
+    CONTROL         "29",IDC_CHECK31,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    143,319,24,10
+    CONTROL         "30",IDC_CHECK32,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    143,329,24,10
+    CONTROL         "31",IDC_CHECK33,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    143,339,24,10
+    CONTROL         "CAMERA COLLISION",IDC_CAMERACOLLISION,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,16,362,85,10
+    CONTROL         "ENEMY COLLISION",IDC_ENEMYCOLLISION,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,16,375,81,10
+    CONTROL         "BULLET COLLISION",IDC_BULLETCOLLISION,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,16,386,83,10
+    CONTROL         "PLAYER COLLISION",IDC_PLAYERCOLLISION,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,16,398,83,10
+    CONTROL         "V/Y",IDC_WRAP_V,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    177,48,29,10
+    LTEXT           "WrapFix:",IDC_STATIC,110,48,29,8
+END
+
+IDD_VISBOX DIALOG DISCARDABLE  0, 0, 108, 150
+STYLE WS_CHILD | WS_VISIBLE
+FONT 8, "MS Sans Serif"
+BEGIN
+    CONTROL         "0, 31, 0",IDC_VISBOX_SPIN,"SpinnerControl",WS_TABSTOP,
+                    89,9,11,10
+    CONTROL         "0",IDC_VISBOX_ID,"CustEdit",WS_TABSTOP,63,9,24,10
+    LTEXT           "Visibility box ID:",IDC_STATIC,7,11,50,8
+    CONTROL         "0",IDC_CHECK1,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,
+                    63,20,10
+    CONTROL         "1",IDC_CHECK2,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,
+                    73,20,10
+    CONTROL         "2",IDC_CHECK3,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,
+                    83,20,10
+    CONTROL         "3",IDC_CHECK4,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,
+                    93,20,10
+    CONTROL         "4",IDC_CHECK5,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,
+                    103,20,10
+    CONTROL         "5",IDC_CHECK6,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,
+                    113,20,10
+    CONTROL         "6",IDC_CHECK7,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,
+                    123,20,10
+    CONTROL         "7",IDC_CHECK8,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,
+                    133,20,10
+    CONTROL         "8",IDC_CHECK9,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,27,
+                    63,20,10
+    CONTROL         "9",IDC_CHECK10,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,27,
+                    73,20,10
+    CONTROL         "10",IDC_CHECK11,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    27,83,24,10
+    CONTROL         "11",IDC_CHECK12,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    27,93,24,10
+    CONTROL         "12",IDC_CHECK13,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    27,103,24,10
+    CONTROL         "13",IDC_CHECK14,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    27,113,24,10
+    CONTROL         "14",IDC_CHECK15,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    27,123,24,10
+    CONTROL         "15",IDC_CHECK16,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    27,133,24,10
+    LTEXT           "From this box, it's also possible to see the following areas of the map :",
+                    IDC_STATIC,7,27,93,25
+    CONTROL         "16",IDC_CHECK34,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    51,63,24,10
+    CONTROL         "17",IDC_CHECK17,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    51,73,24,10
+    CONTROL         "18",IDC_CHECK18,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    51,83,24,10
+    CONTROL         "19",IDC_CHECK19,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    51,93,24,10
+    CONTROL         "20",IDC_CHECK20,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    51,103,24,10
+    CONTROL         "21",IDC_CHECK21,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    51,113,24,10
+    CONTROL         "22",IDC_CHECK22,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    51,123,24,10
+    CONTROL         "23",IDC_CHECK23,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    51,133,24,10
+    CONTROL         "24",IDC_CHECK26,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    76,63,24,10
+    CONTROL         "25",IDC_CHECK27,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    76,73,24,10
+    CONTROL         "26",IDC_CHECK28,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    76,83,24,10
+    CONTROL         "27",IDC_CHECK29,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    76,93,24,10
+    CONTROL         "28",IDC_CHECK30,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    76,103,24,10
+    CONTROL         "29",IDC_CHECK31,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    76,113,24,10
+    CONTROL         "30",IDC_CHECK32,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    76,123,24,10
+    CONTROL         "31",IDC_CHECK33,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    75,133,24,10
+END
+
+IDD_BOXPARAM1 DIALOG DISCARDABLE  0, 0, 108, 16
+STYLE WS_CHILD | WS_VISIBLE
+FONT 8, "MS Sans Serif"
+BEGIN
+    CONTROL         "Cube",IDC_CREATECUBE,"Button",BS_AUTORADIOBUTTON | 
+                    WS_TABSTOP,16,3,43,10
+    CONTROL         "Box",IDC_CREATEBOX,"Button",BS_AUTORADIOBUTTON | 
+                    WS_TABSTOP,61,3,35,10
+END
+
+IDD_BOXPARAM2 DIALOG DISCARDABLE  0, 0, 108, 91
+STYLE WS_CHILD | WS_VISIBLE
+FONT 8, "MS Sans Serif"
+BEGIN
+    CONTROL         "0",IDC_LENGTHEDIT,"CustEdit",WS_TABSTOP,54,5,36,10
+    CONTROL         "0",IDC_WIDTHEDIT,"CustEdit",WS_TABSTOP,54,18,36,10
+    CONTROL         "0",IDC_HEIGHTEDIT,"CustEdit",WS_TABSTOP,54,31,36,10
+    CONTROL         "0,10000,0",IDC_LENSPINNER,"SpinnerControl",0x0,91,5,7,
+                    10
+    CONTROL         "",IDC_WIDTHSPINNER,"SpinnerControl",0x0,91,18,7,10
+    CONTROL         "0,10000,0",IDC_HEIGHTSPINNER,"SpinnerControl",0x0,91,31,
+                    7,10
+    RTEXT           "Length:",IDC_STATIC,28,5,25,8
+    RTEXT           "Height:",IDC_STATIC,29,31,24,8
+    RTEXT           "Width:",IDC_STATIC,30,18,23,8
+    CONTROL         "0",IDC_LIGHTEDIT,"CustEdit",WS_TABSTOP,55,55,36,10
+    CONTROL         "0,10000,0",IDC_LIGHTSPIN,"SpinnerControl",0x0,92,55,7,
+                    10
+    RTEXT           "Light:",IDC_STATIC,30,55,18,8
+    CONTROL         "0",IDC_PRIEDIT,"CustEdit",WS_TABSTOP,55,70,36,10
+    CONTROL         "0,10000,0",IDC_PRISPIN,"SpinnerControl",0x0,92,70,7,10
+    RTEXT           "Priority:",IDC_PRIORITY,30,70,24,8
+    GROUPBOX        "Lighting stuff",IDC_STATIC,5,45,100,40
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO DISCARDABLE 
+BEGIN
+    IDD_PANEL, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 107
+        VERTGUIDE, 7
+        VERTGUIDE, 13
+        VERTGUIDE, 56
+        VERTGUIDE, 90
+        VERTGUIDE, 100
+        TOPMARGIN, 1
+        BOTTOMMARGIN, 818
+        HORZGUIDE, 28
+        HORZGUIDE, 38
+        HORZGUIDE, 50
+        HORZGUIDE, 62
+        HORZGUIDE, 94
+        HORZGUIDE, 106
+        HORZGUIDE, 115
+        HORZGUIDE, 130
+        HORZGUIDE, 152
+        HORZGUIDE, 166
+        HORZGUIDE, 176
+        HORZGUIDE, 184
+        HORZGUIDE, 213
+        HORZGUIDE, 257
+        HORZGUIDE, 270
+        HORZGUIDE, 282
+        HORZGUIDE, 306
+        HORZGUIDE, 317
+        HORZGUIDE, 347
+        HORZGUIDE, 372
+        HORZGUIDE, 421
+        HORZGUIDE, 487
+        HORZGUIDE, 538
+        HORZGUIDE, 547
+        HORZGUIDE, 602
+        HORZGUIDE, 628
+        HORZGUIDE, 649
+        HORZGUIDE, 795
+        HORZGUIDE, 806
+        HORZGUIDE, 810
+    END
+
+    IDD_CHOOSE_OBJECT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 179
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 88
+    END
+
+    IDD_PREVIEW, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 104
+        VERTGUIDE, 13
+        VERTGUIDE, 46
+        VERTGUIDE, 52
+        VERTGUIDE, 100
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 735
+        HORZGUIDE, 155
+    END
+
+    IDD_COLLISION, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 101
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 31
+        HORZGUIDE, 20
+        HORZGUIDE, 30
+    END
+
+    IDD_OBJFLAGS, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 101
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 384
+    END
+
+    IDD_COM, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 101
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 14
+    END
+
+    IDD_DIALOG1, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 179
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 88
+    END
+
+    IDD_VCUTIL_PANEL, DIALOG
+    BEGIN
+        VERTGUIDE, 16
+        VERTGUIDE, 92
+        HORZGUIDE, 6
+        HORZGUIDE, 19
+    END
+
+    IDD_LEVELFLAGS, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 106
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 366
+    END
+
+    IDD_MATERIAL, DIALOG
+    BEGIN
+        LEFTMARGIN, 8
+        RIGHTMARGIN, 209
+        VERTGUIDE, 8
+        VERTGUIDE, 16
+        VERTGUIDE, 40
+        VERTGUIDE, 66
+        VERTGUIDE, 86
+        VERTGUIDE, 94
+        VERTGUIDE, 100
+        VERTGUIDE, 110
+        VERTGUIDE, 145
+        VERTGUIDE, 154
+        VERTGUIDE, 159
+        VERTGUIDE, 191
+        VERTGUIDE, 198
+        VERTGUIDE, 209
+        TOPMARGIN, 8
+        BOTTOMMARGIN, 436
+        HORZGUIDE, 8
+        HORZGUIDE, 18
+        HORZGUIDE, 28
+        HORZGUIDE, 38
+        HORZGUIDE, 48
+        HORZGUIDE, 58
+        HORZGUIDE, 68
+        HORZGUIDE, 78
+        HORZGUIDE, 92
+        HORZGUIDE, 108
+        HORZGUIDE, 127
+        HORZGUIDE, 139
+        HORZGUIDE, 149
+        HORZGUIDE, 163
+        HORZGUIDE, 177
+        HORZGUIDE, 185
+        HORZGUIDE, 198
+        HORZGUIDE, 210
+        HORZGUIDE, 221
+        HORZGUIDE, 237
+        HORZGUIDE, 247
+        HORZGUIDE, 254
+        HORZGUIDE, 261
+        HORZGUIDE, 349
+        HORZGUIDE, 356
+    END
+
+    IDD_VISBOX, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 100
+        VERTGUIDE, 7
+        VERTGUIDE, 24
+        VERTGUIDE, 27
+        VERTGUIDE, 51
+        VERTGUIDE, 76
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 143
+        HORZGUIDE, 19
+        HORZGUIDE, 27
+        HORZGUIDE, 40
+        HORZGUIDE, 52
+        HORZGUIDE, 73
+        HORZGUIDE, 83
+        HORZGUIDE, 93
+        HORZGUIDE, 103
+        HORZGUIDE, 113
+        HORZGUIDE, 123
+        HORZGUIDE, 133
+        HORZGUIDE, 143
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDB_IMAGELIST           BITMAP  DISCARDABLE     "file.bmp"
+
+#ifndef _MAC
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 2,0,0,0
+ PRODUCTVERSION 2,0,0,0
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x2L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "Comments", "Vertex color utility and modifier (plugin)\0"
+            VALUE "CompanyName", "Kinetix, a division of Autodesk, Inc.\0"
+            VALUE "FileDescription", "ApplyVC\0"
+            VALUE "FileVersion", "2, 0, 0, 0\0"
+            VALUE "InternalName", "ApplyVC\0"
+            VALUE "LegalCopyright", "Copyright © 1997 Autodesk Inc.\0"
+            VALUE "LegalTrademarks", "The following are registered trademarks of Autodesk, Inc.: 3D Studio MAX.  The following are trademarks of Autodesk, Inc.: Kinetix, Kinetix(logo), BIPED, Physique, Character Studio, MAX DWG, DWG Unplugged, Heidi, FLI, FLC, DXF.\0"
+            VALUE "OriginalFilename", "ApplyVC.dlu\0"
+            VALUE "ProductName", "3D Studio MAX\0"
+            VALUE "ProductVersion", "2, 0, 0, 0\0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END
+
+#endif    // !_MAC
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog Info
+//
+
+IDD_MATERIAL DLGINIT
+BEGIN
+    IDC_SURFACE, 0x403, 1, 0
+"\000" 
+    0
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_LIBDESCRIPTION      "Red Dog Editor plugin"
+    IDS_CATEGORY            "Exporter"
+    IDS_CLASS_NAME          "RDExport"
+    IDS_PARAMS              "Parameters"
+    IDS_OBJECT_CLASS_NAME   "Map object"
+    IDS_OBJECT_CATEGORY     "Red Dog objects"
+    IDS_RB_PARAMETERS       "Parameters"
+    IDS_RB_CREATIONMETHOD   "Create"
+    IDS_OBJECT_NAME         "RedDogObject"
+    IDS_RB_HAS_STRAT        "Whether the object has a strat"
+    IDS_OBJEXP_CLASS_NAME   "RDObjectExport"
+    IDS_STRAT_CLASS         "RDStratExport"
+    IDS_HELPER_CATEGORY     "Red Dog"
+    IDS_HELPER_NAME         "Red Dog Helper"
+    IDS_RB_DISPLAY          "What the object is displayed as"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_PREVIEW_CATEGORY    "Red Dog Utilities"
+    IDS_PREVIEW_CLASS_NAME  "Red Dog Utilities"
+    IDS_COLLISION_CLASS_NAME "Coll Point"
+    IDS_COLLISION_CATEGORY  "Coll Point"
+    IDS_LEVELFLAGS          "Parameters for this level"
+    IDS_OBJ_FLAGS_CLASS_NAME "Obj Flag"
+    IDS_COM_CLASS_NAME      "Centre of mass Point"
+    IDS_COM_CAT             "Mass centre"
+    IDS_AVCU_CNAME          "RedDog Vertex Colors"
+    IDS_AVCU_PANELTITLE     "RedDog Prelit VertColours"
+    IDS_AVCM_CNAME          "Vertex Colors"
+    IDS_AVCM_ONAME          "Vertex Colors"
+    IDS_AVCM_PANELTITLE     "Information"
+    IDS_AVCU_PROGRESS       "Rendering vertices..."
+    IDS_LIBDESCRIPTION2     "RedDog vertex prelighter"
+    IDS_LEVEL_FLAGS_CLASS_NAME "Level Flags"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_MATERIAL            "RedDog"
+    IDS_BASIC               "Basic properties"
+    IDS_TEXTURE             "Texture"
+    IDS_PASTED              "Pasted texture"
+    IDS_TEXPROP             "Textures"
+    IDS_NONE                "None"
+    IDS_VIS_CLASS_NAME      "VisBox"
+    IDS_VIS_CAT             "VisBox"
+    IDS_CAMCONTROLS         "Camera Controllers"
+    IDS_ANIMCONTROL         "Anim Control"
+    IDS_CONV                "Magic Convert button"
+    IDS_SUBMAT              "Original MAX material"
+    IDS_SHADBOX             "PreBox"
+    IDS_SHADBOX_CREATIONMETHOD "Creation method"
+    IDS_SHADBOX_KEYBOARDENTRY "Keyboard entry"
+    IDS_SHADBOX_PARMS       "Parameters"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_SB_LENGTH           "Length"
+    IDS_SB_WIDTH            "Width"
+    IDS_SB_HEIGHT           "Height"
+    IDS_CAMPPOINT           "Camping Points"
+    IDS_SPLINEMOD           "SPLINEMOD"
+    IDS_BOUNDREGION         "BoundingRegion"
+    IDS_RB_SPHERE           "Sphere"
+    IDS_RB_SPHERE_CLASS     "Sphere"
+    IDS_RB_HOWTO            "HowTo"
+    IDS_RB_CREATIONMETHOD2  "Creation Method"
+    IDS_RB_KEYBOARDENTRY    "Keyboard Entry"
+    IDS_RB_PARAMETERS2      "Parameters"
+    IDS_CT_SURF             "Surf"
+    IDS_CT_CAP              "Cap"
+    IDS_SM_NURBS_SURFACE    "NURBS Surface"
+    IDS_RB_RADIUS           "Radius"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_RB_HEMISPHERE       "Hemisphere"
+    IDS_RB_SEGS             "Segments"
+    IDS_RB_SMOOTH           "Smooth"
+    IDS_LIB_DESC            "Sphere Object (How To Version)"
+    IDS_TH_LINE             "kleaner splines"
+    IDS_TH_LINE_CLASS       "BBOX Splines"
+    IDS_TH_ERRORTWOCONSECUTIVE "ERROR TWO CONSECUTIVE"
+    IDS_TH_CREATION_METHOD  "TH CREATION METHOD"
+    IDS_TH_SPLINES          "TH SPLINES"
+    IDS_TH_NEEDTWOSPLINEPOINTS "TH NEED TWO SPLINE POINTS"
+    IDS_TH_KEYBOARD_ENTRY   "TH KEYBOARD ENTRY"
+END
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.K.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENG)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_UK
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_STRATLIST DIALOG DISCARDABLE  0, 0, 249, 181
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "LEVEL STRATS"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,192,7,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,192,24,50,14
+    CONTROL         "Tree1",IDC_OBJECT_TREE,"SysTreeView32",TVS_HASBUTTONS | 
+                    TVS_HASLINES | TVS_LINESATROOT | TVS_DISABLEDRAGDROP | 
+                    WS_BORDER | WS_TABSTOP,5,5,181,169
+END
+
+IDD_CAMCONTROLS DIALOG DISCARDABLE  0, 0, 93, 84
+STYLE WS_CHILD | WS_VISIBLE
+FONT 8, "MS Sans Serif"
+BEGIN
+    CONTROL         "",IDC_AAMOUNT,"CustEdit",WS_TABSTOP,37,28,25,9
+    CONTROL         "",IDC_AAMOUNTSPINNER,"SpinnerControl",0x0,71,28,7,9
+    LTEXT           "Amount",IDC_STATIC,7,26,27,12,SS_CENTERIMAGE
+    CONTROL         "",IDC_ASPEED,"CustEdit",WS_TABSTOP,37,44,25,9
+    CONTROL         "",IDC_ASPEEDSPINNER,"SpinnerControl",0x0,71,44,7,9
+    LTEXT           "Speed",IDC_STATIC,7,42,27,12,SS_CENTERIMAGE
+END
+
+IDD_ANIMCONTROL DIALOG DISCARDABLE  0, 0, 124, 149
+STYLE WS_CHILD
+FONT 8, "MS Sans Serif"
+BEGIN
+    CONTROL         "",IDC_AKEY,"CustEdit",WS_TABSTOP,68,62,25,9
+    CONTROL         "",IDC_AKEYSPINNER,"SpinnerControl",0x0,96,62,7,9
+    LTEXT           "KeyFrame Start",IDC_STATIC,7,61,49,12,SS_CENTERIMAGE
+    CONTROL         "",IDC_ANIMNAME,"CustEdit",WS_TABSTOP,49,46,63,9
+    LTEXT           "AnimName:",IDC_STATIC,7,47,40,9
+    LTEXT           "AnimNumber:",IDC_STATIC,7,32,47,9
+    PUSHBUTTON      "0",IDC_ANIMNUM,54,31,16,14
+    PUSHBUTTON      "RESET ANIMS",IDC_RESETANIMS,31,128,63,14
+    CONTROL         "Anim is &Interpolated",IDC_INTERPOLATE,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,23,100,77,10
+    CONTROL         "",IDC_AENDKEY,"CustEdit",WS_TABSTOP,67,83,25,9
+    CONTROL         "",IDC_AENDKEYSPINNER,"SpinnerControl",0x0,97,84,7,9
+    LTEXT           "KeyFrame End",IDC_STATIC,7,83,51,12,SS_CENTERIMAGE
+    CONTROL         "CREATE OBJ IDS",IDC_OBJIDCREATE,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,23,113,74,10
+    PUSHBUTTON      "NEXT ANIM",IDC_NEXTANIM,7,13,51,14
+    PUSHBUTTON      "PREV ANIM",IDC_PREVANIM,63,13,48,14
+END
+
+IDD_CAMPPOINT DIALOG DISCARDABLE  0, 0, 121, 95
+STYLE DS_3DLOOK | WS_CHILD
+FONT 8, "MS Sans Serif"
+BEGIN
+    CONTROL         "Use parent's rotation",IDC_CAMPPARENT,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,5,81,10
+    CONTROL         "0, 5000, 0",IDC_CAMPRADIUS_SPIN,"SpinnerControl",
+                    WS_TABSTOP,89,20,11,10
+    CONTROL         "0",IDC_CAMPRADIUS,"CustEdit",WS_TABSTOP,38,20,39,10
+    LTEXT           "Radius :",IDC_STATIC,7,20,33,10,SS_CENTERIMAGE
+END
+
+IDD_SPLINEMOD DIALOG DISCARDABLE  0, 0, 151, 31
+STYLE WS_CHILD
+FONT 8, "MS Sans Serif"
+BEGIN
+    CONTROL         "MAGIC SPLINE MAKE",IDC_SPLINEMODPARENT,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,5,95,10
+END
+
+IDD_BOUNDREGION DIALOG DISCARDABLE  0, 0, 186, 95
+STYLE WS_CHILD
+FONT 8, "MS Sans Serif"
+BEGIN
+    CONTROL         "Use parent's rotation",IDC_BOUNDPARENT2,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,5,81,10
+    CONTROL         "0, 5000, 0",IDC_BOUNDRADIUS_SPIN,"SpinnerControl",
+                    WS_TABSTOP,89,20,11,10
+    CONTROL         "0",IDC_BOUNDRADIUS,"CustEdit",WS_TABSTOP,38,20,39,10
+    LTEXT           "Radius :",IDC_STATIC,7,20,33,10,SS_CENTERIMAGE
+    PUSHBUTTON      "",IDC_BOUNDPARENT,7,38,100,13
+END
+
+IDD_SPHEREPARAM1 DIALOG DISCARDABLE  0, 0, 186, 95
+STYLE WS_CHILD
+FONT 8, "MS Sans Serif"
+BEGIN
+    CONTROL         "Edge",IDC_CREATEDIAMETER,"Button",BS_AUTORADIOBUTTON | 
+                    WS_TABSTOP,10,4,43,10
+    CONTROL         "Center",IDC_CREATERADIUS,"Button",BS_AUTORADIOBUTTON | 
+                    WS_TABSTOP,62,4,35,10
+END
+
+IDD_SPHEREPARAM2 DIALOG DISCARDABLE  0, 0, 186, 95
+STYLE WS_CHILD
+FONT 8, "MS Sans Serif"
+BEGIN
+    CONTROL         "",IDC_RADIUS,"CustEdit",WS_TABSTOP,49,0,36,10
+    CONTROL         "",IDC_SEGMENTS,"CustEdit",WS_TABSTOP,49,13,36,10
+    CONTROL         "Smooth",IDC_OBSMOOTH,"Button",BS_AUTOCHECKBOX,49,28,36,
+                    10
+    CONTROL         "",IDC_HEMISPHERE,"CustEdit",WS_TABSTOP,49,45,36,10
+    CONTROL         "Chop",IDC_HEMI_CHOP,"Button",BS_AUTORADIOBUTTON | 
+                    WS_GROUP | WS_TABSTOP,11,59,30,10
+    CONTROL         "Squash",IDC_HEMI_SQUASH,"Button",BS_AUTORADIOBUTTON,49,
+                    59,39,10
+    CONTROL         "Base To Pivot",IDC_HEMI_RECENTER,"Button",
+                    BS_AUTOCHECKBOX | WS_GROUP,11,73,62,10
+    CONTROL         "Generate Mapping Coords.",IDC_GENTEXTURE,"Button",
+                    BS_AUTOCHECKBOX,11,85,96,10
+    RTEXT           "Radius:",IDC_STATIC,23,1,25,8
+    RTEXT           "Segments:",IDC_STATIC,12,13,36,8
+    CONTROL         "",IDC_SEGSPINNER,"SpinnerControl",0x0,86,13,7,10
+    CONTROL         "",IDC_RADSPINNER,"SpinnerControl",0x0,86,0,7,10
+    RTEXT           "Hemisphere:",IDC_STATIC,4,46,44,8
+    CONTROL         "",IDC_HEMISPHERESPINNER,"SpinnerControl",0x0,86,45,7,10
+END
+
+IDD_SPHEREPARAM3 DIALOG DISCARDABLE  0, 0, 186, 95
+STYLE WS_CHILD
+FONT 8, "MS Sans Serif"
+BEGIN
+    CONTROL         "",IDC_TI_POSX,"CustEdit",WS_TABSTOP,40,8,36,10
+    CONTROL         "",IDC_TI_POSY,"CustEdit",WS_TABSTOP,40,21,36,10
+    CONTROL         "",IDC_TI_POSZ,"CustEdit",WS_TABSTOP,40,34,36,10
+    CONTROL         "",IDC_RADIUS,"CustEdit",WS_TABSTOP,40,50,36,10
+    CONTROL         "Create",IDC_TI_CREATE,"CustButton",WS_TABSTOP,40,66,44,
+                    12
+    CONTROL         "",IDC_TI_POSXSPIN,"SpinnerControl",0x0,77,8,7,10
+    CONTROL         "",IDC_TI_POSYSPIN,"SpinnerControl",0x0,77,21,7,10
+    CONTROL         "",IDC_TI_POSZSPIN,"SpinnerControl",0x0,77,34,7,10
+    CONTROL         "",IDC_RADSPINNER,"SpinnerControl",0x0,77,50,7,10
+    RTEXT           "X:",IDC_STATIC,14,9,25,8
+    RTEXT           "Y:",IDC_STATIC,14,22,25,8
+    RTEXT           "Radius:",IDC_STATIC,14,51,25,8
+    RTEXT           "Z:",IDC_STATIC,14,35,25,8
+END
+
+IDD_SPLINEPARAM1 DIALOG DISCARDABLE  0, 0, 186, 95
+STYLE WS_CHILD
+FONT 8, "MS Sans Serif"
+BEGIN
+    GROUPBOX        "Initial Type",IDC_STATIC,4,2,101,33,WS_GROUP
+    GROUPBOX        "Drag Type",IDC_STATIC,4,36,101,47,WS_GROUP
+    CONTROL         "Corner",IDC_ICORNER,"Button",BS_AUTORADIOBUTTON | 
+                    WS_GROUP | WS_TABSTOP,37,13,35,10
+    CONTROL         "Smooth",IDC_ISMOOTH,"Button",BS_AUTORADIOBUTTON,37,23,
+                    43,10
+    CONTROL         "Corner",IDC_DCORNER,"Button",BS_AUTORADIOBUTTON | 
+                    WS_GROUP | WS_TABSTOP,37,48,35,10
+    CONTROL         "Smooth",IDC_DSMOOTH,"Button",BS_AUTORADIOBUTTON,37,59,
+                    41,10
+    CONTROL         "Bezier",IDC_DBEZIER,"Button",BS_AUTORADIOBUTTON,37,70,
+                    35,10
+END
+
+IDD_SPLINEPARAM2 DIALOG DISCARDABLE  0, 0, 186, 95
+STYLE WS_CHILD
+FONT 8, "MS Sans Serif"
+BEGIN
+    CONTROL         "",IDC_TI_POSX,"CustEdit",WS_TABSTOP,37,0,36,10
+    CONTROL         "",IDC_TI_POSY,"CustEdit",WS_TABSTOP,37,13,36,10
+    CONTROL         "",IDC_TI_POSZ,"CustEdit",WS_TABSTOP,37,26,36,10
+    CONTROL         "Add Point",IDC_TI_ADDPOINT,"CustButton",WS_TABSTOP,32,
+                    39,44,12
+    CONTROL         "",IDC_TI_POSXSPIN,"SpinnerControl",0x0,74,0,7,10
+    CONTROL         "",IDC_TI_POSYSPIN,"SpinnerControl",0x0,74,13,7,10
+    CONTROL         "",IDC_TI_POSZSPIN,"SpinnerControl",0x0,74,26,7,10
+    RTEXT           "X:",-1,27,1,8,8
+    RTEXT           "Y:",-1,27,14,8,8
+    RTEXT           "Z:",-1,27,26,8,8
+    CONTROL         "Close",IDC_TI_CLOSE,"CustButton",WS_TABSTOP,8,55,44,12
+    CONTROL         "Finish",IDC_TI_FINISH,"CustButton",WS_TABSTOP,56,55,44,
+                    12
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO DISCARDABLE 
+BEGIN
+    IDD_STRATLIST, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 242
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 174
+    END
+
+    IDD_CAMCONTROLS, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 86
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 77
+    END
+
+    IDD_ANIMCONTROL, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 117
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 142
+    END
+
+    IDD_CAMPPOINT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 100
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 88
+    END
+
+    IDD_SPLINEMOD, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 102
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 24
+    END
+
+    IDD_BOUNDREGION, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 179
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 88
+    END
+
+    IDD_SPHEREPARAM1, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 179
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 88
+    END
+
+    IDD_SPHEREPARAM2, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 179
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 88
+    END
+
+    IDD_SPHEREPARAM3, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 179
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 88
+    END
+
+    IDD_SPLINEPARAM1, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 179
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 88
+    END
+
+    IDD_SPLINEPARAM2, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 179
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 88
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+#endif    // English (U.K.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

@@ -1,0 +1,469 @@
+LOCALFLOAT	time
+LOCALFLOAT	oldCheckX
+LOCALFLOAT	oldCheckY
+LOCALFLOAT	oldCheckZ
+LOCALFLOAT	bz
+LOCALFLOAT	tempf
+LOCALINT	tempi
+LOCALINT	changePosTime
+
+LOCALINT	idleTime
+LOCALINT	doneArseAttack
+
+LOCALINT	beamPower1
+LOCALINT	beamPower2
+
+LOCALINT	gunPower1
+LOCALINT	gunPower2
+
+LOCALINT	arsePower1
+LOCALINT	arsePower2
+LOCALINT	arsePower3
+LOCALINT	arsePower4
+LOCALINT	arsePower5
+
+LOCALINT	attackMode
+LOCALINT	attackTime
+LOCALINT	attacking
+LOCALINT	lastAttackType
+
+
+DEFINE		BEAM_POWER_1	9
+DEFINE		BEAM_POWER_2	10
+DEFINE		GUN_POWER_1		12
+DEFINE		GUN_POWER_2		11
+DEFINE		ARSE_POWER_1	15
+DEFINE		ARSE_POWER_2	16
+DEFINE		ARSE_POWER_3	17
+DEFINE		ARSE_POWER_4	13
+DEFINE		ARSE_POWER_5	14
+
+DEFINE		SHOCK_RADIUS	1.0
+DEFINE		HIT_FORCE		1.0
+
+
+DEFINE		BEAM			1
+DEFINE		GUN				2
+DEFINE		ARSE			3
+
+DEFINE		BEAM_ATTACK_DELAY		200
+DEFINE		GUN_ATTACK_DELAY		200
+DEFINE		ARSE_ATTACK_DELAY		200
+
+
+STATE Init
+	MyFlag = MyFlag | ENEMY | STRATCOLL | HOVERMOVE
+
+	attackMode = GetGlobalParamInt(0)
+	SetGlobalParamInt(0, 99)
+	InitPath()
+	SetGlobalParamInt(0, attackMode)
+	InitHDC()
+	RotationRestriction(1.0, 1.0, 1.0)
+	time = 0.0
+	attacking = 0
+	idleTime = 0
+	attackTime = 0
+	changePosTime = 0
+	beamPower1 = 0
+	beamPower2 = 0
+	gunPower1 = 0
+	gunPower2 = 0
+	arsePower1 = 0
+	arsePower2 = 0
+	arsePower3 = 0
+	arsePower4 = 0
+	arsePower5 = 0
+	attackMode = 0
+	lastAttackType = 0
+	bz = z
+	doneArseAttack = 0
+	HideObject(19)
+	InActivateObjectCollision(19)
+	SetFriction(0.1, 0.1, 0.1)
+	IAmDaBoss
+	TRIGSET>Always	EVERY 1
+	LOOP (200)
+		MyFlag = MyFlag
+	ENDLOOP
+	STAT>Start
+ENDSTATE
+
+TRIGGER Always
+	z = bz
+	time = time + 1.0
+	IF ((attackMode != ARSE) OR  (attacking = 0))
+		oldCheckX = CheckX
+		oldCheckY = CheckY
+
+		IF (attackMode = 0)
+			CheckX = CheckX + 20.0 * Ssin(time * 0.04)
+			CheckY = CheckY + 20.0 * Ssin(time * 0.05)
+			MoveTowardCheckPosXY(0.1)
+			GetActivationPos(0)
+			TowardWay(0.05, 0.0)
+		ELSE
+			CheckX = CheckX + 3.0 * Ssin(time * 0.04)
+			CheckY = CheckY + 3.0 * Ssin(time * 0.05)
+			MoveTowardCheckPosXY(0.02)
+			GetActivationPos(0)
+
+			IF ((attackMode = BEAM)	OR (attackMode = GUN))
+				TowardWay(0.05, 0.0)
+			ENDIF
+
+			IF (attackMode = ARSE)
+				AwayWayZ(0.05)
+			ENDIF
+		ENDIF
+
+		CheckX = oldCheckX
+		CheckY = oldCheckY
+	ENDIF
+			
+	CalculateStratPolyData(0)
+
+	IF (!attacking)
+		IF (attackMode = BEAM)
+			IF (beamPower1 = 1)
+				DrawTargetOnObject(BEAM_POWER_1)
+				IF (ObjectHitStrat(BEAM_POWER_1))
+					ClearObjCollFlag(BEAM_POWER_1,HITSTRAT)
+					beamPower1 = 0
+					SetGlobalParamFloat(0, SHOCK_RADIUS)
+					SetGlobalParamInt(0, BEAM_POWER_1)
+					CREATE SPAWN_SHOCK_BALL 0, 0, 0, 0, 0, 0, BEAM_POWER_1
+					MoveY(-HIT_FORCE)
+				ENDIF
+			ENDIF
+			IF (beamPower2 = 1)
+				DrawTargetOnObject(BEAM_POWER_2)
+				IF (ObjectHitStrat(BEAM_POWER_2))
+					ClearObjCollFlag(BEAM_POWER_2,HITSTRAT)
+					beamPower2 = 0
+					SetGlobalParamFloat(0, SHOCK_RADIUS)
+					SetGlobalParamInt(0, BEAM_POWER_2)
+					CREATE SPAWN_SHOCK_BALL 0, 0, 0, 0, 0, 0, BEAM_POWER_2
+					MoveY(-HIT_FORCE)
+				ENDIF
+			ENDIF
+			IF ((beamPower1 = 0) AND (beamPower2 = 0))
+				attackMode = 0
+			ENDIF
+		ENDIF
+		IF (attackMode = GUN)
+			IF (gunPower1 = 1)
+				DrawTargetOnObject(GUN_POWER_1)
+				IF (ObjectHitStrat(GUN_POWER_1))
+					ClearObjCollFlag(GUN_POWER_1,HITSTRAT)
+					gunPower1 = 0
+					SetGlobalParamFloat(0, SHOCK_RADIUS)
+					SetGlobalParamInt(0, GUN_POWER_1)
+					CREATE SPAWN_SHOCK_BALL 0, 0, 0, 0, 0, 0, GUN_POWER_1
+					MoveY(-HIT_FORCE)
+				ENDIF
+			ENDIF
+			IF (gunPower2 = 1)
+				DrawTargetOnObject(GUN_POWER_2)
+				IF (ObjectHitStrat(GUN_POWER_2))
+					ClearObjCollFlag(GUN_POWER_2,HITSTRAT)
+					gunPower2 = 0
+					SetGlobalParamFloat(0, SHOCK_RADIUS)
+					SetGlobalParamInt(0, GUN_POWER_2)
+					CREATE SPAWN_SHOCK_BALL 0, 0, 0, 0, 0, 0, GUN_POWER_2
+					MoveY(-HIT_FORCE)
+				ENDIF
+			ENDIF
+			IF ((gunPower1 = 0) AND (gunPower2 = 0))
+				attackMode = 0
+			ENDIF
+		ENDIF
+		IF (attackMode = ARSE)
+			IF (arsePower1 = 1)
+				DrawTargetOnObject(ARSE_POWER_1)
+				IF (ObjectHitStrat(ARSE_POWER_1))
+					ClearObjCollFlag(ARSE_POWER_1,HITSTRAT)
+					arsePower1 = 0
+					SetGlobalParamFloat(0, SHOCK_RADIUS)
+					SetGlobalParamInt(0, ARSE_POWER_1)
+					CREATE SPAWN_SHOCK_BALL 0, 0, 0, 0, 0, 0, ARSE_POWER_1
+					MoveY(HIT_FORCE)
+				ENDIF
+			ENDIF
+			IF (arsePower2 = 1)
+				DrawTargetOnObject(ARSE_POWER_2)
+				IF (ObjectHitStrat(ARSE_POWER_2))
+					ClearObjCollFlag(ARSE_POWER_2,HITSTRAT)
+					arsePower2 = 0
+					SetGlobalParamFloat(0, SHOCK_RADIUS)
+					SetGlobalParamInt(0, ARSE_POWER_2)
+					CREATE SPAWN_SHOCK_BALL 0, 0, 0, 0, 0, 0, ARSE_POWER_2
+					MoveY(HIT_FORCE)
+				ENDIF
+			ENDIF
+			IF (arsePower3 = 1)
+				DrawTargetOnObject(ARSE_POWER_3)
+				IF (ObjectHitStrat(ARSE_POWER_3))
+					ClearObjCollFlag(ARSE_POWER_3,HITSTRAT)
+					arsePower3 = 0
+					SetGlobalParamFloat(0, SHOCK_RADIUS)
+					SetGlobalParamInt(0, ARSE_POWER_3)
+					CREATE SPAWN_SHOCK_BALL 0, 0, 0, 0, 0, 0, ARSE_POWER_3
+					MoveY(HIT_FORCE)
+				ENDIF
+			ENDIF
+			IF (arsePower4 = 1)
+				DrawTargetOnObject(ARSE_POWER_4)
+				IF (ObjectHitStrat(ARSE_POWER_4))
+					ClearObjCollFlag(ARSE_POWER_4,HITSTRAT)
+					arsePower4 = 0
+					SetGlobalParamFloat(0, SHOCK_RADIUS)
+					SetGlobalParamInt(0, ARSE_POWER_4)
+					CREATE SPAWN_SHOCK_BALL 0, 0, 0, 0, 0, 0, ARSE_POWER_4
+					MoveY(HIT_FORCE)
+				ENDIF
+			ENDIF
+			IF (arsePower5 = 1)
+				DrawTargetOnObject(ARSE_POWER_5)
+				IF (ObjectHitStrat(ARSE_POWER_5))
+					ClearObjCollFlag(ARSE_POWER_5,HITSTRAT)
+					arsePower5 = 0
+					SetGlobalParamFloat(0, SHOCK_RADIUS)
+					SetGlobalParamInt(0, ARSE_POWER_5)
+					CREATE SPAWN_SHOCK_BALL 0, 0, 0, 0, 0, 0, ARSE_POWER_5
+					MoveY(HIT_FORCE)
+				ENDIF
+			ENDIF
+			IF ((arsePower1 = 0) AND (arsePower2 = 0) AND (arsePower3 = 0) AND (arsePower4 = 0) AND (arsePower5 = 0))
+				attackMode = 0
+				doneArseAttack = doneArseAttack + 1
+			ENDIF
+		ENDIF
+	ENDIF
+	IF (attackMode > 0)
+		attackTime = attackTime + 1
+		IF (attackMode = BEAM)
+			IF (attackTime > BEAM_ATTACK_DELAY)
+				attacking = 1
+			ELSE
+				attacking = 0
+			ENDIF
+		ENDIF
+		IF (attackMode = GUN)
+			IF (attackTime > GUN_ATTACK_DELAY)
+				attacking = 1
+			ELSE
+				attacking = 0
+			ENDIF
+		ENDIF
+		IF (attackMode = ARSE)
+			IF (attackTime > ARSE_ATTACK_DELAY)
+				attacking = 1
+			ELSE
+				attacking = 0
+			ENDIF
+		ENDIF
+	ELSE
+		attackTime = 0
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+STATE Start
+	
+
+	IF (attacking)
+		IF (attackMode = BEAM)
+			STAT>BeamState
+		ENDIF
+		IF (attackMode = GUN)
+			STAT>GunState
+		ENDIF
+		IF (attackMode = ARSE)
+			STAT>ArseState
+		ENDIF
+	ELSE
+		
+		IF (attackMode = 0)
+			IF (NearCheckPosXY(10.0))	
+				changePosTime = changePosTime + 1
+			ENDIF
+			IF (changePosTime > 200)
+				changePosTime = 0
+				tempf = RandRange(0.0, 2.0)
+				IF (tempf < 1.0)
+					IF (FirstWay())
+						GetLastWay()
+					ELSE
+						GetPrevWay()
+					ENDIF
+				ELSE
+					IF (LastWay())
+						GetFirstWay()
+					ELSE
+						GetNextWay()
+					ENDIF
+				ENDIF
+			ENDIF
+			IF (idleTime > 200)
+				IF (lastAttackType = GUN)
+					attackMode = BEAM
+					beamPower1 = 1
+					beamPower2 = 1
+					ClearObjCollFlag(BEAM_POWER_1,HITSTRAT)
+					ClearObjCollFlag(BEAM_POWER_2,HITSTRAT)
+				ENDIF
+				IF ((lastAttackType = ARSE) OR (lastAttackType = 0))
+					attackMode = GUN
+					gunPower1 = 1
+					gunPower2 = 1
+					ClearObjCollFlag(GUN_POWER_1,HITSTRAT)
+					ClearObjCollFlag(GUN_POWER_2,HITSTRAT)
+				ENDIF
+				IF (lastAttackType = BEAM)
+					IF (doneArseAttack = 0)
+						attackMode = ARSE
+						arsePower4 = 1
+						arsePower5 = 1
+						ClearObjCollFlag(ARSE_POWER_4,HITSTRAT)
+						ClearObjCollFlag(ARSE_POWER_5,HITSTRAT)
+					ENDIF
+					IF (doneArseAttack = 1)
+						attackMode = ARSE
+						arsePower1 = 1
+						arsePower2 = 1
+						arsePower3 = 1
+						ClearObjCollFlag(ARSE_POWER_1,HITSTRAT)
+						ClearObjCollFlag(ARSE_POWER_2,HITSTRAT)
+						ClearObjCollFlag(ARSE_POWER_3,HITSTRAT)
+					ENDIF
+					IF (doneArseAttack >= 2)
+						attackMode = ARSE
+						arsePower1 = 1
+						arsePower2 = 1
+						arsePower3 = 1
+						arsePower4 = 1
+						arsePower5 = 1
+						ClearObjCollFlag(ARSE_POWER_1,HITSTRAT)
+						ClearObjCollFlag(ARSE_POWER_2,HITSTRAT)
+						ClearObjCollFlag(ARSE_POWER_3,HITSTRAT)
+						ClearObjCollFlag(ARSE_POWER_4,HITSTRAT)
+						ClearObjCollFlag(ARSE_POWER_5,HITSTRAT)
+					ENDIF
+				ENDIF
+				lastAttackType = attackMode
+				idleTime = 0
+			ELSE
+				idleTime = idleTime + 1
+			ENDIF
+		ENDIF
+	ENDIF
+ENDSTATE
+
+STATE BeamState
+	UnhideObject(19)
+	LOOP (90)
+		IF (BeamPlayerShieldColl(0, 19, 0.3))
+			tempf = ObjectPlayerShieldDist(0, 19)
+			SetObjectScale(19, 1.0, tempf, 1.0)
+		ELSE
+			IF (BeamPlayerColl(0, 19, 0.3))
+				tempf = ObjectPlayerDist(0, 19)
+				SetObjectScale(19, 1.0, tempf, 1.0)
+				PlayerHealth = PlayerHealth - 1.0
+			ELSE
+				SetObjectScale(19, 1.0, 60.0, 1.0)
+			ENDIF
+		ENDIF
+		MyFlag = MyFlag
+	ENDLOOP
+	HideObject(19)
+	attackMode = 0
+	beamPower1 = 0
+	beamPower2 = 0
+	attacking = 0
+	STAT>Start
+ENDSTATE
+
+STATE GunState
+	tempi = 0
+	LOOP (90)
+		tempi = tempi + 1
+		IF (SeePlayer(0.3))
+			ObjectTowardPlayerXZ(7, 0.05, 0.05, TWOPI, TWOPI)
+			ObjectTowardPlayerXZ(8, 0.05, 0.05, TWOPI, TWOPI)
+			CrntRotToIdleRotZ(7, 0.02)
+			CrntRotToIdleRotX(7, 0.02)
+			CrntRotToIdleRotZ(8, 0.02)
+			CrntRotToIdleRotX(8, 0.02)
+		ENDIF
+		IF (gunPower2 = 1)
+			IF (tempi = 5)
+				MyVar = 3.0
+				CREATE SPAWN_BLASTEXP 0, 11.0, 0, 0, 0, 0, 7
+				CREATE SPAWN_OUTPOST_BOSS_LASER 0, 0, 0, 0, 0, 0, 7
+			ENDIF
+		ENDIF
+		IF (gunPower1 = 1)
+			IF (tempi = 10)
+				MyVar = 3.0
+				CREATE SPAWN_BLASTEXP 0, 11.0, 0, 0, 0, 0, 8
+				CREATE SPAWN_OUTPOST_BOSS_LASER 0, 0, 0, 0, 0, 0, 8
+			ENDIF
+		ENDIF
+		IF (tempi = 10)
+			tempi = 0
+		ENDIF
+	ENDLOOP
+
+	attackMode = 0
+	gunPower1 = 0
+	gunPower2 = 0
+	attacking = 0
+	STAT>Start
+ENDSTATE
+
+STATE ArseState
+	oldCheckX = CheckX
+	oldCheckY = CheckY
+	
+	GetActivationPos(0)
+	tempi = 0
+	MyFlag2 = MyFlag2 & LNOT(PLAYERHIT)
+	WHILE (tempi < 50)
+		tempi = tempi + 1
+		MoveTowardCheckPosXY(0.2)
+		IF (MyFlag2 & PLAYERHIT)
+			tempi = 60
+			PlayerHealth = PlayerHealth - 10.0
+			absspeedx = 0
+			absspeedy = 0
+			absspeedz = 0
+		ENDIF
+	ENDWHILE
+
+	IF (tempi = 60)
+		LOOP (5)
+			tempf = RandRange(-1.0, 1.0)
+			CamX = CamX + tempf
+			tempf = RandRange(-1.0, 1.0)
+			CamY = CamY + tempf
+			tempf = RandRange(-1.0, 1.0)
+			CamZ = CamZ + tempf
+		ENDLOOP
+	ENDIF
+	
+	CheckX = oldCheckX
+	CheckY = oldCheckY
+	WHILE (!NearCheckPosXY(3.0))
+		MoveTowardCheckPosXY(0.2)
+	ENDWHILE
+	attackMode = 0
+	arsePower1 = 0
+	arsePower2 = 0
+	arsePower3 = 0
+	arsePower4 = 0
+	arsePower5 = 0
+	attacking = 0
+	STAT>Start
+ENDSTATE

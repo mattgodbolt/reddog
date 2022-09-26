@@ -1,0 +1,2 @@
+
+extern STRAT *FloorStrat;

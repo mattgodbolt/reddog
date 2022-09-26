@@ -1,0 +1,37 @@
+
+
+STATE Start
+	MoveAlongPath(1.6)
+	x = x + Ssin(xang)
+	xang = xang + 0.07
+	y = y + Ssin(yang)
+	yang = yang + 0.07
+	z = z + Ssin(zang)
+	zang = zang + 0.1
+	FacePlayerXY(0.05)
+	ObjectTowardPlayerXZ(1 , 0.05, 0.05, TWOPI, TWOPI)
+	CrntRotToIdleRotX(1, 0.05)
+	CrntRotToIdleRotZ(1, 0.05)
+	IF (NearPlayerXY(100.0))
+		rand = RandRange(0.0, 10.0)
+		IF (rand < 1.0)
+			randFireX = GlobalVar + 0.03
+			randFireZ = GlobalVar + 0.03
+			randFireX = RandRange(- randFireX , randFireX )
+			randFireZ = RandRange(- randFireZ , randFireZ )
+			PlaySound (0,6,1, 0, 0, 0, 0)
+			CREATE SPAWN_RED_LASER_ENEMY 0.0, 0.0, 0.0, (randFireX), 0, (randFireZ), 1
+			IF (GlobalVar > 0.01)
+				GlobalVar = GlobalVar - 0.01
+			ENDIF
+		ENDIF
+	ENDIF
+ENDSTATE
+
+STATE Explode
+	adrelanin = adrelanin + 0.1
+	Score = Score + 100
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+	Delete()
+	TRIGSTOP
+ENDSTATE

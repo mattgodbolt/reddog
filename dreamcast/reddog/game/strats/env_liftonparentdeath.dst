@@ -1,0 +1,59 @@
+PARAMINT LowColl 0
+PARAMINT n_frames 60
+PARAMFLOAT dist	20.0
+
+LOCALINT i
+LOCALFLOAT f
+STATE Init
+	MyFlag = MyFlag | ENEMY | STRATCOLL
+
+	IF (!(MyFlag2 & OWNIPARAMS))
+		LowColl = 0
+		n_frames = 60
+	ENDIF
+
+	IF (!(MyFlag & OWNFPARAMS))
+		dist = 20.0
+	ENDIF
+
+	IF (LowColl = 1)
+		MyFlag = MyFlag | LOWCOLL
+	ELSE
+		InitHDC()
+		CalculateStratPolyData(1)
+	ENDIF
+
+	WHILE (MyParentInvalid())
+		MyFlag = MyFlag
+	ENDWHILE
+
+	WHILE (MyParentFlag)
+		MyFlag = MyFlag
+	ENDWHILE
+
+	AllocStratSoundBlock(1)
+	SetAudibleRange(0,50,100)
+	PLAYSOUND>wall 0 1.0 0.0 0.0 0.0 0
+
+	i = 0
+	WHILE (i < n_frames) 
+		i = i + 1
+		f = SmoothFromTo(dist, i, n_frames)
+		z = z + f
+		IF (LowColl = 0)
+			CalculateStratPolyData(1)
+		ENDIF
+	ENDWHILE
+
+	
+
+	WHILE (1)
+		MyFlag = MyFlag
+	ENDWHILE
+ENDSTATE
+
+
+	
+
+
+

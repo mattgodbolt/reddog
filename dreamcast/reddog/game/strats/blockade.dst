@@ -1,0 +1,68 @@
+// Blockade strat
+// Will set its parent's MyVar to 1 if it gets within
+// a set distance
+// On its deletion, the parent must clear its own MyVar
+// Or for extra meaty fun; link to another Blockade strat to activate in a row!!
+
+DEFINE BLOCKADE_DIST		10
+
+STATE Init
+	//wait the car to be created
+	IF (MyParent)
+		WHILE (MyParentInvalid())
+			MyVar = MyVar
+		ENDWHILE
+		MakeMeTheLast()
+	ELSE
+		STAT>Die
+	ENDIF
+
+	//ensure we have an active zone, else this stuff won't work
+	IF (!HasActivation(0))
+		STAT>Die
+	ENDIF
+
+   	MyFlag = MyFlag | DELETECALLBACK
+	TRIGSET>Clean WHENDELETED
+	STAT>Wait
+ENDSTATE
+
+
+TRIGGER Clean
+	IF (MyParentFlag)
+		ParentSemaphore = 0
+  	ENDIF
+ENDTRIGGER
+
+STATE Die
+	Delete()
+ENDSTATE
+
+
+
+LOCALFLOAT SaveX
+LOCALFLOAT SaveY
+
+STATE Wait
+	//repeat whilst the car is still active
+	WHILE (MyParentFlag)
+		SaveX = DogX
+		SaveY = DogY
+		DogX = parentx
+		DogY = parenty
+		IF (PlayerNearActivationXY(0))
+			ParentSemaphore = 1
+
+		ENDIF
+		DogX = SaveX
+		DogY = SaveY
+	ENDWHILE
+
+	Delete()
+
+ENDSTATE
+
+
+
+
+

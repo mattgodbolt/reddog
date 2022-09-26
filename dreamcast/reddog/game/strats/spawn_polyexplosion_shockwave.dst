@@ -1,0 +1,33 @@
+LOCALINT	time
+
+STATE Init
+	MyFlag = MyFlag | FRIENDLY
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+
+	MyVar = ParentVar
+
+	AllocStratSoundBlock(1)
+	SetAudibleRange(0, 50, 400)
+	IF (MyVar < 1.0)	
+		OBJECT> Explosions\PolyExplosion_ShockWave
+		MODELANIM>EXPLOSIONS\POLYEXPLOSION_SHOCKWAVE.RDO>EXPLODE>0
+		PLAYSOUND>EX_LARGE_BLAST1 0 1.0 0.0 0.0 0.0 RANDOM
+	ELSE
+		OBJECT> Explosions\PolyExplosion_ShockWave-Air
+		MODELANIM>EXPLOSIONS\POLYEXPLOSION_SHOCKWAVE-AIR.RDO>EXPLODE>0
+		PLAYSOUND>EX_LARGE6 0 1.0 0.0 0.0 0.0 RANDOM
+	ENDIF
+
+	trans = 1.0
+	time = 0
+	
+	UnitiseMatrix()
+	STAT>Start
+ENDSTATE 
+
+STATE Start
+	LOOP (74)
+		trans = trans - 0.01
+	ENDLOOP
+	Delete()
+ENDSTATE

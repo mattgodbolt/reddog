@@ -1,0 +1,77 @@
+LOCALFLOAT	tempf
+LOCALFLOAT	noActs
+LOCALINT	actno
+LOCALFLOAT	actRadius
+LOCALFLOAT	distFromAct
+LOCALFLOAT	sx
+LOCALFLOAT	sy
+LOCALFLOAT	angle
+
+STATE Init
+	MyFlag = MyFlag | ENEMY
+	IF (HasActivation(1))
+		noActs = noActs + 1
+	ENDIF
+	IF (HasActivation(2))
+		noActs = noActs + 1
+	ENDIF
+	IF (HasActivation(3))
+		noActs = noActs + 1
+	ENDIF
+	IF (HasActivation(4))
+		noActs = noActs + 1
+	ENDIF
+
+	TRIGSET>Always EVERY 2
+	STAT>Start
+ENDSTATE
+
+TRIGGER Always
+	IF (HasActivation(0))
+		IF(PlayerNearActivationXY(0))
+			tempf = RandRange(1.0, noActs + 1)
+			IF ((tempf >= 1.0) AND (tempf < 2.0))
+				actno = 1
+			ENDIF
+			IF ((tempf >= 2.0) AND (tempf < 3.0))
+				actno = 2
+			ENDIF
+			IF ((tempf >= 3.0) AND (tempf < 4.0))
+				actno = 3
+			ENDIF
+			IF ((tempf >= 4.0) AND (tempf <= 5.0))
+				actno = 4
+			ENDIF
+
+			GetActivationPos(actno)
+			actRadius = GetActivationRadius(actno)
+			distFromAct = RandRange(0.0, actRadius)
+			angle = RandRange(0.0, (2.0 * 3.14159))
+			sx = Scos(angle)
+			sy = -Ssin(angle)
+			sx = sx * distFromAct
+			sy = sy * distFromAct
+			sx = sx + CheckX
+			sy = sy + CheckY
+
+			tempf = RandRange(0.0, 1.0)
+
+			IF ((sx - DogX) * (sx - DogX) + (sy - DogY) * (sy - DogY) < 10000.0)
+				IF ((tempf >= 0.0) AND (tempf < 0.9))
+					CREAIND SPAWN_LAVA_BUBBLES sx, sy, z, 0, 0, 0
+				ENDIF
+				IF ((tempf >= 0.9) AND (tempf < 0.95))
+					CREAIND SPAWN_LAVAROLLROCK sx, sy, z, 0, 0, 0 
+				ENDIF
+				//IF ((tempf >= 0.95) AND (tempf <= 1.0))
+					//CREAIND SPAWN_LAVASPRAY sx, sy, z, 0, 0, 0
+				//ENDIF
+
+			ENDIF
+		ENDIF
+	ENDIF	
+	TRIGFIN
+ENDTRIGGER
+
+STATE Start
+ENDSTATE

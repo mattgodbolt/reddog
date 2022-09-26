@@ -1,0 +1,75 @@
+LOCALINT	tempi
+LOCALFLOAT	time
+LOCALFLOAT	dist
+LOCALFLOAT	speed
+LOCALFLOAT	tempf
+DEFINE	ACC	0.005
+DEFINE	TOPSPEED	1.5
+
+
+STATE Init
+	WHILE (MyParentInvalid())
+   		MyFlag = MyFlag
+   	ENDWHILE
+	MyFlag = MyFlag | HOVERMOVE
+	SetFriction(0.2,0.2,0.2)
+	tempi = GetParentSem(1)
+	IF (tempi = 1)
+		OBJECT>MISC\TRAINCARRIAGE00
+	ENDIF
+	IF (tempi = 2)
+		OBJECT>MISC\TRAINCARRIAGE01
+	ENDIF
+	IF (tempi = 3)
+		OBJECT>MISC\TRAINCARRIAGE02
+	ENDIF
+	
+	speed = 0.0
+	
+	InheritMyParent()
+	InitPath()
+	InitSplineData()
+	tempi = GetParentSem(0)
+	time = (6 - tempi) * 5.0
+	dist = (6 - tempi) * 15.0
+	MoveAlongPath(dist - 1.0)
+	MoveAlongPath(1.0)
+	FaceAlongPath(1)
+	MoveAlongPath(0.01)
+	TRIGSET>Always EVERY 1
+	WHILE (GetParentSem(2) = 0)
+		MyFlag = MyFlag
+	ENDWHILE
+	STAT> MoveTrain
+ENDSTATE
+
+TRIGGER Always
+	MoveAlongPath(speed)
+	FaceAlongPath(1)
+	time = time + speed
+	tempf = speed * Ssin(time * 0.1) * 0.02
+	RelRotateY(tempf)
+	TRIGFIN
+ENDTRIGGER
+
+STATE MoveTrain
+	IF (speed < TOPSPEED)
+		speed = speed + ACC
+	ELSE
+		speed = TOPSPEED
+	ENDIF	
+	
+	IF (GetParentSem(3) = 1)
+		STAT>StopTrain
+	ENDIF
+ENDSTATE 
+
+STATE StopTrain
+	IF (speed > 0.0)
+		speed = speed - ACC
+	ELSE
+		speed = 0.0
+	ENDIF
+	
+ENDSTATE
+ 

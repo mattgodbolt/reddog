@@ -1,0 +1,78 @@
+PARAMINT n_frames 60
+PARAMFLOAT height 10.0
+
+LOCALINT i
+LOCALFLOAT f
+
+STATE Init
+	MyFlag = MyFlag | ENEMY | STRATCOLL
+
+	IF (!(MyFlag2 & OWNIPARAMS))
+		n_frames = 60
+	ENDIF
+
+	IF (!(MyFlag & OWNFPARAMS))
+		height = 10.0
+	ENDIF
+
+	InitHDC()
+	CalculateStratPolyData(1)
+	AllocStratSoundBlock(1)
+	
+	WHILE (!PlayerNearActivationXY(0))
+		MyFlag = MyFlag
+	ENDWHILE
+
+	IAmHoldPlayer()
+
+   //	SetPitch(0, -0.1)
+	PLAYSOUND>LIFT_ALIEN 0 0.8 0.0 0.0 0.0 CONTINUOUS
+
+	i = 0
+
+	WHILE (i < n_frames)
+		i = i + 1
+		f = SmoothFromTo(height, i, n_frames)
+		z = z + f
+		CalculateStratPolyData(1)
+		HoldPlayer()
+	   	SetPitch(0,(i/(n_frames*2.0)))
+	 //	SetPitch(0, (i / n_frames)/2.0)
+	ENDWHILE
+	
+	StopSound(0,0.0)
+
+	WHILE (MyParentInvalid())
+		MyFlag = MyFlag
+	ENDWHILE
+
+	WHILE (MyParentFlag)
+		MyFlag = MyFlag
+	ENDWHILE
+	
+	i = 0
+
+	//SetPitch(0, 1.0)
+	PLAYSOUND>LIFT_ALIEN 0 0.8 0.0 0.0 0.0 CONTINUOUS
+  
+  	WHILE (i < n_frames)
+		i = i + 1
+		f = SmoothFromTo(height, i, n_frames)
+		z = z - f
+		CalculateStratPolyData(1)
+		HoldPlayer()
+	   	SetPitch(0,0.5 - (i/(n_frames*2.0)))
+		//SetPitch(0, 0.5 - (i / n_frames)/2.0)
+	ENDWHILE
+
+	StopSound(0,0.0)
+
+	WHILE (1)
+		MyFlag = MyFlag
+	ENDWHILE
+
+ENDSTATE
+		
+
+
+

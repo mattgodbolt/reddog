@@ -1,0 +1,81 @@
+
+//LAST STRAT IN THE GROUP IS THE PARENT
+
+DEFINE LEFT		1
+DEFINE RIGHT	2
+
+
+LOCALINT TIMER
+STATE Init 
+
+	TRIGSET>MakeDeathTrig EVERY 1
+
+	OBJECT>HUD\ARROW-A
+  	MyFlag = MyFlag | NODISP
+	TIMER = 0
+  //	mod = 0
+ 	STAT>Direct  
+ENDSTATE
+
+STATE KillOff
+	Delete()
+ENDSTATE
+
+STATE MakeDeathTrig
+	IF (!MyParentInvalid())
+	TRIGSET>KillOff PARENTDEAD
+	TRIGSTOP
+	ENDIF
+	TRIGFIN
+ENDSTATE
+
+//LOCALINT mod
+STATE Direct
+  //	IF (GetPadPush() & PADFIRE)
+  //		mod = mod + 1
+  //		IF (mod = 3)
+  //			mod = 0
+  //		ENDIF
+  //	ENDIF
+
+   //	IF (!mod)
+   //		OBJECT>HUD\ARROW-A
+   //	ENDIF
+
+   //	IF (mod =  1)
+   //		OBJECT>HUD\ARROW-B
+
+   //	ENDIF
+
+   //	IF (mod =  2)
+   //		OBJECT>HUD\ARROW-C
+
+   //	ENDIF
+
+
+	//BRING ME INTO PLAYER SPACE
+	SetCheckPosPlayerRotate(0.0)
+
+  	IF (!VisibleFromPlayer(TWOPI/16.0 ))
+
+//		IF (CheckX > DogX)
+		IF (CheckX < 0)
+		//	IF (TIMER > 15)	
+			DrawArrow(50.0, 250.0, LEFT)
+		//	TIMER = 0
+		//	ENDIF
+		ELSE
+		//	IF (TIMER > 15)
+			DrawArrow(590.0, 250.0,RIGHT)
+		//	TIMER = 0
+		//	ENDIF
+  		ENDIF
+  	ENDIF
+
+	
+
+	TIMER = TIMER + 1
+
+
+ENDSTATE
+

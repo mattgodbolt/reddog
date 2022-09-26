@@ -1,0 +1,5 @@
+// One life - let's get together and feel alright
+STATE Init
+	Lives = 0
+	Delete()
+ENDSTATE

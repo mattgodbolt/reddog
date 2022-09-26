@@ -1,0 +1,22 @@
+LOCALINT timer
+//LOCALFLOAT fang
+LOCALFLOAT res
+
+STATE Init
+
+//	MyFlag = MyFlag | (STRATCOLL + GRAVITYON)
+
+	SetFriction(0.13,0.13,0.13)
+	
+	res = SeePlayer(TWOPI/5.0)
+
+	IF (res)
+		IF (timer > 5)
+			CREATE SPAWN_ENEMYMISSILE -1.0, 0, 0.8, 0, 0, 0, 1
+			timer = 0
+		ELSE
+			timer = timer + 1
+		ENDIF
+	ENDIF
+
+ENDSTATE

@@ -1,0 +1,119 @@
+PARAMINT	colour		1
+PARAMINT	wind		1
+PARAMINT	ID			0
+PARAMINT    delayTime   0
+PARAMFLOAT	density		100.0
+PARAMFLOAT	speed		1.0
+PARAMFLOAT	height		10.0
+PARAMFLOAT	smokescale		2.0
+PARAMFLOAT	transl		1.0
+LOCALINT	rate		
+
+STATE Init
+	MyFlag = MyFlag | NODISP
+	frame = 0
+
+	IF (!(MyFlag2 & OWNIPARAMS))
+		colour = 1
+		wind = 1
+		ID = 0
+		delayTime = 0
+	ENDIF
+
+	IF (!(MyFlag & OWNFPARAMS))
+		density = 100
+		speed = 1.0
+		height = 10.0
+		smokescale = 2.0
+		transl = 1.0
+	ENDIF
+
+	IF (delayTime > 0)
+	MyVar = delayTime
+	IF (PAL)
+		MyVar = MyVar / 1.2
+	ENDIF
+
+	WHILE (MyVar > 0)
+		MyVar = MyVar - 1.0
+	ENDWHILE
+
+//		LOOP (delayTime)
+//			MyFlag = MyFlag
+//		ENDLOOP
+	ENDIF
+
+
+
+
+
+	//IF (wind = 0)
+	//	wind = 1
+	//ENDIF
+	IF (colour = 0)
+		colour = 1
+	ENDIF
+	IF (density = 0.0)
+		density = 100.0
+	ENDIF
+	IF (density > 200.0)
+		density = 200.0
+	ENDIF
+	IF (density < 1.0)
+		density = 1.0
+	ENDIF
+	IF (smokescale = 0.0)
+		smokescale = 2.0
+	ENDIF
+  //	IF (smokescale > 4.0)
+  //		smokescale = 4.0
+  //	ENDIF
+
+	IF (speed <= 10.0)
+		speed = 10.0
+	ENDIF
+	IF (height = 0.0)
+		height = 10.0
+	ENDIF
+	IF (smokescale <= 0.1)
+		smokescale = 0.1
+	ENDIF
+	IF (transl = 0.0)
+		transl = 1.0
+	ENDIF
+	rate = TOINT(200.0 / density)
+
+	IF (!MyParent)
+		ID = 0
+	ENDIF
+
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	frame = frame + 1
+	IF (frame > rate)
+		IF (ID)
+			LinkToParentObject(ID,0,0,0,0,0,0)
+		ENDIF
+
+
+		SetGlobalParamFloat(0, density)
+		SetGlobalParamFloat(1, speed)
+		SetGlobalParamFloat(2, height)
+		SetGlobalParamFloat(3, smokescale)
+		SetGlobalParamFloat(4, transl)
+		SetGlobalParamInt(0, colour)
+		SetGlobalParamInt(1, wind)
+		CREAIND SPAWN_FACTORY_SMOKE x, y, z - 2, 0, 0, 0
+		ClearGlobalParams()
+	   //	SetGlobalParamInt(0, 0)
+	   //	SetGlobalParamInt(1, 0)
+	   //	SetGlobalParamFloat(0, 0.0)
+	   //	SetGlobalParamFloat(1, 0.0)
+	   //	SetGlobalParamFloat(2, 0.0)
+	   //	SetGlobalParamFloat(3, 0.0)
+	   //	SetGlobalParamFloat(4, 0.0)
+		frame = 0   
+	ENDIF
+ENDSTATE

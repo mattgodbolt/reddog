@@ -1,0 +1,122 @@
+DEFINE	GenTime			0
+DEFINE	MaxAtAnyTime	1
+DEFINE	Total			2
+DEFINE	Current			3
+DEFINE	Created			4
+DEFINE	Flag			5
+
+PARAMFLOAT NearRange 40.0
+
+
+LOCALINT	tempi
+LOCALINT	tempj
+LOCALINT	tempk
+LOCALINT	templ
+LOCALINT	active
+LOCALINT	time
+LOCALINT	doit
+LOCALINT	genTime
+
+STATE Init
+	MyFlag = MyFlag | ENEMY
+	doit = 0
+	IF (!(MyFlag & OWNFPARAMS))
+		NearRange = 40.0
+	ENDIF
+	//ENSURE THE NEAR RANGE IS A DECENT VALUE
+	IF (NearRange < 10.0)
+		NearRange = 10.0
+	ENDIF
+
+   	WHILE (MyParentInvalid())
+   		MyFlag = MyFlag
+   	ENDWHILE
+	IF (MyPath)
+		//ensure the own pos is supported
+   		SetGlobalParamInt(0,99)
+		InitPath()
+		ClearGlobalParams()
+	ENDIF
+
+	TRIGSET>Always EVERY 1
+	time = 0
+	genTime = GetParentSem(GenTime)
+	active = 0
+	STAT>Start
+ENDSTATE
+
+TRIGGER Always
+	IF (!MyParentFlag)
+		Delete()
+	//	TRIGSTOP
+	ELSE
+		TRIGFIN
+	ENDIF
+ENDTRIGGER 
+
+
+STATE Start
+	IF (GetParentSem(Flag) = 1)
+		STAT>Kill
+	ENDIF
+	WHILE (GetParentSem(Flag) = 2)
+		MyFlag = MyFlag
+	ENDWHILE
+
+	time = time + 1
+
+	IF ((active = 0) AND (time > (genTime * 30)))
+		IF (HasActivation(0))
+			IF (!PlayerNearActivationXY(0))
+				IF (HasActivation(1))
+					IF (!EnemyInActivation(1, 2D))
+						doit = 1
+					ENDIF
+				ELSE
+					doit = 1
+				ENDIF
+			ENDIF
+		ELSE			
+			IF (HasActivation(1))
+				IF (!EnemyInActivation(1, 2D))
+					doit = 1
+				ENDIF
+			ELSE
+				doit = 1
+			ENDIF
+		ENDIF
+	ENDIF
+
+	IF (doit = 1)
+		doit = 0
+		tempi = GetParentSem(Created)
+		tempj = GetParentSem(Total)
+		IF ((tempi < tempj) AND (GetParentSem(Current) < GetParentSem(MaxAtAnyTime)))
+			IF (RandRange(0.0, 100.0) < 1.0)
+				IF (!(EnemyInActivation(1, 2D)))
+					AddParentSem(Created, 1)
+					AddParentSem(Current, 1)
+					SetGlobalParamFloat(0, 1)
+					SetGlobalParamFloat(3,NearRange)
+					CREATE FootSoldier 0, 0, 0, 0, 0, 0, 0
+					active = 1
+					ClearGlobalParams()
+				ENDIF
+			ENDIF
+		ENDIF
+	ENDIF
+
+	IF (MyParentFlag)
+		IF (MyVar > 0.0)
+			time = 0
+			tempi = TOINT(MyVar)
+			SubParentSem(Current, tempi)
+			active = 0
+			MyVar = 0.0
+		ENDIF
+	ENDIF
+ENDSTATE
+
+STATE Kill
+	Delete()
+ENDSTATE

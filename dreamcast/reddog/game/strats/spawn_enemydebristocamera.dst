@@ -1,0 +1,54 @@
+LOCALFLOAT	time
+LOCALFLOAT	xrot
+LOCALFLOAT	yrot
+LOCALFLOAT	zrot
+LOCALINT	tempi
+
+STATE Init
+	MyFlag = MyFlag | FRIENDLY
+	
+	SetFriction(0,0,0)
+	time = RandRange(0.0, 1.0)
+	OBJECT>SFX\Shrapnel
+	HideObject(1)
+	HideObject(2)
+	HideObject(3)
+	HideObject(4)
+	HideObject(5)
+	HideObject(6)
+	HideObject(7)
+	HideObject(8)
+	HideObject(9)
+	time = RandRange(0.0, 9.9)
+	tempi = TOINT(time)
+	UnhideObject(tempi)
+	
+	RandomPointToCam()
+	
+	MyVar = RandRange(1.5, 2.0)
+	MoveY(MyVar)
+	xrot = RandRange(-0.2, 0.2)
+	yrot = RandRange(-0.1, 0.1)
+	zrot = RandRange(-0.3, 0.3)
+   	
+	trans = 1.0
+	time = 0.0
+	ClearRotFlag()
+	STAT>Start
+ENDSTATE 
+
+STATE Start
+	LOOP (74)
+		time = time + 1.0
+		RotateStratObjectXYZ(xrot, yrot, zrot)
+		IF (time > 70.0)
+			MyFlag2 = MyFlag2 | TRANSLUCENT
+			IF (trans > 0.2)
+				trans = trans - 0.2
+			ELSE
+				trans = 0.0	
+			ENDIF
+		ENDIF
+	ENDLOOP
+	Delete()
+ENDSTATE

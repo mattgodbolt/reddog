@@ -1,0 +1,104 @@
+// Tremor action!
+// When near enough the player, will tremor every TremorGap+/-TremorTolerance frames
+// Lasts for TremorLength+/-TremorLToler frames
+// Signals to its children by MyVar = 1 during a tremor
+// Has an effective range of Range metres
+
+PARAMINT		TremorGap		550
+PARAMINT		TremorTolerance	200
+PARAMINT		TremorLength	100
+PARAMINT		TremorLToler	30
+PARAMINT		Range			400
+
+LOCALFLOAT		wait
+LOCALFLOAT		severity
+LOCALFLOAT		xxx
+LOCALFLOAT		yyy
+LOCALFLOAT		zzz
+
+STATE Init
+	IF (!(MyFlag2 & OWNIPARAMS))
+		TremorGap = 550
+		TremorTolerance	= 200
+		TremorLength = 100
+		TremorLToler = 30
+		Range = 400
+	ENDIF
+
+	MyFlag = MyFlag | DELETECALLBACK
+	TRIGSET>Del WHENDELETED
+
+	AllocStratSoundBlock(2)
+
+	STAT>WaitForTremor
+ENDSTATE
+
+STATE WaitForTremor
+	MyVar = 0
+	WHILE (!NearPlayerXY(Range))
+		MyVar = MyVar
+	ENDWHILE
+	wait = TremorGap + RandRange(-TremorTolerance, TremorTolerance)
+	WHILE (wait > 0)
+		wait = wait -1
+	ENDWHILE
+	STAT>Tremor
+ENDSTATE
+
+LOCALFLOAT	tempf
+LOCALFLOAT	tempf1
+LOCALFLOAT	tempf2
+LOCALFLOAT	tempf3
+LOCALFLOAT	cSev
+LOCALINT	totalWait
+
+STATE Tremor
+	MyVar = 1
+	wait = TremorLength + RandRange(-TremorLToler, TremorLToler)
+	totalWait = wait
+	PLAYSOUND>QUAKEL 0 1.0 0.0 0.0 0.0 (CONTINUOUS | PAN_HARDLEFT | RANDOM | NOPOSITION)
+	PLAYSOUND>QUAKER 1 1.0 0.0 0.0 0.0 (CONTINUOUS | PAN_HARDRIGHT | RANDOM | NOPOSITION)
+	WHILE (wait > 0)
+		severity = 1.0 - (PlayerDistXY() / Range)
+		IF (severity < 0)
+			severity = 0
+		ENDIF
+		cSev = SmoothFromTo(severity * totalWait * 0.1, wait, totalWait)
+		xxx = CamX
+		yyy = CamY
+		zzz = CamZ
+		CamX = CamX + RandRange(-cSev, cSev)
+		CamY = CamY + RandRange(-cSev, cSev)
+		CamZ = CamZ + RandRange(-cSev, cSev)
+		tempf = 0.3 * cSev
+		tempf1 = RandRange(-tempf, tempf)
+		tempf2 = RandRange(-tempf, tempf)
+		tempf3 = RandRange(-tempf, tempf)
+		PlayerRelRotateXYZ(tempf1, tempf2, tempf3)
+		CamTilt = CamTilt + RandRange(-0.01, 0.01)
+		CamLookX = CamLookX + RandRange(-cSev/4, cSev/4)
+		CamLookY = CamLookY + RandRange(-cSev/4, cSev/4)
+		CamLookZ = CamLookZ + RandRange(-cSev/4, cSev/4)
+		wait = wait - 1
+		Vibrate (2, 0.5, cSev, 0)
+	ENDWHILE
+
+	WHILE (CamTilt > 0.01)
+		CamTilt = CamTilt * 0.9
+	ENDWHILE
+
+	StopSound(0,0)
+	StopSound(1,0)
+
+	LOOP (30)
+		CamTilt = CamTilt * 0.9
+	ENDLOOP
+	CamTilt = 0
+
+	STAT>WaitForTremor
+ENDSTATE
+
+TRIGGER Del
+	CamTilt = 0
+	TRIGFIN
+ENDTRIGGER

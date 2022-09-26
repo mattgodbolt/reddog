@@ -1,0 +1,31 @@
+// Shield trail
+// Spawned by the shield to look funky
+
+LOCALINT vertex
+LOCALINT bandHandle
+
+STATE Init
+	vertex = GetShieldVertexNumber()
+
+	bandHandle = CreateBand (1, 4, 0, 1, 0.8, 1, 1, 0, 0, 0, 0.5)
+	AddBandSegment (bandHandle, 0, 0, 0, 0.3)
+
+	TRIGSET>KillOff EVERY 20
+
+	STAT>Move
+ENDSTATE
+
+STATE Move
+	IF (AccelerateTowardsShield(vertex))
+		DeleteBand (bandHandle)
+		Delete()
+	ELSE
+		AddBandSegment (bandHandle, 0, 0, 0, 0.3)
+	ENDIF
+ENDSTATE
+
+STATE KillOff
+	DeleteBand (bandHandle)
+	Delete()
+  //	TRIGFIN
+ENDSTATE

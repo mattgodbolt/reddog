@@ -1,0 +1,26 @@
+STATE Init
+	MyFlag = MyFlag | ENEMY | LOWCOLL | STRATCOLL
+	
+	OBJECT>SCENEANIMS\CanyonWindowSolid
+	RegisterCollision()
+	InitHDC()
+	AllocStratSoundBlock(1)
+	CalculateStratPolyData(1)
+	health = 1.0
+	WHILE (health > 0.0)
+		MyFlag = MyFlag
+	ENDWHILE
+	PLAYSOUND>GLASS 0 1.0 0.0 0.0 0.0 0
+	STAT>Explode
+ENDSTATE
+
+STATE Explode
+	OBJECT>SceneAnims\CanyonWindowShatter
+	MODELANIM>SceneAnims\CanyonWindowShatter.RDO>play>0
+	Score = Score + 50
+	WHILE (MyAnimFlag & RUNNING)
+		MyFlag = MyFlag
+	ENDWHILE
+	Delete()
+ENDSTATE
+

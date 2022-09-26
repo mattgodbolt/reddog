@@ -1,0 +1,97 @@
+//Do not delete these params or you'll regret
+PARAMINT	waittime	0
+PARAMINT	GreenWater	0
+
+LOCALINT timer
+LOCALFLOAT	rot1
+LOCALFLOAT	rot2
+LOCALFLOAT	temp
+
+STATE Init
+	AddWaterStrat()
+	StrtNoFade()
+	rot1 = RandRange(0,3.141)
+	rot2 = RandRange(0,3.141)
+	IF (!(MyFlag2 & OWNIPARAMS))
+		waittime = 0
+		GreenWater = 0
+	ENDIF
+	TRIGSET>Wibble EVERY 1
+	IF (PAL)
+		THREESECS = 75
+		TWOTHIRDSSEC = 16
+	ELSE
+		THREESECS = 90
+		TWOTHIRDSSEC = 20
+	ENDIF
+
+	STAT>Start
+ENDSTATE
+
+LOCALINT THREESECS
+LOCALINT TWOTHIRDSSEC
+
+STATE Start
+	MyFlag = MyFlag
+	IF PlayerNearActivationXY(0)
+		LOOP (THREESECS)
+			MyFlag = MyFlag
+		ENDLOOP
+		STAT>lowerwater
+	ENDIF
+ENDSTATE
+
+STATE lowerwater
+	LOOP (TWOTHIRDSSEC)
+		MoveZ (-0.008)
+	ENDLOOP
+	STAT>Wait
+ENDSTATE
+
+STATE Wait
+	timer = 0
+	WHILE (timer < waittime)
+		MyFlag = MyFlag
+		timer = timer + 1
+	ENDWHILE
+	STAT>stopwater
+ENDSTATE
+
+STATE stopwater
+	LOOP (TWOTHIRDSSEC)
+		MoveZ (0.008)
+	ENDLOOP
+	KillMyVelocity()
+	STAT>end
+ENDSTATE
+  
+STATE end	
+ENDSTATE
+
+STATE Wibble
+	MyVar = Ssin(rot1) * 0.30
+	temp = Scos(rot1) * 0.30
+	SetObjectCrntPos(1, MyVar, 0)
+	SetObjectCrntPos(1, temp, 1)
+
+	MyVar = Ssin(rot2) * 0.8
+	temp = Scos(rot2) * 0.30
+	SetObjectCrntPos(2, MyVar, 0)
+	SetObjectCrntPos(2, temp, 1)
+
+	IF (PAL)
+		rot1 = rot1 + (0.01 * 1.2)
+		rot2 = rot2 - (0.02 * 1.2)
+	ELSE
+		rot1 = rot1 + 0.01
+		rot2 = rot2 - 0.02
+	ENDIF
+	IF (rot1 > 3.1415925)
+		rot1 = rot1 - 3.1415925
+	ENDIF
+
+	IF (rot2 > 3.1415925)
+		rot2 = rot2 - 3.1415925
+	ENDIF
+	TRIGFIN
+ENDSTATE

@@ -1,0 +1,71 @@
+LOCALINT Temp
+
+STATE Init
+	MakeMeTheLast()
+  	MyFlag = MyFlag | RELVELCALC | FLOORCOLL | STRATCOLL | FRIENDLY | NOTEXPLODE | BULLETTYPE | DIRECTMOVE
+    MyFlag2 = MyFlag2 | BULLET_CF
+	SetFriction(0.0, 0.0, 0.0)
+	damage = 10.0
+	Temp = RandRange(0, 1.99)
+	AllocStratSoundBlock(1)
+	IF (Temp < 1.0)
+		IF (Temp < 0.5)
+			PLAYSOUND>VULC1 0 1.0  0.0 0.0 0.0  0
+		ELSE
+			PLAYSOUND>VULC2 0 1.0  0.0 0.0 0.0  0
+		ENDIF
+	ELSE
+		IF (Temp < 1.5)
+			PLAYSOUND>VULC3 0 1.0  0.0 0.0 0.0  0
+		ELSE
+			PLAYSOUND>VULC4 0 1.0  0.0 0.0 0.0  0
+		ENDIF
+	ENDIF
+	TRIGSET>KillOff			WHENHIT
+	TRIGSET>KillOffFloor	ONFLOOR
+   	OBJECT> WEAPON\REDDOGLASER
+	RegisterCollision()
+	TRIGSET>Remove	EVERY 30
+	MoveY(8.0)
+	x = x + PlayerActVelX
+	y = y + PlayerActVelY
+	z = z + PlayerActVelZ
+	absspeedx = absspeedx + PlayerActVelX
+	absspeedy = absspeedy + PlayerActVelY
+	absspeedz = absspeedz + PlayerActVelZ
+	RecordCollision(0)
+	STAT>SetPos
+ENDSTATE 
+
+STATE SetPos
+	IF (UnderWater)
+		ParentVar = ParentVar - 1
+		Delete()
+	ENDIF
+ENDSTATE
+
+STATE KillOff
+	ParentVar = ParentVar - 1
+	Delete()
+ENDSTATE
+
+STATE KillOffFloor
+	IF (!(MyFlag2 & HITHDC))
+		IF (!(PolyType & NODECAL))
+			AddDecal(0, Temp, 0.5, 0.5, 0.2, 0.2, 0.2)
+		ENDIF
+	ENDIF
+	MoveBackOneFrame()
+	MakeFrags (0.1, 12)
+ 	
+	ParentVar = ParentVar - 1
+	Delete()
+ //	TRIGSTOP
+ENDSTATE
+
+STATE Remove
+	ParentVar = ParentVar - 1
+	Delete()
+  //	TRIGSTOP
+ENDSTATE
+

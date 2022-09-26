@@ -1,0 +1,266 @@
+//FRIENDLY GUN TURRET RAIL GUN THING
+//MOVES ALONG WAYPATH IF ONE GIVEN, ELSE SITS THERE
+//
+
+//PARAMETERS 
+// STRENGTH - AMOUNT OF ARMOUR
+// VISIBLE - WHETHER WE NEED TO SEE IT OR NOT, CURRENTLY SET TO BE A CODER'S GUNPOLE WAREZ
+// AUTODESTRUCT - WHETHER IT'S A BOMB OR BE HIT TYPE
+
+
+DEFINE PATROLFORWARD 0
+DEFINE PATROLBACKWARD 1
+
+DEFINE TURRET1	2
+DEFINE TURRET2	3
+
+PARAMINT visible 1
+PARAMINT AutoDestruct 0
+PARAMINT CountTimer 120
+PARAMFLOAT strength	240.0
+
+
+LOCALINT MODE
+LOCALINT endreached
+
+STATE Init 
+	IF (!(MyFlag & OWNFPARAMS))
+		health = 240.0
+	ELSE
+		health = strength
+	ENDIF
+
+	IF (!(MyFlag2 & OWNIPARAMS))
+		visible = 1
+		AutoDestruct = 0
+		CountTimer = 120
+	ENDIF
+
+//	visible = 1
+
+
+	movespeed = 0
+	endreached = 0
+	MyVar = 0.0
+  	MyFlag = HOVERMOVE | STRATCOLL | LOWCOLL | FRIENDLY
+	RegisterCollision()
+	RegisterAsTarget(1)
+
+	IF (!AutoDestruct)
+	 	TRIGSET>Damage WHENHIT 
+		TRIGSET>KillOff WHENDEAD 
+	ELSE
+		TRIGSET>CountDown EVERY 1
+	ENDIF
+
+	IF (!visible)
+		MyFlag = MyFlag | NODISP
+	ENDIF
+ 
+ 		OBJECT> MISC\ENV_GUNONPOLE
+  	SetFriction(0.5,0.5,0.5)
+	IF (MyPath)
+		InitPath()
+		MODE = PATROLFORWARD
+		GetNextWay()
+		IF (MyParent)
+			MyTarget = MyParent
+			TRIGSET>TrackMyTarget EVERY 1
+			TRIGSET>GetNewPos EVERY 2
+		   	TRIGSET>Fire EVERY 10
+			STAT> Track
+	  	ENDIF
+		STAT> Patrol
+	ELSE
+		STAT>Turn
+	ENDIF
+ENDSTATE
+
+STATE CountDown
+
+	IF (CountTimer)
+		CountTimer = CountTimer - 1
+	ELSE
+		STAT>Kill
+	ENDIF
+
+	TRIGFIN
+ENDSTATE
+
+
+STATE KillOff
+	TRIGRESET
+	TRIGSTOP
+	STAT>Kill
+ENDSTATE
+
+
+
+STATE TrackMyTarget
+
+
+	SetPlayerToTarget(1)
+  	ObjectTowardPlayerXZ(1,0.1,0.1,TWOPI,TWOPI)
+ 
+   //	ObjectTowardTargetX(1,0.1)
+   //	ObjectTowardTargetZ(1,0.1)
+	CrntRotToIdleRotX(1, 10)
+  	CrntRotToIdleRotZ(1, 10)
+	SetPlayerBack()
+
+
+	TRIGFIN
+ENDSTATE
+
+STATE GetNewPos
+     IF (!endreached)
+	 GetNearestWayToTarget(0.0)
+	 ENDIF
+   TRIGFIN
+ENDSTATE
+
+LOCALFLOAT recoil
+STATE Fire
+	IF ((MyVar < 6.0) AND (AnyFreeJonnies(2,4))) 
+
+
+	recoil = 0.22
+	LOOP (5)
+		TransObjectRel(TURRET1, 0.0, -recoil, 0.0)
+		TransObjectRel(TURRET2, 0.0, -recoil, 0.0)
+		recoil = recoil + 0.1
+	ENDLOOP
+  
+	LOOP (1)
+		MyFlag = MyFlag
+	ENDLOOP
+  	CREATE SPAWN_GUNTURRETMISSILE 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, TURRET1
+  	CREATE SPAWN_GUNTURRETMISSILE 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, TURRET2
+
+
+	recoil = recoil - 0.1
+	LOOP (5)
+		TransObjectRel(TURRET1, 0.0, recoil, 0.0)
+	  	TransObjectRel(TURRET2, 0.0, recoil, 0.0)
+		recoil = recoil - 0.1
+	ENDLOOP
+  
+  	ENDIF
+
+
+  TRIGFIN
+
+ENDSTATE
+
+STATE Damage
+	MyVar = 4.0
+	CREATE 	SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+  //	MakeFrags(0.1,12)
+	TRIGFIN
+ENDSTATE
+
+STATE Kill
+	PauseTriggers(-1,FORGET)
+	MyVar = 0.0
+  	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+ //	UnRegisterAsTarget()
+	IF (visible)
+		DESTROYME SPAWN_EXPLODINGBITS
+	ELSE
+		Delete()
+	ENDIF
+
+ENDSTATE
+
+
+
+LOCALFLOAT savex
+LOCALFLOAT movespeed
+LOCALFLOAT moveoff
+STATE Track
+	WHILE (!NearCheckPosXY(0.0))
+
+		IF (movespeed > 0.28)
+			movespeed = 0.28
+		ELSE
+			movespeed = movespeed + 0.002
+		ENDIF
+	   MoveTowardXY(CheckX,CheckY,movespeed)
+	ENDWHILE
+
+	movespeed = movespeed * 6.5
+	endreached = 1
+	moveoff = 0
+	savex = x
+	WHILE (movespeed > 0.1)
+	
+	SetCheckPosRel(0,movespeed,0,0)
+	WHILE (!NearCheckPosXY(0.0))
+      MoveTowardXY(CheckX,CheckY,0.28)
+	ENDWHILE
+
+   	CheckX = savex
+   		SetCheckPosRel(0,-movespeed,0,0)
+   	WHILE (!NearCheckPosXY(0.0))
+   	   MoveTowardXY(CheckX,CheckY,0.28)
+   	ENDWHILE
+		IF (moveoff < 0.4)
+			moveoff = moveoff + 0.05
+		ENDIF
+
+	movespeed =  movespeed - moveoff
+	ENDWHILE
+
+	movespeed = 0
+	GetNearestWayToTarget(0.0)
+
+   endreached = 0
+
+
+ENDSTATE
+
+
+
+
+STATE Patrol
+  //	KillMyVelocity()
+	
+	WHILE (!(NearCheckPosXY(0.0)))
+		
+	   
+	   MoveTowardXY(CheckX,CheckY,0.28)
+	  //	ApplyAbsForce(x,y,0,CheckX,CheckY,0,0.28)
+	 //  	TowardWay(0.05,0.05)
+
+	 // 	IF (SeeWayZ(TWOPI/8.0))
+	 // 		MoveY(0.28)
+	 // 	ENDIF
+	ENDWHILE
+
+
+   //	LOOP (250)
+   //		MyFlag = MyFlag
+
+   //	ENDLOOP
+
+	IF (MODE = PATROLFORWARD)
+		IF (LastWay())
+			MODE = PATROLBACKWARD
+		ENDIF
+	ELSE
+		IF (FirstWay())
+			MODE = PATROLFORWARD
+		ENDIF
+	ENDIF
+
+	IF (MODE = PATROLFORWARD)
+		GetNextWay()
+	ELSE
+		GetPrevWay()
+	ENDIF
+	
+ENDSTATE
+
+STATE Turn
+
+ENDSTATE

@@ -1,0 +1,47 @@
+PARAMINT	red				255
+PARAMINT	green			255
+PARAMINT	blue			255
+PARAMINT	frames			5
+PARAMINT	sparks			10
+
+PARAMFLOAT	spread			6.0
+PARAMFLOAT	speed			1.0
+
+STATE Init
+	MyFlag = MyFlag | ENEMY
+
+	IF (!(MyFlag2 & OWNIPARAMS))
+		red = 255
+		green = 255
+		blue = 255
+		frames = 5
+		sparks = 10
+	ENDIF
+
+	IF (!(MyFlag & OWNFPARAMS))
+		spread = 6.0
+		speed = 1.0
+	ENDIF
+
+	IF (GetGlobalParamInt(0) = 1)
+		red = GetGlobalParamInt(1)
+		green = GetGlobalParamInt(2)
+		blue = GetGlobalParamInt(3)
+		frames = GetGlobalParamInt(4)
+		sparks = GetGlobalParamInt(5)
+		spread = GetGlobalParamFloat(0)
+		speed = GetGlobalParamFloat(1)
+	ENDIF
+
+	IF ((red = 0) AND (green = 0) AND (blue = 0))
+		red = RandRange(0, 255)
+		green = RandRange(0, 255)
+		blue = RandRange(0, 255)
+	ENDIF
+
+	DoSpark(sparks, StrM10, StrM11, StrM12, speed, spread, frames, red, green, blue)
+
+	IF (GetGlobalParamInt(6) = 1)
+		Delete()
+	ENDIF
+ENDSTATE

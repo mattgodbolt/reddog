@@ -1,0 +1,44 @@
+// Parent of the footsoldier to control weapon firing
+STATE Init
+	scalex = 0.1
+	scaley = 0.1
+	scalez = 0.1
+	OBJECT> WEAPON\FootSoldierLaserParent
+	TRIGSET>SetToParent EVERY 1
+	STAT>Run
+ENDSTATE
+
+STATE SetToParent
+	// 5 is the arm of the footsoldier
+	LinkToParentObject (5, 0,0,0, 0,0.8,0)
+	TRIGFIN
+ENDSTATE
+
+STATE Run
+	CREATE SPAWN_FootSoldierLaserChild 0,0,0, 0,0,0, 0
+	LOOP 2
+		scalex = scalex + 0.1
+		scaley = scalex
+		scalez = scalex
+	ENDLOOP
+
+	LOOP 2
+		MyFlag = MyFlag
+	ENDLOOP
+
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+	trans = 1
+	WHILE (scalex > 0.1)
+		scalex = scalex * 0.9
+		scaley = scalex
+		scalez = scalex
+		trans = trans * 0.9
+	ENDWHILE
+
+	WHILE (trans > 0.1)
+		trans = trans * 0.85
+	ENDWHILE
+
+	Delete()
+ENDSTATE
+

@@ -1,0 +1,43 @@
+LOCALFLOAT	time
+
+STATE Init
+	MyFlag = MyFlag | ENEMY
+	time = 0.0
+	OBJECT>ENEMIES\DEATH\WalkerDeath
+	MODELANIM>ENEMIES\DEATH\WalkerDeath.RDO>Play>NOTWEEN
+	//HIDE THE RELEVANT ARM BITS
+
+	IF (GetGlobalParamInt(0) = 1)
+		HideObject(2)
+		HideObject(3)
+		HideObject(4)
+	ENDIF
+	IF (GetGlobalParamInt(1) = 1)
+		HideObject(6)
+
+	ENDIF
+
+
+	CREATE SPAWN_ExplosionBall 0, 0, 0, 0, 0, 0, 0
+	CREATE SPAWN_ExplosionShard 0, 0, 0, 0, 0, 0, 0
+	CREATE SPAWN_ExplosionShard 0.0, 0.0, 0, 0, 0, 3.14, 0
+	IMMLOOP (10) 
+		CREATE SPAWN_EnemyDebris 0, 0, 0, 0, 0, 0, 0
+	IMMENDLOOP
+	CREATE SPAWN_EnemyDebrisToCamera 0, 0, 0, 0, 0, 0, 0
+	CREATE SPAWN_EnemyDebrisToCamera 0, 0, 0, 0, 0, 0, 0
+	CREATE SPAWN_EnemyDebrisToCamera 0, 0, 0, 0, 0, 0, 0
+	WHILE (MyAnimFlag & RUNNING)
+		time = time + 1.0
+		IF (time > 90.0)
+			MyFlag2 = MyFlag2 | TRANSLUCENT
+			trans = (100.0 - time) / 10.0
+		ENDIF
+		MyFlag = MyFlag
+	ENDWHILE
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	Delete()
+ENDSTATE

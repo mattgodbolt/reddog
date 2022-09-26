@@ -1,0 +1,172 @@
+//
+// BUILDING BLOW
+//
+
+PARAMINT TYPE
+
+LOCALFLOAT	MUSVOL
+LOCALFLOAT  temp
+
+LOCALINT	SND_TRIG3_4
+
+
+TRIGGER MUSFADE
+	temp = MUSVOL
+	WHILE (temp > (MUSVOL / 3.0))
+		MusicFade(1.0 - temp)
+		temp = temp * 0.3
+	ENDWHILE
+  	TRIGSTOP
+ENDTRIGGER
+
+
+
+STATE Init
+ IF (PAL)
+		
+		SND_TRIG3_4 = 60
+//		END_ANIM    = 200
+	ELSE
+		
+		SND_TRIG3_4 = 70
+//		END_ANIM    = 230
+	ENDIF
+		
+	IF (MyParent)
+		WHILE (MyParentInvalid())
+			MyFlag = MyFlag
+		ENDWHILE
+	ENDIF
+
+	MakeMeTheLast()
+	IF (!TYPE)
+		STAT>FIRSTBOMBER
+	ENDIF
+
+	IF (TYPE = 1)
+		STAT>SECONDBOMBER
+	ENDIF
+	
+	IF (TYPE = 2)
+		STAT>THIRDBOMBER
+	ENDIF
+
+
+ENDSTATE
+
+LOCALFLOAT VOLUME
+
+TRIGGER FADE0
+	WHILE (VOLUME > 0.1)
+		VOLUME = VOLUME * 0.9
+		SetVolume(0,VOLUME)
+   	ENDWHILE
+	TRIGSTOP
+ENDTRIGGER
+
+DEFINE BOMBER1 1
+DEFINE BOMBER2 4
+DEFINE BOMBER3 6
+
+
+STATE FIRSTBOMBER
+  //	MyFlag = MyFlag | NODISP
+
+	//kill all existing sounds
+	StopSound(-1,-1)
+
+	MUSVOL = sfxGetCDVolume()
+	IF (sfxGetCDVolume() > 0.3)
+		TRIGSET>MUSFADE EVERY 1
+	ENDIF
+ 	
+	AllocStratSoundBlock(1)
+	SetAudibleRange(0, 100, 500)
+  
+	PLAYSOUND>BOMBER_ENG 0 1.0 0.0 0.0 0.0 (CONTINUOUS)
+//	SetPitch (0, -0.5)
+
+//	TRIGSET>FADE0 EVERY 100
+	WHILE (MyParentFlag)
+		LinkToParentObject(BOMBER1,0,0,0,0,0,0)
+	ENDWHILE
+  	
+	Delete()
+ENDSTATE
+
+STATE SECONDBOMBER
+//	AllocStratSoundBlock(1)
+//	SetAudibleRange(0, 100, 500)
+  
+//	PLAYSOUND>BOMBER_ENG 0 1.0 0.0 0.0 0.0 CONTINUOUS
+//	TRIGSET>FADE0 EVERY 100
+	WHILE (MyParentFlag)
+		LinkToParentObject(BOMBER2,0,0,0,0,0,0)
+
+	ENDWHILE
+	Delete()
+ENDSTATE
+
+STATE THIRDBOMBER
+	AllocStratSoundBlock(5)
+	SetAudibleRange(0, 100, 500)
+	SetAudibleRange(1, 400, 800)
+	SetAudibleRange(2, 400, 800)
+	SetAudibleRange(3, 400, 800)
+	SetAudibleRange(4, 400, 800)
+  
+//	PLAYSOUND>BOMBER_ENG 0 1.0 0.0 0.0 0.0 CONTINUOUS
+	frame = 0
+   	WHILE ((MyParentFlag) AND (frame < SND_TRIG3_4))
+		frame = frame + 1
+		LinkToParentObject(BOMBER3,0,0,0,0,0,0)
+
+	ENDWHILE
+	VOLUME = 1.0
+
+	TRIGSET>FADE0 EVERY 1
+	PLAYSOUND>EX_LARGE_BLAST1 1 1.0 0.0 0.0 0.0 NOPOSITION
+
+	frame = 0
+	WHILE (frame < 30)
+		frame = frame + 1
+	ENDWHILE
+	
+	PLAYSOUND>EX_TNT_EXPLOSION 2 1.0 0.0 0.0 0.0 NOPOSITION
+	frame = 0
+	WHILE (frame < 15)
+		frame = frame + 1
+	ENDWHILE
+    PLAYSOUND>EX_TNT_EXPLOSION 3 0.8 0.0 0.0 0.0 NOPOSITION
+	//SetPitch(3,0.4)
+	frame = 0
+	WHILE (frame < 7)
+		frame = frame + 1
+	ENDWHILE
+	PLAYSOUND>EX_TNT_EXPLOSION 4 0.9 0.0 0.0 0.0 NOPOSITION
+	//SetPitch(3,0.1)
+	WHILE (IsPlaying(2) OR IsPlaying(3) OR IsPlaying(4))
+		MyFlag = MyFlag
+	ENDWHILE
+   
+   	PLAYSOUND>EX_MEDIUM_BLAST1 1 1.0 0.0 0.0 0.0 NOPOSITION
+	frame = 0
+	WHILE (frame < 7)
+		frame = frame + 1
+	ENDWHILE
+
+   	PLAYSOUND>EX_LARGE_BLAST1 2 0.5 0.0 0.0 0.0 NOPOSITION
+
+	WHILE (IsPlaying(1) OR IsPlaying(2))
+		MyFlag = MyFlag
+	ENDWHILE
+	
+	//ensure existing sounds kick up again
+	MusicFade(1.0 - MUSVOL)
+	StopSound(-2,-1)
+	Delete()
+ENDSTATE
+
+
+
+

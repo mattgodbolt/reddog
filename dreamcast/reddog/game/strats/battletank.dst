@@ -1,0 +1,595 @@
+PARAMINT WaitAfterSpawn 0 //Amount of time before Battletank starts to move
+PARAMFLOAT NearRange 30.0
+
+LOCALINT fireCount
+LOCALINT isGenerated
+
+LOCALFLOAT SEEANG
+LOCALFLOAT TURNANG
+LOCALFLOAT AWAYANG
+LOCALFLOAT pitch
+
+LOCALFLOAT m00
+LOCALFLOAT m01
+LOCALFLOAT m02
+
+LOCALFLOAT m10
+LOCALFLOAT m11
+LOCALFLOAT m12
+
+LOCALFLOAT m20
+LOCALFLOAT m21
+LOCALFLOAT m22
+
+//USED TO SAY WHETHER TO GO AFTER TARGET OR PLAYER
+LOCALINT TARGETVALID
+LOCALINT	GeneratorTeleportTime
+
+DEFINE	SPEED	0.04 
+DEFINE BODY 10  
+STATE Init
+	TURNANG = TWOPI/360.0 * 5.0
+	SEEANG = TWOPI/360.0 * 11.0
+	AWAYANG = TWOPI/360.0 * 45.0
+
+	health = 80.0
+ 	AllocStratSoundBlock(3)
+	RegisterDanger(50.0)
+
+	MakeMeTheLast()
+	MyFlag = MyFlag | STRATCOLL | NOMOVE | RELVELCALC | ENEMY | HOVERMOVE | FLOORCOLL | GRAVITYON | TARGETABLE | LOWCOLL
+	MyFlag2 = MyFlag2 | COLLMOVE
+  
+	IF (!(MyFlag2 & OWNIPARAMS))
+		WaitAfterSpawn = 0
+	ENDIF
+
+	IF (!(MyFlag & OWNFPARAMS))
+		NearRange = 30.0
+	ENDIF
+
+	IF (NearRange < 10.0)
+		NearRange  = 10.0
+	ENDIF
+
+
+	TRIGSET>SpecularMadness EVERY 1
+  	SetFriction(1.0,0.1,0.05)
+	damage = 1.0
+	
+	fireCount = 0
+	InitPath()
+
+	
+	RotationRestriction(1.0, 1.0, 1.0)
+
+	TRIGSET>Kill WHENDEAD
+	IF (GetGlobalParamFloat(0) = 1.0)
+		m00 = StrM00
+		m01 = StrM01
+		m02 = StrM02
+
+		m10 = StrM10
+		m11 = StrM11
+		m12 = StrM12
+
+		m20 = StrM20
+		m21 = StrM21
+		m22 = StrM22
+
+		isGenerated = 1
+		GeneratorTeleportTime = 0
+		trans = 0.0
+		TRIGSET>GeneratorTeleport EVERY 1
+	ELSE
+		isGenerated = 0
+	ENDIF
+	MyFlag = MyFlag | NODISP
+	IF (MyParent)
+		WHILE (MyParentInvalid())
+			MyFlag = MyFlag
+		ENDWHILE
+	ENDIF
+
+   	OBJECT>ENEMIES\BATTLETANK
+	RegisterCollision()
+	MyFlag = MyFlag & LNOT(NODISP)
+
+	IF (isGenerated)
+		InheritMyParent()
+		InitPath()
+		WaitAfterSpawn = 120
+	ELSE
+  		MyTarget = MyParent
+	ENDIF
+
+	SetObjectShadowState(1)
+
+	IF (HasActivation(0))
+		WHILE (!PlayerNearActivationXY(0))
+			MyFlag = MyFlag
+		ENDWHILE
+	ENDIF
+
+
+ 
+	WHILE (WaitAfterSpawn > 0)
+		WaitAfterSpawn = WaitAfterSpawn - 1
+
+		IF (isGenerated)
+			absspeedz = absspeedz * 0.9
+			StrM00 = m00
+			StrM01 = m01
+			StrM02 = m02
+
+			StrM10 = m10
+			StrM11 = m11
+			StrM12 = m12
+
+			StrM20 = m20
+			StrM21 = m21
+			StrM22 = m22
+		ENDIF
+	ENDWHILE
+
+	PLAYSOUND>BTANK_ENGINE_CUT 0 0.7 0.0 0.0 0.0 CONTINUOUS
+
+	IF (MyTarget)
+		TARGETVALID = 1
+		hitdist = 0 
+		TRIGSET>TargetCheck EVERY 1
+		TRIGSET>DeleteTarg  PARENTDEAD
+		TRIGSET>ChangeTarg  WHENHIT
+	ENDIF
+	
+	TRIGSET>FireCheck EVERY 1
+	
+	//IF JUST ON A SPLINE GO INTO SPLINE MODE
+	//ELSE NETWORK
+	IF ((MyPath) AND (!(OnNet)))
+ 		STAT>Defend
+	ELSE
+		inrange = 0
+		TRIGSET>StopGoCheck EVERY 1
+   		IF (MyPath) AND (MyPatrol) 
+			STAT>StartTankNetwork
+		ELSE
+			IF (MyPath)
+				STAT>Network
+			ELSE
+	 			STAT>Wait
+			ENDIF
+		ENDIF
+   	ENDIF
+ENDSTATE
+
+TRIGGER GeneratorTeleport
+	IF (SpecialStrat)
+		DrawShock(x, y, z, SpecialStratX, SpecialStratY, SpecialStratZ, 1, 1, 1)
+	ENDIF
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+	trans = (GeneratorTeleportTime / 90.0)
+	GeneratorTeleportTime = GeneratorTeleportTime + 1
+	IF (GeneratorTeleportTime > 90)
+		trans = 1.0
+		MyFlag2 = MyFlag2 & LNOT(TRANSLUCENT)
+		TRIGSTOP
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+LOCALFLOAT SPECAMOUNT
+
+TRIGGER SpecularMadness
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+	IF ((MyFlag & HITSTRAT) AND (CollWithFlag & BULLETTYPE))
+		SPECAMOUNT = 1.0
+		PLAYSOUND>ENEMY_HIT 2 1.0 0.0 0.0 0.0 RANDOM
+	ENDIF
+	IF (SPECAMOUNT > 0)
+  		MyFlag2 = MyFlag2 | SPECULAR
+		SetSpecularColour(0, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		SPECAMOUNT = SPECAMOUNT - 0.1
+	ELSE
+		SPECAMOUNT = 0
+ 		MyFlag2 = MyFlag2 & LNOT(SPECULAR)
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+STATE TargetCheck
+
+	IF (!hitdist)
+	IF (NearPlayerXY(NearRange))
+		WHILE (NearPlayerXY(NearRange * 2.0))
+			TARGETVALID = 0
+	   	ENDWHILE
+		TARGETVALID = 1
+	ELSE				
+		TARGETVALID = 1
+	ENDIF
+	ENDIF
+
+	TRIGFIN
+
+
+ENDSTATE
+
+LOCALFLOAT hitdist
+
+//ENSURES TARGET IS IGNORED WHEN TANK IS SHOT BY PLAYER
+STATE ChangeTarg
+	hitdist = PlayerDistXY()
+
+	WHILE (NearPlayerXY(hitdist + 10.0))
+		TARGETVALID = 0
+
+	ENDWHILE
+
+
+	TARGETVALID = 1
+
+	hitdist = 0
+	TRIGFIN
+
+
+ENDSTATE
+
+//ENSURES THE STRAT'S TARGET IS THE PLAYER ONCE THE ORIGINAL IS DEAD
+STATE DeleteTarg
+	TRIGKILL>TargetCheck EVERY 1
+	TRIGKILL>ChangeTarg WHENHIT
+	TARGETVALID = 0
+	MyTarget = Player
+	TRIGSTOP
+ENDSTATE
+
+STATE Wait
+ENDSTATE
+
+LOCALINT	FIREAMOUNT
+LOCALINT	TARGETSEEN
+
+STATE FireCheck
+	SetPlayerToTarget(TARGETVALID)
+
+	IF (NearPlayerXY(NearRange * 3.0))
+		IF (PlayerDistXY() > NearRange * 2.5)
+			IF (PAL)
+				FIREAMOUNT = 225
+			ELSE
+	   			FIREAMOUNT = 270
+			ENDIF
+		ELSE
+			IF (PAL)
+				FIREAMOUNT = 75
+			ELSE
+				FIREAMOUNT = 90
+			ENDIF
+	   	ENDIF
+
+
+ 
+	   	ObjectTowardPlayerXZ(7 , 0.05, 0.05, TWOPI/8.0, TWOPI/32.0)
+	   	CrntRotToIdleRotX(7, 0.05)
+	   	CrntRotToIdleRotZ(7, 0.05)
+
+		fireCount = fireCount + 1
+		IF (fireCount > FIREAMOUNT)
+
+			Firing = 1
+			KillMyVelocity()
+			//MyFlag = MyFlag & LNOT(GRAVITYON + FLOORCOLL)
+
+			MyFlag = MyFlag & LNOT(GRAVITYON)
+			MyFlag2 = MyFlag2 | STOPPED
+			
+			TARGETSEEN = SeePlayerZ(TWOPI/8.0)
+			
+			WHILE (!TARGETSEEN)
+				SetPlayerToTarget(TARGETVALID)
+			   
+		   		ObjectTowardPlayerXZ(7 , 0.05, 0.05, TWOPI/8.0, TWOPI/32.0)
+		  		CrntRotToIdleRotX(7, 0.05)
+		  		CrntRotToIdleRotZ(7, 0.05)
+
+   		  		RelTurnTowardPlayerXY(0.05)
+				TARGETSEEN = SeePlayerZ(TWOPI/8.0)
+				KillMyVelocity()
+		
+				SetPlayerBack()
+			ENDWHILE
+			SetPlayerBack()
+
+			fireCount = 0
+		  	//ApplyRelForce(7, 0, -1000.0, 0, 0, 0, 4) 
+			PLAYSOUND>BTANK_GUN4C 1 1.0 0.0 0.0 0.0 0
+	   	  
+			//CREATE A BLUE EXPLOSION AND THEN THE TRAIL
+		   	MyVar = 4.0
+		   //	CREATE SPAWN_EXPLOSION00 0, 4.0, 0, 0, 0, 0, 7
+			CREATE SPAWN_BLASTEXP 0, 4.0, 0, 0, 0, 0, 7
+			CREATE SPAWN_BattleTankShot   0, 4.0, 0, 0, 0, 0, 7
+		   
+		    TransObjectRel(BODY, 0, -0.5, 0)
+
+
+			LOOP (15)
+			   TransObjectRel(BODY, 0, 0.5 / 15.0, 0)
+			   KillMyVelocity()
+
+			ENDLOOP
+		   	//SetPlayerToTarget(TARGETVALID)
+			//IF (!(NearPlayerXY(NearRange * 3.0)))
+
+			// 	MyFlag2 = MyFlag2 & LNOT(STOPPED)
+			//   	MyFlag = MyFlag | GRAVITYON + FLOORCOLL
+			//ENDIF
+			//SetPlayerBack()
+			MyFlag2 = MyFlag2 & LNOT(STOPPED)
+			MyFlag = MyFlag | GRAVITYON + FLOORCOLL
+
+	   
+	   
+	   	ENDIF
+	ELSE
+   		MyFlag2 = MyFlag2 & LNOT(STOPPED)
+
+	ENDIF
+
+	Firing = 0
+  
+
+	SetPlayerBack()
+
+
+	TRIGFIN
+ENDSTATE 
+
+STATE Defend
+
+	SetPlayerToTarget(TARGETVALID)
+	lastdist = PlayerDistXY()
+
+	endreached = 0
+   	IF (!NearPlayerXY(NearRange / 2.0))
+		SetPlayerBack()
+
+   	  	STAT>Attack
+   	ELSE
+		SetPlayerBack()
+
+
+   		STAT>GetOut
+   	ENDIF
+	SetPlayerBack()
+
+ENDSTATE
+
+
+STATE GetOut
+
+	SetPlayerToTarget(TARGETVALID)
+	WHILE ((!endreached))
+	
+		SetPlayerToTarget(TARGETVALID)
+		endreached = GetFurthestWay(0)
+		
+		IF (!NearPlayerXY(NearRange + 5.0))
+   			endreached = 1
+   		ENDIF
+
+	 	IF (!NearCheckPosXY(0.0))
+			IF (AwaySeeWayZ(SEEANG))
+				MoveY (-SPEED)
+				pitch = StratSpeed()
+				SetPitch(0, pitch)
+			ENDIF
+			AwayWayZ(TURNANG)
+		ENDIF
+
+		SetPlayerBack()
+
+
+	 ENDWHILE
+	 SetPitch(0,0.0)
+	 SetPlayerBack()
+	 STAT>DefendWait
+ENDSTATE
+
+
+LOCALFLOAT distnow
+
+STATE DefendWait
+	SetPlayerToTarget(TARGETVALID)
+	lastdist = PlayerDistXY()
+	distnow = lastdist
+
+	WHILE ((distnow < lastdist + 1.0) AND (distnow > lastdist - 1.0))
+		SetPlayerToTarget(TARGETVALID)
+		distnow = PlayerDistXY()
+   		SetPlayerBack()
+	ENDWHILE
+
+   	SetPlayerBack()
+	STAT>Defend
+
+ENDSTATE
+
+
+STATE Attack
+	SetPlayerToTarget(TARGETVALID)
+	IF (NearPlayerXY (NearRange) OR endreached)
+		SetPlayerBack()
+
+		STAT>DefendWait
+	ENDIF
+
+	endreached = GetNearestWaySpline(0.0)
+
+   	IF (!endreached)
+   		IF (SeeWayZ(SEEANG))
+   			MoveY (SPEED)
+			pitch = StratSpeed()
+			SetPitch(0, pitch)
+   		ENDIF
+   		TowardWay (TURNANG,TURNANG)
+   	ENDIF
+	SetPitch(0, 0.0)
+   	SetPlayerBack()
+
+ENDSTATE
+
+
+LOCALFLOAT lastdist
+
+//*** NETWORK CODE ***
+
+LOCALINT inrange
+LOCALINT Firing
+STATE StopGoCheck
+	IF (inrange)
+		MyFlag = MyFlag & LNOT(GRAVITYON)
+		ObjectTowardPlayerXZ(7 , 0.05, 0.05, TWOPI/8.0, TWOPI/32.0)
+		CrntRotToIdleRotX(7, 0.05)
+		CrntRotToIdleRotZ(7, 0.05)
+		KillMyVelocity()
+
+		RelTurnTowardPlayerXY(0.05)
+		IF (!NearPlayerXY(NearRange))
+			inrange = 0
+		ENDIF
+	ELSE
+		IF (!Firing)
+			MyFlag = MyFlag | GRAVITYON
+		ENDIF
+	   	IF (NearPlayerXY(NearRange * 0.6))
+			inrange = 1
+		ENDIF
+	ENDIF
+
+	TRIGFIN
+
+ENDSTATE
+
+
+
+LOCALINT endreached
+LOCALINT LEAVEPATROL
+
+STATE StartTankNetwork
+	IF (inrange)
+		LEAVEPATROL = 1
+	ENDIF
+	IF (NearCheckPosXY(0.0))
+		//if last hit or left patrol
+		IF (LastWay() OR (LEAVEPATROL))	
+			LeaveFixedPath()
+ 
+ 		  	STAT> Network
+		ELSE
+			GetNextWay()
+		ENDIF
+	ENDIF
+	IF (SeeWayZ(0.5))
+		MoveY (SPEED)
+	ENDIF
+	TowardWay (0.05,0.05)
+ENDSTATE
+
+
+
+
+STATE Network
+	endreached = GetNearestWay(0.0)
+	STAT>NetworkMain
+ENDSTATE
+
+LOCALINT BEHIND
+
+
+STATE NetworkMain
+  	IF (!inrange)
+
+	  	IF (NearCheckPosXY(0.0))
+			endreached = GetNearestWay(0.0)
+
+			//POLL HERE IF THE NEAREST POINT IS BUSY
+			IF (endreached = 2)
+				WHILE (GetNearestWay(0.0) = 2)
+					KillMyVelocity()
+				ENDWHILE
+
+			ENDIF
+		
+	   	ELSE
+			IF (!endreached)
+				IF (AwaySeeWayZ(AWAYANG))
+					WHILE (!SeeWayZ(0.01))
+					TowardWay (0.05,0.05)
+					ENDWHILE
+			 	ELSE
+					IF (SeeWayZ(0.01))
+						TowardWay (0.02,0.02)
+						MoveY(SPEED)
+					ELSE
+						MoveY(SPEED/2.0)
+						TowardWay (0.05,0.05)
+					ENDIF
+				ENDIF
+			ELSE
+				BEHIND = AwaySeeWayZ(AWAYANG)
+
+				IF (!NearCheckPosXY(0.0) AND (!BEHIND))
+				   	IF (SeeWayZ(0.01))
+						TowardWay (0.02,0.02)
+						MoveY(SPEED)
+				   	ELSE
+						MoveY(SPEED/2.0)
+						TowardWay (0.05,0.05)
+				   	ENDIF
+				  //	ENDIF
+				ENDIF
+			   
+			   		IF (BEHIND)
+					WHILE (!SeeWayZ(0.01))
+			 		TowardWay (0.05,0.05)
+					ENDWHILE
+
+					ENDIF
+
+
+			   //	ENDIF
+								   
+			ENDIF				 
+	  	ENDIF
+	ENDIF
+ENDSTATE
+
+
+
+STATE Kill
+//	adrelanin = adrelanin + 0.2
+	IF (IsChallengeLevel())
+		Score = Score - 1
+	ELSE
+		Score = Score + 1000
+	ENDIF
+	MakeFrags (0.1, 24)
+	MyVar = 0.0
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+	IF ((isGenerated) AND (MyParentFlag))
+		ParentVar = ParentVar + 1.0
+	ENDIF
+	CREATE SPAWN_DEATH_BattleTank1 0, 0, 0, 0, 0, 0, 0
+	pitch = -0.1
+	IMMLOOP (10)
+		pitch = pitch - 0.1
+		SetPitch(0, pitch)
+		CREATE SPAWN_ExplosionSpark 0, 0, 0, 0, 0, 0, 0
+	IMMENDLOOP
+	Delete()
+   //	TRIGSTOP
+	//DESTROYME SPAWN_EXPLODINGBITS
+ENDSTATE
+ 

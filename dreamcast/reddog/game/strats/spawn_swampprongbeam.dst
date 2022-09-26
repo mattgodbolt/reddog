@@ -1,0 +1,81 @@
+//THE PRONG BEAM
+
+LOCALINT mode
+STATE Init
+	MakeMeTheLast()
+	mode = GetGlobalParamInt(0)
+	STAT>MainLaser
+ENDSTATE
+LOCALINT innerBand
+LOCALINT outerBand
+
+STATE MainLaser
+	OBJECT> BOSSES\SWAMPBOSSWEAPONS\SwampEnergyBall
+	damage = 6.0
+	SetObjectShadowState(0)
+
+	//GET OBJECT
+	MyVar = GetGlobalParamFloat(0)
+	//OBJECT Y OFFSET
+	frame = GetGlobalParamFloat(1)
+	//REQUIRED LENGTH
+	health = GetGlobalParamFloat(2)
+
+	innerBand = CreateBand (1, 16, 0, 1, 1, 0.4, 0.5, 0.5, 0.0, 0, 0.5)
+	outerBand = CreateBand (1, 16, 0, 1, 1, 0, 0, 0.4, 0, 0, 0)
+	AddBandSegment (innerBand, 0, 0, 0, 0.1)
+	AddBandSegment (outerBand, 0, 0, 0, 0.5)
+	
+	TRIGSET>BandTrigger EVERY 1 
+
+
+  //	TRIGSET>Spawner EVERY 1
+  
+  	MyFlag = MyFlag  | STRATCOLL | ENEMY | NOTEXPLODE | BULLETTYPE | LOWCOLL
+	MyFlag2 = MyFlag2 | BULLET_CF
+
+ 	RegisterCollision()
+	offSx = absspeedx
+	StartX = x
+   //	frame = 30
+	ang = TWOPI/4.0
+	STAT>SetPos
+ENDSTATE
+
+LOCALFLOAT offSx
+LOCALFLOAT StartX
+LOCALFLOAT ang
+
+STATE SetPos
+  //	frame = 30.0
+	IF (!(MyParentFlag))
+		DeleteBand (innerBand)
+		DeleteBand (outerBand)
+		Delete()
+	ELSE
+
+	IF (mode)
+   //		ang = ang - 0.1
+	offSx = 100.0 * Ssin(ang)
+	ELSE
+   //		ang = ang + 0.1
+	offSx = -100.0 * Ssin(ang)
+	ENDIF
+	IF (ang > 0.0)
+		ang = ang - 0.1
+	ENDIF
+   //	offSx = 8.0 * Ssin(ang)
+	LinkToParentObject(1, 0, 0, 0, offSx, 0.0, 0) 
+  //	LinkToParentObject(MyVar, 0, 0, 0, offSx, frame, 0) 
+    z = DogZ
+   	ENDIF
+ENDSTATE
+
+STATE BandTrigger
+	AddBandSegment (innerBand, 0, 0, 0, 0.1)
+	AddBandSegment (outerBand, 0, 0, 0, 0.5)
+	TRIGFIN
+ENDSTATE
+
+
+

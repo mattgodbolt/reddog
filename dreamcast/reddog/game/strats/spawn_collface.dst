@@ -1,0 +1,24 @@
+STATE Init 
+	MyFlag = MyFlag | STRATCOLL | NODISP | FLOORCOLL | ENEMY | BULLETTYPE
+	RegisterCollision()
+   	OBJECT> MISC\COLLFACE
+	TRIGSET>Remove	EVERY 200
+	TRIGSET>KillOff	WHENHIT
+	TRIGSET>KillOff	ONFLOOR
+	SetFriction(0.0, 0.0, 0.0)
+	damage = 20.0
+	MoveY(2.0)
+	STAT> Start
+ENDSTATE
+
+STATE Start
+ENDSTATE
+
+STATE KillOff
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+	Delete()
+ENDSTATE
+
+STATE Remove
+	Delete()
+ENDSTATE

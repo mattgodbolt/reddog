@@ -1,0 +1,84 @@
+//LOCALINT obj
+
+
+STATE Init
+
+	//TO ENSURE, PER FRAME THE PARENT ALWAYS RUNS FIRST
+	MakeMeTheLast()
+//	count = 0
+//   	MyFlag = MyFlag | GRAVITYON
+//	MyFlag2 = MyFlag2 | TRANSLUCENT	
+
+	MyFlag = MyFlag | ENEMY
+ 	SetFriction(0.0,0.0,0.2)
+   	OBJECT> SFX\JETTHRUST
+	TRIGSET>KillOff	EVERY 5
+	
+	trans = 0.9
+ 	ANIM>	JETTHRUST>JETTHRUST
+
+
+	// Hide object, and use the trails instead
+  // 	MyFlag = MyFlag | NODISP
+
+   
+   
+   	TRIGSET>BandTrigger EVERY 1
+//	col = MyParentRadius + 0.7
+
+//	MyVar = FABS(ParentVar)
+
+
+//	obj = TOINT(ParentVar)
+	MyVar = 0.08 * MyParentScaleX	* FABS(parentabsspeedz)
+   	scalex = MyVar
+   	scaley = MyVar
+  	scalez = MyVar
+
+
+	MyVar = ParentVar
+	STAT>Move
+ENDSTATE
+ 
+LOCALFLOAT col
+
+
+
+STATE BandTrigger
+  
+   scalex = scalex + 0.05
+   scaley = scaley + 0.05
+   scalez = scalez + 0.05
+
+
+	IF (trans > 0.0)
+		trans = trans - 0.25
+	ENDIF
+	TRIGFIN
+ENDSTATE
+
+STATE Move
+
+	IF (MyParentFlag)
+	IF (MyVar = 8.0)
+		LinkToParentObject(8,0.0,0,0,-1.0,-0.8,-0.75)
+	ELSE
+		LinkToParentObject(8,0.0,0,0,1.0,-0.8,-0.75)
+
+	ENDIF
+	ELSE
+		Delete()
+	ENDIF
+
+
+
+
+ENDSTATE
+
+
+//ON DYING TRIGGER CHANGE THE MAIN RUN ADDRESS TO DEATH
+STATE KillOff
+	Delete()
+ENDSTATE
+
+

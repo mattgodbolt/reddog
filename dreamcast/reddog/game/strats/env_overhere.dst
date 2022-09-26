@@ -1,0 +1,43 @@
+//PAL FRIENDLY
+LOCALFLOAT	time
+LOCALFLOAT	tempf
+LOCALFLOAT	rx
+LOCALFLOAT	ry
+LOCALFLOAT	rz
+
+STATE Init
+	MyFlag = MyFlag | ENEMY
+	IF (!PNode)
+		OBJECT>MISC\SOLIDARROW
+	ENDIF
+	rx = x
+	ry = y
+	rz = z
+
+
+
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	tempf = Ssin(time)
+	IF (PAL)
+		time = time + (0.2 * 1.2)
+	ELSE
+		time = time + 0.2
+	ENDIF
+	x = rx
+	y = ry
+	z = rz
+	MoveXYZNow(0.0, tempf, 0.0)
+	RelRotateY(0.05)
+
+	IF (MyParent)	
+		IF (!(MyParentInvalid()))
+			IF (!(MyParentFlag))
+				Delete()
+			ENDIF
+		ENDIF
+	ENDIF
+
+ENDSTATE

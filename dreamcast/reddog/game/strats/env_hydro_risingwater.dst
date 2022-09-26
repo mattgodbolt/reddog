@@ -1,0 +1,59 @@
+//Do not delete these params or you'll regret
+PARAMINT	dum		0
+PARAMINT	nextdum	0
+LOCALINT	FastDie
+
+//PAL FRIENDLY
+LOCALFLOAT WaterSpeed
+LOCALFLOAT WaterFromRD
+
+STATE Init
+	FastDie = 0
+	IF (!(MyFlag2 & OWNIPARAMS))
+		dum = 0
+		nextdum = 0
+	ENDIF
+//	OBJECT> P:\GAME\NEWOBJECTS\MISC\ENV_HYDRO_RISINGWATER
+	AllocStratSoundBlock(1)
+	AddWaterStrat()
+	StrtNoFade()
+	PLAYSOUND>HYDRO_RISINGWATER 0 1.0 0.0 0.0 0.0 CONTINUOUS | NOPOSITION
+	SetPitch(0, -2.0)
+	STAT> RaiseWater
+ENDSTATE
+
+
+STATE RaiseWater
+
+	WaterFromRD = DogZ - z - 1
+
+	IF WaterFromRD < 0
+		WaterFromRD = 0
+	ENDIF		
+
+	WaterSpeed = ( 0.005 * ( WaterFromRD ) * ( WaterFromRD ) ) + 0.01
+
+	IF (PAL)
+		WaterSpeed = WaterSpeed * 1.2
+	ENDIF
+
+	IF (!(PlayerNearActivationXY(1)))
+		IF WaterSpeed > 0.055
+			WaterSpeed = 0.055
+		ENDIF
+	ENDIF
+
+	IF (PlayerNearActivationXY(2))
+		IF WaterSpeed > 0.025
+			WaterSpeed = 0.025
+		ENDIF
+	ENDIF 
+
+	z = z + WaterSpeed
+
+	IF (PlayerState = PS_INDROPSHIP)
+		Delete()
+	ENDIF
+
+ENDSTATE
+

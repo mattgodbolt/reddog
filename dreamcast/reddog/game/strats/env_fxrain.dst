@@ -1,0 +1,92 @@
+// Controls the rain and snow, actually
+// Starts raining after activation 0, if it has one
+// Stops on activation 1
+
+PARAMINT	AmountOutside	1000
+PARAMINT	AmountInside	0
+PARAMINT	Snow			0
+LOCALINT	Amount1
+LOCALINT	Amount2
+
+LOCALINT RAINSET
+LOCALFLOAT VOLUME
+TRIGGER RAINEFFECT
+	VOLUME = RandRange(0.5, 0.6)
+	SetVolume(0, VOLUME)
+  	TRIGSTOP
+ENDTRIGGER
+
+
+
+
+STATE Init
+	MyFlag = MyFlag | NODISP
+
+	IF (HasActivation(0))
+		WHILE (!PlayerNearActivation(0))
+			MyFlag = MyFlag
+		ENDWHILE
+	ENDIF
+
+//	AllocStratSoundBlock(2)
+//	SetAudibleRange(100, 1000)
+//	PLAYSOUND>RAINL 0 0.8 0.0 0.0 0.0 (HARDLEFT | CONTINUOUS)
+//	PLAYSOUND>RAINR 0 0.8 0.0 0.0 0.0 (HARDRIGHT | CONTINUOUS)
+
+
+	IF (MyFlag2 & OWNIPARAMS)
+//		SetRainAmount (AmountOutside, AmountInside, Snow)
+	ELSE
+		AmountOutside = 1000
+		AmountInside = 0
+		Snow = 0
+  //		SetRainAmount(1000, 0, 0)
+	ENDIF
+
+	WHILE ((Amount1 < AmountOutside) OR (Amount2 < AmountInside))
+		IF (Amount1 < AmountOutside)
+			Amount1 = Amount1 + RandRange(0,30.0)
+		ENDIF
+		IF (Amount2 < AmountInside)
+			Amount2 = Amount2 + RandRange(0,30.0)
+		ENDIF
+		IF ((!RAINSET) AND (!Snow))
+			AllocStratSoundBlock(1)
+			RAINSET = 1
+			PLAYSOUND>RAINL 0 0.55  0.0 0.0 0.0  CONTINUOUS | NOPOSITION 
+			TRIGSET>RAINEFFECT EVERY 10
+			//TRIGSET>
+
+		ENDIF
+
+		SetRainAmount (Amount1, Amount2, Snow)
+
+		frame = RandRange(0,50.0)
+		LOOP (frame)
+			MyFlag = MyFlag
+		ENDLOOP
+	ENDWHILE
+	
+	IF (HasActivation(1))
+		WHILE (!PlayerNearActivation(1))
+			MyFlag = MyFlag
+//			Need to check whether we are inside or outside
+		ENDWHILE
+		SetRainAmount(0,0,0)
+		IF (RAINSET)
+			StopSound(0,0)
+			RAINSET = 0
+			TRIGKILL>RAINEFFECT EVERY 10
+		ENDIF
+		
+//		StopSound(1)
+	ELSE
+		Delete()
+	ENDIF
+ENDSTATE
+
+
+
+
+
+

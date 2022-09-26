@@ -1,0 +1,137 @@
+PARAMINT WaitAfterSpawn
+PARAMFLOAT NearRange 40.0
+
+LOCALFLOAT	dist
+
+//to ensure the valid area array is cleaned up
+TRIGGER CleanUp
+	DeleteValidAreaEntry()
+
+ENDTRIGGER
+
+
+
+STATE Init
+   	MyFlag = MyFlag | ENEMY | NODISP | DELETECALLBACK
+	
+	TRIGSET>CleanUp WHENDELETED 
+
+	IF (GetGlobalParamFloat(3))
+		NearRange = GetGlobalParamFloat(3)
+	ELSE
+		IF (!(MyFlag & OWNFPARAMS))
+			NearRange = 40.0
+		ENDIF
+		//ENSURE THE NEAR RANGE IS A DECENT VALUE
+		IF (NearRange < 10.0)
+			NearRange = 10.0
+		ENDIF
+	ENDIF
+   
+  	OBJECT> MISC\PARENTSPHERE
+	SetFriction(0.1, 0.1, 0.1)  
+	AllocStratSoundBlock(1)
+	RegisterDanger(50.0)
+	IF (GetGlobalParamInt(0))
+		MyVar = CHILDIGNOREPATH
+	ELSE
+		MyVar = 0
+	ENDIF
+	//HAVE I GOT A PATH AND AM I UNIQUE, IF SO INITIALISE PATH
+
+	IF ((MyPath) AND (!MyParent))
+		InitPath() 
+		SetGlobalParamFloat(3,NearRange)  
+		CREAIND SPAWN_FOOTSOLDIER x, y, z + 2.0, 0, 0, 0
+	 	ClearGlobalParams() 
+		STAT>Start
+	ELSE
+		//HAS A PARENT OR  DOES NOT HAVE PATH
+		IF (MyParent)
+			InheritMyParent()
+		ENDIF
+
+		IF (MyVar != CHILDIGNOREPATH)
+			IF (MyPath)
+				InitPath()
+			ENDIF
+		ENDIF
+	
+		SetGlobalParamInt(0,WaitAfterSpawn)
+		SetGlobalParamFloat(3,NearRange)  
+		CREAIND SPAWN_FOOTSOLDIER x, y, z + 2.0, 0, 0, 0
+		ClearGlobalParams() 
+   	 	STAT>InitBusy
+	ENDIF
+ENDSTATE
+
+							   
+STATE Start
+	IF (NearCheckPosXY(3.0))
+		IF (LastWay())
+			LeaveFixedPath()
+			STAT> InitBusy
+		ENDIF
+		GetNextWay()
+	ENDIF
+	MoveTowardCheckPosXY(0.4)
+	RelTurnTowardCheckPosXY(0.05)	
+ENDSTATE
+
+
+//LOCALFLOAT xdiff
+//LOCALFLOAT ydiff
+
+STATE InitBusy
+//  xdiff = 0
+//  ydiff = 0
+
+//  TRIGSET>CheckOutside EVERY 1 
+   STAT>GetBusy
+ENDSTATE
+
+//LOCALINT endreached
+
+//STATE CheckOutside
+//    CheckX = 0
+//    CheckY = 0
+
+//  	IF (AvoidSurround(FORCE_POS_AWAY))
+//		MyFlag = MyFlag
+//	ENDIF
+
+//	xdiff = x - CheckX
+//	ydiff = y - CheckY
+
+
+//	TRIGFIN
+//ENDSTATE
+
+
+
+
+
+
+STATE GetBusy
+//	Delete()
+
+   	IF (MySemaphore != STOPSTRAT)
+		IF (!NearPlayerXY(18.0))
+		  //	CheckX = DogX + xdiff
+		  //	CheckY = DogY + ydiff
+			MoveTowardPlayerXY(0.8)
+			//MoveTowardCheckPosXY(3.4)
+		ENDIF
+		dist = PlayerDistXY() - 20.0
+		IF (dist < 0.0)
+			dist = 0.0
+		ENDIF
+		dist = 4.0 + (dist * 0.15)
+		IF (dist > 20.0)
+			dist = 20.0
+		ENDIF
+
+	  	ValidatePosition(dist)
+  	  	AvoidPlayer(20.0)
+   	ENDIF
+ENDSTATE

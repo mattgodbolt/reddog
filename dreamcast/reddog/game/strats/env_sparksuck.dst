@@ -1,0 +1,21 @@
+PARAMINT	red		256
+PARAMINT	green	256
+PARAMINT	blue	256
+
+LOCALINT	col
+
+STATE Init
+	IF (!(MyFlag2 & OWNIPARAMS))
+		red = 256
+		green = 256
+		blue = 256
+	ENDIF
+
+	col = (red * 65536) + (green * 256) + blue
+	MyFlag = MyFlag
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	SparkSuck(0, SPARKWHIRL, 1, col, 30)
+ENDSTATE

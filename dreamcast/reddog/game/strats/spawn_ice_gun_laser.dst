@@ -1,0 +1,41 @@
+LOCALINT	trail1
+
+STATE Init
+	MyFlag = MyFlag | ENEMY | BULLETTYPE | STRATCOLL | FLOORCOLL
+	MakeMeTheLast()
+	OBJECT>weapon\ice_gun_laser
+	damage = 10.0
+	RegisterCollision()
+	AllocStratSoundBlock(1)
+	SetAudibleRange(0,0,400.0)
+	PLAYSOUND>ICEGUN 0 1.0 0.0 0.0 0.0 0
+	trail1 = CreateBand (1, 6, 0, 1, 0, 0, 2.0, 0, 1, 1, 1)
+	TRIGSET>Trail EVERY 1
+	TRIGSET>BandTrigger EVERY 1
+	SetFriction(0.0, 0.0, 0.0)
+	MoveY(30.0)
+	TRIGSET>Die WHENHIT
+	TRIGSET>Die EVERY 10
+	STAT>DoNothing
+ENDSTATE
+
+
+TRIGGER BandTrigger
+	AddBandSegment (trail1, 0.0, -0.5, 0.0, 1.0)
+	TRIGFIN
+ENDTRIGGER
+
+TRIGGER Trail
+	RubberBand (trail1, 0.0, -0.5, 0.0, 1.0)
+	TRIGFIN
+ENDTRIGGER
+
+STATE DoNothing
+ENDSTATE
+
+TRIGGER Die
+	DeleteBand(trail1)
+	Delete()
+	TRIGSTOP
+ENDTRIGGER
+

@@ -1,0 +1,195 @@
+; M_nTexA.src
+; Completely OnScreen Strip Model Renderer (nontextured)
+				.CPU			SH4
+				.OUTPUT			DBG=DWARF
+				.SECTION		RASTERISERS, CODE, ALIGN=4
+				.INCLUDE		"..\RedDog.pre"
+
+				.EXPORT			_nontexMStripRasteriser
+; Prototype: PKMDWORD nontexMStripRasteriser (ModelContext *context, Uint32 nStrip, Uint32 matNum, PKMDWORD kmPtr);
+strip:			.REG			R8
+kmPtr:			.REG			R7	; parm
+matNum:			.REG			R6	; parm
+nStrip:			.REG			R5	; parm
+context:		.REG			R4	; parm
+vertArray:		.REG			R3
+kmVertParam:	.REG			R2
+nextVert:		.REG			R1
+vert:			.REG			R0
+
+XY:				.FREG			DR0
+X:				.FREG			FR0
+Y:				.FREG			FR1
+ZW:				.FREG			DR2
+Z:				.FREG			FR2
+W:				.FREG			FR3
+PQ:				.FREG			DR6
+P:				.FREG			FR6
+Q:				.FREG			FR7
+
+diffCol:		.FREG			FV8
+diffColAR:		.FREG			DR8
+diffColA:		.FREG			FR8
+diffColR:		.FREG			FR9
+diffColGB:		.FREG			DR10
+diffColG:		.FREG			FR10
+diffColB:		.FREG			FR11
+
+; ***********************************************************************************
+; Coloured version
+; ***********************************************************************************
+
+_nontexMStripRasteriser:
+				; Push used registers
+				PUSH	R8
+				PUSH	R9
+
+				; Set up the registers based on the context
+				MOV.L	@(0, context), vertArray
+				MOV.L	@(12, context), strip
+
+				ADD		#32, context		; get to the colour part of the context
+				FSCHG						; change to double size
+				FMOV.D	@context+, diffColAR; get alpha and red diffuse colour
+				
+				FMOV.D	@context+, diffColGB; get green and blue colour out
+				ADD		#16, vertArray		; vertArray points at the x, y, rW, pad0
+				ADD		#-(32+16), context	; put context back 
+
+?mTexLoopReset
+				; Move the UVs on
+				MOV.L	@(8, context), vert
+				MOV		nStrip, nextVert	; take a copy of the number of vertices to render
+				SHLL2	nextVert
+				ADD		nextVert, vert
+				ADD		nextVert, vert
+				MOV.L	vert, @(8, context)
+
+				MOV.L	#H'e0000000, kmVertParam
+				DT		nStrip				; predecrement so we exit the main loop one cycle early
+
+				MOV.W	@strip+, vert		; get the vertex number
+				ADD		#16, kmPtr			; move kmPtr past rW
+
+				MOV.W	@strip+, nextVert	; get the next vertex number
+				SHLL8	vert				; vert = vert * 256
+
+				SHLR2	vert				; vert = (vert * 256) / 4  == vert * 64
+
+				ADD		vertArray, vert		; vert now points at the prepped vertex's co-ords
+?mTexLoop		FMOV.D	@vert+, XY			; get X, Y [T]
+
+				FMOV.D	@vert+, ZW			; get Z, W (w == pad0)
+				FSCHG						; change to single stores (mutter mutter) [R]
+
+				; [R][R][R] - ack! so put in these badgers
+				SHLL8	nextVert
+				PREF	@strip
+
+				SHLR2	nextVert
+
+				ADD		vertArray, nextVert	; now nextVert lives at the next vertex
+				FMOV.S	Z, @-kmPtr			; store Z
+
+				FMOV.S	Y, @-kmPtr			; store Y
+
+				FMOV.S	X, @-kmPtr			; store X
+				FSCHG						; change back to double stores (hooray)
+
+				MOV.L	kmVertParam, @-kmPtr; store in the KM_VERTPARAM_NORMAL
+
+				ADD		#32, kmPtr			; move kmPtr to the end of the diffuse colour
+				FMOV.D	@vert+, XY
+
+				FMOV.D	@vert+, ZW			; get the colour (XYZW == ARGB here)
+				
+				FMUL	diffColA, X			; X*= diffColA
+
+				FMUL	diffColR, Y			; Y*= diffColR
+
+				FMUL	diffColG, Z			; Z*= diffColG
+
+				FMUL	diffColB, W			; W*= diffColB
+
+				FMOV.D	ZW, @-kmPtr			; store in diffuse GB
+				DT		nStrip				; decrement the strip counter
+
+				; [R] see if 
+				FMOV.D	XY, @-kmPtr			; store in diffuse AR
+				MOV		nextVert, vert		; set up next vert
+
+				PREF	@kmPtr				; SQ blast!
+				ADD		#32, kmPtr			; point at the next entry in the TA and move to past rW
+
+				BF/S	?mTexLoop			; and loop until we've done
+				MOV.W	@strip+, nextVert	; get the next vertex number [s]
+				
+				; We still have one vert to do, after we make sure kmVertParam is ENDOFSTRIP
+				MOV.L	#H'f0000000, kmVertParam
+
+				FMOV.D	@vert+, XY			; get X, Y [T]
+
+				FMOV.D	@vert+, ZW			; get Z, W (w == pad0) [T]
+				FSCHG						; change to single stores (mutter mutter)
+
+				;[R][R][R]
+				FMOV.S	Z, @-kmPtr			; store Z
+
+				FMOV.S	Y, @-kmPtr			; store Y [T]
+
+				FMOV.S	X, @-kmPtr			; store X [T]
+
+				MOV.L	kmVertParam, @-kmPtr; store in the KM_VERTPARAM_NORMAL [T]
+
+				FSCHG						; change back to double stores (hooray)
+				; Now to do the colour warez
+				ADD		#32, kmPtr			; move kmPtr to the end of the diffuse colour
+				FMOV.D	@vert+, XY	
+
+				FMOV.D	@vert+, ZW			; get the colour (XYZW == ARGB here)
+
+				;[R][R]
+				FMUL	diffColA, X			; X*= diffColA
+
+				FMUL	diffColR, Y			; Y*= diffColR
+
+				FMUL	diffColG, Z			; Z*= diffColG
+
+				FMUL	diffColB, W			; W*= diffColB
+
+				;[R][R][R]
+				FMOV.D	ZW, @-kmPtr			; store in diffuse GB
+
+				FMOV.D	XY, @-kmPtr			; store in diffuse AR
+
+				; Now to check if the next strip is the same material
+				CMP/EQ	nextVert, matNum
+				PREF	@kmPtr				; SQ blast!
+
+				ADD		#16, kmPtr			; point at the next entry in the TA for the retVal
+				BF		?ItsTheEnd
+				; Check this isn't a terminator
+				MOV.W	@strip, vert
+				CMP/EQ	#0, vert
+				BT		?ItsTheEnd
+				; OK - we can go round again, so update vert and kmVert and loop back
+				ADD		#2, strip
+				BRA		?mTexLoopReset
+				MOV		vert, nStrip ; slot
+
+?ItsTheEnd		; We now have to update strip
+				ADD		#-2, strip
+				FSCHG						; back to boring single stores
+				MOV.L	strip, @(12, context)
+
+				MOV		kmPtr, R0			; get return value
+
+				; pop-a-lop
+				POP		R9
+				RTS
+				POP		R8		; slot
+
+				.SECTION		DATA
+				.IMPORT			_pViewSize
+a_pViewSize		.DATA.L			_pViewSize
+				.END

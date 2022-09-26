@@ -1,0 +1,94 @@
+LOCALFLOAT	PlayerHoldX
+LOCALFLOAT	PlayerHoldY
+LOCALFLOAT	PlayerHoldZ
+LOCALFLOAT	temp
+LOCALFLOAT	upd
+LOCALFLOAT	upo
+
+STATE Init 
+	MyFlag = MyFlag
+	upd = 0.0
+	STAT> Start
+ENDSTATE
+
+STATE Start
+	IF (PlayerState = PS_TOWERLIFT)
+		PlayerHeld = 1
+		upd = 0.0
+		IAmHoldPlayer()
+		RelPosToCheck(2, DogX, DogY, DogZ)
+		PlayerHoldX = CheckX
+		PlayerHoldY = CheckY
+		PlayerHoldZ = CheckZ
+
+		upo = PlayerHoldZ
+		STAT> DoThing
+	ENDIF
+ENDSTATE
+
+STATE DoThing
+	//PlayerFlag = PlayerFlag & LNOT(FLOORCOLL)
+	PlayerFlag = PlayerFlag & LNOT(GRAVITYON)
+	
+	RotateObjectXYZ(5, 0.0, 0.0, -SmoothJoyX * SmoothJoyX * SmoothJoyX * 0.01)
+	IF (BossStrat)
+		IF(upd < 25.0)
+			upd = upd + 0.4
+			TransObjectRel(2, 0.0, 0.0, 0.4)
+		ENDIF
+	ELSE
+		IF (JoyY > 0.0)
+			IF(upd < 25.0)
+				upd = upd + SmoothJoyY * 0.4
+				TransObjectRel(2, 0.0, 0.0, SmoothJoyY * 0.4)
+			ENDIF
+		ELSE
+			IF(upd > 0.0)
+				upd = upd + SmoothJoyY * 0.4
+				TransObjectRel(2, 0.0, 0.0, SmoothJoyY * 0.4)
+			ENDIF
+		ENDIF
+	ENDIF
+	HoldPlayerPos(2, PlayerHoldX, PlayerHoldY, PlayerHoldZ)
+	HoldPlayerRot(2, 0.0, 0.0, 0.0)
+	IF (PlayerState = PS_NORMAL)
+//		PlayerHeld = 0
+//		PlayerFlag = PlayerFlag | GRAVITYON | FLOORCOLL
+		STAT>Start
+	ENDIF
+	IF (MyVar = 1)
+		STAT>Reset
+	ENDIF
+ENDSTATE
+
+STATE Reset
+	temp = GetObjectCrntRot(5,MODEZ)
+	IF (temp != 0.0)
+		IF (temp > 0.01)
+			SetObjectCrntRot(5, temp - 0.01,MODEZ)
+		ELSE
+			IF (temp < -0.01)
+				SetObjectCrntRot(5, temp + 0.01,MODEZ)
+			ELSE
+				SetObjectCrntRot(5, 0.0,MODEZ)
+			ENDIF
+		ENDIF
+	ELSE
+		temp = GetObjectCrntPos(2,MODEZ)
+		IF (temp > -4.888)
+			IF (temp > -4.888 + 0.2)
+				SetObjectCrntPos(2, temp - 0.2, MODEZ)
+			ELSE
+				SetObjectCrntPos(2, -4.888,MODEZ)
+			ENDIF
+		ELSE
+			PlayerState = PS_NORMAL
+			PlayerFlag = PlayerFlag | GRAVITYON | FLOORCOLL
+			PlayerHeld = 0
+			MyVar = 0
+			STAT> Start
+		ENDIF
+	ENDIF
+	HoldPlayerPos(2, PlayerHoldX, PlayerHoldY, PlayerHoldZ)
+	HoldPlayerRot(2, 0.0, 0.0, 0.0)
+ENDSTATE

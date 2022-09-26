@@ -1,0 +1,79 @@
+DEFINE	GUNBASE		1
+DEFINE	GUNTURRET	2
+
+LOCALINT	time 
+
+STATE Init
+	MyFlag = ENEMY | STRATCOLL | LOWCOLL
+	RegisterCollision()
+	AllocStratSoundBlock(1)
+	SetAudibleRange(0,5,15)
+   
+   	RegisterDanger(100.0)
+	OBJECT>ENEMIES\BOXGUN
+	health = 50.0
+	
+	WHILE (!PlayerNearActivationXY(0))
+		IF (health < 0.0)
+			STAT>Die
+		ENDIF
+	ENDWHILE
+	time = 0
+	MODELANIM>ENEMIES\BOXGUN.RDO>OPEN>0
+	WHILE (MyAnimFlag & RUNNING)
+		MyFlag = MyFlag
+	ENDWHILE
+	MODELANIM>ENEMIES\BOXGUN.RDO>IDLE>REPEAT
+	STAT>Start
+ENDSTATE
+
+LOCALINT NEAR
+
+STATE Start
+	IF (health < 0.0)
+		STAT>Die
+	ENDIF
+	ObjectTowardPlayerXZ (GUNBASE, 0.0, 0.1, TWOPI, TWOPI)
+	ObjectTowardPlayerXZ (GUNTURRET, 0.1, 0.0, TWOPI, TWOPI)
+	CrntRotToIdleRotZ(GUNBASE, 0.1)
+	CrntRotToIdleRotX(GUNTURRET, 0.1)
+	IF (time > 20) 
+		NEAR = NearPlayerXY(100.0)
+		IF (HasActivation(1))
+			IF (!PlayerNearActivationXY(1))
+				NEAR = 0
+			ENDIF
+		ENDIF
+
+
+
+		IF (NEAR AND (ObjectSeePlayerZ(TWOPI/8.0,GUNTURRET,0,0,0)))
+			IF (PlayerState = PS_ONTRAIN)
+				IF (StratInPlayerCone(0, 0.5))
+					PLAYSOUND>LASER_GUN 0 1.0 0.0 0.0 0.0 0
+					SetAudibleRange(0,5,15)
+					CREATE SPAWN_ENEMYMISSILE -0.5, 0.0, 0.0, 0, 0, 0, GUNTURRET
+					CREATE SPAWN_ENEMYMISSILE 0.5, 0.0, 0.0, 0, 0, 0, GUNTURRET
+				ENDIF
+			ELSE
+				PLAYSOUND>LASER_GUN 0 1.0 0.0 0.0 0.0 0
+				SetAudibleRange(0,5,15)
+				CREATE SPAWN_ENEMYMISSILE -0.5, 0.0, 0.0, 0, 0, 0, GUNTURRET
+				CREATE SPAWN_ENEMYMISSILE 0.5, 0.0, 0.0, 0, 0, 0, GUNTURRET
+			ENDIF
+			MyVar = 1.0
+			CREATE SPAWN_BLASTEXP 0.0, 2.0, 0.0, 0, 0, 0, GUNTURRET
+			time = 0
+		ENDIF
+	ENDIF
+	time = time + 1
+ENDSTATE
+
+STATE Die	
+	MyFlag = MyFlag | NODISP | FRIENDLY 
+	MyFlag = MyFlag & LNOT(STRATCOLL)
+//	adrelanin = adrelanin + 0.2
+	Score = Score + 1000
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+	DESTROYME SPAWN_EXPLODINGBITS
+ENDSTATE

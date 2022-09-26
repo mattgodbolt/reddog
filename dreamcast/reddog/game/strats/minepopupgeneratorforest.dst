@@ -1,0 +1,56 @@
+LOCALFLOAT RandomCreation
+
+STATE Init
+	//OBJECT> MISC\POPUPMINEHOLE
+	STAT> RandomCheck
+ENDSTATE
+
+STATE RandomCheck
+
+	RandomCreation = RandRange(0.0, 1.0)
+	IF (RandomCreation > 0.8)
+		STAT>DoNothing		
+	ENDIF
+	RandomCreation = RandRange(20.0, 25.0)
+
+	STAT>WaitToCreate
+
+ENDSTATE
+
+STATE WaitToCreate
+
+	IF NearPlayerXY(RandomCreation)
+		PlayerCheckX = x
+		PlayerCheckY = y
+		PlayerCheckZ = z
+		IF(PlayerSeePlayerCheckPosXY(0.4))
+			STAT>CreateMine
+		ENDIF
+	ENDIF
+
+ENDSTATE
+
+STATE CreateMine
+	CREATE Mine_PopUp 0, 0, 0, 0, 0, 0, 0
+	STAT>OpenHole
+ENDSTATE
+
+STATE OpenHole
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+	Loop (12)
+		
+	EndLoop
+	STAT>CloseHole
+ENDSTATE
+
+STATE CloseHole
+	OBJECT> SCENERY\OTHER\ENV_MineHoleTop2
+	Loop (12)
+		
+	EndLoop
+ 	STAT>DoNothing
+ENDSTATE
+
+STATE DoNothing
+ENDSTATE
+

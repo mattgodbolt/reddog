@@ -1,0 +1,50 @@
+
+//parentvar 0.0 = normal trail
+//			1.0	= long trail
+
+LOCALINT band
+
+TRIGGER CleanUp
+	DeleteBand (band)
+ENDTRIGGER
+
+STATE Init
+	MyFlag = MyFlag | DELETECALLBACK
+
+	MyVar = ParentSemaphore
+	MakeMeTheLast()
+	IF (MyVar)
+		band = CreateBand (1, 32, 0, 1, 0, 0, 1.0, 0.0, 0, 0, 1.0)
+		AddBandSegment (band, 0, 0, 0, 0.3)
+		TRIGSET>Trailer EVERY 1
+		TRIGSET>BandTrigger EVERY 3 
+	ELSE
+		band = CreateBand (1, 16, 0, 1, 0, 0, 1.0, 0, 0, 0, 0)
+		TRIGSET>BandTrigger EVERY 1 
+	ENDIF
+	AddBandSegment (band, 0, 0, 0, 0.3)
+	TRIGSET>Kill PARENTDEAD
+	TRIGSET>CleanUp WHENDELETED
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	x = parentx
+	y = parenty
+	z = parentz
+ENDSTATE
+
+STATE Trailer
+	RubberBand (band, 0, 0, 0, 0.3)
+	TRIGFIN
+ENDSTATE
+
+STATE BandTrigger
+	AddBandSegment (band, 0, 0, 0, 0.3)
+	TRIGFIN
+ENDSTATE
+
+STATE Kill
+	Delete()
+//	TRIGSTOP
+ENDSTATE

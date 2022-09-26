@@ -1,0 +1,173 @@
+/* Camera follows player */
+
+//TO TARGET, SET THE STRAT TO BE FRIENDLY TO FACE PLAYER
+//			 SET THE STRAT TO ENEMY TO FACE ITS DIRECTION OF TRAVEL/STATIC DIRECTION
+
+PARAMINT	WideScreen			1
+PARAMINT	UnderWaterCam		0
+PARAMINT	FaceCamAlongPath	0
+PARAMINT	DelayFor			0
+PARAMINT	HoldFor				90
+PARAMINT	GoBackToGameCam		1
+PARAMINT	FadeCrazy			0
+PARAMINT	HoldRedDog			1
+PARAMFLOAT  FieldOfView			0.7
+PARAMFLOAT  Speed				0.8
+
+LOCALINT	endpatrol
+LOCALINT	HoldPlay
+LOCALFLOAT ph
+
+TRIGGER CleanUp
+   	IF (GoBackToGameCam)
+		ChangeCam(0,0)
+   	ENDIF
+	IF (HoldPlay)
+		PlayerHeld = 0
+		PlayerState = PS_NORMAL
+	ENDIF
+
+ENDTRIGGER
+
+STATE Init  
+ 
+	MyFlag = MyFlag | NODISP | BULLETTYPE
+ 	TRIGSET>CleanUp WHENDELETED
+	MyFlag = MyFlag | DELETECALLBACK
+
+	
+	IF (GetGlobalParamInt(0) = 1)
+		MyParentParent = Me
+	ENDIF
+   	OBJECT> MISC\CAMERANOCOLL
+
+  	IF (!(MyFlag & OWNFPARAMS))
+		FieldOfView = 0.7	
+		Speed = 0.8
+	ENDIF
+
+	IF (!(MyFlag2 & OWNIPARAMS))
+		WideScreen = 1
+		UnderWaterCam = 0
+		FaceCamAlongPath = 0
+		DelayFor = 0
+		HoldFor = 90
+		GoBackToGameCam = 1
+		FadeCrazy = 0
+		HoldRedDog = 1
+	ENDIF
+
+	IF (PAL)
+		IF (FadeCrazy > 0)
+			FadeCrazy = FadeCrazy / 1.2
+		ENDIF
+	ENDIF
+
+	IF (HoldRedDog)
+		HoldPlay = 1	
+	ENDIF
+
+	IF (WideScreen = 5)
+		WideScreen = 0
+	ELSE
+		WideScreen = 1
+	ENDIF
+
+	IF (PAL)
+		HoldFor = HoldFor / 1.2
+		DelayFor = DelayFor / 1.2
+	ENDIF
+
+	IF (FaceCamAlongPath)
+		MyParent = 0
+	ENDIF
+
+
+	IF (MyParent)
+		WHILE (MyParentInvalid())
+			MyParent = MyParent
+		ENDWHILE
+	ENDIF
+
+	WHILE (DelayFor > 0)
+		DelayFor = DelayFor - 1
+	ENDWHILE
+	SetSem(0,0)
+	SetSem(1,0)
+
+	SetCamSimple()
+
+	IF (UnderWaterCam)
+		rFlareB = rFlareB + 0.4
+	ENDIF
+
+	SetFriction(0.2,0.2,0.2)
+	MyFlag = MyFlag | RELVELCALC  
+	RotationRestriction(1.0, 1.0, 1.0)
+	ExpRot = 0.005
+   //	SetExpRot(0.005)
+
+	ph = PlayerHealth
+	IF (MyPath)
+		InitPath()
+		InitSplineData()
+		endpatrol = 0
+		STAT>PathTrack	
+	ELSE
+		STAT>Inert				  
+	ENDIF
+ENDSTATE
+   
+
+LOCALINT Near
+
+STATE Inert
+	
+	WHILE (HoldFor > 0)
+		HoldFor = HoldFor - 1
+		IF (HoldPlay)
+			PlayerState = PS_ONPATH
+		ENDIF
+		PlayerHealth = ph
+		IF (FadeCrazy > 1)
+			FadeCrazy = FadeCrazy - 1
+		ENDIF
+		IF (FadeCrazy = 1)
+			CREATE SPAWN_CrazyFade 0, 0, 0, 0, 0, 0, 0
+			FadeCrazy = 0
+		ENDIF
+	ENDWHILE
+   //	IF (GoBackToGameCam)
+   //		ChangeCam(0,0)
+   //	ENDIF
+	Delete()
+ENDSTATE
+
+STATE PathTrack 
+	IF (!endpatrol)
+		MoveAlongPath(Speed)
+	ELSE
+		MoveAlongPath(Speed)
+	ENDIF
+
+	IF (!endpatrol AND LastWay())
+		endpatrol = 1
+	ENDIF
+	IF (endpatrol AND FirstWay())
+		endpatrol = 0
+	ENDIF
+
+	IF (FaceCamAlongPath)
+		FaceAlongPath(1)
+	ENDIF
+	HoldFor = HoldFor - 1
+	PlayerHealth = ph
+	IF (HoldFor <= 0)
+	   //	IF (GoBackToGameCam)
+	   //		ChangeCam(0,0)
+	   //	ENDIF
+		Delete()
+	ENDIF
+ENDSTATE 
+
+

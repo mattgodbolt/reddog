@@ -1,0 +1,51 @@
+// Wall of death door
+// Closes when player passes through its activation circle
+// Re-opens when its parent dies
+
+LOCALFLOAT closedRot
+LOCALFLOAT temp
+LOCALINT parentdead
+
+DEFINE OpenAmount 1.6
+
+STATE Init
+	// Set up object
+	OBJECT>Scenery\Doors\ENV_HYDRO_WallOfDeathDoor
+
+	// Flags
+	MyFlag = MyFlag | STRATCOLL | ENEMY
+  	MyFlag2 = MyFlag2 | COLLMOVE
+
+	// Delay Door Opening
+	IF (PAL)
+		temp = 12
+	ELSE
+		temp = 15
+	ENDIF
+	WHILE (temp > 0)
+		MyFlag = MyFlag
+		temp = temp - 1
+	ENDWHILE
+
+	STAT>Open
+ENDSTATE
+
+// Open the doors
+STATE Open
+	IF (PAL)
+		temp = 33
+	ELSE
+		temp = 40
+	ENDIF
+	AllocStratSoundBlock(1)
+   	PLAYSOUND>DOOR_ROUND_OPEN 0 1.0 0.0 0.0 0.0 NOPOSITION
+	WHILE (temp > 0)
+		RelRotateZ (-0.05)
+		temp = temp - 1
+	ENDWHILE
+	KillMyVelocity()
+	STAT>End
+ENDSTATE
+
+STATE End
+ENDSTATE

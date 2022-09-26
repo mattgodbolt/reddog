@@ -1,0 +1,20 @@
+PARAMFLOAT	mytrans	1.0
+
+STATE Init
+	IF (!(MyFlag & OWNFPARAMS))
+		mytrans = 1.0
+	ENDIF
+	IF (mytrans != 1.0)
+		MyFlag2 = MyFlag2 | TRANSLUCENT
+		trans = mytrans
+	ENDIF
+	AllocStratSoundBlock(1)
+	SetAudibleRange(0, 150, 220)
+	PLAYSOUND>LAVA 0 0.55 0.0 0.0 0.0 CONTINUOUS
+	AddLavaStrat()
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	MyFlag = MyFlag
+ENDSTATE

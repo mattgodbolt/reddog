@@ -1,0 +1,10 @@
+PARAMINT TRACKNUM
+
+
+STATE Init
+	SoundPlayTrack(TRACKNUM)
+	Delete()
+
+ENDSTATE
+
+

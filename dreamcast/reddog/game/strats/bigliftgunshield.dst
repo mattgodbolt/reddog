@@ -1,0 +1,23 @@
+STATE Init
+	MyFlag = MyFlag | ENEMY | STRATCOLL
+	MyVar = 4.0
+	IAmHoldPlayer()
+	InitHDC()
+	CalculateStratPolyData(1)
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	IF (MyVar = 0.0)
+		STAT>RemoveShield
+	ENDIF
+ENDSTATE
+
+STATE RemoveShield	
+	LOOP 30
+		scalex = scalex * 0.95
+		scaley = scaley * 0.95
+		scalez = scalez * 0.95
+	ENDLOOP
+	Delete()
+ENDSTATE

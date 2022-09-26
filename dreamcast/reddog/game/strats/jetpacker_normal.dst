@@ -1,0 +1,85 @@
+LOCALFLOAT	dist
+
+
+
+
+STATE Init
+   	MyFlag = MyFlag  | FLOORCOLL | GRAVITYON | NODISP
+   
+	AllocStratSoundBlock(1)
+	RegisterDanger(50.0)
+
+  	OBJECT> ENEMIES\JETPACKERPARENT
+ // 	RegisterCollision()
+	SetFriction(0.1, 0.1, 0.1)  
+	CREATE SPAWN_JETPACKER 0.0, 0.0, 2.0, 0, 0, 0, 0
+	MyVar = 0
+	TRIGSET>Collide EVERY 1
+//	TRIGSET>Raise EVERY 3
+//   	Rise = 0
+	STAT>GetBusy
+ENDSTATE
+
+// LOCALFLOAT Rise
+STATE Raise
+	IF (MyFlag & HITFLOOR)
+		z = z + 0.5
+
+	//ELSE
+   //		IF (Rise > 0)
+   //			Rise = Rise - 0.5
+   //		ENDIF
+	ENDIF
+
+	TRIGFIN
+ENDSTATE
+
+
+
+							   
+
+LOCALINT endreached
+/*** INTERRUPT CODE THAT RUNS EVERY TIME STRAT HITS A WALL ***/
+
+STATE Collide
+   		IF (HitWall(SET))
+
+		x = CheckX
+		y = CheckY
+		z = CheckZ	
+
+
+
+   
+
+    ENDIF
+	TRIGFIN
+
+ENDSTATE
+
+
+
+STATE GetBusy
+
+//	Delete()
+
+		IF (!NearPlayerXY(30.0))
+			MoveTowardPlayerXY(0.4)
+		ENDIF
+
+		
+
+		dist = PlayerDistXY() - 20.0
+		IF (dist < 0.0)
+			dist = 0.0
+		ENDIF
+		dist = 4.0 + (dist * 0.15)
+		IF (dist > 20.0)
+			dist = 20.0
+		ENDIF
+
+	  	ValidatePosition(200.0)
+	    
+	   //	ValidatePosition(dist)
+  	  	AvoidPlayer(20.0)
+ENDSTATE

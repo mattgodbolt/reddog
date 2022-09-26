@@ -1,0 +1,166 @@
+//0 FOR DEADLY BIG  - LAST ATTACK, KEEP THE SAME
+//global int of 1 for small type - FOR REPLACEMENT
+//global int of 2 for lens flare type 
+//GLOBAL INT OF 3 FOR V SMALL NON-LENS FLARE - FOR REPLACEMENT
+STATE Init
+
+	MakeMeTheLast()
+
+	AllocStratSoundBlock(2)
+	SetAudibleRange(0,0,200)
+	SetAudibleRange(1,0,200)
+
+
+	IF (GetGlobalParamInt(0) = 1)
+		scalex = scaley = scalez = 2.0
+		MyVar = 1.0
+	   //	IF (RandRange(0,5.0) > 2.5)
+	   //		PLAYSOUND>BEAMGUN 0 0.9 0.0 0.0 0.0 0
+	   //	ELSE 
+	   //		PLAYSOUND>VOLCLASER 0 0.9 0.0 0.0 0.0 0
+	   //	ENDIF
+   	ENDIF
+
+	IF (!GetGlobalParamInt(0))
+			PLAYSOUND>BEAMGUN 0 0.9 0.0 0.0 0.0 0
+		PLAYSOUND>VLBOSSWEP4 1 1.0 0.0 0.0 0.0 CONTINUOUS
+
+	ENDIF
+
+	IF ((GetGlobalParamInt(0) = 1) OR (GetGlobalParamInt(0) = 3))
+	  	PLAYSOUND>VOLCLASER 0 0.9 0.0 0.0 0.0 0
+		PLAYSOUND>FIZZLE 1 1.0 0.0 0.0 0.0 0
+	ENDIF
+
+
+   
+   	IF (GetGlobalParamInt(0) = 2)
+		MyVar = 2.0
+	ENDIF
+
+   	IF (GetGlobalParamInt(0) = 3)		
+		MyVar = 1.0
+	ENDIF
+
+
+
+  	MyFlag = MyFlag | BULLETTYPE | FLOORCOLL | STRATCOLL | ENEMY | DIRECTMOVE 
+    MyFlag2 = MyFlag2 | BULLET_CF
+ //	MyFlag = MyFlag | FLOORCOLL | LOWCOLL | ENEMY | DIRECTMOVE 
+
+//	IF (MyVar = 2.0)
+//		MyFlag = MyFlag | NODISP
+//	ENDIF
+ 
+ 
+	IF (MyVar = 1.0)
+		OBJECT> Weapon\scorpionbossweapon1
+		MyFlag = MyFlag | SPRITE
+	ELSE
+		OBJECT> BOSSES\SCORPIONWEAPONS\ScorpionEnergyBall
+	ENDIF
+  	RegisterCollision()
+   	SetFriction(0.1,0.1,0.1)
+
+	TRIGSET>KillOff	WHENHIT
+   	TRIGSET>KillOffFloor	ONFLOOR
+   	TRIGSET>KillOffFloor	EVERY 100
+	frame = 30
+	IF (!MyVar)
+		//BIG BAD TYPE
+		//USES HDC AS IT DOES SCALE
+	   	damage = 15.0
+		InitHDC()
+		PLAYSOUND>BEAMGUN 0 1.0 0.0 0.0 0.0 CONTINUOUS
+	ELSE
+		damage = 5.0
+	ENDIF
+	STAT>Go
+ENDSTATE
+
+STATE Go
+	PointTo(DogX, DogY, DogZ)
+	IF (!MyVar)
+		MoveY(1.5)
+	ELSE
+		MoveY(0.25)
+	ENDIF
+	STAT>Start
+ENDSTATE 
+
+
+
+STATE Start
+   
+	IF (!MyVar)
+   
+   
+   		SetCheckPosRel(0,0, -10, 0)
+
+	 	DrawShock(x,y,z,CheckX,CheckY,CheckZ,0.05 * (31 - frame),1.2,10.0 )
+  	
+		SetCheckPosRel(0,-10, -10, 0)
+
+	  	DrawShock(x,y,z,CheckX,CheckY,CheckZ,0.05 * (31 - frame),1.2,10.0 )
+  	
+		SetCheckPosRel(0,10, -10, 0)
+	
+	 	DrawShock(x,y,z,CheckX,CheckY,CheckZ,0.05 * (31 - frame),1.2,10.0 )
+  //	ELSE
+  //		DrawLensFlare(1,0,0,0,1.0,1.0,1.0,1.0)
+	ENDIF
+
+	SetCheckPosRel(0,0, -0.5, 0)
+
+	IF (MyVar != 1.0)
+		DrawShock(x,y,z,CheckX,CheckY,CheckZ,0.07 * (31 - frame),1.2,10.0 )
+	ENDIF
+ 
+ 	IF (frame > 1)
+		frame = frame - 1
+	ENDIF
+	
+	
+	IF (MyVar = 0)
+	   //	IF (FACTOR < 4.0)
+	   //		FACTOR = FACTOR + 0.2
+	   //		SetObjectScale(1,FACTOR * 225.0,FACTOR * 225.0,FACTOR * 225.0)
+	   //	ENDIF
+
+	   	IF (scalex < 4.0)
+	   		scalex = scalex + 0.2
+	   	ENDIF
+
+	   	scaley = scalez = scalex
+	    MoveY(0.5)
+		CalculateStratPolyData(1)
+   	ELSE
+		MoveY(0.2)
+	ENDIF
+
+	health = health + 0.02
+	RelRotateY(health)
+ENDSTATE
+
+STATE KillOff
+	IF (!MyVar)
+		MyVar = 2.0
+	ELSE
+		MyVar = 3.0
+	ENDIF
+	CREATE SPAWN_BLASTEXP 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0
+	Delete()
+  //	TRIGSTOP
+ENDSTATE
+
+STATE KillOffFloor
+
+	IF (!MyVar)
+		MyVar = 2.0
+	ELSE
+		MyVar = 3.0
+	ENDIF
+	CREATE SPAWN_BLASTEXP 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0
+	Delete()
+	//TRIGSTOP
+ENDSTATE

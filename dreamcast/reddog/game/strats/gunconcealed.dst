@@ -1,0 +1,230 @@
+// Gun Tower 
+LOCALINT	AimState
+LOCALINT	WaitFrame
+
+DEFINE	GUNTURRET 6
+DEFINE	LEFTGUN 2
+DEFINE	GUNBASE 7
+DEFINE	SENSOR	3
+DEFINE  HANDLE  4
+DEFINE	GUNBIT	5
+
+
+DEFINE DORMANT		0
+DEFINE POPPINGUP	1
+DEFINE AIMING		2
+DEFINE POPPINGDOWN	3
+
+STATE Init
+    //CONTROLLER FOR FIRING EXPLOSION
+   	MyVar = 4.0 
+	OBJECT>ENEMIES\GUNCONCEALED
+	// Initialise the strat's state
+   	MyFlag = MyFlag | ENEMY
+	health = 80
+
+	AimState = DORMANT
+
+	//ensure we are in a 'DOWN' state
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+	trans = 0.0
+  	MODELANIM>ENEMIES\GUNCONCEALED.RDO>POPDOWN>0
+
+	WHILE (MyAnimFlag & RUNNING)
+		MyFlag = MyFlag
+	ENDWHILE
+
+	MyFlag2 = MyFlag2 & LNOT(TRANSLUCENT)
+
+	RegisterCollision()
+	InitHDC()
+
+	// Keep a trigger aiming the gun
+   	TRIGSET>KeepOnAiming EVERY 1
+
+	// One sound at a time
+	AllocStratSoundBlock(1)
+
+	//COLLISION CONTROL
+	TRIGSET>UpdateCollision EVERY 1
+
+	// OnDead handler
+	TRIGSET>Die WHENDEAD
+
+	// Sit and wait
+	STAT>Wait
+ENDSTATE
+
+LOCALINT colloff
+
+TRIGGER UpdateCollision
+
+	colloff = 0
+
+	IF (AimState = DORMANT)
+		colloff = 1
+	ENDIF
+
+
+	IF (colloff)
+		MyFlag = MyFlag & LNOT(STRATCOLL + TARGETABLE)
+	ELSE
+	
+		CalculateStratPolyData(0)
+		MyFlag = MyFlag | STRATCOLL	| TARGETABLE
+	ENDIF
+
+
+	TRIGFIN
+
+ENDTRIGGER
+
+
+
+
+
+// Wait for the player to come into range
+STATE Wait
+	AimState = DORMANT
+	IF (HasActivation(0))
+		// Has activation and is near it..
+		IF (PlayerNearActivationXY(0))
+			STAT>Popup
+		ENDIF
+	ELSE
+		IF (NearPlayer(40))
+			// Popup when within range of the player
+			STAT>Popup
+		ENDIF
+	ENDIF
+ENDSTATE
+
+// Pop up and get ready to aim at the player
+STATE Popup
+	WaitFrame = RandRange(0,10)
+	LOOP WaitFrame
+		MyFlag = MyFlag
+	ENDLOOP
+	AimState = POPPINGUP
+   	MODELANIM>ENEMIES\GUNCONCEALED.RDO>POPUP>0
+
+	WHILE (MyAnimFlag & RUNNING)
+		MyFlag = MyFlag
+	ENDWHILE
+
+	MODELANIM>ENEMIES\GUNCONCEALED.RDO>FIRING>REPEAT
+	//ENSURE WE ARE DAMAGEABLE
+	MyFlag2 = MyFlag2 & LNOT(NODAMAGE)
+	
+
+	STAT>Aim
+ENDSTATE
+
+// Pop back down
+STATE Popdown
+	AimState = POPPINGDOWN
+   	MODELANIM>ENEMIES\GUNCONCEALED.RDO>POPDOWN>0
+	WHILE (MyAnimFlag & RUNNING)
+		MyFlag = MyFlag
+	ENDWHILE
+
+	//MAKE NO DAMAGEABLE
+	MyFlag2 = MyFlag2 | NODAMAGE
+	
+   
+	STAT>Wait
+ENDSTATE
+
+// Do the aiming and firing
+STATE Aim
+	IF (!NearPlayer(80.0))
+		STAT>Popdown
+	ENDIF
+	AimState = AIMING
+	LOOP (80)
+		MyFlag = MyFlag
+	ENDLOOP
+
+	IF (ObjectSeePlayerZ(TWOPI/8.0,GUNTURRET,0,0,0))
+		LOOP (3 * 6)
+			PLAYSOUND>SQUAR009PMIX2 0 1.0 0.0 0.0 0.0 0
+			CREATE SPAWN_ENEMYMISSILE 0.0, 0.0, 0.0, 0, 0, 0, LEFTGUN
+			CREATE SPAWN_BLASTEXP 0.0, 0.0, 0.0, 0, 0, 0, LEFTGUN
+			LOOP 3
+				MyFlag = MyFlag
+			ENDLOOP
+
+		ENDLOOP
+	ENDIF
+ENDSTATE
+
+STATE KeepOnAiming
+   
+   	IF (AimState = AIMING)
+		ObjectTowardPlayerXZ (GUNBASE, 0.0, 0.025, TWOPI, TWOPI)
+		ObjectTowardPlayerXZ (GUNTURRET, 0.05, 0.0, 0.0, (TWOPI/360.0) * 45.5)
+		CrntRotToIdleRotZ(GUNBASE, 0.025)
+		CrntRotToIdleRotX(GUNTURRET, 0.05)
+  	ENDIF
+
+	TRIGFIN
+ENDSTATE
+
+STATE Die
+	TRIGKILL>KeepOnAiming EVERY 1
+	TRIGKILL>UpdateCollision EVERY 1
+	HideObject(GUNTURRET)
+	HideObject(LEFTGUN)
+	HideObject(GUNBIT)
+	HideObject(SENSOR)
+	HideObject(HANDLE)
+
+
+	//ENSURE WE CAN HIT BUT NOT TARGET THE THING
+
+	MyFlag = MyFlag | STRATCOLL
+	MyFlag = MyFlag & LNOT(ENEMY | TARGETABLE )
+	// Resurrect the object to live on as a dead sentry
+   	MyFlag = MyFlag | ALIVE
+	MyVar = 2.0
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, GUNBASE
+//	adrelanin = adrelanin + 0.2
+   	TRIGRESET
+	TRIGSTOP
+      	STAT>Dead
+ENDSTATE
+
+STATE Dead
+	AimState = 2
+	WHILE (AimState)
+		WaitFrame = 150
+		WHILE (WaitFrame)
+			IF (AimState = 2)
+				MyVar = 2.0
+			ELSE
+				MyVar = 0.0
+			ENDIF
+			CREATE SPAWN_ScapeSmoke 0,0,0, 0,0,0, GUNTURRET
+			CREATE SPAWN_ScapeSmoke 0,0,0, 0,0,0, GUNTURRET
+			IF (AimState = 2)
+				MyVar = 3.0
+			ELSE
+				MyVar = 1.0
+			ENDIF
+			CREATE SPAWN_ScapeSmoke 0,0,0, 0,0,0, GUNTURRET
+			WaitFrame = WaitFrame - 1 
+		ENDWHILE
+		AimState = AimState - 1
+	ENDWHILE
+	STAT>Idle
+ENDSTATE
+
+STATE Idle
+	IF (NearPlayer(40.0))
+		MyVar = 0.0
+		CREATE SPAWN_ScapeSmoke 0,0,0, 0,0,0, GUNTURRET
+		CREATE SPAWN_ScapeSmoke 0,0,0, 0,0,0, GUNTURRET
+		MyVar = 1.0
+		CREATE SPAWN_ScapeSmoke 0,0,0, 0,0,0, GUNTURRET
+	ENDIF
+ENDSTATE

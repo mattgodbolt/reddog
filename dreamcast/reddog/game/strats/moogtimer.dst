@@ -1,0 +1,90 @@
+// Magic ninja timer of doom
+
+PARAMINT	WaitTicks	0
+PARAMINT	LimitTicks	0
+PARAMINT	ZeroGameTime 0
+PARAMINT	ParentLift 0
+
+STATE Init
+	MyFlag = MyFlag | NODISP | DELETECALLBACK
+
+	IF (!(MyFlag2 & OWNIPARAMS))
+		WaitTicks = 0
+		LimitTicks = 0
+		ZeroGameTime = 0
+		ParentLift = 0
+	ENDIF
+
+	TRIGSET>CleanUp WHENDELETED
+
+	// Wait for parent creation, if any
+	IF (MyParent)
+		WHILE (MyParentInvalid())
+			MyVar = MyVar
+		ENDWHILE
+	ENDIF
+
+	// Wait for an activation to happen
+	IF (HasActivation(0))
+		WHILE (!PlayerNearActivationXY(0))
+			MyVar = MyVar
+		ENDWHILE
+	ENDIF
+
+	IF (PAL)
+		LimitTicks = LimitTicks / 1.2
+		WaitTicks = WaitTicks / 1.2
+  	ENDIF
+
+	// Signal game timer if necessary
+	IF (ZeroGameTime)
+		TimeFunction (-1)
+		TimeFunction (0)
+	ENDIF
+
+	//LimitTicks =  WaitTicks = 2
+
+	// Pop the timer up
+	InitTimer (0, LimitTicks)
+
+	LOOP WaitTicks
+		MyVar = MyVar
+	ENDLOOP
+
+	// Now start the timer off!
+	InitTimer (-1, LimitTicks)
+	
+	// Wait for the timer to expire
+	WHILE (InitTimer(-1,-1) > 0)
+		IF (HasActivation(1))
+			IF (PlayerNearActivation(1))
+				STAT>Disable
+			ENDIF
+		ENDIF
+	ENDWHILE
+
+	// If I have a parent, delete it and sit in a big loop, else delete myself
+	HideTimer()
+	IF (MyParent)
+		IF (ParentLift)
+			SetParentSem(2, 1)
+			Delete()
+		ELSE
+			DeleteMyParent()
+			WHILE (1)
+				MyVar = MyVar
+			ENDWHILE
+		ENDIF
+	ELSE
+		Delete()
+	ENDIF
+ENDSTATE
+
+STATE Disable
+	// Stay created so as not to annoy anything waiting for us to delete
+	HideTimer()
+ENDSTATE
+
+STATE CleanUp
+	HideTimer()
+ENDSTATE

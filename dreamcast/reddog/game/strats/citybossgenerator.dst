@@ -1,0 +1,61 @@
+//GlobalVar2 used as counter for number of bosses
+
+
+DEFINE MAXBOSS 3
+
+STATE Init2
+	Delete()
+ENDSTATE
+
+
+STATE Init
+	IF (MyParent)
+		WHILE (MyParentInvalid())
+			MyFlag = MyFlag
+		ENDWHILE
+	ENDIF
+
+	IF (MyPath)
+		InitPath()
+	ENDIF
+
+	IF (!HasActivation(0))
+		STAT>Idle
+	ENDIF
+
+	STAT>SpawnCheck
+ENDSTATE
+
+STATE Idle
+
+ENDSTATE
+
+
+
+STATE SpawnCheck
+	
+	IF ((!MyVar) AND (!PlayerNearActivationXY(0)))
+		IF (GlobalVar2 < MAXBOSS)
+			//ensure a rotation in the list
+			MakeMeTheLast()
+			ClearGlobalParams()
+			CREATE SPAWN_CITYBOSS 0,0,0,0,0,0,0
+		
+			MyVar = 1.0
+			GlobalVar2 = GlobalVar2 + 1.0
+			WHILE (MyVar)
+		  
+				//to handle player successful end game sequence
+		  		IF (GlobalVar)
+					STAT>Idle
+				ENDIF
+		 		MyFlag = MyFlag
+			ENDWHILE
+
+			Delete()
+
+		ENDIF
+	ENDIF
+
+ENDSTATE
+

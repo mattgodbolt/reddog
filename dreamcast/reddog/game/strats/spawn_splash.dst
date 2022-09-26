@@ -1,0 +1,90 @@
+//GlobalInt 0 - If 1 Then fade up and Down
+//GlobalInt 1 - Frames to fade up and down
+//GlobalInt	3 - If I'm a boss debris splash
+//GlobalFloat 0 - scale
+
+STATE Init
+	MyFlag = MyFlag | ENEMY | SPRITE
+	OBJECT> SFX\WHITESMOKE
+   //	UnitiseMatrix()
+  //	z = DogZ
+	CheckX = GetGlobalParamInt(1)
+	CheckZ = GetGlobalParamFloat(0)
+	
+	IF (CheckZ != 0.0)
+		scalex = scaley = CheckZ
+	ELSE
+		scalex = scaley = 3.0
+	ENDIF
+
+	CheckZ = GetGlobalParamInt(2)
+
+   //	IF (!CheckZ)
+	   MyVar = RandRange(-PI, PI)
+		RelRotateZ(MyVar)
+
+   //	ENDIF
+
+	IF (CheckX)
+		CheckY = 1.0 / CheckX
+	ELSE
+		CheckX = 5.0
+		CheckY = 0.2
+	ENDIF
+
+ //	IF (CheckZ)
+ //		STAT>MAIN
+ //	ENDIF
+	IF (GetGlobalParamInt(3))
+		AllocStratSoundBlock(1)
+		SetAudibleRange(0,50,600)
+		IF (RandRange(0,5.0) > 1.5)
+   			PLAYSOUND>SPLASH1 0 1.0 0.0 0.0 0.0 0
+		ELSE
+			IF (RandRange(0,5.0) > 2.5)
+	   			PLAYSOUND>SPLASH2 0 1.0 0.0 0.0 0.0 0
+			ELSE
+	   			PLAYSOUND>SPLASH3 0 1.0 0.0 0.0 0.0 0
+			ENDIF
+		ENDIF
+
+	ENDIF
+
+	IF (GetGlobalParamInt(0) = 1)
+		MyFlag2 = MyFlag2 | TRANSLUCENT
+		trans = 0.0
+		STAT>BoatSplash
+	ENDIF
+
+	LOOP (1)
+		MyFlag = MyFlag
+	ENDLOOP
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	
+	Delete()
+ENDSTATE
+
+STATE BoatSplash
+	LOOP (CheckX)
+		trans = trans + CheckY
+	ENDLOOP
+	STAT>MAIN
+ENDSTATE
+
+STATE MAIN
+	LOOP (CheckX)
+		IF (CheckZ)
+		scalex  = scalex + 0.4
+   	   	IF (scaley > 0.1)
+   	   		scaley = scaley - 1.0 / (CheckX * 2)
+   	   	ENDIF
+		ENDIF
+		trans = trans - CheckY
+	ENDLOOP
+	Delete()
+ENDSTATE
+
+

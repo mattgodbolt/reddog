@@ -1,0 +1,3 @@
+STATE Init
+	MyFlag = MyFlag | ENEMY | STRATCOLL
+	InitHDC()

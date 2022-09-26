@@ -1,0 +1,17 @@
+// ScapeFire
+// Emits plumes of flames for the benefit of burning stuff in landscapes
+
+STATE Init
+  	MyFlag = MyFlag | NODISP
+  	STAT>Main
+ENDSTATE
+
+STATE Main
+	WHILE (NearPlayer(600))
+		MyVar = 0
+		CREATE SPAWN_ScapeSmoke 0,0,0, 0,0,0, 0
+		CREATE SPAWN_ScapeSmoke 0,0,0, 0,0,0, 0
+		MyVar = 1
+		CREATE SPAWN_ScapeSmoke 0,0,0, 0,0,0, 0
+	ENDWHILE
+ENDSTATE

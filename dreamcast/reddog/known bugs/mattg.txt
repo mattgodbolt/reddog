@@ -1,0 +1,7 @@
+MATT G - KNOWN BUGS 
+
+[FIXED]	1.	You can't see the Dome for the fog.
+[FIXED]	2.	Model clipping still buggy
+
+
+If anyone notices any more buggy near-clipping let me know!!

@@ -1,0 +1,312 @@
+PARAMINT	random 0
+
+DEFINE		HEALTH 30.0
+DEFINE		AfterFiringWaitFor	30
+DEFINE		StayUnderGroundFor	45
+DEFINE		WaitBeforeFiring	15
+
+LOCALINT	readyToFire
+LOCALINT	submerge
+LOCALINT	time
+LOCALINT	firstTime
+LOCALINT	noActs
+LOCALINT	actNo
+LOCALINT	dead
+LOCALFLOAT	oldHealth
+LOCALFLOAT	tempf
+
+
+STATE Init
+	MyFlag = MyFlag | ENEMY | STRATCOLL
+	IF (!(MyFlag2 & OWNIPARAMS))
+		random = 0
+	ENDIF
+	IF (!PNode)
+		OBJECT>Enemies\Hydra
+	ENDIF
+	dead = 0
+	AllocStratSoundBlock(4)
+	SetAudibleRange(0, 50, 400)
+	SetAudibleRange(1, 50, 400)
+	SetAudibleRange(2, 50, 400)
+	SetAudibleRange(3, 50, 400)
+	RegisterDanger(100.0)
+	RegisterCollision()
+	InitHDC()
+	CalculateStratPolyData(1)
+	IF (HasActivation(0))
+		noActs = noActs + 1
+	ENDIF
+	IF (HasActivation(1))
+		noActs = noActs + 1
+	ENDIF
+	IF (HasActivation(2))
+		noActs = noActs + 1
+	ENDIF
+	IF (HasActivation(3))
+		noActs = noActs + 1
+	ENDIF
+	ObjectTargetable(1)
+	SetObjectHealth(1, 10000)
+	health = HEALTH
+	oldHealth = health
+	time = 0
+	firstTime = 1
+	submerge = 0
+	TRIGSET>SpecularMadness EVERY 1
+	STAT>Emerge
+ENDSTATE
+
+STATE Emerge
+	readyToFire = 0
+	IF (HasActivation(4))
+		WHILE (!PlayerNearActivationXY(4))
+			MyFlag = MyFlag
+		ENDWHILE
+	ENDIF
+	ObjectTargetable(1)
+	IF (noActs)
+		IF ((firstTime) AND (random = 0))
+			GetActivationPos(0)
+			x = CheckX
+			y = CheckY
+			oldx = x
+			oldy = y
+			oldoldx = x
+			oldoldy = y
+		ELSE
+			
+			
+			tempf = RandRange(0.0, noActs)
+			
+			IF ((tempf >= 0.0) AND (tempf <= 1.0))
+				actNo = 0
+			ENDIF
+			IF ((tempf > 1.0) AND (tempf <= 2.0))
+				actNo = 1
+			ENDIF
+			IF ((tempf > 2.0) AND (tempf <= 3.0))
+				actNo = 2
+			ENDIF
+			IF ((tempf > 3.0) AND (tempf <= 4.0))
+				actNo = 3
+			ENDIF
+			WHILE (PlayerNearActivationXY(actNo))
+				tempf = RandRange(0.0, noActs)
+			
+				IF ((tempf >= 0.0) AND (tempf <= 1.0))
+					actNo = 0
+				ENDIF
+				IF ((tempf > 1.0) AND (tempf <= 2.0))
+					actNo = 1
+				ENDIF
+				IF ((tempf > 2.0) AND (tempf <= 3.0))
+					actNo = 2
+				ENDIF
+				IF ((tempf > 3.0) AND (tempf <= 4.0))
+					actNo = 3
+				ENDIF
+			ENDWHILE
+		ENDIF
+	ENDIF
+
+	GetActivationPos(actNo)
+	x = CheckX
+	y = CheckY
+	oldx = x
+	oldy = y
+	oldoldx = x
+	oldoldy = y
+	CalculateStratPolyData(1)
+
+	IF (firstTime)
+		TRIGSET>Always EVERY 1
+	ENDIF
+	firstTime = 0
+
+	MODELANIM>Enemies\Hydra.RDO>EMERGE>NOTWEEN
+
+	IMMLOOP (20)
+		SetGlobalParamInt(0, 1)
+		CREATE SPAWN_EXPLOSION_DEBRIS 0, 0, 0, 0, 0, 0, 0
+		SetGlobalParamInt(0, 0)
+	IMMENDLOOP
+
+	PLAYSOUND>HYDRA_ERUPT 0 1.0 0.0 0.0 0.0 0
+
+	WHILE (MyAnimFlag & RUNNING)
+		MyFlag = MyFlag
+		health = oldHealth
+	ENDWHILE
+	readyToFire = 1
+	TRIGSET>KillCheck EVERY 1
+	STAT>Start
+ENDSTATE
+	
+TRIGGER Always
+	IF (dead = 0)
+		ObjectTowardPlayerXZ(1,0.05,0.05, 1.0, 0.5)
+		CrntRotToIdleRotX(1, 0.04)
+		CrntRotToIdleRotZ(1, 0.04)
+		ObjectTowardPlayerXZ(2,0.05,0.05, 0.3, 0.5)
+		CrntRotToIdleRotX(2, 0.04)
+		CrntRotToIdleRotZ(2, 0.04)
+		ObjectTowardPlayerXZ(3,0.05,0.05, 0.3, 0.5)
+		CrntRotToIdleRotX(3, 0.04)
+		CrntRotToIdleRotZ(3, 0.04)
+		RelTurnTowardPlayerXY(0.1)
+		CalculateStratPolyData(0)
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+STATE Submerge
+
+	MODELANIM>Enemies\Hydra.RDO>SUBMERGE>0
+				
+	readyToFire = 0
+	oldHealth = health
+
+	PLAYSOUND>HYDRADIVE 0 1.0 0.0 0.0 0.0 RANDOM
+
+	WHILE (MyAnimFlag & RUNNING)
+		MyFlag = MyFlag
+		health = oldHealth
+	ENDWHILE
+	ObjectNotTargetable(1)
+	LOOP (StayUnderGroundFor)
+		MyFlag = MyFlag
+	ENDLOOP
+	IF (HasActivation(4))
+		WHILE (!PlayerNearActivationXY(4))
+			MyFlag = MyFlag
+		ENDWHILE
+	ENDIF
+	submerge = 0
+	STAT>Emerge
+ENDSTATE
+
+LOCALINT FIRING
+
+STATE Start
+	time = time + 1
+	
+	IF (HasActivation(4))
+		IF (readyToFire)	
+			IF (!FIRING)
+				MODELANIM>Enemies\Hydra.RDO>STAND>REPEAT
+				LOOP (WaitBeforeFiring)
+					MyFlag = MyFlag
+				ENDLOOP
+				TRIGSET>FireIt EVERY 1
+			ELSE
+				readyToFire = 0
+			ENDIF
+		ELSE
+			IF (submerge)
+				STAT>Submerge
+			ENDIF
+		ENDIF
+	ELSE
+		IF (readyToFire)			
+			IF (!FIRING)
+				MODELANIM>Enemies\Hydra.RDO>STAND>REPEAT
+				LOOP (WaitBeforeFiring)
+						MyFlag = MyFlag
+				ENDLOOP
+				TRIGSET>FireIt EVERY 1
+				readyToFire = 0
+			ENDIF
+		ELSE
+			IF (submerge)
+				MODELANIM>Enemies\Hydra.RDO>SUBMERGE>0
+				oldHealth = health
+				WHILE (MyAnimFlag & RUNNING)
+					MyFlag = MyFlag
+					health = oldHealth
+				ENDWHILE
+				LOOP (StayUnderGroundFor)
+					MyFlag = MyFlag
+				ENDLOOP
+				submerge = 0
+				STAT>Emerge
+			ENDIF
+		ENDIF
+	ENDIF
+
+
+
+ENDSTATE
+
+TRIGGER KillCheck
+	
+	IF (health <= 0.0)	
+		MyFlag2 = MyFlag2 | STOPPED	
+		WHILE (MyAnimFlag & RUNNING)
+			MyFlag = MyFlag
+		ENDWHILE
+		OBJECT>Enemies\Death\HydraDeath
+		Score = Score + 1000
+		dead = 1
+		MODELANIM>Enemies\Death\HydraDeath.RDO>Play>NOTWEEN
+		MyVar = 8.0
+		PLAYSOUND>HYDRAEXPLO 0 1.0 0.0 0.0 0.0 RANDOM
+		CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+		WHILE (MyAnimFlag & RUNNING)
+			MyFlag = MyFlag
+		ENDWHILE
+		Delete()
+	ENDIF
+
+ENDTRIGGER
+
+
+LOCALFLOAT SPECAMOUNT
+
+TRIGGER SpecularMadness
+	UpdateTrigFlag(TRIG_ALWAYS_RUN)
+	IF ((MyFlag & HITSTRAT) AND (CollWithFlag & BULLETTYPE))
+		SPECAMOUNT = 1.0
+		PLAYSOUND>ENEMY_HIT 3 1.0 0.0 0.0 0.0 RANDOM
+	ENDIF
+	IF (SPECAMOUNT > 0)
+  		MyFlag2 = MyFlag2 | SPECULAR
+		SetSpecularColour(0, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+		SPECAMOUNT = SPECAMOUNT - 0.1
+	ELSE
+		SPECAMOUNT = 0
+ 		MyFlag2 = MyFlag2 & LNOT(SPECULAR)
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+
+LOCALINT	fireTime
+LOCALINT	channelSwitch
+
+TRIGGER FireIt
+	fireTime = 0
+	readyToFire = 0
+	channelSwitch = 0
+	FIRING = 1
+	LOOP (30)
+		fireTime = fireTime + 1
+		IF (fireTime = 3)
+			IF (channelSwitch = 0)
+				PLAYSOUND>HYDRA_GUN 1 1.0 0.0 0.0 0.0 0
+			ELSE
+				PLAYSOUND>HYDRA_GUN 2 1.0 0.0 0.0 0.0 0
+			ENDIF
+			channelSwitch = LNOT(channelSwitch)
+			CREATE SPAWN_ENEMY_VULCAN 0, 0, 0, 0, 0, 0, 2
+			CREATE SPAWN_ENEMY_VULCAN 0, 0, 0, 0, 0, 0, 3
+			fireTime = 0
+		ENDIF
+	ENDLOOP
+	
+	LOOP(AfterFiringWaitFor)
+		MyFlag = MyFlag
+	ENDLOOP
+	FIRING = 0
+	submerge = 1
+	TRIGSTOP
+ENDTRIGGER

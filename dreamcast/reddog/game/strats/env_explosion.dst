@@ -1,0 +1,142 @@
+PARAMINT ID 1
+PARAMINT UPDOWN 0
+PARAMFLOAT time	0.0
+PARAMFLOAT Size	1.0
+
+LOCALINT generated
+
+//DUMMY JUST SITS HERE LOOKING THICK 
+TRIGGER SPAWNER
+	SetGlobalParamInt(0,1)
+
+	frame = 9.0 * Ssin(ang)
+	ang = ang + (TWOPI / 360.0 ) * 10.0
+	IF (MyVar > 0.1)
+		MyVar = MyVar * 0.7
+	ENDIF
+
+   //	SetCheckPosRel(0,0, frame, 0)
+
+	IF (!UPDOWN)
+		CREAIND ENV_EXPLOSION x + frame, y, z, 0, 0, 0
+	ELSE
+		CREAIND ENV_EXPLOSION x, y, z + frame, 0, 0, 0
+	ENDIF
+	ClearGlobalParams()
+
+	TRIGFIN
+ENDTRIGGER
+
+
+STATE Init
+
+	MyFlag = MyFlag | SPRITE
+
+	//test if generated
+	IF (GetGlobalParamInt(1) = 99)
+		Size = GetGlobalParamFloat(0)
+		time = GetGlobalParamFloat(1)
+		ID = GetGlobalParamInt(2)
+		UPDOWN = GetGlobalParamInt(3)
+	   	generated = 1
+
+
+	ELSE
+	IF (!(MyFlag & OWNFPARAMS))
+		Size = 1.0
+		time = 0.0
+	ENDIF
+
+	IF (!(MyFlag2 & OWNIPARAMS))
+		ID = 1
+	ENDIF
+	ENDIF
+
+	IF (GetGlobalParamInt(0))
+		STAT>Trailer
+	ENDIF
+
+
+
+   	IF (MyParent)
+		IF (!generated)
+			WHILE (MyParentInvalid())
+				MyFlag = MyFlag
+			ENDWHILE
+	//	ELSE
+	//		MyParent = MyParentParent
+		ENDIF
+  		LinkToParentObject(ID, 0, 0, 0, 0, 0, 0)
+  	ENDIF
+
+	
+	//take off .6 secs to allow for exp lead in
+	IF (PAL)
+		time = time - 1.1
+		time = time * 25.0
+	ELSE
+		time = time - 1.1
+		time = time * 30.0
+	ENDIF
+
+	WHILE (time > 0)
+		time = time - 1.0
+	ENDWHILE 
+   
+	AllocStratSoundBlock(1)
+
+	// Explosions can be heard louder from further away
+	SetAudibleRange(0, 150, 450)
+
+  	PLAYSOUND>EX_LARGE_BLAST1 0 1.0 0.0 0.0 0.0 RANDOM
+  
+
+	CREATE SPAWN_ENEMYDEBRIS 0,0,0,0,0,0,0
+
+   	MyVar = scalex = Size * 10.0
+
+	scalez = RandRange(0, TWOPI)
+	RelRotateZ(scalez)
+
+	scaley = scalex
+	scalez = scalex
+   
+ 	OBJECT> EXPLOSIONS\EXPLOSION01
+	ANIM> EXPLOSION01>Explosion
+
+	TRIGSET>KillOff WHENANIMOVER
+	TRIGSET>SPAWNER EVERY 3
+
+	STAT>SetPos
+
+ENDSTATE
+
+STATE SetPos
+	RelRotateY(-PI/22.0)
+ENDSTATE
+
+STATE KillOff
+  	Delete()
+ENDSTATE
+
+STATE Trailer
+   	scalex = ParentSemaphore * 10.0
+
+	scalez = RandRange(0, TWOPI)
+	RelRotateZ(scalez)
+
+	scaley = scalex
+	scalez = scalex
+   
+ 	OBJECT> EXPLOSIONS\EXPLOSION01
+	ANIM> EXPLOSION01>Explosion
+
+	TRIGSET>KillOff WHENANIMOVER
+		STAT>SetPos
+
+
+ENDSTATE
+
+
+LOCALFLOAT ang
+

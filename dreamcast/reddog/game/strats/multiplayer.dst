@@ -1,0 +1,44 @@
+// Multiplayer strat which kicks off the whole she-bang
+
+LOCALINT PlayerNum
+
+STATE Init
+	STAT>Wait
+ENDSTATE
+
+STATE Wait
+	// While there's players to create - spawn them
+	PlayerNum = FindDeadPlayer()
+	IF (PlayerNum = 1)
+		SignalSpawnPoint (1)
+	ELSE
+		IF (PlayerNum = 2)
+			SignalSpawnPoint (2)
+		ELSE 
+			IF (PlayerNum = 3)
+				SignalSpawnPoint (4)
+			ELSE 
+				IF (PlayerNum = 4)
+					SignalSpawnPoint (8)
+				ENDIF
+			ENDIF
+		ENDIF
+	ENDIF
+
+	// If we've reached a winning state then go to EndGame
+	IF (CheckEndGameStatus() = 1)
+		STAT>EndGame
+	ENDIF
+
+ENDSTATE
+
+// No more spawning or anything in the end game state - we just
+// wait for a reset
+STATE EndGame
+	// 'Winner!' is now onscreen, so hang around a bit to let
+	// the winner revel in their glory
+	LOOP 90
+		MyFlag = MyFlag
+	ENDLOOP
+	GameOver()
+ENDSTATE

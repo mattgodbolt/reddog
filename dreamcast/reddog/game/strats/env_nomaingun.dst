@@ -1,0 +1,4 @@
+STATE Init
+	NoMainGun = 1
+	Delete()
+ENDSTATE

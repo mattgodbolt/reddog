@@ -1,0 +1,405 @@
+//PAL FRIENDLY
+LOCALFLOAT var
+LOCALINT	fireTime 
+LOCALINT	Lightning
+LOCALINT	isGenerated
+LOCALINT	airTime
+
+//2 SECOND FIREDELAY
+DEFINE  NTSC_FIREDELAY 60
+DEFINE  PAL_FIREDELAY 50
+LOCALINT FIREDELAY
+
+//4 SECOND AIRDELAY
+DEFINE PAL_AIRDELAY 100
+DEFINE NTSC_AIRDELAY 120
+
+LOCALINT AIRDELAY 
+DEFINE HEAD 1
+DEFINE BODY 11
+
+//THE ORIGINAL LEVEL2 MODEL HEAD ID
+//DEFINE HEAD 10
+DEFINE WALK 1
+DEFINE STOP 0
+LOCALINT MODE
+   	    
+STATE Init 
+ 
+	//THE FIRST THING TO DO IS CHECK FOR THE STRAT BEING MADE FROM GENERATORS
+	//IF SO, THEN WE MUST INHERIT THE AREA COLLISION FROM IT
+	IF (MyParent)
+		InheritMyParent()
+	ENDIF
+
+	IF (PAL)
+		FIREDELAY = PAL_FIREDELAY
+		AIRDELAY = PAL_AIRDELAY
+	ELSE
+		FIREDELAY = NTSC_FIREDELAY
+		AIRDELAY = NTSC_AIRDELAY
+	ENDIF
+	
+ 	//SET UP PATH INFO IF NEEDED
+ 	IF (MyPath)
+		SetGlobalParamInt(0,99)
+		InitPath()
+		ClearGlobalParams()
+	ENDIF
+
+
+	TRIGSET>CheckPlayerHit EVERY 1
+	MyFlag2 = MyFlag2 | COLLMOVE
+	MyFlag = MyFlag | FLOORCOLL | ENEMY | STRATCOLL | LOWCOLL | TARGETABLE
+   	OBJECT>ENEMIES\RAPIERMINI_LEVEL3
+	RegisterCollision()
+	RotationRestriction(1.0, 1.0, 1.0)
+	SetFriction(1.0, 0.3, 0.0)
+	airTime = 0
+	IF (GetGlobalParamFloat(0) = 1.0)
+		isGenerated = 1
+	ELSE
+		isGenerated = 0
+	ENDIF
+	health = 10.0
+	var = 0.0
+	fireTime = 0
+	Lightning = 0
+	HEADMOVEVALID = 0
+	TRIGSET>MoveHead EVERY 1
+	TRIGSET>Kill WHENDEAD
+	TRIGSET>FireCheck EVERY 1 
+	TRIGSET>DoPausedLightning WHENPAUSED
+
+
+	AllocStratSoundBlock(2)
+	RegisterDanger(40.0)
+	SetAudibleRange(0, 20, 100)
+	SetAudibleRange(1, 20, 100)
+
+	WHILE(!(IAmOnFloor))
+		IF (PAL)
+			ApplyRelForce(BODY, 0, 0, -20 * 1.2, 0, 0, 0)
+		ELSE
+			ApplyRelForce(BODY, 0, 0, -20, 0, 0, 0)
+		ENDIF
+	ENDWHILE
+	TRIGSET>KeepDown EVERY 1
+
+	//IF WE ARE CONNECTED TO PATHS AND AREAS THEN RUN THE AREA COLLISION
+	IF (MyPath)
+   		TRIGSET>CheckOutsideArea EVERY 1
+		InsideCheck = 1
+	ENDIF
+
+	STAT> Walk
+ENDSTATE
+
+LOCALINT InsideCheck
+
+TRIGGER CheckOutsideArea
+
+	IF (InsideCheck)
+		//CHECK TO SEE IF WE'VE LEFT THE OUTER REGION
+		IF (InsideArea() < 0)
+			InsideCheck = 0
+ 			TRIGRESET
+			TRIGFIN
+			IF (PlayerOutSide())
+				//WE HAVE GONE OUTSIDE AND THE PLAYER IS OUTSIDE, SO WAIT
+				STAT>Wait
+			ELSE
+				//WE HAVE GONE OUTSIDE, SO GET TO OUR NEAREST CAMPPOINT AND ATTACK AGAIN
+				IF (GetNearestCampPoint(1))
+					STAT>WalkAway
+				ELSE
+					InsideCheck = 1
+					STAT>Walk
+				ENDIF
+			ENDIF	
+		ENDIF
+	ENDIF
+
+
+	TRIGFIN
+ENDTRIGGER
+
+LOCALINT sound
+
+STATE WalkAway
+	MODELANIM>ENEMIES\RAPIERMINI_LEVEL3.RDO>walk>REPEAT
+
+
+	WHILE (!NearCheckPos(1.5))
+		MoveY(0.06)
+		IF (!(IAmOnFloor))
+			airTime = airTime + 1
+			RelRotateX(-0.05) 
+		ELSE
+			FlattenToPoly(0.3)
+			airTime = 0
+			sound = RandRange(0, 30)
+			IF (!IsPlaying(0))
+				IF (sound = 1)
+					PLAYSOUND>RAPIER_LEG1 0 0.9 0.0 0.0 0.0 (RANDOM | NOUPDATE)
+				ENDIF
+				IF (sound = 2)
+					PLAYSOUND>RAPIER_LEG2 0 0.9 0.0 0.0 0.0 (RANDOM | NOUPDATE)
+				ENDIF
+				IF (sound = 3)
+					PLAYSOUND>RAPIER_LEG3 0 0.9 0.0 0.0 0.0 (RANDOM | NOUPDATE)
+				ENDIF
+			ENDIF
+		ENDIF
+
+		RelTurnTowardCheckPosXY(0.05)
+
+	ENDWHILE
+
+	InsideCheck = 1
+  
+  	STAT>Walk
+
+
+ENDSTATE
+
+STATE Wait
+	HEADMOVEVALID = 1
+//   	MyFlag = MyFlag & LNOT(FLOORCOLL | GRAVITYON)
+// 	TRIGKILL>KeepDown EVERY 1
+   	WHILE (PlayerOutSide())
+		MODELANIM>ENEMIES\RAPIERMINI_LEVEL3.RDO>Stand1>REPEAT
+		IF (!FireSightPlayer())
+			MyFlag = MyFlag | NODISP
+		ELSE
+			MyFlag = MyFlag & LNOT(NODISP)
+		ENDIF
+
+
+//		KillMyVelocity()
+	ENDWHILE
+// 	MyFlag = MyFlag | FLOORCOLL	| GRAVITYON
+//	TRIGSET>KeepDown EVERY 1
+
+	InsideCheck = 1
+	HEADMOVEVALID = 0
+	IF (MODE = STOP)
+		STAT>Stop
+	ELSE
+		STAT>Walk
+	ENDIF
+
+
+
+ENDSTATE
+
+
+
+LOCALINT HEADMOVEVALID
+
+STATE MoveHead
+   //	HEADMOVEVALID = 1
+	IF (HEADMOVEVALID)
+		ObjectTowardPlayerXZ(HEAD , 0.05, 0.05, TWOPI/8.0, TWOPI/8.0)
+   	ELSE
+   		ObjectReturnToStart(HEAD)
+	ENDIF
+	CrntRotToIdleRotX(HEAD, 0.05)
+
+	CrntRotToIdleRotZ(HEAD, 0.05)
+	TRIGFIN
+ENDSTATE
+
+//TRIGGER TO KEEP THE CHAP ON THE FLOOR
+STATE KeepDown
+	IF (PAL)
+		ApplyRelForce(BODY, 0, 0, -20 * 1.2, 0, 0, 0)
+	ELSE
+		ApplyRelForce(BODY, 0, 0, -20, 0, 0, 0)
+	ENDIF
+	TRIGFIN
+
+ENDSTATE
+
+STATE DoPausedLightning
+	IF (MyVar = 1)
+		DrawLightning (HEAD, 0, 1.4, -0.25, Lightning,0)
+	ENDIF
+	TRIGFIN
+ENDSTATE
+
+STATE FireCheck
+	IF (NearPlayerXY(20.0))
+		IF (fireTime > 80)
+		
+		   	fireTime = 0
+			MyFlag2 = MyFlag2 | STOPPED
+		 
+			WHILE (!SeePlayerZ(0.1))
+				MODELANIM>ENEMIES\RAPIERMINI_LEVEL3.RDO>Walk>REPEAT
+				RelTurnTowardPlayerXY(0.05)
+			ENDWHILE
+
+	
+			//ENSURE THAT AFTER ALL THAT WE ARE STILL NEAR THE PLAYER
+			IF (NearPlayerXY(25.0))
+			MODELANIM>ENEMIES\RAPIERMINI_LEVEL3.RDO>FireStart>0
+
+			WHILE (MyAnimFlag & RUNNING)
+				MyFlag = MyFlag
+			ENDWHILE
+			
+			MODELANIM>ENEMIES\RAPIERMINI_LEVEL3.RDO>FireMain>REPEAT
+
+			MyVar = 1
+			//CREATE SPAWN_RAPIER_Mini_Sparkle 0, 0, 0, 0, 0, 0, 0
+		
+			HEADMOVEVALID = 1
+			PLAYSOUND>RAPIERELECTRIC 1 1.0 0.0 0.0 0.0 CONTINUOUS
+		  	WHILE ((fireTime < FIREDELAY) AND (NearPlayerXY(22.0)))
+		   //	LOOP (200)
+		  		fireTime = fireTime + 1
+		   		Lightning = DrawLightning (HEAD, 0, 1.4, -0.25, Lightning,0)
+				IF (!PlayerReward(0, CHEAT_INVUL))
+					PlayerHealth = PlayerHealth - 0.2
+				ENDIF
+		   	ENDWHILE
+			StopSound(1,0.0)
+
+		   //	ENDLOOP
+			HEADMOVEVALID = 0
+			fireTime = 0
+			MyVar = 0
+
+			//CREATE SPAWN_AUTO_ENEMY_SHOT 0.0, 2.0, 1.0, 0, 0, 0, 0
+			MODELANIM>ENEMIES\RAPIERMINI_LEVEL3.RDO>FireExit>0
+		   	WHILE (MyAnimFlag & RUNNING)
+				MyFlag = MyFlag
+			ENDWHILE
+			MODELANIM>ENEMIES\RAPIERMINI_LEVEL3.RDO>Walk>REPEAT
+			ENDIF
+
+	  
+			MyFlag2 = MyFlag2 & LNOT(STOPPED)
+	  	ENDIF
+	ENDIF
+
+
+	fireTime = fireTime + 1
+	TRIGFIN
+ENDSTATE
+
+
+LOCALINT TIME
+STATE Walk
+	IF (NearPlayer(15.0))
+		IF (PAL)
+			BASETIME = 25
+		ELSE
+			BASETIME = 30
+		ENDIF
+	   	TIME  = 0
+		MODE = STOPPED
+	 	STAT>Stop
+	ELSE
+	MODELANIM>ENEMIES\RAPIERMINI_LEVEL3.RDO>walk>REPEAT
+
+	MoveY(0.12)
+	IF (!(IAmOnFloor))
+		airTime = airTime + 1
+		RelRotateX(-0.05) 
+	ELSE
+		FlattenToPoly(0.3)
+		airTime = 0
+		IF (!IsPlaying(0))
+			sound = RandRange(0, 30)
+			IF (sound = 1)
+				PLAYSOUND>RAPIER_LEG1 0 0.9 0.0 0.0 0.0 (RANDOM | NOUPDATE)
+			ENDIF
+			IF (sound = 2)
+				PLAYSOUND>RAPIER_LEG2 0 0.9 0.0 0.0 0.0 (RANDOM | NOUPDATE)
+			ENDIF
+			IF (sound = 3)
+				PLAYSOUND>RAPIER_LEG3 0 0.9 0.0 0.0 0.0 (RANDOM | NOUPDATE)
+			ENDIF
+		ENDIF
+	ENDIF
+
+	IF (airTime > AIRDELAY)
+		STAT>Kill
+	ENDIF
+
+	var = var + 1.0
+	IF (var > 100.0)
+		var = RandRange(-0.8, 0.8)
+		PickCheckPosStratToPlayerAngleOffset(var)
+		var = 0.0
+	ENDIF
+	RelTurnTowardCheckPosXY(0.05)
+	ENDIF
+ENDSTATE
+
+LOCALINT BASETIME
+
+STATE Stop
+  	MODELANIM>ENEMIES\RAPIERMINI_LEVEL3.RDO>Stand1>REPEAT
+	WHILE (NearPlayer(20.0))
+		IF (TIME = BASETIME)
+			IF (RandRange(0.0,5.0) < 2.5)
+	  			MODELANIM>ENEMIES\RAPIERMINI_LEVEL3.RDO>Stand1>REPEAT
+				IF (PAL)
+					BASETIME = 64
+				ELSE
+					BASETIME = 80
+				ENDIF
+		   	ELSE
+	  			MODELANIM>ENEMIES\RAPIERMINI_LEVEL3.RDO>Stand1>REPEAT
+				IF (PAL)
+					BASETIME = 25
+				ELSE
+					BASETIME = 30
+				ENDIF
+		   	ENDIF
+			TIME = 0
+		ENDIF
+	 TIME = TIME + 1
+	ENDWHILE
+	MODE = WALK
+	STAT>Walk
+
+
+ENDSTATE
+
+STATE Kill
+	StopSound(1,0.0)
+	//esnure lightning is turned off
+	MyVar = 8.5
+	//MakeFrags (0.1, 24)
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+	IF (MyParent)
+		ParentVar = ParentVar + 1.0
+		GlobalVar = GlobalVar + 1.0
+	ENDIF
+//	adrelanin = adrelanin + 0.2
+	Score = Score + 500
+   	IF (Radius > 0.0)
+		Score = Score + 1000
+   		DESTROYME SPAWN_EXPLODINGBITS
+   	ELSE
+		Score = Score + 1000
+		Delete()
+   	ENDIF
+ENDSTATE
+
+
+TRIGGER CheckPlayerHit
+	IF (MyFlag2 & PLAYERHIT)
+		IF (PlayerBoostButtonCount = 2)
+			IF (!PlayerReward(0, CHEAT_INVUL))
+				PlayerHealth = PlayerHealth - 10.0
+			ENDIF
+			health = 0.0
+		ENDIF
+	ENDIF
+	TRIGFIN
+ENDTRIGGER

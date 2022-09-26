@@ -1,0 +1,57 @@
+LOCALINT time
+LOCALINT accTime
+LOCALFLOAT	speed
+LOCALFLOAT ct
+
+STATE Init
+	MyFlag = MyFlag | ENEMY
+	OBJECT>Scenery\ice\ice_lift_top
+
+	
+	time = GetGlobalParamInt(0)
+	accTime = GetGlobalParamInt(1)
+	speed = GetGlobalParamFloat(0)
+
+	WHILE (GetParentSem(0) = 0)
+		MyFlag = MyFlag
+	ENDWHILE
+
+	i = 0
+
+	ct = time - accTime - (100.0 / speed)
+	WHILE (i < ct)
+		i = i + 1
+	ENDWHILE
+
+	MyFlag = MyFlag | STRATCOLL
+
+	RegisterCollision()
+	InitHDC()
+	CalculateStratPolyData(1)
+	STAT>Start
+ENDSTATE
+
+
+LOCALINT i
+LOCALFLOAT tempf
+
+STATE Start
+	
+	WHILE (i < time - accTime)
+		z = z - speed
+		i = i + 1
+	ENDWHILE
+	i = 0
+	WHILE (i < accTime)
+		tempf = speed - SmoothFromToSum(speed, i, accTime)
+		i = i + 1
+		z = z - tempf
+		CalculateStratPolyData(0)
+	ENDWHILE
+	STAT>Finish
+ENDSTATE
+
+STATE Finish
+ENDSTATE
+	
+

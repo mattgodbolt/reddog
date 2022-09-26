@@ -1,0 +1,406 @@
+//PAL FRIENDLY
+PARAMINT	aliveTime	1000
+PARAMINT	type		0				// 0 is the normal electric badger, 1 is the fast train badger
+PARAMINT	holdfiretime	0
+PARAMFLOAT	fastspeed	1.6
+
+DEFINE		REVERSE		1
+DEFINE		FORWARD		2
+DEFINE		ENGAGED		4
+DEFINE		ACC			0.1
+DEFINE		STOPRANGE	50
+DEFINE		REVERSERANGE	30
+DEFINE		VERT_FIRE		2.3
+DEFINE		HOR_FIRE		4.0
+DEFINE		FOR_FIRE		3.0
+DEFINE		ELECTRIC		0
+DEFINE		FAST			1
+
+LOCALFLOAT  velocity
+LOCALFLOAT  xang
+LOCALFLOAT  yang
+LOCALFLOAT  zang
+LOCALFLOAT  rand
+LOCALFLOAT  randFireX
+LOCALFLOAT  randFireZ
+LOCALFLOAT	tx
+LOCALFLOAT	ty
+LOCALFLOAT	tz
+LOCALFLOAT	ox
+LOCALFLOAT	oy
+LOCALFLOAT	oz
+LOCALFLOAT	rx
+LOCALFLOAT	ry
+LOCALFLOAT	rz
+
+
+LOCALINT	Mode
+LOCALINT	time
+LOCALINT	Lightning
+LOCALINT	shockHim
+LOCALINT	shockTime
+LOCALINT	startfiretime 
+
+LOCALINT TWOTHIRDSSEC
+LOCALINT ONESECONETHIRD
+LOCALINT TWOSECS
+LOCALINT TWOSECSTWOTHIRDS
+LOCALINT THREESECSONETHIRD
+
+LOCALFLOAT SCALEFAC
+STATE Init
+	//ENSURE WE HAVE THE NEW MODEL
+	OBJECT>ENEMIES\HOVERBOT
+	IF (!(MyFlag2 & OWNIPARAMS))
+		aliveTime = 1000
+		holdfiretime = 0
+	   	type = 0
+	ENDIF
+	IF (!(MyFlag & OWNFPARAMS))
+		fastspeed = 1.6
+	ENDIF
+
+	IF (PAL)
+		SCALEFAC = 1.2
+	ELSE
+		SCALEFAC = 1.0
+	ENDIF
+
+	AllocStratSoundBlock(4)
+	RegisterDanger(100.0)
+	tx = RandRange(-0.2, 0.2)
+	SetPitch(0, tx) 
+	PLAYSOUND>HOVERBOT_LOOP3 0 0.7 0.0 0.0 0.0 CONTINUOUS
+
+	IF (PAL)
+		TWOTHIRDSSEC = 16
+		ONESECONETHIRD = 33
+		TWOSECS	= 50
+		TWOSECSTWOTHIRDS = 66
+		THREESECSONETHIRD = 83
+	ELSE
+		TWOTHIRDSSEC = 20
+		ONESECONETHIRD = 40
+		TWOSECS	= 60
+		TWOSECSTWOTHIRDS = 80
+		THREESECSONETHIRD = 100
+
+	ENDIF
+	IF (type = ELECTRIC)
+		STAT>HoverBotElectricInit
+	ENDIF
+	IF (type = FAST)
+		STAT>HoverBotFastInit
+	ENDIF
+ENDSTATE
+
+
+STATE HoverBotElectricInit
+	MyFlag = MyFlag | STRATCOLL | TARGETABLE | LOWCOLL | ENEMY
+	RegisterCollision()
+	MyVar = 1
+	IF (aliveTime = 0)
+		aliveTime = 1000
+	ENDIF
+	SetFriction(0.05, 0.05, 0.05)
+	InitPath()
+	InitSplineData()
+	TRIGSET>HoverBotFastExplode WHENDEAD 
+	TRIGSET>HoverBotElectricFiringWarez EVERY 1
+	xang = RandRange(0.0, 3.1415)
+	yang = RandRange(0.0, 3.1415)
+	zang = RandRange(0.0, 3.1415)
+	Mode = FORWARD
+	time = 0
+	shockHim = 0
+	startfiretime = 0
+	health = 1.0
+	velocity = 0.2
+	GlobalVar = 0.2
+	SetObjectShadowState(1)
+	STAT>HoverBotElectricStart
+ENDSTATE
+
+STATE HoverBotElectricStart
+	IF (MyVar = 1)
+		STAT> HoverBotElectricGetBusy
+	ENDIF
+ENDSTATE
+
+
+STATE HoverBotElectricFiringWarez
+	WHILE (startfiretime < holdfiretime)
+		MyFlag = MyFlag
+	ENDWHILE
+	IF (!NearPlayerXY(100))
+		shockHim = 0
+		shockTime = 0
+	ENDIF
+	IF (shockHim = 0)
+		IF (NearPlayerXY(100.0))
+			IF (NearPlayerXY(100.0))
+				IF (RandRange(0.0, 90.0) < 1.0)
+					shockHim = 1
+					shockTime = 0
+				ENDIF
+			ELSE
+				rand = RandRange(0.0, 100.0)
+				IF (rand < 1.0)
+					randFireX = GlobalVar + 0.03
+					randFireZ = GlobalVar + 0.03
+					randFireX = RandRange(- randFireX , randFireX )
+					randFireZ = RandRange(- randFireZ , randFireZ )
+					PLAYSOUND>SQUAR009PMIX 2 1.0 0.0 0.0 0.0 0
+					CREATE SPAWN_RED_LASER_ENEMY -1.3, 0.0, -0.6, randFireX, 0, randFireZ, 0
+					CREATE SPAWN_RED_LASER_ENEMY 1.3, 0.0, -0.6, randFireX, 0, randFireZ, 0
+					IF (GlobalVar > 0.01)
+						GlobalVar = GlobalVar - 0.01
+					ENDIF
+				ENDIF
+			ENDIF
+		ENDIF
+	ELSE	
+		shockTime = shockTime + 1
+		IF (shockTime > 0)
+			IF (shockTime = 1)
+				PLAYSOUND>HOVERBOT_SPARK1 1 0.85 0.0 0.0 0.0 CONTINUOUS
+			ENDIF
+			MyStratToWorld(-HOR_FIRE, FOR_FIRE, 0.0)
+			tx = CheckX
+			ty = CheckY
+			tz = CheckZ 
+			MyStratToWorld(0.0, FOR_FIRE, VERT_FIRE)
+			DrawShock(tx, ty, tz, CheckX, CheckY, CheckZ, 0.1, 2.0, 2.0)
+		ENDIF
+			
+		IF (shockTime > TWOTHIRDSSEC)
+			IF (shockTime = (TWOTHIRDSSEC+1))
+				PLAYSOUND>HOVERBOT_SPARK2 1 0.85 0.0 0.0 0.0 CONTINUOUS
+			ENDIF
+			MyStratToWorld(0.0, FOR_FIRE, VERT_FIRE)
+			tx = CheckX
+			ty = CheckY
+			tz = CheckZ
+			MyStratToWorld(HOR_FIRE, FOR_FIRE, 0.0)
+			DrawShock(tx, ty, tz, CheckX, CheckY, CheckZ, 0.1, 2.0, 2.0)
+		ENDIF
+
+		IF (shockTime > ONESECONETHIRD)
+			IF (shockTime = (ONESECONETHIRD+1))
+				PLAYSOUND>HOVERBOT_SPARK1 1 0.85 0.0 0.0 0.0 CONTINUOUS
+			ENDIF
+			MyStratToWorld(HOR_FIRE, FOR_FIRE, 0.0)
+			tx = CheckX
+			ty = CheckY
+			tz = CheckZ
+			MyStratToWorld(0.0, FOR_FIRE, -VERT_FIRE)
+			DrawShock(tx, ty, tz, CheckX, CheckY, CheckZ, 0.1, 2.0, 2.0)
+		ENDIF
+
+		IF (shockTime > TWOSECS)
+			IF (shockTime = (TWOSECS+1))
+				PLAYSOUND>HOVERBOT_SPARK2 1 0.85 0.0 0.0 0.0 CONTINUOUS
+			ENDIF
+			MyStratToWorld(0.0, FOR_FIRE, -VERT_FIRE)
+			tx = CheckX
+			ty = CheckY
+			tz = CheckZ
+			MyStratToWorld(-HOR_FIRE, FOR_FIRE, 0.0)
+			DrawShock(tx, ty, tz, CheckX, CheckY, CheckZ, 0.1, 2.0, 2.0)
+		ENDIF
+
+		IF (shockTime > TWOSECSTWOTHIRDS)
+			IF (shockTime = (TWOSECSTWOTHIRDS+1))
+				PLAYSOUND>HOVERBOT_SPARK1 1 0.85 0.0 0.0 0.0 CONTINUOUS
+			ENDIF
+			MyStratToWorld(0.0, FOR_FIRE, 0.0)
+			tx = CheckX
+			ty = CheckY
+			tz = CheckZ
+			MyStratToWorld(-HOR_FIRE, FOR_FIRE, 0.0)
+			DrawShock(tx, ty, tz, CheckX, CheckY, CheckZ, 0.2, 2.0, 2.0)
+			MyStratToWorld(HOR_FIRE, FOR_FIRE, 0.0)
+			DrawShock(tx, ty, tz, CheckX, CheckY, CheckZ, 0.2, 2.0, 2.0)
+			MyStratToWorld(0.0, FOR_FIRE, VERT_FIRE)
+			DrawShock(tx, ty, tz, CheckX, CheckY, CheckZ, 0.2, 2.0, 2.0)
+			MyStratToWorld(0.0, FOR_FIRE, -VERT_FIRE)
+			DrawShock(tx, ty, tz, CheckX, CheckY, CheckZ, 0.2, 2.0, 2.0)
+		ENDIF
+
+		IF ((shockTime > THREESECSONETHIRD) AND (shockTime < 120) AND (PlayerHealth > 0.0))
+			IF (shockTime = (THREESECSONETHIRD+1))
+				PLAYSOUND>HOVERBOT_ZAP 2 0.9 0.0 0.0 0.0 CONTINUOUS
+			ENDIF
+			IF (!PlayerReward(0, CHEAT_INVUL))
+				PlayerHealth = PlayerHealth - 0.5
+			ENDIF
+			Lightning = DrawLightning (0, 0, 0, 0, Lightning,0)
+		ENDIF
+
+		IF (shockTime > 120)
+			shockHim = 0
+			shockTime = 0
+			StopSound(1,0)
+			StopSound(2,0)
+		ENDIF
+	ENDIF
+ENDSTATE
+
+STATE HoverBotElectricGetBusy
+	time = time + 1
+	IF (NearPlayer(REVERSERANGE))
+		Mode = (Mode | REVERSE | ENGAGED) & LNOT(FORWARD)
+		IF (velocity > -1.0)
+			velocity = velocity - ACC
+		ENDIF
+	ELSE
+		IF (!NearPlayer(STOPRANGE))
+			Mode = (Mode | FORWARD) & LNOT(REVERSE)
+			IF (velocity < 1.0)
+				velocity = velocity + ACC
+			ENDIF
+		ELSE
+			velocity = velocity * 0.9	
+		ENDIF
+	ENDIF	
+	IF (velocity < 0.0)
+		IF (!NearActivationXY(0))
+			IF (FirstSplineSection())
+				IF (distToLastWay() > 5.0)
+					MoveAlongPath(velocity)
+					rx = x
+					ry = y
+					rz = z
+				ELSE
+					x = rx
+					y = ry
+					z = rz
+				ENDIF
+			ELSE
+				MoveAlongPath(velocity)
+				rx = x
+				ry = y
+				rz = z
+			ENDIF
+		ELSE
+			x = ox
+			y = oy
+			z = oz
+			MyFlag = MyFlag
+		ENDIF
+	ELSE
+		IF (LastSplineSection())
+			IF (distToLastWay() > 5.0)
+				MoveAlongPath(velocity)
+				rx = x
+				ry = y
+				rz = z
+			ELSE
+				x = rx
+				y = ry
+				z = rz
+			ENDIF
+		ELSE
+			MoveAlongPath(velocity)
+			rx = x
+			ry = y
+			rz = z
+		ENDIF
+	ENDIF
+	FaceAlongPath(2)
+	ox = x
+	oy = y
+	oz = z
+	x = x + Ssin(xang) * SCALEFAC
+	xang = xang + 0.07
+	y = y + Ssin(yang) * SCALEFAC
+	yang = yang + 0.07
+	z = z + Ssin(zang) * SCALEFAC
+	zang = zang + 0.1
+	PointToXY(DogX, DogY, DogZ)
+	IF (Mode & ENGAGED)	
+		time = time + 1
+		IF (time > 1000)
+			STAT>HoverBotElectricLegit
+		ENDIF 
+	ENDIF
+ENDSTATE
+
+STATE HoverBotElectricExplode
+	MyVar = 0.0
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+	Score = Score + 1000
+//	adrelanin = adrelanin + 0.1
+	Delete()
+//	TRIGSTOP
+ENDSTATE
+
+STATE HoverBotElectricLegit
+	MoveZ(0.1)
+	shockTime = 0 
+	time = time + 1
+	IF (time > aliveTime)
+		Delete()
+	ENDIF
+ENDSTATE
+
+STATE HoverBotFastInit
+	MyFlag = MyFlag | ENEMY | STRATCOLL | LOWCOLL | TARGETABLE
+	RegisterCollision()
+ 	WHILE (!PlayerNearActivationXY(0))
+		MyFlag = MyFlag
+	ENDWHILE
+	xang = RandRange(0.0, 3.1415)
+	yang = RandRange(0.0, 3.1415)
+	zang = RandRange(0.0, 3.1415)
+	InitPath()
+	TRIGSET>HoverBotElectricFiringWarez EVERY 1
+	health = 1.0
+	InitSplineData()
+	GlobalVar = 0.2
+	TRIGSET>HoverBotElectricExplode WHENDEAD 
+	SetObjectShadowState(1)
+	STAT>HoverBotFastStart
+ENDSTATE
+
+STATE HoverBotFastStart
+	
+	IF (LastSplineSection())
+		IF (distToLastWay() > 5.0)
+			MoveAlongPath(fastspeed)
+		ENDIF
+	ELSE
+		MoveAlongPath(fastspeed)
+	ENDIF
+	x = x + Ssin(xang) * SCALEFAC
+	xang = xang + 0.07
+	y = y + Ssin(yang) * SCALEFAC
+	yang = yang + 0.07
+	z = z + Ssin(zang) * SCALEFAC
+	zang = zang + 0.1
+	FacePlayerXY(0.05)
+	PointToXY(DogX, DogY, DogZ)
+   
+	
+	IF (LastSplineSection())
+		IF (distToLastWay() < 5.0)
+			STAT>HoverBotFastLegit		
+		ENDIF
+	ENDIF
+ENDSTATE
+
+STATE HoverBotFastExplode
+//	adrelanin = adrelanin + 0.1
+	Score = Score + 1000
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+	Delete()
+ //	TRIGSTOP
+ENDSTATE
+
+STATE HoverBotFastLegit
+	LOOP (60)
+		shockTime = 0 
+		MoveZ(0.1)
+	ENDLOOP
+	Delete()
+ENDSTATE

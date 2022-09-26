@@ -1,0 +1,160 @@
+LOCALINT trail
+LOCALINT Temp
+LOCALINT dead
+LOCALINT tempi
+LOCALINT time
+LOCALFLOAT tempf
+LOCALFLOAT cr
+LOCALFLOAT cg
+LOCALFLOAT cb
+LOCALFLOAT a
+LOCALFLOAT b
+LOCALFLOAT c
+
+
+STATE Init
+	MakeMeTheLast()
+  	MyFlag = MyFlag | RELVELCALC | FLOORCOLL | STRATCOLL | FRIENDLY | NOTEXPLODE | BULLETTYPE | DIRECTMOVE
+	MyFlag2 = MyFlag2 | BULLET_CF
+	SetFriction(0.0, 0.0, 0.0)
+	
+	TRIGSET>KillOffFloor	ONFLOOR
+	dead = 0
+	SetSem(0, 1)
+	scalex = 0.5
+	scaley = 0.5
+	scalez = 0.5
+	Temp = 0
+	time = 0
+	OBJECT> WEAPON\AssaultDroneShot
+	trail = CreateBand (1, 4, 0, 1, 1, 0.5, 0, 1, 0, 0, 0)
+	SetBandRotXYZandScaling (trail, 0, 0, 0, 0.95, 0.95, 0.95)
+	AddBandSegment (trail, 0.0, 0, 0, 0.3)
+	ExplosionLight (0.2, 0.2, 0, 10, 0.98, 5)
+	TRIGSET>Trailer EVERY 1
+	TRIGSET>BandTrigger EVERY 2
+	damage = 30.0
+	RegisterCollision()
+	ResetOCP()
+	MoveY(8.0)
+	TRIGSET>Remove	EVERY 45
+ 	
+	AllocStratSoundBlock(1)
+
+	// Record those collisions
+	RecordCollision(0)
+
+	STAT>SetPos
+ENDSTATE 
+
+STATE BandTrigger
+	tempf = RandRange(0.1, 0.9)
+	AddBandSegment (trail, 0.0, 0, 0, tempf)
+	TRIGFIN 
+ENDSTATE
+
+STATE Trailer
+	IF (time = 0)
+		time = 1
+		tempf = 0.1
+	ELSE
+		tempf = RandRange(0.1, 0.9)
+	ENDIF
+	
+	RubberBand (trail, 0.0, 0, 0, tempf)
+	TRIGFIN
+ENDSTATE
+
+STATE Die
+	Delete()
+ENDSTATE
+
+STATE SetPos
+	IF (!dead)
+		IF (UnderWater)
+			SubParentSem(0, 1)
+			dead = 1
+			DoSpark(20, 0.0, 0.0, 1.0, 0.4, 1.0, 50, 255, 255, 255)
+			DeleteBand (trail)
+		   	STAT>Die
+		   	
+		ENDIF
+	ENDIF
+	IF (!dead)
+		IF ((MyFlag2 & HITHDC))
+			SubParentSem(0, 1)
+			DeleteBand (trail)
+			dead = 1
+			STAT>Die
+		ENDIF
+	ENDIF
+	IF (PolyNX OR PolyNY OR PolyNZ)
+		a = PolyNX
+		b = PolyNY
+		c = PolyNZ
+	ENDIF
+ENDSTATE
+
+STATE KillOff
+	IF (!dead)
+   		SubParentSem(0, 1)
+		DeleteBand (trail)
+		dead = 1
+		Delete()
+	ENDIF
+ENDSTATE
+
+STATE ResetColl
+	TRIGSET>Remove EVERY 90
+	//TRIGSET>KillOff WHENHIT
+	TRIGSTOP
+ENDSTATE
+
+STATE KillOffFloor
+	
+	Temp = RandRange(0, 1.99)
+	IF (!(MyFlag2 & HITHDC))
+		cr = cr * 0.5
+		cg = cg * 0.5
+		cb = cb * 0.5
+		IF (!(PolyType & NODECAL))
+			AddDecal(0, Temp, 0.5, 0.5, cr, cg, cb)
+		ENDIF
+	ENDIF
+
+	MoveBackOneFrame()
+	IF (!dead)
+		dead = 1
+		SubParentSem(0, 1)
+		SetGlobalParamFloat(0, a)
+		SetGlobalParamFloat(1, b)
+		SetGlobalParamFloat(2, c)
+		CREATE SPAWN_BulletRing 0, 0, 0, 0, 0, 0, 0
+		SetGlobalParamFloat(0, 0)
+		SetGlobalParamFloat(1, 0)
+		SetGlobalParamFloat(2, 0)
+		DeleteBand (trail)
+		Delete()
+	ENDIF
+ENDSTATE
+
+STATE Remove
+	IF (!dead)
+		SubParentSem(0, 1)
+		DeleteBand (trail)
+		dead = 1
+		Delete()
+	ENDIF
+ENDSTATE
+
+LOCALINT MainTarget
+
+TRIGGER HitStrat
+	IF (!dead)
+   		SubParentSem(0, 1)
+		DeleteBand (trail)
+		dead = 1
+		Delete()
+	ENDIF
+
+ENDTRIGGER

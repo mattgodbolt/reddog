@@ -1,0 +1,24 @@
+LOCALFLOAT	time
+
+STATE Init
+	MyFlag = MyFlag | ENEMY
+	time = 0.0
+	OBJECT>SFX\ExplosionShardGround
+	MODELANIM>SFX\ExplosionShardGround.RDO>Play>0
+	IF (GetGlobalParamFloat(0) != 0.0)
+		scalex = scaley = scalez = GetGlobalParamFloat(0)
+	ENDIF
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	WHILE (MyAnimFlag & RUNNING)
+		time = time + 1.0
+		IF (time > 46.0)
+			MyFlag2 = MyFlag2 | TRANSLUCENT
+			trans = (51.0 - time) / 5.0
+		ENDIF
+		MyFlag = MyFlag
+	ENDWHILE
+	Delete()
+ENDSTATE

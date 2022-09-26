@@ -1,0 +1,116 @@
+LOCALINT outerBand
+LOCALINT foundTarget
+LOCALINT Temp
+LOCALINT pn
+LOCALFLOAT length
+LOCALINT	dead
+
+
+STATE Init
+	dead = 0
+	pn = GetGlobalParamInt(0)
+	MakeMeTheLast()
+  	MyFlag = MyFlag | NODISP | RELVELCALC | FLOORCOLL | STRATCOLL | FRIENDLY | NOTEXPLODE | BULLETTYPE 
+    MyFlag2 = MyFlag2 | BULLET_CF
+	
+	damage = 10.0
+	TRIGSET>KillOff			WHENHIT
+	TRIGSET>KillOffFloor	ONFLOOR
+   	OBJECT> WEAPON\REDDOGLASER
+	RegisterCollision()
+	SetFriction(0.2,0.2,0.2)
+	TRIGSET>Remove	EVERY 90
+	MoveY(3.0)
+	
+	MyVar = pn
+	outerBand = CreateBand (1, 3, 0, 1, 1, 0, 0, 0.6, 0, 0, 1)
+	AddBandSegment (outerBand, 0, 0, 0, 0.5)
+	foundTarget = GetHomingBulletTarget(pn)
+	
+	TRIGSET>BandTrigger EVERY 1 
+
+	RecordCollision(0)
+	LOOP(2)
+		MyFlag = MyFlag
+	ENDLOOP
+	STAT>SetPos
+ENDSTATE 
+
+STATE BandTrigger
+	AddBandSegment (outerBand, 0, 0, 0, 0.5)
+	TRIGFIN
+ENDSTATE
+
+STATE SetPos
+	IF (!ValidStrat(foundTarget))
+		MoveY(0.6)
+	ELSE
+		IF (foundTarget != 0)
+			IF (SetCheckPosToTarget(foundTarget))
+				TowardWay(1.65,1.0)	
+			ELSE
+				STAT>Remove
+			ENDIF
+		ENDIF
+		MoveY(0.6)
+	ENDIF
+	IF (!dead)
+		IF (UnderWater)
+			dead = 1
+			DeleteBand (outerBand)
+			SubParentSem(0, 1)
+			Delete()
+		ENDIF
+	ENDIF
+ENDSTATE
+
+STATE KillOff
+	IF (!dead)
+		dead = 1
+		DeleteBand (outerBand)
+		SubParentSem(0, 1)
+		Delete()
+	ENDIF
+ENDSTATE
+
+
+STATE ResetColl
+	TRIGSET>Remove EVERY 90
+	TRIGSET>KillOff WHENHIT
+	TRIGSTOP
+ENDSTATE
+
+
+STATE KillOffFloor
+	IF (!dead)
+		dead = 1
+		IF (PlayerState = PS_ONTRAIN)
+			CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+		ENDIF
+
+		Temp = RandRange(0, 1.99)
+		IF (!(MyFlag2 & HITHDC))
+			IF (!(PolyType & NODECAL))
+				AddDecal(0, Temp, 0.5, 0.5, 0.4, 0, 0)
+			ENDIF
+		ENDIF
+		DeleteBand (outerBand)
+		
+		MoveBackOneFrame()
+		MakeFrags (0.1, 12)
+ 		
+		SubParentSem(0, 1)
+		Delete()
+	ENDIF
+ENDSTATE
+
+STATE Remove
+	IF (!dead)
+		dead = 1
+		DeleteBand (outerBand)
+		SubParentSem(0, 1)
+		Delete()
+	ENDIF
+ENDSTATE
+
+

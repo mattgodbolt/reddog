@@ -1,0 +1,17 @@
+STATE Init
+	MyFlag = MyFlag | ENEMY
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	WHILE (!BattleTankInActivation(0))
+		MyFlag = MyFlag 
+	ENDWHILE
+	STAT>Explode
+ENDSTATE
+
+STATE Explode
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+   //	TRIGSTOP
+	DESTROYME SPAWN_EXPLODINGBITS
+ENDSTATE

@@ -1,0 +1,74 @@
+PARAMINT	DelayFor	0
+LOCALFLOAT	speed
+
+STATE Init
+	MyFlag = MyFlag & LNOT(ENEMY)
+	MyFlag = MyFlag | FRIENDLY
+	IF (!(MyFlag2 & OWNIPARAMS))
+		DelayFor = 0
+	ENDIF
+
+	IF (PAL)
+		DelayFor = DelayFor / 1.2
+	ENDIF
+	WHILE (DelayFor > 0)
+		DelayFor = DelayFor - 1
+	ENDWHILE
+
+	InitPath()
+	SetPlayerBoostButtonCount(0, 0)
+	speed = 0.0
+	PlayerState = PS_ONPATH
+	STAT> Start
+ENDSTATE
+
+STATE Start
+	GetPrevWay()
+	PlayerCheckX = CheckX
+	PlayerCheckY = CheckY
+	PlayerCheckZ = CheckZ
+	STAT> FollowPath
+ENDSTATE
+
+STATE FollowPath
+	PlayerTurnTowardPlayerCheckPosXY()
+	PlayerControlPadPress = PADSHOULDERR | PADFORWARD
+	IF (LastWay())
+		speed = PlayerDistPlayerCheckXY() * 0.004
+		IF (speed > 1.0)
+			speed = 1.0
+		ENDIF
+	ELSE
+		speed = 1.0
+	ENDIF
+	PlayerControlPlayerAcc = speed
+	IF (LastWay())
+		IF (PlayerNearPlayerCheckPosXY(0.0))
+			IF (HasActivation(1))
+				GetActivationPos(1)
+				PlayerCheckX = CheckX
+				PlayerCheckY = CheckY
+				PlayerCheckZ = CheckZ
+			ENDIF
+			//LOOP (15)
+			//	PlayerControlPlayerAcc = 0.1
+			//ENDLOOP
+			STAT> Finish
+		ENDIF
+	ELSE
+		PlayerState = PS_ONPATH
+		SetPlayerBoostButtonCount(0, 0)
+		IF (PlayerNearPlayerCheckPosXY(5.0))
+			GetNextWay()
+			PlayerCheckX = CheckX
+			PlayerCheckY = CheckY
+			PlayerCheckZ = CheckZ
+		ENDIF
+	ENDIF
+ENDSTATE
+
+STATE Finish
+	PlayerHeld = 0
+	PlayerState = PS_NORMAL
+	Delete()
+ENDSTATE

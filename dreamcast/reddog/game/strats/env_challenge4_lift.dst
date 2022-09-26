@@ -1,0 +1,211 @@
+LOCALINT i
+LOCALINT nframes
+LOCALFLOAT f
+
+STATE Init
+	MyFlag = MyFlag | STRATCOLL | ENEMY
+	MyFlag2 = MyFlag2 | HOLDPLAYER
+	RegisterCollision()
+	InitHDC()
+	CalculateStratPolyData(1)
+	STAT>Start
+ENDSTATE
+
+STATE Start
+
+	WHILE (MyParentInvalid())
+		MyFlag = MyFlag
+	ENDWHILE
+
+	// Wait for my parent (the mission briefing) to delete
+	WHILE (MyParentFlag)
+		HoldPlayerPos(0, 0, 0, 0.9)
+		HoldPlayerRot(0, 0, 0, 0)
+		PlayerHeld = 1
+	ENDWHILE
+
+//	WHILE (!(MyFlag2 & PLAYERHIT))
+//		MyFlag = MyFlag
+//	ENDWHILE
+
+   AllocStratSoundBlock(2)
+	PLAYSOUND>LIFT_ALIEN 0 0.8 0.0 0.0 0.0 CONTINUOUS | NODOPPLER
+	   	
+	TRIGSET>Always EVERY 1
+	//Drop to door 1
+	i = 0
+	WHILE (i < 200)
+		i = i + 1
+		f = SmoothFromTo(50, i, 200)
+		z = z - f
+		CalculateStratPolyData(1)
+		IF (i = 150)
+			SetSem(0, 1)
+		ELSE
+			frame = i / 400.0
+			IF (frame < 0.27)
+			   	SetPitch(0,-frame)
+			ENDIF
+	   	ENDIF
+
+	ENDWHILE
+	StopSound(0,0)
+   	PLAYSOUND>BUMP4 1 1.0 0.0 0.0 0.0 NOPOSITION
+
+	
+	WHILE (GetSem(2) = 0)
+		MyFlag = MyFlag
+	ENDWHILE
+	SetSem(2, 0)
+
+	SetSem(1, 0)
+	SetSem(0, 2)
+
+	//Drop to door 2
+	LOOP (60)
+		MyFlag = MyFlag
+	ENDLOOP
+	
+	PLAYSOUND>LIFT_ALIEN 0 0.8 0.0 0.0 0.0 CONTINUOUS
+	
+	i = 0
+	IF (PAL)
+		nframes = 167
+	ELSE
+		nframes = 200
+	ENDIF
+
+	WHILE (i < nframes)
+		i = i + 1
+		f = SmoothFromTo(42, i, nframes)
+		z = z - f
+		f = SmoothFromTo(3.14159 * 0.5, i, nframes)
+		IF (PAL)
+			RelRotateZ(-f * 0.83333)
+		ELSE
+			RelRotateZ(-f)
+		ENDIF
+		CalculateStratPolyData(1)
+		IF (i = 150)
+			SetSem(0, 3)
+		ELSE
+			frame = i / (nframes * 2.0)
+			IF (frame < 0.27)
+			   	SetPitch(0,-frame)
+			ENDIF
+		ENDIF
+	ENDWHILE
+
+	StopSound(0,0)
+   	PLAYSOUND>BUMP4 1 1.0 0.0 0.0 0.0 NOPOSITION
+
+	WHILE (GetSem(2) = 0)
+		MyFlag = MyFlag
+	ENDWHILE
+	SetSem(2, 0)
+
+	SetSem(1, 0)
+	SetSem(0, 4)
+
+	//Drop to door 3
+	LOOP (60)
+		MyFlag = MyFlag
+	ENDLOOP
+	
+	
+	i = 0
+	IF (PAL)
+		nframes = 167
+	ELSE
+		nframes = 200
+	ENDIF
+	PLAYSOUND>LIFT_ALIEN 0 0.8 0.0 0.0 0.0 CONTINUOUS
+	WHILE (i < nframes)
+		i = i + 1
+		f = SmoothFromTo(42, i, nframes)
+		z = z - f
+		f = SmoothFromTo(3.14159 * 0.5, i, nframes)
+		IF (PAL)
+			RelRotateZ(-f * 0.83333)
+		ELSE
+			RelRotateZ(-f)
+		ENDIF
+		CalculateStratPolyData(1)
+		IF (i = 150)
+			SetSem(0, 5)
+		ELSE
+			frame = i / (nframes * 2.0)
+			IF (frame < 0.27)
+			   	SetPitch(0,-frame)
+			ENDIF
+		ENDIF
+	ENDWHILE
+
+	StopSound(0,0)
+   	PLAYSOUND>BUMP4 1 1.0 0.0 0.0 0.0 NOPOSITION
+	WHILE (GetSem(2) = 0)
+		MyFlag = MyFlag
+	ENDWHILE
+	SetSem(2, 0)
+
+	SetSem(1, 0)
+	SetSem(0, 6)
+
+	//Drop to door 4
+	LOOP (60)
+		MyFlag = MyFlag
+	ENDLOOP
+	
+	
+	i = 0
+	IF (PAL)
+		nframes = 167
+	ELSE
+		nframes = 200
+	ENDIF
+	PLAYSOUND>LIFT_ALIEN 0 0.8 0.0 0.0 0.0 CONTINUOUS
+	WHILE (i < nframes)
+		i = i + 1
+		f = SmoothFromTo(42, i, nframes)
+		z = z - f
+		f = SmoothFromTo(3.14159 * 0.5, i, nframes)
+		IF (PAL)
+			RelRotateZ(-f * 0.83333)
+		ELSE
+			RelRotateZ(-f)
+		ENDIF
+		CalculateStratPolyData(1)
+		IF (i = 150)
+			SetSem(0, 7)
+		ELSE
+			frame = i / (nframes * 2.0)
+			IF (frame < 0.27)
+			   	SetPitch(0,-frame)
+			ENDIF
+		ENDIF
+	ENDWHILE
+
+	StopSound(0,0)
+   	PLAYSOUND>BUMP4 1 1.0 0.0 0.0 0.0 NOPOSITION
+	WHILE (GetSem(2) = 0)
+		MyFlag = MyFlag
+	ENDWHILE
+	SetSem(2, 0)
+
+	SetSem(1, 0)
+	SetSem(0, 8)
+	
+
+	WHILE (1)
+		MyFlag = MyFlag
+	ENDWHILE
+ENDSTATE
+
+TRIGGER Always
+	HoldPlayerPos(0, 0, 0, 0.9)
+	HoldPlayerRot(0, 0, 0, 0)
+	SetPlayerOCP()
+	//PlayerState = PS_TOWERLIFT
+	PlayerHeld = 1
+	TRIGFIN
+ENDTRIGGER

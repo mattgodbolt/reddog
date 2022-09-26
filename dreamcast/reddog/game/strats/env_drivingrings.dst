@@ -1,0 +1,25 @@
+LOCALFLOAT tempi
+LOCALFLOAT tempf
+
+STATE Init
+	//ENSURE A MODEL OF SOME SORT IS ASSIGNED
+	IF (!PNode)
+		OBJECT>Pickups\SinglePlayer\Bomb
+		MODELANIM>Pickups\SinglePlayer\Bomb.RDO>play>REPEAT
+	ENDIF
+
+	MyFlag = MyFlag | STRATCOLL | ENEMY
+	RegisterCollision()
+	WHILE (!(MyFlag2 & PLAYERHIT))
+		MyFlag = MyFlag
+	ENDWHILE
+	LOOP (10)
+		tempi = tempi + 1
+		tempf = SmoothFromToSum(0.999, tempi, 10)
+		scalex = 1.0 - tempf
+		scaley = 1.0 - tempf
+		scalez = 1.0 - tempf
+	ENDLOOP
+	Delete()
+ENDSTATE
+

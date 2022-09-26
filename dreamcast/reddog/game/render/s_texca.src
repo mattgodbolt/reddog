@@ -1,0 +1,1250 @@
+; All new, all-singing, all-dancing textured scape renderer!
+				.CPU		SH4
+				.OUTPUT		DBG=DWARF
+				.INCLUDE	"..\RedDog.pre"
+
+; Prototype: StripHeader *texturedStripRasteriserClipped
+; (StripPos *v, StripEntry *strip, Uint32 nStrip, ModelContext *context);
+
+; Register allocation:
+temp:			.REG		R0		; temporary register, R0 is most accessible
+retVal:			.REG		R0		; r0 is also the return value
+lightingBuf:	.REG		R1		; the lighting buffer
+curVertex:		.REG		R2		; the number of the vertex in the 3-vert round-robin buffer
+pkm:			.REG		R3		; where to stick the next vertex, TA-wise
+vertTab:		.REG		R4		; address of the vertex table
+strip:			.REG		R5		; the strip pointer
+nStrip:			.REG		R6		; number of vertices left in this strip
+context:		.REG		R7		; pointer to the context
+
+v:				.REG		R8		; pointer to current vertex position
+pcw:			.REG		R8		; [olap] paramcontrolword
+
+outcode:		.REG		R9		; current outcode
+
+temp2:			.REG		R10		; another temporary register
+diff:			.REG		R10		; [olap] difference in outcoding
+v0:				.REG		R10		; [olap] vertex 0 pointer in clipping
+
+mask:			.REG		R11		; used as a mask, and a temporary register
+v1:				.REG		R11		; [olap] vertex 1 pointer in clipping
+
+uv_u:			.REG		R12		; u value
+abs_w:			.REG		R12		; [olap] absolute binary W
+v2:				.REG		R12		; [olap] vertex 2 pointer in clipping
+
+uv_v:			.REG		R13		; v value
+t:				.REG		R13		; [olap] used in outcoding
+counter:		.REG		R13		; [olap] used in clipping
+
+col:			.REG		R14		; colour value
+temp3:			.REG		R14		; [olap] more temp action
+addrV1:			.REG		R14		; [olap] vertex 1's position in the alpha
+
+; Floating point madness
+				DEC_XYZW	vert, 4, 5, 6, 7	; vertex position
+X:				.FREG		FR4
+Y:				.FREG		FR5
+Z:				.FREG		FR6
+W:				.FREG		FR7		; NOT tother way aroond
+midX:			.FREG		FR8		; screen midpoint X
+midY:			.FREG		FR9		; screen midpoint Y
+mulX:			.FREG		FR10	; screen size X
+mulY:			.FREG		FR11	; screen size Y
+rW:				.FREG		FR0
+alpha:			.FREG		FR0		; [olap] alpha value
+rWnearVal:		.FREG		FR1		; rW at camera plane
+U:				.FREG		FR2
+V:				.FREG		FR3
+
+; Offsets:
+_X:				.EQU		0
+_Y:				.EQU		4
+_Z:				.EQU		8
+_W:				.EQU		12
+_U:				.EQU		16
+_V:				.EQU		20
+_preColour:		.EQU		24
+_dynColour:		.EQU		28
+_outcode:		.EQU		32
+_rW:			.EQU		36
+_scrY:			.EQU		40
+_scrX:			.EQU		44
+_padding:		.EQU		48
+
+				.SECTION	PSCAPERAST, CODE, ALIGN=16
+
+; Outcode description:
+; bit  |  meaning
+; -----+-----------
+;  0   |  Off near
+;  1   |  Off left
+;  2   |  Off right
+;  3   |  Off top
+;  4   |  Off bottom
+
+				.MACRO pad
+				; NOP no nops for speed
+				.ENDM
+
+; curVertex bits:
+; lower 2 bits are the current vertex
+; bit 3 is the parity, if set then the triangle is the 'right way around'
+; bit 4 is the continuation flag, if clear then the previous two vertices need to be sent before 'this'
+
+; Subroutine: Prepares a vertex read from strip into the buffer pointed to
+;			  by R0
+; Corrupts: everything barring the pointers
+				.ALIGN	16
+PrepareVertex:
+				MOV.L	@strip+, temp2			; read in the vertex number
+				pad
+
+				pad
+				pad
+
+				MOV		temp2, v				; move into the v register
+				SHLL2	v						; get v as an offset into the vertex table
+
+				ADD		vertTab, v				; v now points at the vertex in question
+				FLDI1	vertW					; vertW all set for the transformation
+
+				FMOV.S	@v+, vertX				; read in the X position
+				MOV		#-1, mask				; get mask=0xffffffff
+
+				FMOV.S	@v+, vertY				; read in Y position
+				SHLR	mask					; mask is now 0x7fffffff
+
+				FMOV.S	@v+, vertZ				; read in the Z position
+				ADD		lightingBuf, temp2		; find the address of the lightingBuf address
+
+				MOV.L	@strip+, uv_u			; read the UV value from strip
+				pad
+
+				FTRV	XMTRX, vert				; transform the vertex [5-7 cyc lat]
+				MOV.L	@temp2, temp2			; read the dynamic lighting value
+
+				FLDI1	rW						; get 1 in rW ready for reciprocation
+				ADD		#32, strip				; move strip on for a prefetch
+
+				MOV.L	temp2, @(_dynColour, R0); store in the dynamic colour
+				EXTU.W	uv_u, uv_v				; clear the top 16 bits of uv to get v into v
+
+				MOV.L	@v+, col
+				SHLR16	uv_u					; move u down to clear the bottom bits
+
+				SHLL16	uv_v					; shift v back up == VVVV0000
+				FLDI0	U						; load U ready for the comparison
+
+				MOV.L	col, @(_preColour, R0)	; store in the prelit colour
+				SHLL16	uv_u					; shift U back up == UUUU0000
+
+				MOV.L	uv_v, @(_V, R0)			; store V
+				pad
+
+				MOV.L	uv_u, @(_U, R0)			; store U
+				ADD		#_U, R0					; move R0 past the point data
+; FTRV ready here
+				FLDS	W, FPUL					; get bin(W)
+				FCMP/GT	Z, U					; is 0 > Z? ie is z <= 0 [4 cyc lat]
+
+				STS		FPUL, abs_w				; abs_w is bin(W)
+				pad
+
+				FLDS	X, FPUL					; load X into FPUL ready for bin(X)
+				AND		mask, abs_w				; get abs(bin(W))
+
+				STS		FPUL, t					; get bin(X) into t
+				MOV		abs_w, diff				; diff = abs_w
+
+				FLDS	Y, FPUL					; load Y into FPUL for bin(Y)
+				MOV		t, temp3				; blimey another temporary register
+
+				AND		mask, temp3				; temp3 is abs(bin(X))
+				FDIV	W, rW					; get some reciprocation going now
+
+				MOVT	outcode					; bit 0 is now Z <= 0 (near clip bit)
+				PREF	@strip					; prefetch the next strip information
+
+				SHLL	t						; T bit is top bit of bin(X)
+				FMOV.S	W, @-R0					; store W
+
+				MOVT	t						; store T into the t
+				FMOV.S	Z, @-R0					; store Z
+
+				SUB		temp3, diff				; diff = abs_w - abs(bin(X))
+				FMOV.S	Y, @-R0					; store Y
+
+				SHLL	diff					; T bit = sign(abs_w - abs(bin(X)))
+				STS		FPUL, temp3				; temp3 is bin(Y)
+				
+				ADD		#1, t					; t is now 1 + sign of X
+				FMOV.S	X, @-R0					; store X
+
+				MOVT	diff					; diff = T bit == sign(abs_w - abs(bin(X)))
+				FMUL	mulX, X					; X = X * screen size X
+
+				SHLD	t, diff					; diff = (abs_w - abs(bin(X))) << t
+				FMUL	mulY, Y					; Y = Y * screen size Y
+
+				OR		diff, outcode			; outcode |= 0, 2 or 4 depending of X outcode
+				pad
+
+				MOV		temp3, t				; get a copy of bin(y)
+				AND		mask, temp3				; temp3 = abs(bin(y))
+
+				SHLL	t						; get top bit into t == sign of y
+				FMOV.S	midX, U					; U is mid X ready for the FMAC
+
+				MOVT	t						; t == 1 or 0 depending on sgn (y)
+				FMOV.S	midY, V					; V is mid Y ready for the FMAC
+
+				MOV		abs_w, diff				; move abs_w into diff
+				SUB		temp3, diff				; diff = abs_w - abs(bin(y))
+
+				SHLL	diff					; T bit = sign(abs_w - abs(bin(y)))
+				FMAC	rW, X, U				; U = midX + X * screen size * rW
+
+				ADD		#3, t					; t = 3 or 4
+				FMAC	rW, Y, V				; V = midY + Y * screen size * rW
+
+				MOVT	diff					; diff = T bit = sign(abs_w - abs(bin(y)))
+				pad
+
+				ADD		#_rW, R0				; point R0 at 1/w's place
+				pad
+
+				SHLD	t, diff					; diff = sign(abs_w - abs(bin(y))) << t
+				FMOV.S	rW, @R0					; store 1/w
+
+				OR		diff, outcode			; outcode is now complete - huzzah!
+				pad
+
+				ADD		#12, R0					; point R0 at the transformed X and Y
+				FMOV.S	U, @-R0					; store transformed X
+
+				FMOV.S	V, @-R0					; store transformed Y
+				ADD		#-_scrY, R0				; move R0 back to the beginning
+
+				ADD		#-32, strip				; move strip back to whence it came
+				RTS								; return, and as a slot:
+				MOV.L	outcode, @(_outcode, R0); [slot] store the outcode back
+
+
+; Support routine: Output a vertex
+;				vertex pointed to by r0, output is pkm
+;				leaves pkm pointing at the PCW, and with SQ requiring dispatch
+;				corrupts only FP and temp3
+;				sets pcw to be 0xe0000000
+;				returns (curVertex+temp3 % 3) in R0
+				.ALIGN 16
+OutputVertex:
+				ADD		#_U, R0					; point r0 at the U value
+
+				ADD		#32, pkm				; point at the end of the vertex
+				FMOV.S	@R0+, U					; read U
+
+				FMOV.S	@R0+, V					; read V
+				MOV		#H'E, pcw				; pcw = 0xe
+
+				FMOV.S	@R0+, vertX				; read prelighting
+				SHLL16	pcw						; pcw = 0xe<<16
+
+				FMOV.S	@R0, vertY				; read dynamic lighting
+				ADD		#8, R0					; skip over to 1/w
+
+				FMOV.S	@R0+, vertZ				; read rW
+				SHLL8	pcw						; pcw = 0xe<<24
+
+				FMOV.S	@R0+, rW				; read screen X
+				SHLL2	pcw						; pcw = 0xe<<26
+
+				FMOV.S	@R0+, vertW				; read screen Y
+				SHLL2	pcw						; pcw = 0xe<<28 == 0xe0000000
+
+				FMOV.S	vertY, @-pkm			; store dynamic lighting
+				MOV		curVertex, R0			; get curvertex
+
+				FMOV.S	vertX, @-pkm			; store prelighting
+				AND		#3, R0					; just get the vertex number
+
+				FMOV.S	V, @-pkm				; store V
+				ADD		temp3, R0				; curVertex + temp3
+
+				MOV		#3, temp3				; check 3
+				FMOV.S	U, @-pkm				; store U
+
+				CMP/GE	temp3, R0				; check for curVertex overflow
+				FMOV.S	vertZ, @-pkm			; store 1/w
+
+				BF/S	?ok						; is it OK to skip
+				FMOV.S	rW, @-pkm				; store screen Y [slot]
+
+				ADD		#-3, R0					; reset R0 to 0
+?ok				FMOV.S	vertW, @-pkm			; store screen X
+				RTS
+				ADD		#-4, pkm				; reset pkm to point at pcw
+
+; Support routines: Output a vertex halfway between R0 and addrV1
+;					Corrupts all FP, PCW
+OutputAlpha:	; first read Z for both to get the alpha calculation done first
+				ADD		#_Z, R0					; point R0 at v0.z
+				pad
+
+				ADD		#_Z, addrV1				; point addrV1 at v1.z
+				FMOV.S	@R0, Z					; read v0.z into Z
+
+				FMOV.S	@addrV1, alpha			; read v1.z into alpha
+				ADD		#-_Z, R0				; put r0 back to the beginning
+
+				FMOV.S	@R0+, X					; read v0.x into X
+				ADD		#-_Z, addrV1			; move addrV1 back to the beginning also
+
+				FMOV	alpha, W				; take a copy of v1.z into W
+				FSUB	Z, W					; W = v1.z - v0.z
+
+				FMOV.S	@R0+, Y					; read v0.y into Y
+				ADD		#8, R0					; move R0 to point at the UV values
+
+				FMOV.S	@addrV1+, U				; U = v1.X
+				pad
+
+				FDIV	W, alpha				; alpha = v1.z / (v1.z - v0.z) in about 12 cycle's time
+				FMOV.S	@addrV1+, V				; V = v1.Y
+
+				FMOV	X, W					; W is temporarily v0.X
+				FSUB	U, W					; W = v0.X - v1.X
+
+				FMOV	Y, Z					; Z is temporarily v0.Y
+				FSUB	V, Z					; Z = v0.Y - v1.Y
+
+				; stall for 10 cycles here - travesty!
+
+				ADD		#8, addrV1				; move on to the uvs
+				FMAC	alpha, Z, V				; V = v1.Y + alpha * (v1.Y - v0.Y)
+
+				FMAC	alpha, W, U				; U = v1.X + alpha * (v1.X - v0.X)
+				pad
+				
+				pad
+				pad
+
+				FMUL	rWnearVal, V			; perspectivize Y
+				pad
+
+				FMUL	rWnearVal, U			; perspectivize X
+				ADD		#16, pkm				; move pkm on
+
+				FMUL	mulY, V					; scale to fit on screen in Y
+				FMOV.S	@R0+, X					; X is v0.u
+
+				FMUL	mulX, U					; scale to fit on screen in X
+				FMOV.S	@R0+, Y					; Y is v0.v
+
+				FADD	midY, V					; V is a screen pos at last too
+				pad
+
+				FADD	midX, U					; U is a screen pos at last
+				FMOV.S	rWnearVal, @-pkm		; store 1/near clip value
+
+				FMOV.S	V, @-pkm				; store Y value
+				pad
+
+				FMOV.S	U, @-pkm				; store X value
+
+;stall
+
+				FMOV.S	@addrV1+, U				; read v1.U into U
+
+				FMOV.S	@addrV1+, V				; read v1.V into V
+
+				FMOV	X, Z					; copy v0.U into Z
+				FSUB	U, Z					; Z = v0.U - v1.U
+
+				FMOV	Y, W					; copy v0.V into W
+				FSUB	V, W					; W = v0.V - v1.V
+
+				pad
+				pad
+
+				FMAC	alpha, Z, U				; U = alpha * v1.U - v0.U + v1.U
+
+				FMAC	alpha, W, V				; V = alpha * v1.V - v0.V + v1.V
+				ADD		#20, pkm				; move pkm to the end of the UV area
+
+				pad
+				pad
+
+				FMOV.S	V, @-pkm
+
+				FMOV.S	U, @-pkm
+
+				PUSH	outcode
+
+				PUSH	temp2
+				ADD		#16, pkm				; point at end of colour
+
+				PUSH	t
+				MOV		#4, temp2				; loop counter is 4
+
+				ADD		#7, R0					; move to end of colour
+
+				ADD		#7, addrV1				; move to end of colour
+
+				MOV		#0, outcode				; outcode 
+
+?colourLoop		MOV.B	@R0, pcw				; read a byte of colour into pcw
+				ADD		#-1, R0					; move down
+
+				EXTU.B	pcw, pcw				; zero those top bits
+				MOV.B	@addrV1, t				; read a second byte of colour
+
+				ADD		#-1, addrV1				; move down
+				LDS		pcw, FPUL				; FPUL madness
+
+				EXTU.B	t, t					; zero those top bits
+				FLOAT	FPUL, X					; X is colour 1
+
+				SHLL8	outcode
+				CMP/EQ	t, pcw					; are they the same?
+
+				LDS		t, FPUL					; FPUL madness again
+				BT		?sameColours
+
+				FLOAT	FPUL, Y					; Y is colour 2
+
+				FSUB	Y, X					; X = (colour 1 - colour 2)
+
+				FMAC	alpha, X, Y				; Y = (colour 1 - colour 2) * alpha
+
+				FTRC	Y, FPUL					; FPUL is the colour
+
+				STS		FPUL, pcw
+?sameColours	DT		temp2
+
+				BF/S	?colourLoop
+				OR		pcw, outcode			; store in the outcode madness
+
+				MOV.L	outcode, @-pkm
+
+				; have we done?
+				MOV		#7, t
+				TST		t, pkm
+
+				BT		?hoorayTheEnd
+
+				BRA		?colourLoop
+				MOV		#4, temp2
+
+				MOV		#0, outcode
+
+?hoorayTheEnd
+				POP		t
+		
+				POP		temp2
+
+				POP		outcode
+				RTS
+				ADD		#-24, pkm				; reset pkm to the beginning
+
+
+				.EXPORT _texturedStripRasteriserClipped
+				.ALIGN 16
+_texturedStripRasteriserClipped:
+				; Enormous stacking action
+				PREF	@strip					; start by prefetching the strip information
+
+				PUSH	R14
+
+				PUSH	R13
+
+				PUSH	R12
+
+				PUSH	R11
+
+				PUSH	R10
+
+				PUSH	R9
+
+				PUSH	R8
+
+				STS.L	PR,@-R15				; end of stacking
+
+				MOV.L	@context, pkm			; read pkm from context
+				ADD		#8, context				; skip matnum
+
+				FMOV.S	@context+, midX			; read midX
+				MOV		#96, R0
+
+				FMOV.S	@context+, midY			; read midY
+				ADD		#96, R0					; R0 is now 192
+
+				MOV.L	@context+, lightingBuf	; read lightingBuf
+				SUB		R0, R15					; rewind stack enough for three vertex buffers
+
+				FMOV.S	@context+, mulX			; read mulX
+				MOV		#2, curVertex			; read the coming vertex into vertbuf2
+
+				FMOV.S	@context+, mulY
+				ADD		#-2, nStrip
+
+				FMOV.S	@context, rWnearVal
+				ADD		#-7*4, context	; rewind context
+
+				; Read in the first two vertices : (nStrip must be pre-decremented and curVertex 2)
+?bigLoop:
+				BSR		PrepareVertex			; vertex #1
+				MOV		R15, R0					; buffer @sp+0 [slot]
+
+				MOV		R15, R0					; vertex #2
+				BSR		PrepareVertex			; buffer @sp+64
+				ADD		#64, R0					; [slot]
+
+				.AIF \&COUNT_GEOMETRY EQ 1
+				MOV.L	#a_nDrawn, temp2
+				MOV.L	@temp2, temp2
+				MOV.L	@temp2, R0
+				ADD		nStrip, R0
+				MOV.L	R0, @temp2
+				.AENDI
+
+?loop			; Read in another vertex at the current vertex position
+				MOV		curVertex, R0			; r0 = curVertex
+				AND		#3, R0					; ensure only vertex number is around
+
+				SHLL8	R0						; r0 = curVertex * 256
+				pad
+
+				SHLR2	R0						; r0 = curVertex * 64
+				BSR		PrepareVertex			; prepare that vertex
+				ADD		R15, R0					; [slot] r0 is address of new vertex now
+
+				; incrememnt curVertex, and toggle parity, ugly bit of code
+				MOV		curVertex, R0
+				AND		#3, R0
+				ADD		#1, R0
+				CMP/EQ	#3, R0
+				BF		?ok
+				MOV		#0, R0
+?ok				MOV		#-4,t					; not 3
+				AND		t, curVertex			
+				OR		curVertex, R0			; curVertex incremented
+				XOR		#(1<<3), R0				; toggle parity
+				MOV		R0, curVertex
+
+				; Now check the outcode; outcode will be A|B|C, temp A&B&C
+				MOV.L	@(_outcode, R15), outcode			; outcode is A
+				MOV		R15, temp3
+
+				MOV		outcode, temp			; temp is going to be the AND version
+				ADD		#64, temp3	
+
+				MOV.L	@(_outcode, temp3), temp2	; temp2 is B
+
+				ADD		#64, temp3	
+
+				MOV.L	@(_outcode, temp3), temp3	; temp3 is C
+
+				OR		temp2, outcode			; outcode |= B
+
+				AND		temp2, temp				; temp &= B
+
+				OR		temp3, outcode			; outcode |= C
+
+				AND		temp3, temp				; temp &= C
+
+				CMPZ	temp					; is temp zero; if not, we're totally offscreen
+				pad
+
+				BF		?offScreen				; branch if not zero to off screen
+				MOV		outcode, temp
+
+				TST		#1, temp				; is any of this triangle nearclipped?
+				pad
+
+				BF		?clipPoly				; if nearclipped, go ahead and clip it
+
+?onScreen		; check to see if this is the first polygon
+				MOV		#(1<<4), R0
+				TST		R0, curVertex			; check continuation bit
+				pad
+
+				BF		?continueStrip			; if continuation bit is 1, continue the strip
+
+				MOV		#(1<<3), R0
+				TST		R0, curVertex			; check parity bit
+				pad
+
+				BF		?parityOK				; correct parity, so carry on
+
+				; we're going to output a dummy vertex of curVertex + 1
+				MOV		curVertex, R0			; r0 = curVertex
+				AND		#3, R0					; ensure only vertex number is around
+
+				ADD		#1, R0					; + 1
+
+				CMP/EQ	#3, R0					; ovf?
+
+				BF		?parityovfOK
+				MOV		#0, R0
+?parityovfOK
+				SHLL8	R0						; r0 = curVertex+1 * 256
+				pad
+
+				SHLR2	R0						; r0 = curVertex+1 * 64
+				BSR		OutputVertex			; and output vertex 0 of the triangle
+				ADD		R15, R0					; [slot] point r0 in the right place
+
+				MOV		pcw, @pkm
+				pad
+
+				PREF	@pkm
+				ADD		#32, pkm
+
+
+?parityOK
+				; Now we have to output the first two polygons in a strip
+				; That is, polygons at curVertex, curVertex+1 and curVertex+2
+				MOV		curVertex, R0			; r0 = curVertex
+				AND		#3, R0					; ensure only vertex number is around
+
+				SHLL8	R0						; r0 = curVertex * 256
+				pad
+
+				MOV		#1, temp3				; add one
+				pad
+
+				SHLR2	R0						; r0 = curVertex * 64
+				BSR		OutputVertex			; and output vertex 0 of the triangle
+				ADD		R15, R0					; [slot] point r0 in the right place
+
+				; store in the pcw and dispatch
+				MOV.L	pcw, @pkm				; store e0000000
+				SHLL8	R0						; R0 is (curVertex+1)<<8
+
+				PREF	@pkm					; SQ blast!
+				ADD		#32, pkm				; move on
+
+				MOV		#2, temp3				; add two this time
+				pad
+
+				SHLR2	R0						; R0 is (curVertex+1)<<6
+				BSR		OutputVertex			; output vertex 1
+				ADD		R15, R0					; [slot] move to the right plaice
+
+				; store in the pcw and dispatch
+				MOV.L	pcw, @pkm				; store e0000000
+				SHLL8	R0						; R0 is (curVertex+2)<<8
+
+				PREF	@pkm					; SQ blast!
+				ADD		#32, pkm				; move on
+
+				SHLR2	R0						; R0 is (curVertex+2)<<6
+				BSR		OutputVertex			; output vertex 1
+				ADD		R15, R0					; [slot] move to the right plaice
+
+				; leave the vertex hanging in the pipe, as we may be able to extend it, we may not, you never know
+				MOV		#(1<<4), R0				; get continuation bit
+
+				OR		R0, curVertex			; curVertex has the continuation bit set
+
+				DT		nStrip
+
+				BF		?loop
+
+?endStripCont	; if we got here, then we have to terminate the poly in the current pipe
+				; pcw should be 0xe0000000
+				SHAR	pcw						; e0000000 -> f0000000
+
+				MOV.L	pcw, @pkm				; store terminator
+
+				PREF	@pkm					; SQ blast
+
+				ADD		#32, pkm				; move on to next
+				
+?end
+				MOV.L	@strip+, nStrip			; read num strip
+
+				MOV.L	@strip+, temp2			; read material
+
+				MOV.L	@(4, context), temp3	; read should be material
+
+				CMPZ	nStrip					; is temp zero?
+
+				BT		?reallyTheEnd
+				ADD		#-2, nStrip
+
+				CMP/EQ	temp2, temp3			; is it the same material?
+
+				BT/S	?bigLoop				; yes? wicked!
+				MOV		#2, curVertex			; reset curVertex [slot]
+
+
+?reallyTheEnd	MOV.L	pkm, @context			; store back the pkm
+
+				MOV.L	#192, R0				; 192 = 3*64
+
+				ADD		R0, R15					; stack sortout
+				
+				LDS.L	@R15+, PR				; unstacking action
+				MOV		strip, R0				; get the return value
+
+				POP		R8
+				ADD		#-8, R0					; rewind the retVal
+
+				POP		R9
+
+				POP		R10
+
+				POP		R11
+
+				POP		R12
+
+				POP		R13
+				RTS
+				POP		R14
+
+				; the polygon is offscreen, DT and reloop, 
+?offScreen		; Check for some flushing action
+				MOV		#(1<<4), R0
+				TST		R0, curVertex			; check continuation bit
+				pad
+			
+				MOV.L	#H'F0000000, pcw
+				BT		?noFlush				; no need to flush
+
+				MOV.L	pcw, @pkm				; store terminator
+
+				PREF	@pkm					; SQ blast
+
+				ADD		#32, pkm				; move on to next
+
+				MOV		#(1<<4), R0
+
+				XOR		R0, curVertex			; clear continuation bit
+
+?noFlush		DT		nStrip
+				
+				BF		?loop
+
+				BRA		?end					; else end
+				NOP
+		
+				; We've already outputted some vertices, and this is onscreen too,
+				; so SQ the pending vertex, and then output curVertex + 2 (== curVertex-1)
+?continueStrip	MOV.L	#H'e0000000, pcw		; get e*
+				MOV		curVertex, R0
+				
+				AND		#3, R0
+				pad
+
+				ADD		#2, R0					; add two
+				pad
+	
+				MOV		#2, temp2
+
+				MOV.L	pcw, @pkm				; PCW previous vertex
+				CMP/GT	temp2, R0				; r0 > temp2 ? : ovf?
+
+				PREF	@pkm					; SQ blast previous vertex [slot]
+
+				BF/S	?contovfOK
+				ADD		#32, pkm
+
+				ADD		#-3, R0					;  get R0 ok
+
+?contovfOK		SHLL8	R0
+
+				SHLR2	R0						; get vert*64
+				BSR		OutputVertex			; output that vertex
+				ADD		R15, R0					; [slot] address add
+
+				DT		nStrip					; finished strip?
+
+				BT		?endStripCont			; yes?...we need to flush
+
+				BRA		?loop					; no, lets go round again
+				NOP
+
+				; Time to clip the triangle[cur, cur+1, cur+2]
+				; Set up the vertex pointers correspondingly
+?clipPoly:		
+				MOV		#(1<<4), R0
+				TST		R0, curVertex			; check continuation bit
+				pad
+			
+				MOV.L	#H'F0000000, pcw
+				BT		?noFlush2				; no need to flush
+
+				MOV.L	pcw, @pkm				; store terminator
+
+				PREF	@pkm					; SQ blast
+
+				ADD		#32, pkm				; move on to next
+
+				XOR		R0, curVertex			; clear continuation bit
+
+?noFlush2
+				MOV		curVertex, R0			; r0 is curVertex
+				TST		#(1<<3), R0				; parity even or odd?
+
+				BF/S	?evenParity
+?oddParity:		AND		#3, R0					; get R0 as just current vertex number
+				; If we got here, then we need v0=cur+1, v1=cur, v2=cur+2
+				MOV		R0, v1
+				SHLL8	v1						; v1 = R0*256
+
+				SHLR2	v1						; v1 = R0*64
+				pad
+
+				ADD		R15, v1					; v1 = address of vertex 0
+
+				ADD		#1, R0					; move R0 on
+
+				CMP/EQ	#3, R0					; overflow?
+
+				BF		?skipOddOvf1
+				MOV		#0, R0
+?skipOddOvf1
+				MOV		R0, v0					; v0 = vertex 1
+				SHLL8	v0
+
+				SHLR2	v0						; v0 = vertex1 * 64
+
+				ADD		R15, v0					; v0 is address of vertex 1
+
+				ADD		#1, R0					; move R0 on
+
+				CMP/EQ	#3, R0					; ovf?
+
+				BF		?lastVertexAddr			; no, get last vertex into v2
+				BT		?lastVertexOvf			; yes, flip round and get into v2
+
+				; poly is in the right order, v0=0,v1=1,v2=2
+?evenParity
+				MOV		R0, v0
+				SHLL8	v0						; v0 = R0*256
+
+				SHLR2	v0						; v0 = R0*64
+				pad
+
+				ADD		R15, v0					; v0 = address of vertex 0
+
+				ADD		#1, R0					; move R0 on
+
+				CMP/EQ	#3, R0					; overflow?
+
+				BF		?skipEvenOvf1
+				MOV		#0, R0
+?skipEvenOvf1
+				MOV		R0, v1					; v1 = vertex 1
+				SHLL8	v1
+
+				SHLR2	v1						; v1 = vertex1 * 64
+
+				ADD		R15, v1					; v1 is address of vertex 1
+
+				ADD		#1, R0					; move R0 on
+
+				CMP/EQ	#3, R0					; ovf?
+
+				BF		?lastVertexAddr			; no ovf
+?lastVertexOvf	MOV		#0, R0					; reset to 0
+
+?lastVertexAddr	MOV		R0, v2
+				SHLL8	v2						; v2 = 256*v2
+
+				SHLR2	v2
+
+				ADD		R15, v2					; v2 now points in the right place
+
+				; lets see whether this clips to a triangle or a quad
+				; a triangle can be blasted straight to the TA, but a quad needs
+				; temporary buffering and the vertices sent in 0132 order, annoyingly
+				; a triangle clips to a quad IFF only one vertex is off the near
+				; the case where all points are off the near has already been handled, so either
+				; one or two vertices are offscreen: a XOR will tell us the oddness or evenness
+				MOV.L	@(_outcode, v0), outcode; outcode for v0
+
+				MOV.L	@(_outcode, v1), temp	; outcode for v1
+
+				MOV.L	@(_outcode, v2), v		; outcode for v2
+				XOR		temp, outcode			; outcode = v0^v1
+
+				XOR		v, outcode				; outcode = v0^v1^v2
+				
+				SHLR	outcode					; get bottom bit into T bit
+
+				BF		?clipToTri				; if the bit is set, an odd number of nearclipped verts == 1
+				BRA		?clipToQuad
+				NOP
+
+				; We've ascertained the output will be a triangle, so do each edge
+?clipToTri:
+				MOV		@(_outcode, v0), outcode; get v0's outcode
+				
+				MOV		#3,	counter				; set up the vertex counter
+				pad
+
+				MOV		outcode, R0
+				SHLR	R0						; get T as the nearclip bit
+
+				BT		?v0OffScreen
+				
+				BSR		OutputVertex			; Output v0
+				MOV		v0, R0					; [slot] point r0 at v0
+
+				MOV.L	pcw, @pkm				; store PCW
+				
+				PREF	@pkm					; sq blast
+				ADD		#32, pkm				; move along
+
+				DT		counter					; counter can't possibly go to zero here, so no check
+
+?v0OffScreen	MOV		@(_outcode, v1), temp	; read v1's outcode
+				pad
+
+				pad
+				pad
+
+				XOR		temp, outcode			; outcode = v0 ^ v1
+
+				SHLR	outcode					; get bottom bit into T
+
+				BF/S	?no0to1alpha			; if one onscreen and not the other, need to output alpha vertex
+				MOV		temp, outcode			; put v1's outcode into 'outcode'
+
+				; We need to output the 0-1 alpha vertex
+				MOV		v0, R0					; r0 points to the first vertex
+				BSR		OutputAlpha
+				MOV		v1, addrV1				; addrv1 is the second vertex
+
+				DT		counter					; can't go to zero here
+
+				MOV.L	#H'e0000000, pcw	
+
+				MOV.L	pcw, @pkm				; store the e0000000
+				
+				PREF	@pkm
+				ADD		#32, pkm				; blast and move on
+
+?no0to1alpha	MOV		outcode, R0				; get outcode of v1 into R0
+				SHLR	R0						; get clip bit into T
+
+				BT		?v1OffScreen			; is v1 off screen?
+
+				BSR		OutputVertex
+				MOV		v1, R0					; output v1
+
+				DT		counter					; is this the last polygon?
+				BF		?notTheLast
+				
+				SHAR	pcw						; e0000000 to f0000000
+
+?notTheLast		MOV.L	pcw, @pkm				; store PCW
+				
+				PREF	@pkm					; sq blast
+				ADD		#32, pkm				; move along
+
+?v1OffScreen	MOV		@(_outcode, v2), temp	; read v2's outcode
+				pad
+
+				pad
+				pad
+
+				XOR		temp, outcode			; get v1^v2
+
+				SHLR	outcode					; T bit action
+
+				BF/S	?no1to2alpha			; no need to output an alpha vertex then
+				MOV		temp,outcode			; get v2's outcode ready for the next bit
+				
+				; we Need to output a v1-v2 alpha
+				MOV		v1, R0
+				BSR		OutputAlpha
+				MOV		v2, addrV1				; [s] output alpha value
+
+				MOV.L	#H'E0000000, pcw
+				DT		counter					; check to see if this is the last
+				BF		?notTheLast2
+
+				SHAR	pcw						; e0 -> f00000000
+?notTheLast2	MOV.L	pcw, @pkm
+
+				PREF	@pkm
+				ADD		#32, pkm
+
+?no1to2alpha	MOV		outcode, R0				; get v2's outcode into R0
+				SHLR	R0						; T= offscreenness of v2
+
+				BT		?v2OffScreen
+
+				BSR		OutputVertex
+				MOV		v2, R0					; output v2
+
+				DT		counter					; is this the last polygon?
+				BF		?notTheLast3
+				
+				SHAR	pcw						; e0000000 to f0000000
+
+?notTheLast3	MOV.L	pcw, @pkm				; store PCW
+				
+				PREF	@pkm					; sq blast
+				ADD		#32, pkm				; move along
+
+?v2OffScreen	MOV		@(_outcode, v0), temp	; read v0's outcode
+				pad
+
+				pad
+				pad
+
+				XOR		temp, outcode
+				pad
+
+				SHLR	outcode					; check v0^v2
+				BF		?noFlushjumper			; no more to do?  Loop all the way back!
+
+				; we Need to output a v2-v0 alpha
+				MOV		v2, R0
+				BSR		OutputAlpha
+				MOV		v0, addrV1				; [s] output alpha value
+
+				MOV.L	#H'f0000000, pcw		; definitely the last 
+
+				MOV.L	pcw, @pkm
+
+				PREF	@pkm
+				BRA		?noFlush
+				ADD		#32, pkm				; [slot]
+?noFlushjumper
+				BRA		?noFlush
+				NOP
+
+; //////////////////////////////////////////////////////////////////////////////
+
+				.ALIGN	16
+
+?clipToQuad		
+				MOVA	?QuadBuffer, R0
+				PUSH	pkm
+
+				MOV		R0, pkm					; point pkm at a buffer for now
+
+				MOV		@(_outcode, v0), outcode; get v0's outcode
+				
+				MOV		outcode, R0
+				SHLR	R0						; get T as the nearclip bit
+
+				BT		?v0OffScreenQ
+				
+				BSR		OutputVertex			; Output v0
+				MOV		v0, R0					; [slot] point r0 at v0
+
+				ADD		#32, pkm
+
+?v0OffScreenQ	MOV		@(_outcode, v1), temp	; read v1's outcode
+				pad
+
+				pad
+				pad
+
+				XOR		temp, outcode			; outcode = v0 ^ v1
+
+				SHLR	outcode					; get bottom bit into T
+
+				BF/S	?no0to1alphaQ			; if one onscreen and not the other, need to output alpha vertex
+				MOV		temp, outcode			; put v1's outcode into 'outcode'
+
+				; We need to output the 0-1 alpha vertex
+				MOV		v0, R0					; r0 points to the first vertex
+				BSR		OutputAlpha
+				MOV		v1, addrV1				; addrv1 is the second vertex
+
+				ADD		#32, pkm
+
+?no0to1alphaQ	MOV		outcode, R0				; get outcode of v1 into R0
+				SHLR	R0						; get clip bit into T
+
+				BT		?v1OffScreenQ			; is v1 off screen?
+
+				BSR		OutputVertex
+				MOV		v1, R0					; output v1
+
+				ADD		#32, pkm
+
+?v1OffScreenQ	MOV		@(_outcode, v2), temp	; read v2's outcode
+				pad
+
+				pad
+				pad
+
+				XOR		temp, outcode			; get v1^v2
+
+				SHLR	outcode					; T bit action
+
+				BF/S	?no1to2alphaQ			; no need to output an alpha vertex then
+				MOV		temp,outcode			; get v2's outcode ready for the next bit
+				
+				; we Need to output a v1-v2 alpha
+				MOV		v1, R0
+				BSR		OutputAlpha
+				MOV		v2, addrV1				; [s] output alpha value
+
+				ADD		#32, pkm
+
+?no1to2alphaQ	MOV		outcode, R0				; get v2's outcode into R0
+				SHLR	R0						; T= offscreenness of v2
+
+				BT		?v2OffScreenQ
+
+				BSR		OutputVertex
+				MOV		v2, R0					; output v2
+
+				ADD		#32, pkm
+
+?v2OffScreenQ	MOV		@(_outcode, v0), temp	; read v0's outcode
+				pad
+
+				pad
+				pad
+
+				XOR		temp, outcode
+				pad
+
+				SHLR	outcode					; check v0^v2
+				BF		?endQuadClip			; no more to do?  Loop all the way back!
+
+				; we Need to output a v2-v0 alpha
+				MOV		v2, R0
+				BSR		OutputAlpha
+				MOV		v0, addrV1				; [s] output alpha value
+
+;no need			ADD		#32, pkm
+
+				; Now to output the vertices in 0132 order
+?endQuadClip	POP		pkm
+				MOVA	?QuadBuffer, R0			; get true address in r0
+	
+				MOV.L	#H'E0000000, pcw		; pcw is 0xe0000000
+				FSCHG							; change to nice big stores
+
+				; first vertex :
+				FMOV.D	@R0+, vertXY
+
+				FMOV.D	@R0+, vertZW
+
+				FMOV.D	vertXY, @pkm
+				MOV.L	pcw, @pkm				; overwrite pkm
+
+				ADD		#8, pkm
+
+				FMOV.D	vertZW, @pkm
+				ADD		#8, pkm
+
+				FMOV.D	@R0+, vertXY
+
+				FMOV.D	@R0+, vertZW
+
+				FMOV.D	vertXY, @pkm
+				ADD		#8, pkm
+
+				FMOV.D	vertZW, @pkm
+				PREF	@pkm
+
+				ADD		#8, pkm
+
+				; second vertex
+				FMOV.D	@R0+, vertXY
+
+				FMOV.D	@R0+, vertZW
+
+				FMOV.D	vertXY, @pkm
+				MOV.L	pcw, @pkm				; overwrite pkm
+
+				ADD		#8, pkm
+
+				FMOV.D	vertZW, @pkm
+				ADD		#8, pkm
+
+				FMOV.D	@R0+, vertXY
+
+				FMOV.D	@R0+, vertZW
+
+				FMOV.D	vertXY, @pkm
+				ADD		#8, pkm
+
+				FMOV.D	vertZW, @pkm
+				PREF	@pkm
+
+				ADD		#8, pkm
+
+				ADD		#8*4, R0				; skip to fourth vertex
+
+				; third vertex
+				FMOV.D	@R0+, vertXY
+
+				FMOV.D	@R0+, vertZW
+
+				FMOV.D	vertXY, @pkm
+				MOV.L	pcw, @pkm				; overwrite pkm
+
+				ADD		#8, pkm
+
+				FMOV.D	vertZW, @pkm
+				ADD		#8, pkm
+
+
+				FMOV.D	@R0+, vertXY
+
+				FMOV.D	@R0+, vertZW
+
+				FMOV.D	vertXY, @pkm
+				ADD		#8, pkm
+
+				FMOV.D	vertZW, @pkm
+				PREF	@pkm
+
+				ADD		#8, pkm
+
+				ADD		#-8*4*2, R0				; rewind back to third vertex
+
+				SHAR	pcw						; f00000000
+
+				; last vertex
+				FMOV.D	@R0+, vertXY
+
+				FMOV.D	@R0+, vertZW
+
+				FMOV.D	vertXY, @pkm
+				MOV.L	pcw, @pkm				; overwrite pkm
+
+				ADD		#8, pkm
+
+				FMOV.D	vertZW, @pkm
+				ADD		#8, pkm
+
+				FMOV.D	@R0+, vertXY
+
+				FMOV.D	@R0+, vertZW
+
+				FMOV.D	vertXY, @pkm
+				ADD		#8, pkm
+
+				FMOV.D	vertZW, @pkm
+				PREF	@pkm
+
+				FSCHG
+				BRA		?noFlush				; and loop back
+				ADD		#8, pkm
+
+				.ALIGN	16
+?QuadBuffer		.RES.L	8*4
+
+
+				.AIF \&COUNT_GEOMETRY EQ 1
+				.IMPORT			_nDrawn
+a_nDrawn:		.DATA.L			_nDrawn
+				.AENDI
+
+
+				.END

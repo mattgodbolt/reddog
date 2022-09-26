@@ -1,0 +1,249 @@
+LOCALINT innerBand
+LOCALINT outerBand
+LOCALINT Temp
+LOCALINT dead
+LOCALINT tempi
+LOCALFLOAT length
+LOCALFLOAT cr
+LOCALFLOAT cg
+LOCALFLOAT cb
+//LOCALFLOAT a
+//LOCALFLOAT b
+//LOCALFLOAT c
+
+
+DEFINE		VULCAN	2
+
+STATE Init
+	MakeMeTheLast()
+  	MyFlag = MyFlag | RELVELCALC | FLOORCOLL | STRATCOLL | FRIENDLY | NOTEXPLODE | BULLETTYPE | DIRECTMOVE
+	MyFlag2 = MyFlag2 | BULLET_CF
+	SetFriction(0.0, 0.0, 0.0)
+	AllocStratSoundBlock(1)
+	damage = 10.0
+	IF (Multiplayer)
+		TRIGSET>HitStrat WHENHIT
+	ELSE
+   		TRIGSET>KillOff	WHENHIT
+	ENDIF
+	TRIGSET>KillOffFloor	ONFLOOR
+	dead = 0
+
+	MyVar = GetParentPlayerNumber()
+	Temp = 0
+	IF (FiredByAssassin())	
+		damage = 20.0
+		Temp = 1
+	ENDIF
+	OBJECT> WEAPON\REDDOGLASER
+	RegisterCollision()
+	ResetOCP()
+	MoveY(8.0)
+	TRIGSET>Remove	EVERY 45
+
+	IF (Multiplayer)
+		IF (Temp = 1)
+			innerBand = CreateBand (1, 2, 0, 1, 1, 1, 1, 0.4, 0, 0, 0)
+			outerBand = CreateBand (1, 2, 0, 1, 0.5, 0.5, 0.5, 0.4, 0, 0, 0)
+			cr = 1
+			cg = 1
+			cb = 1
+		ELSE
+			GetPlayerColour(MyVar)
+			cr = Range(0.0, CheckX * 1.5, 1.0)
+			cg = Range(0.0, CheckY * 1.5, 1.0)
+			cb = Range(0.0, CheckZ * 1.5, 1.0)
+			innerBand = CreateBand (1, 2, 0, 1, cr, cg, cb, 0.4, CheckX * 0.5, CheckY * 0.5, CheckZ * 0.5)
+			outerBand = CreateBand (1, 2, 0, 1, CheckX, CheckY, CheckZ, 0.4, 0, 0, 0)
+		ENDIF
+	ELSE
+		IF (PlayerWeaponPower = 0)
+			innerBand = CreateBand (1, 2, 0, 1, 1, 0.5, 0.5, 0.4, 0.5, 0, 0)
+			outerBand = CreateBand (1, 2, 0, 1, 1, 0, 0, 0.4, 0, 0, 0)
+			cr = 0.4
+			cg = 0
+			cb = 0
+			ExplosionLight (0.1, 0, 0, 10, 0.98, 5)
+		ENDIF
+		IF (PlayerWeaponPower = 1)
+			innerBand = CreateBand (1, 2, 0, 1, 0.5, 1, 0.5, 0.4, 0, 0.5, 0)
+			outerBand = CreateBand (1, 2, 0, 1, 0, 1, 0, 0.4, 0, 0, 0)
+			ExplosionLight (0.0, 0.1, 0, 10, 0.98, 5)
+			cr = 0
+			cg = 0.4
+			cb = 0
+		ENDIF
+		IF (PlayerWeaponPower >= 2)
+			innerBand = CreateBand (1, 2, 0, 1, 0.5, 0.5, 1.0, 0.4, 0, 0, 0.5)
+			outerBand = CreateBand (1, 2, 0, 1, 0, 0, 0.5, 0.4, 0, 0, 0)
+			ExplosionLight (0.0, 0, 0.1, 10, 0.98, 5)
+			cr = 0
+			cg = 0
+			cb = 0.4
+		ENDIF
+	ENDIF
+	AddBandSegment (innerBand, 0, 0, 0, 0.1)
+	AddBandSegment (outerBand, 0, 0, 0, 0.5)
+	AddBandSegment (innerBand, 0, 0, 0, 0.1)
+	AddBandSegment (outerBand, 0, 0, 0, 0.5)
+	
+	length = 0
+  
+	TRIGSET>BandTrigger EVERY 1 
+	MyFlag = MyFlag | NODISP
+
+	// Record those collisions
+	RecordCollision(0)
+
+	IF ((PlayerState = PS_ONTRAIN) OR (PlayerState = PS_TOWERLIFT) OR (PlayerState = PS_WATERSLIDE))
+	//DELAY NEEDED ON TRAIN
+   
+   		LOOP (2)
+			MyFlag = MyFlag
+		ENDLOOP
+	ENDIF
+
+	STAT>SetPos
+ENDSTATE 
+
+TRIGGER BandTrigger
+	IF (dead = 1)
+		TRIGSTOP
+	ELSE
+		FaceAlongDir()
+		IF (!(MyFlag & HITFLOOR))
+			IF (!(MyFlag & HITSTRAT))
+				RubberBand (innerBand, 0, -length, 0, 0.1)
+				RubberBand (outerBand, 0, -length, 0, 0.5)
+				AddBandSegment (innerBand, 0, 0, 0, 0.01)
+				AddBandSegment (outerBand, 0, 0, 0, 0.05)
+
+				IF (PAL)
+					IF (length < 23)
+						length = length + 11.52
+					ENDIF
+				ELSE
+					IF (length < 24)
+						length = length + 8
+					ENDIF
+				ENDIF
+			ENDIF
+		ENDIF
+		TRIGFIN
+	ENDIF
+ENDTRIGGER
+
+STATE SetPos
+   	IF ((PlayerState = PS_ONTRAIN) OR (PlayerState = PS_TOWERLIFT) OR (PlayerState = PS_WATERSLIDE))
+   	 	x = x + PlayerActVelX
+   	 	y = y + PlayerActVelY
+   	 	z = z + PlayerActVelZ
+   	ENDIF
+
+	IF ((UnderWater) AND (dead = 0))
+		SubParentSem(0, 1)
+		dead = 1
+		DeleteBand (innerBand)
+		DeleteBand (outerBand)
+		DoSpark(20, 0.0, 0.0, 1.0, 0.4, 1.0, 50, 255, 255, 255)
+		
+		Delete()
+	ENDIF
+ENDSTATE
+
+TRIGGER KillOff
+	IF (dead = 0)
+		dead = 1
+   		DeleteBand (innerBand)
+   		DeleteBand (outerBand)
+   		SubParentSem(0, 1)
+		Delete()
+	ENDIF
+ENDTRIGGER
+
+TRIGGER KillOffFloor
+	IF (dead = 0)
+		Temp = RandRange(0, 1.99)
+		IF (!(MyFlag2 & HITHDC))
+			cr = cr * 0.5
+			cg = cg * 0.5
+			cb = cb * 0.5
+			IF (!(PolyType & NODECAL))
+				AddDecal(0, Temp, 0.5, 0.5, cr, cg, cb)
+			ENDIF
+		ENDIF
+		MoveBackOneFrame()
+		dead = 1
+		DeleteBand (innerBand)
+		DeleteBand (outerBand)
+		SubParentSem(0, 1)
+		Delete()
+	ENDIF
+ENDTRIGGER
+
+TRIGGER Remove
+	IF (dead = 0)
+		DeleteBand (innerBand)
+		DeleteBand (outerBand)
+		SubParentSem(0, 1)
+	  	dead = 1
+		Delete()
+	ENDIF
+  //	TRIGSTOP
+ENDTRIGGER
+
+LOCALINT MainTarget
+
+TRIGGER HitStrat
+	IF (dead = 0)
+		dead = 1
+		tempi = -1
+		IF (CollWith)
+			IF (CollWith = PlayerShieldStrat(0)) 
+				tempi = 0
+			ENDIF
+			IF (CollWith = PlayerShieldStrat(1)) 
+				tempi = 1
+			ENDIF
+			IF (CollWith = PlayerShieldStrat(2)) 
+				tempi = 2
+			ENDIF
+			IF (CollWith = PlayerShieldStrat(3)) 
+				tempi = 3
+			ENDIF
+		ENDIF
+		
+		
+		IF (tempi = -1)
+			DeleteBand (innerBand)
+   			DeleteBand (outerBand)
+   			SubParentSem(0, 1)
+			Delete()
+		   //	TRIGSTOP
+		ELSE
+			SubParentSem(0, 1)
+			MyFlag = MyFlag | FRIENDLY
+			PLAYSOUND>DAMAGE3 0 1.0  0.0 0.0 0.0  RANDOM
+			BounceOffShield(tempi)
+			DeleteBand (innerBand)
+			DeleteBand (outerBand)
+			MyVar = tempi
+			GetPlayerColour(MyVar)
+			length = 0
+			cr = Range(0.0, CheckX * 1.5, 1.0)
+			cg = Range(0.0, CheckY * 1.5, 1.0)
+			cb = Range(0.0, CheckZ * 1.5, 1.0)
+			innerBand = CreateBand (1, 2, 0, 1, cr, cg, cb, 0.4, CheckX * 0.5, CheckY * 0.5, CheckZ * 0.5)
+			outerBand = CreateBand (1, 2, 0, 1, CheckX, CheckY, CheckZ, 0.4, 0, 0, 0)
+			MainTarget = GetPlayerStrat(tempi)
+			RestoreTarget(MainTarget)
+			MyParent = MyTarget
+			AddParentSem(0, 1)
+			CollWith = 0
+			dead = 0
+			TRIGFIN	
+		ENDIF
+	ELSE
+		TRIGSTOP
+	ENDIF
+ENDTRIGGER

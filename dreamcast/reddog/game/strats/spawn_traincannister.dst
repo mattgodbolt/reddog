@@ -1,0 +1,77 @@
+LOCALINT colour
+STATE Init
+	MyFlag = MyFlag | STRATCOLL | ENEMY
+	colour = RandRange(0,1.9999)
+	IF (colour = 0)
+		OBJECT>envanims\cannister
+	ELSE
+		OBJECT>envanims\redcannister
+	ENDIF
+
+	RegisterCollision()
+	AllocStratSoundBlock(1)
+	InitHDC()
+	SetGlobalParamFloat(0, 0.0)
+	SetGlobalParamFloat(1, 2.0)
+	SetGlobalParamFloat(2, -5.0)
+	CREATE SPAWN_LightFlare 0, 0, 0, 0, 0, 0, 0
+	SetGlobalParamFloat(0, 0.0)
+	SetGlobalParamFloat(1, 0.0)
+	SetGlobalParamFloat(2, 0.0)
+		
+	InheritMyParent()
+
+	health = 1
+
+	TRIGSET>HealthCheck EVERY 1	
+
+	InitPath()
+	InitSplineData()
+
+	SetAudibleRange(0, 30, 100)
+	PLAYSOUND>TRAIN 0 0.7 0.0 0.0 0.0 CONTINUOUS
+	
+	STAT>Start
+ENDSTATE
+
+TRIGGER HealthCheck
+	IF (health <= 0.0)
+		ParentVar = ParentVar + 1.0
+		MyVar = 8.0
+		SetAudibleRange(0, 100, 300)
+		PLAYSOUND>EX_LARGE_BLAST1 0 0.9 0.0 0.0 0.0 RANDOM
+		CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+		IF (colour = 0)
+			OBJECT>envanims\canbreak
+		ELSE
+			OBJECT>envanims\redcanbreak
+		ENDIF
+	  	DESTROYME SPAWN_EXPLODINGBITS
+	ELSE
+		CalculateStratPolyData(0)
+		TRIGFIN
+	ENDIF
+ENDTRIGGER
+
+STATE Start
+	IF (LastSplineSection())
+		IF (distToLastWay() < 5.0)
+			STAT>Die
+		ENDIF
+	ENDIF
+
+	//IF (health > 0.0)
+		//tempf = GetObjectCrntRot(1, MODEZ)
+		//SetObjectCrntRot(1, tempf + 0.2, MODEZ)
+	//ENDIF
+
+	MoveAlongPath(1.5)
+	FaceAlongPath(1)
+	TiltAlongPath(1.0)
+	SplineRelFlatten(1.0)
+ENDSTATE
+
+STATE Die
+	ParentVar = ParentVar + 1.0
+	Delete()
+ENDSTATE

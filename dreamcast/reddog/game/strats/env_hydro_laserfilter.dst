@@ -1,0 +1,50 @@
+PARAMINT	waittime
+
+LOCALFLOAT rotspeed
+LOCALINT timer
+
+STATE Init
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	MyFlag = MyFlag
+	IF PlayerNearActivationXY(0)
+		LOOP (120)
+			MyFlag = MyFlag
+		ENDLOOP
+		STAT>rotate
+	ENDIF
+ENDSTATE
+
+STATE rotate
+	LOOP (20)
+		MoveZ (-0.010)
+	ENDLOOP
+	rotspeed = 0.00001
+	LOOP (20)
+		rotz = (rotspeed)
+		rotspeed = rotspeed + 0.00001
+	ENDLOOP
+	STAT>wait
+ENDSTATE
+
+STATE wait
+	timer = 0
+	WHILE (timer < waittime)
+		MyFlag = MyFlag
+		timer = timer + 1
+	ENDWHILE
+	STAT>stop
+ENDSTATE
+
+STATE stop
+	LOOP (20)
+		MoveZ (0.010)
+	ENDLOOP
+	KillMyVelocity()
+	STAT>end
+ENDSTATE
+  
+STATE end	
+ENDSTATE

@@ -1,0 +1,15 @@
+STATE Init
+	WHILE (MyParentInvalid())
+		MyFlag = MyFlag
+	ENDWHILE
+	AddParentToArrowArray()
+	STAT>Finish
+ENDSTATE
+
+STATE Finish
+	WHILE ((MyParent) AND (MyParentHealth > 0.0) AND (MyParentFlag))
+		MyFlag = MyFlag
+	ENDWHILE
+	RemoveParentFromArrowArray()
+	Delete()
+ENDSTATE

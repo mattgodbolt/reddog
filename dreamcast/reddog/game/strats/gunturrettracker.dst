@@ -1,0 +1,79 @@
+//FRIENDLY INVISIBLE TARGETTING THING
+//MOVES ALONG WAYPATH
+
+DEFINE PATROLFORWARD 0
+DEFINE PATROLBACKWARD 1
+
+//DUMMY JUST SITS HERE LOOKING THICK 
+LOCALINT MODE
+
+STATE Init 
+
+// 	MyFlag = MyFlag  | RELVELCALC | HOVERMOVE
+ 	MyFlag = MyFlag  | RELVELCALC | PLANEMOVE
+   	RotationRestriction(1.0, 1.0, 1.0)
+	OBJECT> MISC\ENV_GUNONPOLE
+//	MODELANIM>misc\FOOTSOLDIER.RDO>footSoldierWalk>REPEAT
+	scalex = 2.0
+	scaley = 2.0
+	scalez = 2.0
+  	SetFriction(0.2,0.2,0.2)
+	IF (MyPath)
+		InitPath()
+		MODE = PATROLFORWARD
+		GetNextWay()
+		STAT> Patrol2
+	ELSE
+		Delete()
+	ENDIF
+ENDSTATE
+
+STATE Patrol
+ENDSTATE
+
+LOCALFLOAT savez
+LOCALINT randwait
+STATE Patrol2
+  //	KillMyVelocity()
+	
+	WHILE (!(NearCheckPosXY(0.0)))
+		
+//		TowardWay(0.05,0.05)
+		MoveY(0.28)
+			TowardWay(TWOPI/10.0,TWOPI/45.0)
+	Flatten(3.0)
+	
+
+	ENDWHILE
+
+
+	    randwait = rand() & 127
+	   //	savez = z
+   	LOOP (randwait)
+ 
+	MyFlag = MyFlag
+	   //	z = savez + RandRange(0.0, 2.0) 
+ 	 //
+   	ENDLOOP
+
+   //	z = savez
+
+
+	IF (MODE = PATROLFORWARD)
+		IF (LastWay())
+			MODE = PATROLBACKWARD
+		ENDIF
+	ELSE
+		IF (FirstWay())
+			MODE = PATROLFORWARD
+		ENDIF
+	ENDIF
+
+	IF (MODE = PATROLFORWARD)
+		GetNextWay()
+	ELSE
+		GetPrevWay()
+	ENDIF
+	
+ENDSTATE
+

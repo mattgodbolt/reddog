@@ -1,0 +1,28 @@
+STATE Init 
+	MyFlag = MyFlag | FRIENDLY | NODISP
+	MyFlag2 = MyFlag2 | NODAMAGE
+	OBJECT> REDDOG\REDDOGSHIELD
+	RegisterCollision()
+	// No shadows on this badger
+	SetObjectShadowState(0)
+	IAmPlayerShield
+	STAT> Stick  
+ENDSTATE
+
+STATE Stick
+	
+	IF (ParentPlayer)
+		IF (ParentShieldHold)
+			SetPosRelOffsetPlayerObject(ParentPlayerNumber, 5, 0.0, 5.0, 1.0)
+			oldx = x
+			oldy = y
+			oldz = z
+			MyFlag = MyFlag | STRATCOLL	| LOWCOLL
+		ELSE
+			MyFlag = MyFlag & LNOT(STRATCOLL)
+		ENDIF
+	ELSE
+		Delete()
+	ENDIF
+ENDSTATE
+ 

@@ -1,0 +1,10 @@
+; LightVerts.src
+				.CPU			SH4
+				.OUTPUT			DBG=DWARF
+				.SECTION		LIGHTING, CODE, ALIGN=4
+				.INCLUDE		"..\RedDog.pre"
+
+				.EXPORT			_LIGHTING_END
+_LIGHTING_END:	.FDATA	F'0.35
+
+				.END

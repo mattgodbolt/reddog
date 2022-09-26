@@ -1,0 +1,33 @@
+PARAMINT Allowed 3
+PARAMINT Time
+LOCALINT WaitTime
+STATE Init
+
+	IF (!(MyFlag2 & OWNIPARAMS))
+	    MyFlag = MyFlag
+		Allowed = 3
+	ENDIF
+
+	Time = 0
+	STAT>Wait
+	
+ENDSTATE
+
+STATE Wait
+
+	WHILE (Time < WaitTime)
+		Time = Time + 1
+	ENDWHILE
+
+	STAT>Del
+
+ENDSTATE
+
+
+STATE Del
+
+	IF (GetParentSem (0) >= Allowed)
+		Delete ()
+	ENDIF
+
+ENDSTATE

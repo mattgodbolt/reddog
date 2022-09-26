@@ -1,0 +1,48 @@
+PARAMINT	LowColl 0
+PARAMFLOAT	xspeed	0.05
+PARAMFLOAT	yspeed	0.0
+PARAMFLOAT	zspeed	0.0
+PARAMFLOAT	damagePlayer 10.0
+
+
+STATE Init
+	MyFlag = MyFlag | ENEMY | STRATCOLL
+	IF (!(MyFlag2 & OWNIPARAMS))
+		LowColl = 0
+	ENDIF
+
+	IF (!(MyFlag & OWNFPARAMS))
+		xspeed = 0.05
+		yspeed = 0.0
+		zspeed = 0.0
+		damagePlayer = 10.0
+	ENDIF
+
+	IF (LowColl = 1)
+		MyFlag = MyFlag | LOWCOLL
+	ELSE
+		InitHDC()
+		CalculateStratPolyData(1)
+	ENDIF
+
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	IF (xspeed != 0.0)
+		RelRotateX(xspeed)
+	ENDIF
+	IF (yspeed != 0.0)
+		RelRotateY(yspeed)
+	ENDIF
+	IF (zspeed != 0.0)
+		RelRotateZ(zspeed)
+	ENDIF
+	CalculateStratPolyData(0)
+	IF (MyFlag2 & PLAYERHIT)
+		PlayerHealth = PlayerHealth - damagePlayer
+	ENDIF
+ENDSTATE
+
+
+	

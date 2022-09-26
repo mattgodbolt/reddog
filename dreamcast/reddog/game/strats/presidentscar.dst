@@ -1,0 +1,199 @@
+
+PARAMFLOAT	speed 0.2
+LOCALFLOAT  curSpeed
+LOCALINT	WaitingForRedDogToMoveAway
+LOCALFLOAT healthSpec
+LOCALFLOAT OldHealth
+LOCALFLOAT myTime
+LOCALFLOAT rdSpec
+
+DEFINE TOTAL_HEALTH 50.0
+
+TRIGGER CleanUp
+	RadarUpdate(RADARUNREG)
+ENDTRIGGER
+
+STATE AlertPlayer
+	PLAYSOUND>ALERT 1 1.0 0.0 0.0 0.0 NOPOSITION
+	TRIGFIN
+ENDTRIGGER
+
+STATE Init
+	SetFriction(0.0, 0.0, 0.0)
+	MyFlag = MyFlag & LNOT(ENEMY)
+	MyFlag = MyFlag | GRAVITYON | DELETECALLBACK | FLOORCOLL | STRATCOLL | FRIENDLY
+	myTime = 0.0
+	rdSpec = 0.0
+	IF (!(MyFlag & OWNFPARAMS))
+		speed = 0.2
+	ENDIF
+	WHILE(!PNode)
+		MyFlag = MyFlag
+	ENDWHILE
+
+	IF (MyParent)
+		WHILE (MyParentInvalid())
+			MyFlag = MyFlag
+		ENDWHILE
+	ENDIF
+
+	//record the target
+	MyTarget = MyParent
+
+	InitHDC()
+	RegisterCollision()
+	RegisterAsTarget(10)
+	InitPath()
+	InitSplineData()
+//	President = Me
+	RotationRestriction(1.0, 1.0, 1.0)
+	health = TOTAL_HEALTH
+   //	health = 500000.0
+	SetObjectShadowState(1)
+	MyVar = 0
+	
+	AllocStratSoundBlock(2)
+
+	curSpeed = speed
+	WaitingForRedDogToMoveAway = 0
+
+	SetGlobalParamInt(0,1)
+	CREATE SPAWN_POINTTOTARGET 0, 0, 0, 0, 0, 0, 0
+	ClearGlobalParams()
+
+	RadarUpdate(RADARREG)
+
+	SetPitch(0, curSpeed)
+	PLAYSOUND>CAR 0 0.6 0.0 0.0 0.0 CONTINUOUS
+
+	TRIGSET>AlertPlayer WHENHIT
+	TRIGSET>CleanUp WHENDELETED
+	TRIGSET>CheckBlockade EVERY 1
+	TRIGSET>DrawHealth EVERY 1
+	TRIGSET>DrawHealth WHENPAUSED
+	STAT> Start
+ENDSTATE 
+
+TRIGGER CheckBlockade
+	//MakeMeTheLast()
+	TrigCheckMe()
+	RadarUpdate(RADARDRAW)
+
+   	IF (WaitingForRedDogToMoveAway)
+   		IF (PlayerDistXY() > 10)
+   			WaitingForRedDogToMoveAway = 0
+   		ENDIF
+   	   //	IF (!MyParentFlag)
+   	   //		MyVar = 0
+   	   //	ENDIF
+   	ELSE
+		//HAS MY VAR BEEN SET BY A BLOCKADE ?
+		IF (MyVar != 0)
+			// We're blockaded
+			IF (curSpeed < (speed * 0.1))
+				curSpeed = 0
+				KillMyVelocity()
+			ELSE
+				curSpeed = curSpeed * 0.85
+			ENDIF
+		 //	IF (!MyParentFlag)
+		 //		MyVar = 0
+		 //	ENDIF
+	 	ELSE
+			// Check for collisions, break if necessary
+	  		IF ((MyFlag2 & PLAYERHIT) OR (SeePlayerZ(TWOPI/5) AND NearPlayer(11)))
+	  			IF (curSpeed < (speed * 0.1))
+	  				curSpeed = 0
+	  				KillMyVelocity()
+	  				WaitingForRedDogToMoveAway = 1
+	  			ELSE
+	  				curSpeed = curSpeed * 0.85
+	  			ENDIF
+	  	   //	  	IF (!MyParentFlag)
+	  	   //			MyVar = 0
+	  	   //		ENDIF
+	  		ELSE
+				IF ((curSpeed < speed))
+					IF (PAL)
+						curSpeed = curSpeed + 0.005
+						//(speed - curSpeed) * PAL_MOVESCALE * 0.1
+					ELSE
+						curSpeed = curSpeed + 0.005
+						//curSpeed = curSpeed + (speed - curSpeed) * 0.1
+				    ENDIF
+				ENDIF
+			//	IF (!MyParentFlag)
+			 //		MyVar = 0
+			 //	ENDIF
+		   	ENDIF
+		ENDIF
+	ENDIF
+	SetPitch(0, curSpeed)
+	TRIGFIN
+ENDTRIGGER
+
+TRIGGER DrawHealth
+	DrawStratBar(0, health / TOTAL_HEALTH, rdSpec, 1)
+	TRIGFIN
+ENDTRIGGER
+
+STATE Start
+	CalculateStratPolyData(1)
+	MoveAlongPathXY(curSpeed)
+	FaceAlongDirXY(1)
+	IF (OldHealth != health)
+		healthSpec = 1.0
+	ENDIF
+
+	IF (healthSpec >= 0.0333)
+		healthSpec = healthSpec - 0.0333
+	ELSE
+		healthSpec = 0.0
+	ENDIF
+
+	IF ((WaitingForRedDogToMoveAway = 1) OR (MyVar != 0))
+		myTime = myTime + 0.2
+		rdSpec = ((Ssin(myTime) + 1.0) * 0.5) + healthSpec
+	ELSE
+		rdSpec = healthSpec
+		myTime = 0.0
+	ENDIF
+
+	
+	OldHealth = health
+
+	//ensure we go on the last waypoint
+	IF (LastWay())
+		Delete()
+	ELSE
+
+		IF (health <= 0.0)
+			SetGlobalParamInt(0, 1)
+			CREATE camTrack 5, 20, 10, 0, 0, 0, 0
+			SetGlobalParamInt(0, 0)
+			ChangeCamStrat()
+			OBJECT>Misc\ArmouredCarExplode
+			MyFlag = MyFlag & LNOT(GRAVITYON | STRATCOLL | FLOORCOLL)
+			KillMyVelocity()
+			LOOP (30)
+				MyFlag = MyFlag
+			ENDLOOP
+			RadarUpdate(RADARUNREG)
+			SetGlobalParamInt(0, 90)
+			CREATE STATECHANGE_KillPlayer 0, 0, 0, 0, 0, 0, 0
+			SetGlobalParamInt(0, 0)
+			DESTROYME SPAWN_EXPLODINGBITS
+		ENDIF
+	ENDIF
+
+
+ENDSTATE
+
+// Now we wait for our parent to die
+//STATE Blockaded
+//	WHILE (MyParentFlag)
+//		MyVar = MyVar
+//	ENDWHILE
+//	MyVar = 0
+//	STAT>Start
+//ENDSTATE

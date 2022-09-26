@@ -1,0 +1,122 @@
+/* Camera follows player */
+ 
+
+// cam modes SET AS AGGRESSIVE TO FOLLOW PATH WITH MOVEMENT AND ROTATION
+//           SET AS HOLDING TO BE A CAMERA TARGET TYPE
+//			 NORMAL MODE WILL JUST FOLLOW THE PATH IN MOVEMENT ONLY
+
+//TO TARGET, SET THE STRAT TO BE FRIENDLY TO FACE PLAYER
+//			 SET THE STRAT TO ENEMY TO FACE ITS DIRECTION OF TRAVEL/STATIC DIRECTION
+
+PARAMINT	WideScreen		0
+PARAMINT	UnderWaterCam		0
+PARAMFLOAT  FieldOfView		0.7
+PARAMFLOAT  Speed			0.8
+
+/* ENDPARAMS */
+
+//LOCALFLOAT	speed
+LOCALINT	endpatrol
+
+//globalparamint/float sems from spawning strats
+// int 0 to 1, indicates I was spawned from a strat
+// and if so, int 1 indicates I need to be of a widescreen type
+//and float 0 is the required field-of-view setting
+
+STATE Init  
+   
+	MyFlag = MyFlag | NODISP | BULLETTYPE
+
+	IF (GetGlobalParamInt(0) = 1)
+		MyParentParent = Me
+	ENDIF
+   	OBJECT> MISC\CAMERANOCOLL
+
+  	IF (!(MyFlag & OWNFPARAMS))
+		FieldOfView = 0.7
+	
+		Speed = 0.8
+	 
+	ENDIF
+	IF (GetGlobalParamFloat (0) > 0.0)
+		FieldOfView = GetGlobalParamFloat(0)
+	ENDIF
+	IF (!(MyFlag2 & OWNIPARAMS))
+		WideScreen = 0
+		UnderWaterCam = 0
+	ENDIF
+
+	IF (MyFlag & AGGRESSIVE)
+		MyParent = 0
+	ENDIF
+
+	IF (GetGlobalParamInt(1) = 1)
+		WideScreen = 1
+	ENDIF
+
+	IF (MyParent)
+		WHILE (MyParentInvalid())
+			MyParent = MyParent
+		ENDWHILE
+	ENDIF
+
+	IF (UnderWaterCam)
+		rFlareB = rFlareB + 0.4
+	ENDIF
+
+	IF (!(MyFlag & HOLDING))
+		LogCam()
+	ENDIF
+	IF (MyPath)
+		InitPath()
+		endpatrol = 0
+    ENDIF
+	 
+	SetFriction(0.2,0.2,0.2)
+	MyFlag = MyFlag | RELVELCALC  
+	RotationRestriction(1.0, 1.0, 1.0)
+//	SetExpRot(0.005)
+	ExpRot = 0.005
+
+	IF (MyPath)
+		InitSplineData()
+		STAT>PathTrack
+	ELSE
+		STAT>Inert				  
+	ENDIF
+ENDSTATE
+   
+LOCALINT Near
+
+STATE Inert
+
+ENDSTATE
+
+
+
+STATE PathTrack
+ 
+	IF (!endpatrol)
+		MoveAlongPath(Speed)
+	ELSE
+		MoveAlongPath(Speed)
+	ENDIF
+
+
+
+	IF (!endpatrol AND LastWay())
+		endpatrol = 1
+	ENDIF
+	IF (endpatrol AND FirstWay())
+		endpatrol = 0
+	ENDIF
+
+
+	IF (MyFlag & AGGRESSIVE)
+		FaceAlongPath(1)
+	ENDIF
+
+
+ENDSTATE 
+
+

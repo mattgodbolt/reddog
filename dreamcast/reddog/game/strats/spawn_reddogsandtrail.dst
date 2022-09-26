@@ -1,0 +1,50 @@
+// Red dog's sand trail strat
+
+STATE Init
+	MakeMeTheLast()
+	MyFlag = MyFlag | SPRITE | NOTEXPLODE
+
+	SetFriction(0.03,0.03,0.03)
+	
+	scalex = GetGlobalParamFloat(0)
+	scaley = GetGlobalParamFloat(0)
+
+	OBJECT> SFX\SANDPUFF
+	ANIM> SANDPUFF>DUSTPUFF
+	TRIGSET>TKillOff WHENANIMOVER
+
+	MoveZ (0.002)
+	MyVar = RandRange(-0.33, -0.28) * 0.1
+	MoveY (MyVar)
+	MyVar = RandRange(-0.015, 0.015) * 0.5
+	MoveX (MyVar)
+
+	x = x + RandRange(-0.1, 0.1)
+	y = y + RandRange(-0.1, 0.1)
+
+	MyVar = RandRange(0, TWOPI)
+	Yaw(MyVar)
+
+	STAT>Wait
+ENDSTATE
+
+STATE Wait
+	IF (Player)
+		MoveZ (0.002)
+		x = x + windX * 0.02 + PlayerVelX * 0.7
+		y = y + windY * 0.02 + PlayerVelY * 0.7
+		z = z + PlayerVelZ * 0.5
+	ELSE
+		STAT>KillOff
+	ENDIF
+ENDSTATE
+
+TRIGGER TKillOff
+	TRIGRESET
+	TRIGSTOP
+	STAT>KillOff
+ENDTRIGGER
+
+STATE KillOff
+	Delete()
+ENDSTATE

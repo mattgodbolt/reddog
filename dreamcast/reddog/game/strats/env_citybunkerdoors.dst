@@ -1,0 +1,87 @@
+PARAMINT	waitBeforeOpen 0
+PARAMINT	waitBeforeClose 300
+LOCALFLOAT	temp
+LOCALINT	time
+
+STATE Init
+	AllocStratSoundBlock(2)
+	time = 0
+	MyFlag = MyFlag | STRATCOLL | ENEMY
+	IF (!(MyFlag2 & OWNIPARAMS))
+		waitBeforeClose = 300
+	ENDIF
+	//WAIT TO FETCH PRESIDENT'S CAR
+	IF (MyParent)
+		WHILE (MyParentInvalid())
+			MyFlag = MyFlag
+		ENDWHILE
+	ENDIF
+
+	//LINK TO THE DUMMY ATTACHED TO THE CAR
+	//THIS HAS BEEN RECORDED IN THE CAR STRAT'S TARGET FIELD
+	MyTarget = MyParentTarget
+
+	RegisterCollision()
+  	MyFlag2 = MyFlag2 | COLLMOVE
+	InitHDC()
+	CalculateStratPolyData(1)
+	STAT> Start
+ENDSTATE
+
+STATE Start
+	WHILE (waitBeforeOpen > 0)
+		waitBeforeOpen = waitBeforeOpen - 1
+	ENDWHILE
+	IF (MyParent)
+		IF (ParentNearActivationXY(0))
+			STAT>Open
+		ENDIF
+	ELSE	
+		STAT>Open
+	ENDIF
+ENDSTATE
+
+STATE Open
+	// Some sound warez :-)
+	// The clunk:
+	PLAYSOUND>door_huge_start 0 1 0.0 0.0 0.0 0
+	// The rolling open
+	PLAYSOUND>door_huge_roll 1 1 0.0 0.0 0.0 (CONTINUOUS)
+	temp = 0
+	WHILE (temp < 5.0)
+		MyParent = MyTarget
+		temp = GetObjectCrntPos(1,MODEX)
+		SetObjectCrntPos(1, temp - 0.1,MODEX)
+		temp = GetObjectCrntPos(2,MODEX)
+		SetObjectCrntPos(2, temp + 0.1,MODEX)
+		CalculateStratPolyData(1)
+	ENDWHILE
+	// Stop the rolling sound
+	StopSound(1,0.0)
+	// Thought it'd be nice to clunk again as it stops
+	PLAYSOUND>door_huge_start 0 1 0.0 0.0 0.0 0
+	STAT>Opened
+ENDSTATE
+
+STATE Opened
+
+	WHILE (waitBeforeClose > 0)
+		waitBeforeClose = waitBeforeClose - 1
+	ENDWHILE
+
+	//NOW DELETE THE PARENT AND CAUSE THE BRIEFING EVENTS TO FLY
+	DeleteMyParent()
+
+//	temp = GetObjectCrntPos(1,MODEX)
+//	IF (temp < 0.0)
+//		SetObjectCrntPos(1, temp + 0.1,MODEX)
+//		temp = GetObjectCrntPos(2,MODEX)
+//		SetObjectCrntPos(2, temp - 0.1,MODEX)
+//		CalculateStratPolyData(1)
+//	ELSE
+		STAT>Finish
+//	ENDIF
+ENDSTATE
+
+STATE Finish
+ENDSTATE

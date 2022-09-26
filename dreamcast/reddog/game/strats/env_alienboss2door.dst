@@ -1,0 +1,54 @@
+LOCALINT i
+LOCALFLOAT f
+
+STATE Init
+	MyFlag = MyFlag | STRATCOLL
+
+	WHILE (MyParentInvalid())
+		MyFlag = MyFlag
+	ENDWHILE
+	RegisterCollision()
+	AllocStratSoundBlock(1)
+
+	InitHDC()
+	z = z - 2
+	CalculateStratPolyData(1)
+	WHILE (!PlayerNearActivationXY(0))
+		MyFlag = MyFlag 
+	ENDWHILE
+
+	PLAYSOUND>MINE_DOOR_CLOSE 0 1.0 0.0 0.0 0.0 0
+	i = 0
+	WHILE (i < 30)
+		i = i + 1
+		f = SmoothFromTo(2.0, i, 30)
+		z = z + f
+		CalculateStratPolyData(1)
+	ENDWHILE
+
+	WHILE (MyParentFlag)
+		MyFlag = MyFlag
+	ENDWHILE
+
+	PLAYSOUND>MINE_DOOR_CLOSE 0 0.7 0.0 0.0 0.0 0
+	i = 0
+	WHILE (i < 30)
+		i = i + 1
+		f = SmoothFromTo(2.0, i, 30)
+		z = z - f
+		CalculateStratPolyData(1)
+	ENDWHILE
+
+	WHILE (1)
+		MyFlag = MyFlag
+	ENDWHILE
+ENDSTATE
+
+
+
+
+
+
+
+
+

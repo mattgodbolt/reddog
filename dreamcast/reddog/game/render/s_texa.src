@@ -1,0 +1,346 @@
+; S_TexA.src
+; Completely OnScreen scape renderer and Strip Model Renderer
+				.CPU			SH4
+				.OUTPUT			DBG=DWARF
+				.SECTION		PSCAPERAST, CODE, ALIGN=16
+				.INCLUDE		"..\RedDog.pre"
+
+; Prototype: StripHeader *texturedStripRasteriser(StripPos *v, StripEntry *strip, Uint32 nStrip, StripContext *c);
+; R4 -> vertex list
+; R5 -> strip list
+; R6 -> number in this strip
+; R7 -> strip context
+; On the stack, &taAddress
+; XMTRX = perspectivization matrix
+; out:
+; R0 <- strip list
+
+; Parameters
+retVal:			.REG		R0
+vertTab:		.REG		R4
+strip:			.REG		R5
+nStrip:			.REG		R6
+context:		.REG		R7
+
+; Other registers
+pkm:			.REG		R1		; output
+pcw:			.REG		R2		; param control word
+v:				.REG		R3		; address of current vertex
+lightingBuf:	.REG		R8		; address of lighting info
+prefetch:		.REG		R9		; address to prefetch at
+temp:			.REG		R10		; temporary address
+; Floating point registers
+				DEC_XYZW	vert, 4, 5, 6, 7		; vertex position before reversal
+W:				.FREG		FR4		; the reversed W
+Z:				.FREG		FR5		; the reversed Z
+Y:				.FREG		FR6		; the reversed Y
+X:				.FREG		FR7		; the reversed X
+rW:				.FREG		FR0		; 1/w value
+litValue:		.FREG		FR1		; not actually a float, but nay matter
+midX:			.FREG		FR2
+midY:			.FREG		FR3
+uv:				.FREG		FR8		; not a float either, but that's life
+transX:			.FREG		FR9		; transformed X
+transY:			.FREG		FR10	; transformed Y
+tempX:			.FREG		FR11	; the next X value
+
+				.EXPORT			_texturedStripRasteriser
+_texturedStripRasteriser:
+				PUSH		R10				; preserve
+				MOV			#H'e, pcw		; PCW = 0x0000000e
+
+				PUSH		R9				; pickle r9
+				SHLL8		pcw				; PCW = 0x00000e00
+
+				PUSH		R8				; preserve registers
+				SHLL16		pcw				; PCW = 0x0e000000
+
+				MOV.L		@context, pkm	; read pkmCurrentPtr
+				ADD			#8, context		; skip to midX and midY
+
+				FMOV.S		@context+, midX	; midpoint X
+				MOV			strip, prefetch
+
+				FMOV.S		@context+, midY	; midpoint Y
+				ADD			#32, prefetch	; prefetch one cache line ahead
+
+				MOV.L		@context, lightingBuf	; lighting buffer base address
+				ADD			#-16, context	; leave context pointing at pkm
+
+				MOV			@strip+, temp	; read the vertex offset
+				ADD			#-2, nStrip		; pre-decrement nStrip to exit the loop early
+
+				PREF		@prefetch		; prefetch the next set of strip action
+				SHLL2		pcw				; PCW = 0x38000000
+
+				MOV			temp, v			; v is now offset/4
+				ADD			lightingBuf, temp; temp is now the address of the lighting information
+
+				SHLL2		v				; v*=4, v now is the offset proper
+				FLDI1		vertW			; preload 1 into vertW
+
+				FMOV.S		@temp, litValue	; load in the lit value
+				SHLL2		pcw				; pcw is finally 0xe0000000
+
+?bigLoop		ADD			vertTab, v		; v now is the address of the first vertex
+				FMOV.S		@strip+, uv		; get the UV value
+
+				.AIF \&COUNT_GEOMETRY EQ 1
+				MOV.L	#a_nDrawn, temp
+				MOV.L	@temp, temp
+				MOV.L	@temp, R0
+				ADD		nStrip, R0
+				MOV.L	R0, @temp
+				.AENDI
+
+				FMOV.S		@v+, vertX		; read the X position
+				ADD			#28, pkm		; move to the dynamic light position
+
+				FMOV.S		@v+, vertY		; read the Y position
+				ADD			#8, prefetch	; move the prefetch position on
+
+				FMOV.S		@v+, vertZ		; read the Z position
+
+				FLDI1		rW				; may be a better place to put this
+
+				FMOV.S		litValue, @pkm	; store in the dynamic lighting amount
+				ADD			#-12, pkm		; move pkm to point at the UV value
+
+				MOV.L		@v+, temp		; read the prelit information
+				FTRV		XMTRX, vert		; transform the vertex and kill the FPU!
+
+				FMOV.S		uv, @pkm		; store the U|V value
+				ADD			#-16, pkm		; move pkm to point at the ParamControlWord
+
+				MOV.L		temp, @(24, pkm); store prelighting information
+
+				MOV.L		pcw, @pkm		; store in the ParamControlWord
+				ADD			#16, pkm		; point at the end of the vertex position information
+
+?loop			MOV.L		@strip+, temp	; read the next vertex's number
+
+				FMOV.S		W, rW
+				FMUL		rW, rW
+;			FDIV		W, rW			; start the perspective divide
+
+				PREF		@prefetch
+				ADD			#8, prefetch	; prefetch madness
+;1
+				MOV			temp, v			; copy temp
+				ADD			lightingBuf, temp; temp now points at the lighting information
+;2
+				FSRRA		rW
+				SHLL2		v				; v*=4
+				FMOV.S		midY, transY	; get ready for the MAC later on
+;3
+				ADD			vertTab, v		; v now points ready at the next vertex
+				FMOV.S		@temp, litValue	; read the next vertex's lighting info
+;4
+				FMOV.S		@strip+, uv		; get the next UV value ready				
+;5
+				FMOV.S		@v+, tempX		; read the X value, also prefetches I guess
+;6
+				MOV.L		@(8, v), temp	; temp is the prelighting info of the next vertex
+;7
+;8..9..10..11..12..
+				; about a million nops
+
+				FMAC		rW, Y, transY	; transY = midY + Y*rW
+				FMOV.S		midX, transX	; get ready for the MAC
+
+				FMAC		rW, X, transX	; transX = midX + X*rW
+				FMOV.S		rW, @-pkm		; store 1/w in
+				
+				FMOV.S		transY, @-pkm	; store Y
+
+				FMOV.S		transX, @-pkm	; store X
+				DT			nStrip			; decrement the strip counter
+
+				BT/S		?endStrip		; end of the strip, so clean up
+				PREF		@pkm			; SQ blast
+				
+				FMOV.S		@v+, vertY		; read the Y of the new vertex
+				ADD			#28, pkm		; point at the next vertex
+
+				FMOV.S		tempX, vertX	; take our temporary prefetched X and put in useful place
+
+				FMOV.S		@v+, vertZ		; get the Z value
+
+				FLDI1		vertW			; vertex W value 1 ready for FTRV
+
+				MOV.L		pcw, @pkm		; store ParamControlWord
+				FTRV		XMTRX, vert		; begin transformation
+
+				MOV.L		temp, @(24, pkm); store prelit information
+				ADD			#16, pkm		; move to UV value
+
+				FMOV.S		uv, @pkm		; store UV value
+				ADD			#12, pkm		; move to the dynamic light position
+
+				FMOV.S		litValue, @pkm
+
+				FLDI1		rW				; reset W ready
+				BRA			?loop			; branch back round
+				ADD			#-12, pkm		; put back to being just past the rW value [slot]
+
+?endStrip		FMOV.S		@v+, vertY		; read the Y of the new vertex
+				ADD			#28, pkm		; point at the next vertex
+
+				FMOV.S		tempX, vertX	; take our temporary prefetched X and put in useful place
+
+				FMOV.S		@v+, vertZ		; get the Z value
+
+				FLDI1		vertW			; vertex W value 1 ready for FTRV
+
+				MOV.L		pcw, @pkm		; store ParamControlWord
+				FTRV		XMTRX, vert		; begin transformation
+
+				MOV.L		temp, @(24, pkm); store prelit information
+				ADD			#16, pkm		; move to UV value
+
+				FMOV.S		uv, @pkm		; store UV value
+				ADD			#12, pkm		; move to the dynamic light position
+
+				FMOV.S		litValue, @pkm
+
+				FLDI1		rW				; reset W ready
+				ADD			#-12, pkm		; put back to being just past the rW value [slot]
+
+				MOV.L		@strip+, temp	; read the next vertex's number
+
+				FMOV.S		W, rW
+				FMUL		rW, rW
+;				FDIV		W, rW			; start the perspective divide
+
+				PREF		@prefetch
+				ADD			#8, prefetch	; prefetch madness
+;1
+				MOV			temp, v			; copy temp
+				ADD			lightingBuf, temp; temp now points at the lighting information
+;2
+				FSRRA		rW
+				SHLL2		v				; v*=4
+				FMOV.S		midY, transY	; get ready for the MAC later on
+;3
+
+				ADD			vertTab, v		; v now points ready at the next vertex
+				FMOV.S		@temp, litValue	; read the next vertex's lighting info
+;4
+				FMOV.S		@strip+, uv		; get the next UV value ready				
+;5
+				FMOV.S		@v+, tempX		; read the X value, also prefetches I guess
+;6
+				MOV.L		@(8, v), temp	; temp is the prelighting info of the next vertex
+;7
+;8..9..10..11..12..
+				; about a million nops
+
+				FMAC		rW, Y, transY	; transY = midY + Y*rW
+				FMOV.S		midX, transX	; get ready for the MAC
+
+				FMAC		rW, X, transX	; transX = midX + X*rW
+				FMOV.S		rW, @-pkm		; store 1/w in
+				
+				FMOV.S		transY, @-pkm	; store Y
+				SHAR		pcw				; pcw be 0xf0000000 now
+
+				FMOV.S		transX, @-pkm	; store X
+				PREF		@pkm			; SQ blast
+				
+				FMOV.S		@v+, vertY		; read the Y of the new vertex
+
+				ADD			#28, pkm		; point at the next vertex
+				FMOV.S		tempX, vertX	; take our temporary prefetched X and put in useful place
+
+				FMOV.S		@v+, vertZ		; get the Z value
+
+				FLDI1		vertW			; vertex W value 1 ready for FTRV
+
+				MOV.L		pcw, @pkm		; store ParamControlWord
+				FTRV		XMTRX, vert		; begin transformation
+
+				MOV.L		temp, @(24, pkm); store prelit information
+				ADD			#16, pkm		; move to UV value
+
+				FMOV.S		uv, @pkm		; store UV value
+				ADD			#12, pkm		; move to the dynamic light position
+
+				FMOV.S		litValue, @pkm
+
+				FLDI1		rW				; reset W ready
+				ADD			#-12, pkm		; put back to being just past the rW value [slot]
+
+				MOV.L		@strip+, nStrip	; read the number of polys in the next strip
+
+				FMOV.S		W, rW
+				FMUL		rW, rW
+;				FDIV		W, rW			; start the perspective divide
+
+				PREF		@prefetch
+				ADD			#8, prefetch	; prefetch madness
+;1
+;2
+				FMOV.S		midY, transY	; get ready for the MAC later on
+;3
+				FSRRA		rW
+;4
+;5
+;6
+;7
+;8..9..10..11..12..
+				; about a million nops
+
+				FMAC		rW, Y, transY	; transY = midY + Y*rW
+				FMOV.S		midX, transX	; get ready for the MAC
+
+				FMAC		rW, X, transX	; transX = midX + X*rW
+				FMOV.S		rW, @-pkm		; store 1/w in
+				
+				FMOV.S		transY, @-pkm	; store Y
+
+				FMOV.S		transX, @-pkm	; store X
+				PREF		@pkm			; SQ blast
+									
+				ADD			#28, pkm
+				MOV.L		@strip+, temp	; read the material number
+
+				CMPZ		nStrip			; is this the last strip?
+
+				BT			?theEnd			; the end
+				MOV			@(4, context), R0
+
+				FLDI1		vertW			; vertex W value 1 ready for FTRV
+				CMP/EQ		R0, temp		; same material?
+
+				BF			?theEnd
+				SHLL		pcw				; 0xf0000000<<1 == 0xe0000000 cunning
+
+				MOV			@strip+, temp	; read the vertex offset
+				ADD			#-2, nStrip		; pre-decrement nStrip to exit the loop early
+
+				PREF		@prefetch		; prefetch the next set of strip action
+				MOV			temp, v			; v is now offset/4
+
+				ADD			lightingBuf, temp; temp is now the address of the lighting information
+				FLDI1		vertW			; preload 1 into vertW
+
+				SHLL2		v				; v*=4, v now is the offset proper
+				BRA			?bigLoop
+				FMOV.S		@temp, litValue	; load in the lit value [slot]
+
+?theEnd			POP			R8
+				MOV			strip, retVal	; get strip in the right place
+
+				POP			R9
+				ADD			#-8, retVal		; rewind
+
+				MOV.L		pkm, @context	; store in the pkm return value
+				RTS
+				POP			R10				; last pop
+
+				.AIF \&COUNT_GEOMETRY EQ 1
+				.IMPORT			_nDrawn
+a_nDrawn:		.DATA.L			_nDrawn
+				.AENDI
+
+				.END

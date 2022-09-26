@@ -1,0 +1,18 @@
+STATE Init
+	IF (PlayerFlag & NODISP)
+		Delete()
+	ELSE
+		STAT>Start
+	ENDIF
+ENDSTATE
+
+STATE Start
+	IF (HasActivation(0))
+		IF (PlayerNearActivationXY(0))
+			CREATE SPAWN_KillPlayerInOne 0, 0, 0, 0, 0, 0, 0
+		ENDIF
+	ELSE
+		CREATE SPAWN_KillPlayerInOne 0, 0, 0, 0, 0, 0, 0
+	ENDIF
+	Delete()
+ENDSTATE

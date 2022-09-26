@@ -1,0 +1,328 @@
+// Foot soldier drop ship level 2
+// Activated by: Proximity trigger
+// Then, travel along a spline to a deploy trigger
+// Drop off 'n' enemies, four at a time
+// Enemies drop out the sides
+// Different types selectable
+// After 'n' soldiers, follow exit waypoint spline
+
+// Parameter - number of soliders inside
+PARAMINT	NumSoldiers	4
+PARAMFLOAT	Test
+
+// Local float - velocity we're travelling along the spline
+LOCALFLOAT	velocity
+LOCALFLOAT	rotAmt
+LOCALFLOAT	velDamp
+LOCALFLOAT	rot
+LOCALFLOAT	rotVel
+LOCALFLOAT	xAng
+LOCALFLOAT	yAng
+LOCALFLOAT	zAng
+LOCALFLOAT offset
+
+// Definitions
+DEFINE	TOPSPEED 1.2
+
+// Initialise the strat
+STATE Init
+
+
+	offset = 10.0
+	MyVar = CHILDIGNOREPATH
+	// Set up default vars
+	IF (!(MyFlag2 & OWNIPARAMS))
+		NumSoldiers = 4
+	ENDIF
+	OBJECT> ENEMIES\FOOTSOLDIERDROPSHIPLEVEL2
+
+	// We're a collisionable targetable enemy
+	MyFlag = MyFlag | ENEMY | STRATCOLL | TARGETABLE
+
+	RegisterCollision()
+	InitHDC()
+
+	// Set up path info
+	InitPath()
+	InitSplineData()
+
+	// Set up the speed, armour and the rotational damping
+	velocity = TOPSPEED
+	health = 250.0
+	rot = 0
+	rotVel = 0
+
+	// Shadows on
+	SetObjectShadowState(1)
+
+	// Start up the sound
+	AllocStratSoundBlock(2)
+	RegisterDanger(50.0)
+	
+	PLAYSOUND>ENEMY_DROPSHIP 0 1.0 0.0 0.0 0.0 CONTINUOUS
+
+	// Set a trigger to check the activation point
+	TRIGSET>CheckActivation EVERY 2
+
+	// Set a trigger to deal with death
+   //	TRIGSET>KillOff WHENDEAD
+
+	// Set a trigger to keep us moving
+	TRIGSET>KeepOnRunning EVERY 1
+
+	InActivateObjectCollision(1)
+	InActivateObjectCollision(2)
+	InActivateObjectCollision(3)
+	InActivateObjectCollision(4)
+
+
+
+
+	STAT>Idle
+ENDSTATE
+
+
+LOCALFLOAT SPECAMOUNT
+LOCALINT ValidToKill
+// Keep the thing moving along
+STATE KeepOnRunning
+	IF (!LastWay())
+		MoveAlongPath(velocity)
+	   	FaceAlongPath(2)
+	   	TiltAlongPath(0.5)
+	   	SplineRelFlatten(0.5)
+		rotVel = (rotVel + (((velocity * (TWOPI / 64.0)) - rot) * 0.02)) * 0.94
+		rot = rot + rotVel
+		x = x + (Ssin (xAng)) * (((TOPSPEED/2) - velocity) / TOPSPEED)
+		y = y + (Ssin (yAng)) * (((TOPSPEED/2) - velocity) / TOPSPEED)
+		z = z + (Ssin (zAng)) * (((TOPSPEED/2) - velocity) / TOPSPEED)
+		xAng = xAng + 0.07
+		yAng = yAng - 0.03
+		zAng = zAng + 0.02
+	   	RelRotateX (-rot)
+		SetPitch(0, velocity*0.5)
+	ELSE
+	 	TRIGRESET
+		TRIGSTOP
+	   	STAT>Remove
+
+
+	ENDIF
+
+	IF (MyFlag & HITSTRAT)
+//		IF (ValidToKill)
+//			IF (health <=0)
+//			   	TRIGRESET
+//				TRIGSTOP
+//			  	STAT>Die
+//			ENDIF
+//		ENDIF
+//	  	SPECAMOUNT = 1.0
+		PLAYSOUND>ENEMY_HIT 1 1.0 0.0 0.0 0.0 RANDOM
+	ENDIF
+//	IF (SPECAMOUNT > 0)
+//  		MyFlag2 = MyFlag2 | SPECULAR
+//		IF (ValidToKill)
+//			SetSpecularColour(0, SPECAMOUNT,0,0)
+//		ELSE
+//			SetSpecularColour(0, SPECAMOUNT,SPECAMOUNT,SPECAMOUNT)
+//		ENDIF
+//		IF (PAL)
+//		   	SPECAMOUNT = SPECAMOUNT - (0.1 * 1.2)
+//		ELSE
+//		   	SPECAMOUNT = SPECAMOUNT - 0.1
+//		ENDIF
+//	ELSE
+//		SPECAMOUNT = 0
+// 		MyFlag2 = MyFlag2 & LNOT(SPECULAR)
+//	ENDIF
+ 
+ 
+	CalculateStratPolyData(1) 
+  	TRIGFIN
+ENDSTATE
+
+LOCALFLOAT ORANGEAMOUNT
+STATE Die
+	PauseTriggers(-1,FORGET)
+
+	//SET THE SPEED
+	absspeedx = oldx - oldoldx
+	absspeedy = oldy - oldoldy
+
+	MyFlag = MyFlag | FLOORCOLL | REALGRAVITYON
+	MyFlag2 = MyFlag2 & LNOT(STRATCOLL)
+	ActivateObjectCollision(1)
+	ActivateObjectCollision(2)
+	ActivateObjectCollision(3)
+	ActivateObjectCollision(4)
+
+  //	WHILE (!(IAmOnFloor))
+  //		MyFlag = MyFlag
+  //	ENDWHILE
+
+  //	KillMyVelocity()
+
+	TRIGSET>MakeExp EVERY 2
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+	trans = 1.0
+	LOOP (30)
+		IF (trans > 0.1)
+			trans = trans - 1.0 / 30
+		ENDIF
+		IF (IAmOnFloor)
+			KillMyVelocity()
+		ENDIF
+		MyFlag = MyFlag
+	ENDLOOP
+
+
+	Score = Score + 2000
+   	DESTROYME SPAWN_EXPLODINGBITS
+
+ENDSTATE
+
+
+TRIGGER MakeExp
+	MyFlag = 2.0
+	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+
+	TRIGFIN
+ENDTRIGGER
+
+
+DEFINE SHIPLENGTH -16.0
+//need the 'whizz out' ship anim here
+STATE Remove
+
+	//SET THE SPEED
+	absspeedx = oldx - oldoldx
+	absspeedy = oldy - oldoldy
+
+  //	SetCheckPosRel(0,0,100.0,0.0)
+  //	CheckZ = z + 20.0
+
+  //	WHILE (!(SeeWay(TWOPI/90.0)))
+  //	   TurnTowardPosXZ(CheckX, CheckY, z + 20.0, 0.025, 0.0)
+  // ENDWHILE
+
+   //SET THE POSITION TO BE THE POSITION AT THE BACK OF THE SHIP
+	//THIS IS BECAUSE THE PIVOT POINT OF THE REPLACEMENT MODEL IS AT
+	//THE SHIP'S TAIL
+//   	SetCheckPosRel(0, 0, SHIPLENGTH, 0)
+//	x = CheckX
+//	y = CheckY
+//	z = CheckZ
+	OBJECT> SFX\DROPSHIPTELEPORTLEVEL2
+	MODELANIM>SFX\DROPSHIPTELEPORTLEVEL2.RDO>Play>NOTWEEN
+	WHILE (MyAnimFlag & RUNNING)
+	 MyFlag = MyFlag
+	ENDWHILE
+	
+
+	Delete()
+ENDSTATE
+
+
+STATE Idle
+
+ENDSTATE
+
+
+// Check the activation points
+STATE CheckActivation
+	IF (NearActivationXY(0))
+		TRIGRESET
+		TRIGSTOP
+		STAT>StartDropping
+	ELSE
+		TRIGFIN
+	ENDIF
+ENDSTATE
+
+// Start dropping men out
+STATE StartDropping
+
+	rotAmt = 0.0
+	velDamp = 1.0
+	WHILE (rotAmt < (TWOPI/3))
+		velocity = velocity * velDamp
+		IF velDamp > 0.85
+			velDamp = velDamp - 0.025
+		ENDIF
+		IF (velocity < (TOPSPEED / 2))
+			RotateObjectXYZ(1, 0, 0.1, 0)
+			RotateObjectXYZ(2, 0, 0.1, 0)
+			rotAmt = rotAmt + 0.1
+		ENDIF
+	ENDWHILE
+	NumSoldiers = 4
+	// Throw out some soldiers
+	WHILE (NumSoldiers >= 4)
+		offset = 1.0	
+		IF (InsideArea() > 0)
+		SetGlobalParamInt(0,1)
+		CREATE FOOTSOLDIERLEVEL2 0, 0, 0, 0, 0, 0, 5
+		ClearGlobalParams()
+		SetGlobalParamInt(0,1)
+		CREATE FOOTSOLDIERLEVEL2 0, 0, 0, 0, 0, 0, 6
+		ClearGlobalParams()
+		SetGlobalParamInt(0,1)
+		CREATE FOOTSOLDIERLEVEL2 0, 0, 0, 0, 0, 0, 7
+		ClearGlobalParams()
+		SetGlobalParamInt(0,1)
+		CREATE FOOTSOLDIERLEVEL2 0, 0, 0, 0, 0, 0, 8
+		ClearGlobalParams()
+
+	   	LOOP 30
+			IF (velocity > 0.05)
+				velocity = velocity * 0.9
+			ENDIF
+		ENDLOOP
+
+		offset = offset + 10.0
+		NumSoldiers = NumSoldiers - 4
+		ENDIF
+	ENDWHILE
+
+	LOOP (30)
+		MyFlag = MyFlag
+	ENDLOOP
+
+	
+	WHILE (velocity < TOPSPEED)
+		velocity = velocity + (TOPSPEED - velocity) * 0.01
+		IF (rotAmt > 0)
+			RotateObjectXYZ(1, 0, -0.1, 0)
+			RotateObjectXYZ(2, 0, -0.1, 0)
+			rotAmt = rotAmt - 0.1
+		ENDIF
+		IF (!NearActivationXY(0))
+			ValidToKill = 1
+		ENDIF
+	ENDWHILE
+
+  //	ValidToKill = 1
+	// Set a trigger to check to see if we've left the playing area
+	health = 150.0
+	STAT>Idle
+
+ENDSTATE
+
+// Check to see if we're out of the playing area
+//STATE CheckFinished
+//	IF LastWay()
+//		StopSound(0)
+//		Delete()
+//	ENDIF
+//	TRIGFIN
+//ENDSTATE
+
+// Called when we've been shot out of the sky
+//STATE KillOff
+//	StopSound(0)
+//	DESTROYME SPAWN_EXPLODINGBITS
+//	adrelanin = adrelanin + 0.2
+//	Score = Score + 2000
+//	TRIGFIN
+//ENDSTATE

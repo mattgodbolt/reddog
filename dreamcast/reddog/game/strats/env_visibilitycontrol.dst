@@ -1,0 +1,49 @@
+//Visibility controller, flag passed in is the one to make invisible
+
+PARAMINT	VisBitNumber	0
+PARAMINT	SetBit			0
+PARAMINT	Inside			0
+PARAMINT	delayTime		0
+
+STATE Init 
+	IF (!(MyFlag2 & OWNIPARAMS))
+		VisBitNumber = 0
+		SetBit = 0
+		Inside = 0
+		delayTime = 0
+	ENDIF
+	LOOP (delayTime)
+		MyFlag = MyFlag
+	ENDLOOP
+	IF (HasActivation(0))
+		STAT>Start
+	ELSE
+		IF (SetBit)
+			SetVisBit(VisBitNumber)
+		ELSE
+   			ClearVisBit(VisBitNumber)
+		ENDIF
+	ENDIF
+
+	Delete()
+ENDSTATE
+
+STATE Start
+	IF (Inside)
+		IF (PlayerNearActivationXY(0))
+			IF (SetBit)
+				SetVisBit(VisBitNumber)
+			ELSE
+   				ClearVisBit(VisBitNumber)
+			ENDIF
+		ENDIF
+	ELSE
+		IF (!PlayerNearActivationXY(0))
+			IF (SetBit)
+				SetVisBit(VisBitNumber)
+			ELSE
+   				ClearVisBit(VisBitNumber)
+			ENDIF
+		ENDIF
+	ENDIF
+ENDSTATE

@@ -1,0 +1,72 @@
+LOCALINT	type
+DEFINE CITYBOSS 1
+DEFINE ESCORTTANKER 2
+
+
+//DELETION CLEAN UP CODE
+TRIGGER CleanUp
+	ArrowStrat = 0	  
+ENDTRIGGER
+
+
+STATE Init
+	MyFlag = MyFlag | ENEMY | NODISP | DELETECALLBACK
+  	TRIGSET>CleanUp WHENDELETED
+	OBJECT>MISC\ARROWTRANS
+	ArrowStrat = Me
+	damage = 0.0
+	IF (GetGlobalParamInt(0) = 2)
+		type = ESCORTTANKER
+	ENDIF
+  	IF (GetGlobalParamInt(0) = 1)
+	  	type = CITYBOSS
+		damage = 1.0
+		MyVar = 1.0
+		STAT>Idle
+	ENDIF
+ 	
+	STAT>GetBusy
+ENDSTATE
+
+
+STATE Idle
+	WHILE (MyParentFlag)
+		MyFlag = MyFlag
+	ENDWHILE
+	Delete()
+ENDSTATE
+
+STATE GetBusy
+	IF (type != CITYBOSS)
+		UpdateArrowArray()
+	ENDIF
+
+	IF (damage = 0.0)
+		IF (scalex > 0.0)
+			scalex = scalex - 0.1
+			scaley = scaley - 0.1
+			scalez = scalez - 0.1
+		ELSE
+			scalex = 0.0
+			scaley = 0.0
+			scalez = 0.0
+			MyFlag = MyFlag | NODISP
+		ENDIF
+	ELSE
+		MyFlag = MyFlag & LNOT(NODISP)
+		IF (scalex < 1.0)
+			scalex = scalex + 0.1
+			scaley = scaley + 0.1
+			scalez = scalez + 0.1
+		ELSE
+			scalex = 1.0
+			scaley = 1.0
+			scalez = 1.0
+		ENDIF
+	ENDIF
+	IF (type = ESCORTTANKER)
+		IF (GetParentSem(0) = 1)
+			Delete()
+		ENDIF
+	ENDIF
+ENDSTATE

@@ -1,0 +1,134 @@
+PARAMINT	collisionable 0 
+PARAMINT	hdc 0
+PARAMINT	explodeWhenShot 0
+PARAMINT	Health 1
+PARAMINT	animating 0
+PARAMINT	repeating 0
+PARAMINT	DoNotPoint 0
+PARAMINT    DropshipType 0
+
+PARAMFLOAT	speed	1.5
+PARAMFLOAT	rotObjectOneZ 0.0
+
+LOCALFLOAT VOLUME
+LOCALINT isGenerated
+
+STATE Init
+	MyFlag = MyFlag | ENEMY 
+
+	IF (!(MyFlag2 & OWNIPARAMS))
+		collisionable = 0
+		hdc = 0
+		explodeWhenShot = 0
+		Health = 1
+		animating = 0
+		repeating = 0
+		DoNotPoint = 0
+	ENDIF
+
+	
+	IF (animating)
+		ThisModelAnimPlay(REPEAT)
+	ENDIF
+
+	IF (!(MyFlag & OWNFPARAMS))
+		speed = 1.5
+		rotObjectOneZ = 0.0
+	ENDIF
+
+	IF (collisionable = 1)
+		MyFlag = STRATCOLL | ENEMY
+		IF (hdc = 1)
+			InitHDC()
+		ELSE
+			MyFlag = MyFlag | LOWCOLL
+		ENDIF
+		RegisterCollision()
+	ENDIF
+
+	IF (GetGlobalParamFloat(0) = 1.0)
+		isGenerated = 1
+	ELSE
+		isGenerated = 0
+	ENDIF
+
+	IF (isGenerated)
+		InheritMyParent()
+	ENDIF
+
+	health = Health
+
+	IF (explodeWhenShot = 1)
+		TRIGSET>HealthCheck EVERY 1	
+	ENDIF
+
+	IF (DoNotPoint)
+		SetGlobalParamInt(0,100)
+	ENDIF
+	InitPath()
+	ClearGlobalParams()
+	InitSplineData()
+	IF (DropshipType)
+		AllocStratSoundBlock(1)
+		SetAudibleRange(0,50,400)
+		VOLUME = 0.1
+		PLAYSOUND>DROPSHIP 0 VOLUME 0.0 0.0 0.0 CONTINUOUS
+		TRIGSET>FadeInVolume EVERY 1
+	ENDIF
+	STAT>Start
+ENDSTATE
+
+TRIGGER FadeInVolume
+	IF (VOLUME < 0.88)
+		VOLUME = VOLUME + 0.015
+		SetVolume(0, VOLUME)
+		TRIGFIN
+	ELSE
+		TRIGSTOP
+	ENDIF
+ENDTRIGGER
+
+TRIGGER HealthCheck
+	IF (health <= 0.0)
+		IF (isGenerated)
+			ParentVar = ParentVar + 1.0
+		ENDIF
+		MyVar = 8.0
+		CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+		DESTROYME SPAWN_EXPLODINGBITS
+		TRIGSTOP
+	ELSE
+		TRIGFIN
+	ENDIF
+ENDTRIGGER
+
+STATE Start
+	IF (!repeating)
+		IF (LastSplineSection())
+			IF (distToLastWay() < 5.0)
+				STAT>Die
+			ENDIF
+		ENDIF
+	ENDIF
+
+	IF (rotObjectOneZ != 0.0)
+		MyVar = GetObjectCrntRot(1, MODEZ)
+		SetObjectCrntRot(1, MyVar + rotObjectOneZ, MODEZ)
+	ENDIF
+
+	MoveAlongPath(speed)
+	IF (!DoNotPoint)
+	FaceAlongPath(1)
+	TiltAlongPath(1.0)
+	SplineRelFlatten(1.0)
+	ENDIF
+	
+ENDSTATE
+
+
+STATE Die
+	IF (isGenerated)
+		ParentVar = ParentVar + 1.0
+	ENDIF
+	Delete()
+ENDSTATE

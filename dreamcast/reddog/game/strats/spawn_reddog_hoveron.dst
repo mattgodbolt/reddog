@@ -1,0 +1,173 @@
+LOCALFLOAT	time
+LOCALFLOAT	px
+LOCALFLOAT	py
+LOCALFLOAT	pz
+LOCALFLOAT	ax
+LOCALFLOAT	ay
+LOCALFLOAT	az
+LOCALFLOAT	tempf
+LOCALINT	padPush
+LOCALINT	padPress
+LOCALINT	ft
+LOCALINT	pos
+LOCALINT	fp
+
+STATE Init
+  	MyFlag = MyFlag | FRIENDLY | FLOORCOLL
+	MyFlag2 = MyFlag2 | PLAYER_CF
+	OBJECT>REDDOG\WEAPON1
+	//SetObjectShadowState(1)
+	SetFriction(0.5, 0.5, 0.5)
+	time = RandRange(0.0, 1000.0)
+	x = DogX
+	y = DogY
+	z = DogZ + 0.5
+	ft = 100
+	fp = 0
+	HideObject(1)
+	HideObject(2)
+	IF (LeftGunPickUp = 1)
+		IF (RightGunPickUp = 1)
+			STAT>Die
+		   //	Delete()
+		ENDIF
+		RightGunPickUp = 1
+		pos = 2
+	ELSE
+		LeftGunPickUp = 1
+		pos = 1
+	ENDIF
+	TRIGSET>Always EVERY 1   	
+	STAT>Start
+ENDSTATE
+
+STATE Die
+	Delete()
+ENDSTATE
+
+TRIGGER Always
+	//ENSURE I'M TURNED OFF, IF REDDOG IS, (IE: WHEN RD IS IN THE DROPSHIP)
+	IF (PlayerFlag & NODISP)
+		MyFlag = MyFlag | NODISP
+	ELSE
+		MyFlag = MyFlag & LNOT(NODISP)
+	ENDIF
+
+	ft = ft + 1
+	FacePlayerAim(0)
+	time = time + 1.0
+	tempf = time * 0.05
+	IF (pos = 1)
+		px = parentLeftGunX + Ssin(tempf * 2.0) * 0.5
+		py = parentLeftGunY + Scos(tempf) * 0.5
+		pz = parentLeftGunZ + 1.5 + Ssin(tempf * 2.3) * 0.3
+	ELSE
+		px = parentRightGunX + Ssin(tempf * 2.0) * 0.5
+		py = parentRightGunY + Scos(tempf) * 0.5
+		pz = parentRightGunZ + 1.5 + Ssin(tempf * 2.3) * 0.3
+	ENDIF
+	ax = (px - x) * 15.0
+	ay = (py - y) * 15.0
+	az = (pz - z) * 15.0
+	IF (ScoobyDoo)
+		HoldPlayerVY = 4.0
+	ENDIF
+	x = x + HoldPlayerVX * 0.5
+	y = y + HoldPlayerVY * 0.5
+	z = z + HoldPlayerVZ * 0.5
+	ApplyAbsForce(ax, ay, az, 0, 0, 0, 1.0)
+	
+	IF (MyParentFlag & NODISP)
+		MyFlag = MyFlag | NODISP
+	ELSE
+		MyFlag = MyFlag & LNOT(NODISP)
+	ENDIF
+	TRIGFIN
+ENDTRIGGER
+LOCALINT VALID
+
+
+STATE Start
+	
+	IF (MyParentHealth <= 0.0)
+		Delete()
+	ELSE 
+	
+	VALID = !((PlayerState & PS_SCRIPTHELD) | (PlayerState & PS_INDROPSHIP))
+	IF (VALID)
+		padPush = GetPadPush(0)
+	ELSE
+		padPush = 0
+	ENDIF
+
+   //	padPush = 	GetPadPush(0)
+	padPress = 	GetPadPress(0)
+	
+	IF ((padPush & PADFIRE) OR (padPush & PADB))
+		ft = 0
+	ENDIF
+	IF ((padPress & PADFIRE) OR (padPress & PADB))
+		IF (ft = 9)
+			ft = 0
+		ENDIF
+	ENDIF
+
+	
+	IF (pos = 1)
+		IF (ft = 0)
+			IF (fp = 0)
+				fp = 1
+				HideObject(2)
+				UnhideObject(1)
+				CREATE SPAWN_PTMD_BULLET -0.375, 3.0, -0.18, 0, 0, 0, 0
+			ELSE
+				HideObject(1)
+				UnhideObject(2)
+				CREATE SPAWN_PTMD_BULLET 0.375, 3.0, -0.18, 0, 0, 0, 0
+				fp = 0
+			ENDIF
+		ENDIF
+		IF (ft = 3)
+			HideObject(1)
+			HideObject(2)
+		ENDIF
+	ELSE
+		IF (ft = 3)
+			IF (fp = 0)
+				fp = 1
+				HideObject(1)
+				UnhideObject(2)
+				CREATE SPAWN_PTMD_BULLET 0.375, 3.0, -0.18, 0, 0, 0, 0
+			ELSE
+				HideObject(2)
+				UnhideObject(1)
+				CREATE SPAWN_PTMD_BULLET -0.375, 3.0, -0.18, 0, 0, 0, 0
+				fp = 0
+			ENDIF
+		ENDIF
+		IF (ft = 6)
+			HideObject(1)
+			HideObject(2)
+		ENDIF
+	ENDIF
+	
+	IF (PlayerDistXY() > 20.0)
+		STAT>Restart
+	ENDIF
+	ENDIF
+ENDSTATE
+
+STATE Restart
+	MyFlag = MyFlag & LNOT(FLOORCOLL)
+	LOOP (30)
+		MyFlag = MyFlag
+	ENDLOOP
+	x = DogX
+	y = DogY
+	z = DogZ + 0.5
+	LOOP(2)
+		MyFlag = MyFlag
+	ENDLOOP
+	MyFlag = MyFlag | FLOORCOLL
+	STAT>Start
+ENDSTATE

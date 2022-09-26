@@ -1,0 +1,382 @@
+
+//the beam laser of the ice boss base
+
+DEFINE BEAMLASER 12
+DEFINE SCALEFAC 3.0
+DEFINE BEAMLENGTH 18.0
+
+LOCALFLOAT temp
+LOCALINT paramtype
+//STATE Init
+
+//ENDSTATE
+
+STATE Init
+
+	MakeMeTheLast()
+	//SEE IF WE'RE A CHILD OF THE KILLING RAY
+	IF (GetGlobalParamInt(1) = 1)
+		 AllocStratSoundBlock(1)
+
+		PLAYSOUND>ICEB_LASER_BEAM_CUT 0 1.0 0.0 0.0 0.0 CONTINUOUS
+		STAT>ChildOfBeam
+	ENDIF
+	
+	//..ELSE, WE COULD BE THE BLAST FROM THE BEAM
+	IF (GetGlobalParamInt(1) = 2)
+		AllocStratSoundBlock(1)
+		PLAYSOUND>ICEB_STATIC 0 1.0 0.0 0.0 0.0 CONTINUOUS
+
+		STAT>ExplodeOfBeam
+	ENDIF
+
+	//ELSE, WE'RE THE GREEN EFFECT WAREZ
+  	AllocStratSoundBlock(1)
+
+	PLAYSOUND>ICEB_POWERUP 0 1.0 0.0 0.0 0.0 0
+
+	
+	temp = ParentSemaphore
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+   	OBJECT> BOSSES\ICEBOSS\ICEBOSSBEAM
+	
+
+	IF (GetGlobalParamInt(0))
+		IF (GetGlobalParamInt(0) != 2)
+		    //record the boss base strat as a root
+			MyTarget = MyParent
+
+			//SET THE MAX COUNT
+			MyVar = 1.0
+		ELSE
+			MyTarget = MyParentTarget
+			MyVar = temp
+		ENDIF
+		ClearGlobalParams()
+
+		//FIRST TYPE
+		scalex = scalez = SCALEFAC
+		trans = 0.5
+		scaley = 0.1 
+	    LOOP (2)
+			MyFlag = MyFlag
+		ENDLOOP
+
+	   	STAT>Spawner
+
+	ELSE
+		//maintains a link back to the root boss base strat
+	 	MyTarget = MyParentTarget
+		MyVar = temp
+		scalex = scalez = MyParentScaleX
+		offme = 1.5 * 1.0 / scalex
+		scaley = 0.1
+
+		trans = (SCALEFAC - scalex) / SCALEFAC 
+
+			IF (scalex = 1.0)
+				IF (!MyVar) 
+					GlobalVar = 0
+					//this is where we fire the beam
+					//was a pellet, now make a satellite laser
+
+				   //	MyFlag = MyFlag | STRATCOLL | ENEMY	| FLOORCOLL
+				   //	damage = 80.0
+				   //	TRIGSET>KillOff WHENHIT
+				   //	TRIGSET>KillOff ONFLOOR
+					//OBJECT> BOSSES\SCORPIONWEAPONS\SCORPIONFOCALBEAM
+				   //	OBJECT> BOSSES\ICEBOSS\ICEBOSSFOCALBEAM
+				   //	RegisterCollision()
+
+
+					//THE FINAL		
+				   //	TRIGSET>Update EVERY 1
+					STAT>Link
+				ELSE
+					paramtype = 2
+				   //	SetGlobalParamInt(0,2)
+					MyVar = MyVar - 1.0
+				ENDIF
+			ENDIF
+		LOOP (2)
+		MyParent = BossStrat
+		LinkToParentObject(BEAMLASER, 0, 0, 0, 0, BEAMLENGTH, 0)
+			MyFlag = MyFlag
+		ENDLOOP
+
+		STAT>Spawner
+	ENDIF
+
+
+ENDSTATE
+
+DEFINE INNER 1
+DEFINE TIP 2
+
+STATE ChildOfBeam
+	OBJECT>BOSSES\ICEBOSS\ICEICEBeamy
+	HideObject(TIP)
+    DontFogMeOut()
+	scalex = MyParentScaleX
+	scaley = MyParentScaleY
+	dist = Ssin(GlobalVar) * 0.25
+	MyFlag2 = MyFlag2 | TRANSLUCENT
+   //	SetSpecularColour(0, 0.9, 0.0, 0.0)
+	trans = 1.0
+	LOOP (2)
+		MyFlag = MyFlag
+	ENDLOOP
+
+	HideObject(INNER)
+
+	MoveX(dist)
+	LOOP (4)
+		trans = trans - 0.25
+
+	 //	MyFlag = MyFlag
+	ENDLOOP
+
+	Delete()
+
+ENDSTATE
+
+
+TRIGGER Child
+	GlobalVar =  GlobalVar + ((TWOPI / 360.0) * 6.0)
+	SetGlobalParamInt(1,1)
+	CREATE SPAWN_ICEBASEBEAM 0, 0, 0, 0, 0, 0, 0
+	ClearGlobalParams()
+	TRIGFIN
+ENDTRIGGER
+
+
+//CREATE A BLAST AT THE TIP OF THE BEAM
+TRIGGER Blast
+	SetGlobalParamInt(1,2)
+	CREATE SPAWN_ICEBASEBEAM 0, 0, 0, 0, 0, 0, TIP
+	ClearGlobalParams()
+	TRIGSTOP
+
+ENDTRIGGER
+
+//2.1
+LOCALFLOAT offme
+
+STATE Spawner
+
+	scalex = scalex - 0.5
+	SetGlobalParamInt(0,paramtype)
+	CREATE SPAWN_ICEBASEBEAM 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0
+	ClearGlobalParams()
+   	LOOP (5)
+		//MyTarget = MyParent
+		MyParent = BossStrat
+	   //	LinkToParentObject(BEAMLASER, 0, BEAMLENGTH, 0, 0, 0, 0)
+		LinkToParentObject(BEAMLASER, 0, 0, 0, 0, BEAMLENGTH, 0)
+		
+		DrawLensFlare(0,x,y,z,1.0,1.0,1.0,1.0)
+
+		trans = trans + 0.05
+		trans = trans + offme
+		MyFlag = MyFlag
+	ENDLOOP
+
+	Delete()
+
+
+
+
+ENDSTATE
+
+//NASTY CODE
+//PARENT SEMAPHORE OF 99.0 WILL KILL ME
+
+
+TRIGGER Update
+//	MoveY(3.0)
+	MoveY(0.05)
+
+	TRIGFIN
+ENDTRIGGER
+
+STATE Die
+	WHILE (scalex > 0.1)
+		scalex = scalex - 0.1
+		scalez = scalex
+	ENDWHILE
+
+	Delete()
+
+ENDSTATE
+
+
+
+STATE ExplodeOfBeam
+   //	MakeMeTheLast()
+ 	CheckY = MyParentScaleY
+	MyVar = 11.0
+
+	//WHILST THE PARENT BEAM IS NOT SHRINKING, MAKE SOME FIRE WAREZ
+ 	WHILE ((MyParentFlag) AND (CheckY <= MyParentScaleY))
+	 
+   
+	   	CREATE SPAWN_BLASTEXP 0, 0, 0, 0, 0, 0, 0
+	ENDWHILE
+
+	Delete()
+
+ENDSTATE
+
+
+TRIGGER KillOff
+	MyVar = 2.0
+	CREATE SPAWN_BLASTEXP 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0
+	MyParent = MyTarget
+   	ParentSemaphore = 0
+	Delete()
+   //	TRIGSTOP
+
+ENDTRIGGER
+LOCALINT ONESECONETHIRD
+LOCALINT ONESECTWOTHIRD
+LOCALINT ONESEC
+
+DEFINE PAL_ONESECHALF 37
+DEFINE NTSC_ONESECHALF 45
+LOCALINT time
+
+LOCALFLOAT Savex
+LOCALFLOAT Savey
+LOCALFLOAT Savez
+LOCALINT valid
+LOCALFLOAT dist
+//WAS PLAYER HAS BEEN HIT, WE'LL MAINTAIN THE BEAM HERE FOR ABOUT 1.5 SECS
+LOCALINT HITSTOP
+LOCALINT SET
+
+LOCALINT Lightning
+
+STATE Link
+	GlobalVar2 = 1
+	IF (PAL)
+		ONESEC = 25
+		ONESECONETHIRD = 33
+		ONESECTWOTHIRD = 41
+	//	CHARGETIME = PAL_ONESECHALF
+	ELSE
+		ONESEC = 30
+		ONESECONETHIRD = 40
+		ONESECTWOTHIRD = 50
+  //		CHARGETIME = NTSC_ONESECHALF
+	ENDIF
+ // 	scalex = 5.0
+
+	MyFlag = MyFlag | ENEMY	| NODISP
+	OBJECT>BOSSES\ICEBOSS\ICEICEBeamy
+	HideObject(TIP)
+    DontFogMeOut()
+   	frame = (TWOPI/360.0) * 5.0
+	CheckX = DogX
+	CheckY = DogY
+	CheckZ = DogZ
+	//ensure we are linked to the boss
+	MyParent = BossStrat
+   //	LinkToParentObject(BEAMLASER, 0, BEAMLENGTH, 0, 0, 0, 0)
+   	LinkToParentObject(BEAMLASER, 0, 0, 0, 0, BEAMLENGTH, 0)
+	dist = PlayerDistXY()
+	valid = 1
+	trans = 1.0
+	MyFlag2 = MyFlag2 & LNOT(TRANSLUCENT)
+
+	scalex = 0.1
+	WHILE (valid)
+ 
+ 	  Lightning = DrawLightning (0, 0, 1.4, -0.25, Lightning,2)
+	IF (scalex < 48.0)
+			scalex = scalex + 3.0
+		ENDIF
+
+   		KillMyVelocity()
+
+	   //	LinkToParentObject(BEAMLASER, 0, BEAMLENGTH, 0, 0, 0, 0)
+		LinkToParentObject(BEAMLASER, 0, 0, 0, 0, BEAMLENGTH, 0)
+	   	PointTo(CheckX,CheckY,CheckZ)
+	  // 	RelRotateY(TWOPI/ 90.0)
+	   	IF (BeamHit(1.0,3.0,DogX,DogY,DogZ))
+	   		IF (!SET)
+				SET = 1
+   				TRIGSET>Child EVERY 2
+	 	   	    TRIGSET>Blast EVERY 1
+			ENDIF
+		  	MyFlag = MyFlag & LNOT(NODISP)
+		 	HITSTOP = 1
+			IF (time > ONESEC * 1.5)
+			   	valid = 0
+			ENDIF
+		 	//HURT REDDOG
+	   	 	PlayerHealth = PlayerHealth - 1.5
+	   	ELSE
+			IF (!HITSTOP)
+			  //	IF (ValidToBeam(0, scaley,	0))
+				IF (ValidToBeam(0, 1.0,	0, 0))
+					scaley = scaley + dist / (ONESEC / 5)
+				ELSE
+					HITSTOP = 1
+			  		IF (!SET)
+						SET = 1
+	 	   			  	TRIGSET>Child EVERY 2
+	 	   			  	TRIGSET>Blast EVERY 1
+	   				ENDIF
+					MyFlag = MyFlag & LNOT(NODISP)
+					valid = 0
+				ENDIF
+			ELSE
+				IF (time > ONESEC * 1.5)
+				   	valid = 0
+				ENDIF
+			ENDIF
+		ENDIF
+		time = time + 1
+	ENDWHILE
+
+
+		Savex = x
+		Savey = y
+		Savez = z
+
+	time  = 0
+
+	WHILE ((scaley > 1.0))
+	   	x = CheckX
+		y = CheckY
+		z = CheckZ
+		
+		//LinkToParentObject(BEAMLASER, 0, 0, 0, 0, 0, 0)
+	   	IF (BeamHit(1.0,3.0,DogX,DogY,DogZ))
+		 	//HURT REDDOG
+	   	 	PlayerHealth = PlayerHealth - 1.5
+	   	ENDIF
+
+		
+		PointTo(Savex,Savey,Savez)
+		IF (scaley > 1.0)
+			scaley = scaley - dist / (ONESEC / 4)
+		ENDIF
+		time = time + 1
+
+	ENDWHILE
+
+
+	GlobalVar2 = 0
+	Delete()
+
+ENDSTATE
+
+
+
+
+//FOCAL BEAM CODE
+//PARENT SEMAPHORE OF 99 WILL KILL ME
+
+DEFINE BEAMTURRETLENGTH 15.0
+

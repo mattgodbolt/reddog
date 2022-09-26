@@ -1,0 +1,10 @@
+//DUMMY JUST SITS HERE LOOKING THICK 
+
+STATE Init 
+//	RotationRestriction(1.0, 1.0, 1.0)
+  //	MyFlag = MyFlag | STATIC
+	STAT> DoNothing
+ENDSTATE
+
+STATE DoNothing
+ENDSTATE

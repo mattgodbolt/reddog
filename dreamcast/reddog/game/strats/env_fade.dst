@@ -1,0 +1,45 @@
+PARAMINT	fs		0
+PARAMINT	time	60
+
+PARAMFLOAT	r	0.0
+PARAMFLOAT	g	0.0
+PARAMFLOAT	b	0.0
+
+LOCALFLOAT	mul
+LOCALFLOAT	am
+
+
+STATE Init
+	MyFlag = MyFlag
+
+	IF (!(MyFlag2 & OWNIPARAMS))
+		fs = 0
+		time = 60
+	ENDIF
+
+	IF (!(MyFlag & OWNFPARAMS))
+		r = 0.0
+		g = 0.0
+		b = 0.0
+	ENDIF
+	
+	mul = 1.0 / time
+	am = 0.0
+
+	IF (fs = 0)
+		WHILE(time > 0)
+			SetScreenARGB(1.0 - am, r, g, b)
+			am = am + mul
+			time = time - 1
+		ENDWHILE
+	ELSE
+		WHILE(time > 0)
+			SetScreenARGB(am, r, g, b)
+			am = am + mul
+			time = time - 1
+		ENDWHILE
+	ENDIF
+
+	Delete()
+ENDSTATE
+

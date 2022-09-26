@@ -1,0 +1,113 @@
+LOCALINT Temp
+LOCALINT dead
+LOCALINT tempi
+LOCALFLOAT cr
+LOCALFLOAT cg
+LOCALFLOAT cb
+LOCALFLOAT tempf
+LOCALFLOAT a
+LOCALFLOAT b
+LOCALFLOAT c
+
+STATE Init
+	MakeMeTheLast()
+  	MyFlag = MyFlag | RELVELCALC | FLOORCOLL | STRATCOLL | FRIENDLY | NOTEXPLODE | BULLETTYPE | DIRECTMOVE
+	MyFlag2 = MyFlag2 | BULLET_CF
+	SetFriction(0.0, 0.0, 0.0)
+	damage = 20.0
+	TRIGSET>KillOff	WHENHIT
+	TRIGSET>KillOffFloor	ONFLOOR
+	dead = 0
+
+	MyVar = GetParentPlayerNumber()
+	Temp = 0
+	OBJECT> WEAPON\SecondWB
+	RegisterCollision()
+	ResetOCP()
+	MoveY(8.0)
+	TRIGSET>Remove	EVERY 45
+	ExplosionLight (0.0, 0.1, 0.3, 10, 0.98, 5)
+ 	
+	AllocStratSoundBlock(1)
+
+	// Record those collisions
+	RecordCollision(0)
+	scalex = scaley = scalez = 1.3
+
+	STAT>SetPos
+ENDSTATE 
+
+STATE SetPos
+	IF (UnderWater)
+		SubParentSem(0, 1)
+		dead = 1
+		DoSpark(20, 0.0, 0.0, 1.0, 0.4, 1.0, 50, 255, 255, 255)
+		
+		Delete()
+	ELSE
+	tempf = GetObjectCrntRot(1, MODEY)
+	SetObjectCrntRot(1, tempf + 0.05, MODEY)
+	SetObjScale(1, tempf + 1.0, tempf + 1.0, tempf + 1.0)
+	IF (tempf < 1.6)
+		SetObjectTrans(1, 1.0 - (tempf * 0.5))
+	ENDIF
+	IF (PolyNX OR PolyNY OR PolyNZ)
+		a = PolyNX
+		b = PolyNY
+		c = PolyNZ
+	ENDIF
+	ENDIF	
+
+ENDSTATE
+
+STATE KillOff
+   	SubParentSem(0, 1)
+	Delete()
+ENDSTATE
+
+STATE ResetColl
+	TRIGSET>Remove EVERY 90
+	TRIGSET>KillOff WHENHIT
+	TRIGSTOP
+ENDSTATE
+
+STATE KillOffFloor
+	
+	Temp = RandRange(0, 1.99)
+	IF (!(MyFlag2 & HITHDC))
+		cr = cr * 0.5
+		cg = cg * 0.5
+		cb = cb * 0.5
+		IF (!(PolyType & NODECAL))
+			AddDecal(0, Temp, 0.5, 0.5, cr, cg, cb)
+		ENDIF
+	ENDIF
+
+	MoveBackOneFrame()
+	dead = 1
+	SubParentSem(0, 1)
+	SetGlobalParamFloat(0, a)
+	SetGlobalParamFloat(1, b)
+	SetGlobalParamFloat(2, c)
+	SetGlobalParamInt(0, 1)
+	CREATE SPAWN_BulletRing 0, 0, 0, 0, 0, 0, 0
+	ClearGlobalParams()
+  //	SetGlobalParamInt(0, 1)
+  //	SetGlobalParamFloat(0, 0)
+  //	SetGlobalParamFloat(1, 0)
+  //	SetGlobalParamFloat(2, 0)
+		
+	Delete()
+ENDSTATE
+
+STATE Remove
+	SubParentSem(0, 1)
+	Delete()
+ENDSTATE
+
+LOCALINT MainTarget
+
+TRIGGER HitStrat
+   	SubParentSem(0, 1)
+	Delete()
+ENDTRIGGER

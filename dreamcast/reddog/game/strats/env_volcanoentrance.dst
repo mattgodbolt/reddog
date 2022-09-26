@@ -1,0 +1,121 @@
+PARAMINT WaitTime 0
+PARAMINT OpenDoorType 0
+PARAMINT CloseAgain 0
+LOCALINT DoorTime 
+LOCALFLOAT SmokeX
+LOCALFLOAT Tempf
+LOCALINT DOORFRAME
+LOCALINT CLOSEFRAME
+
+
+STATE Init
+	MyFlag = MyFlag | ENEMY | STRATCOLL | LOWCOLL
+	RegisterCollision()
+	AllocStratSoundBlock(1)
+	SetAudibleRange(0, 100, 250)
+	InitHDC()
+	DoorTime = 0
+	SetSem (0,0)
+	IF (PAL)
+		DOORFRAME = 100
+		CLOSEFRAME = 31
+	ELSE
+		DOORFRAME = 120
+		CLOSEFRAME = 38
+	ENDIF
+
+	IF (OpenDoorType)
+		CalculateStratPolyData(1)
+		STAT> WaitForOpen
+	ENDIF
+	STAT> WaitForClose
+ENDSTATE
+
+STATE WaitForClose
+
+	CalculateStratPolyData(1)
+	IF PlayerNearActivationXY(0)
+		STAT>CloseDoor
+	ELSE
+		IF 	(GetSem(0) = 1)
+			STAT>Finish
+		ENDIF		
+	ENDIF
+
+ENDSTATE
+
+STATE CloseDoor
+	WHILE (WaitTime > DoorTime)
+		DoorTime = DoorTime + 1
+	ENDWHILE
+	DoorTime = 0
+	PLAYSOUND>VOLCANO_DOOR_CL 0 1.0 0.0 0.0 0.0 NODOPPLER
+	WHILE (DoorTime < (DOORFRAME / 4))
+		MoveZ (-0.02)
+		CalculateStratPolyData(1)
+		DoorTime = DoorTime + 1
+	ENDWHILE
+//	LOOP (3)
+//		SetGlobalParamFloat (0,3)
+//		SmokeX = -16
+//		IMMLOOP (32)
+//			Tempf = RandRange (0.0, 3.0)
+//			IF (Tempf < 1.0)
+//				Tempf = RandRange (0.0, 3.0)
+//				CREATE SPAWN_REDDOGSANDTRAIL  SmokeX, 2, -12 + Tempf, 0, 0, 0, 0			
+//			ENDIF
+//			SmokeX = SmokeX + 1
+//		IMMENDLOOP
+//		SetGlobalParamFloat (0,0)
+//	ENDLOOP
+	KillMyVelocity()
+	MoveZ (0.0)
+	DoorTime = 0
+	CalculateStratPolyData(1)
+	STAT>WaitForOpen
+ENDSTATE
+
+STATE WaitForOpen
+	IF (GetSem(0) = 1)
+		STAT>OpenDoor
+	ENDIF
+ENDSTATE
+
+STATE OpenDoor
+	PLAYSOUND>VOLCANO_DOOR_OP 0 1.0 0.0 0.0 0.0 NODOPPLER
+	WHILE (DoorTime < DOORFRAME)
+		MoveZ (0.002)
+		CalculateStratPolyData(0)
+		DoorTime = DoorTime + 1
+	ENDWHILE
+	KillMyVelocity()
+	DoorTime = 0
+	CalculateStratPolyData(1)
+	IF (CloseAgain)
+		STAT>WaitCloseAgain
+	ENDIF
+	STAT>Finish
+ENDSTATE
+
+STATE WaitCloseAgain
+	CalculateStratPolyData(1)
+	IF PlayerNearActivationXY(1)
+		STAT>CloseAgain
+	ENDIF
+ENDSTATE
+
+STATE CloseAgain
+	DoorTime = 0
+	PLAYSOUND>VOLCANO_DOOR_CL 0 1.0 0.0 0.0 0.0 NODOPPLER
+	WHILE (DoorTime < CLOSEFRAME)
+		MoveZ (-0.02)
+		CalculateStratPolyData(0)
+		DoorTime = DoorTime + 1
+	ENDWHILE
+	KillMyVelocity()
+	CalculateStratPolyData(1)
+	STAT>Finish
+ENDSTATE
+
+STATE Finish
+ENDSTATE

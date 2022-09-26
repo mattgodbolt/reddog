@@ -1,0 +1,34 @@
+SAVIZ! - KNOWN BUGS
+
+1.	Hitting reverse when going forwards causes RD to come to a gradual stop whereas
+	letting go of the controls altogether stops RD immediately.
+
+	FIXED
+
+2.	Holding down forward and reverse together does not cause RD to go into the
+	supercool strafe mode as required.
+
+	FIXED
+
+3.	Holding down left or right and boosting forwards or backwards when RD is not moving 
+	should cause RD to do 'donuts' on the spot and NOT powerslide away as is currently the case.
+
+	FIXED
+
+4.	Button to switch camera collision on and off.
+
+	DONE When camera is too far from player
+
+5.	Try acceleration exponential increase with shoulder button displacement thus giving
+	more control when travelling at low speeds.
+
+	FIXED
+
+6.	The player should not be able to rotate RD while it is in the air (all four wheels not
+	touching the ground) though they should still be able to move the aiming and shoot.
+
+	FIXED
+
+7.	RD sometimes moves for no reason when stood still on flat ground.
+
+	FIXED

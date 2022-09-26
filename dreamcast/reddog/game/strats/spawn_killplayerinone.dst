@@ -1,0 +1,17 @@
+LOCALINT	time
+
+STATE Init
+	time = 0
+	MyParent = 0
+	MakeMeTheLast()
+	LOOP (30)
+		time = time + 1
+		SetWhiteOut(time * 0.03333, time * 0.03333, time * 0.03333)
+	ENDLOOP
+	STAT>Start
+ENDSTATE
+
+STATE Start
+	SetHealthOfPlayer(0, -1.0)
+	Delete()
+ENDSTATE
